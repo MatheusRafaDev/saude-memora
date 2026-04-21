@@ -1,21 +1,197 @@
-/* src/global.css */
+/* ── Design System — SaúdeMemora ─────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --primary:        #2563eb;
+  --primary-dark:   #1d4ed8;
+  --primary-light:  #dbeafe;
+  --primary-soft:   #eff6ff;
+  --success:        #16a34a;
+  --success-light:  #dcfce7;
+  --error:          #dc2626;
+  --error-light:    #fee2e2;
+  --warning:        #d97706;
+  --warning-light:  #fef3c7;
+  --gray-50:  #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  --nav-height-desktop: 70px;
+  --nav-height-mobile: 60px;
+  --radius:     14px;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,.14);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-
-  /* Para rolagem vertical */
-  overflow-y: scroll;
-
-  /* Firefox */
-  scrollbar-width: none; 
-
-  /* IE 10+ */
-  -ms-overflow-style: none; 
 }
 
-/* Chrome, Safari e Opera */
-body::-webkit-scrollbar {
-  display: none;
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Remove scrollbar global (mantém o scroll mas esconde a barra) */
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+body::-webkit-scrollbar { 
+  display: none; 
+}
+
+/* ── Layout principal com Nav (CORRIGIDO) ───────────────────────── */
+/* O Nav fica fixo no topo sem afetar o conteúdo */
+.main-content {
+  min-height: calc(100vh - var(--nav-height-desktop));
+  background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fa 100%);
+  padding: 32px;
+  margin-top: var(--nav-height-desktop); /* Espaço para o Nav fixo */
+  width: 100%;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+  .main-content {
+    min-height: calc(100vh - var(--nav-height-mobile));
+    padding: 20px;
+    margin-top: var(--nav-height-mobile);
+    padding-bottom: calc(var(--nav-height-mobile) + 20px);
+  }
+}
+
+/* Remove os antigos offsets */
+@media (min-width: 992px) {
+  #root > * .page-content,
+  .layout-content {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .layout-content {
+    padding-bottom: 0 !important;
+  }
+}
+
+/* ── Reset dos containers das páginas ──────────────────────────── */
+.prontuario-container,
+.up-page,
+.perfil-container,
+.home-container,
+.documentos-wrapper {
+  min-height: auto !important;
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+/* Ajuste específico para o Perfil */
+.perfil-container {
+  max-width: 1000px;
+  margin: 0 auto !important;
+  width: 100%;
+}
+
+/* Ajuste específico para UploadDocumentos */
+.up-page {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+.up-container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* Ajuste específico para ListarDocumentos */
+.content {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* ── Spinner util ─────────────────────────────────────────────── */
+@keyframes sm-spin { 
+  to { transform: rotate(360deg); } 
+}
+
+.sm-spinner {
+  display: inline-block;
+  width: 16px; 
+  height: 16px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sm-spin .7s linear infinite;
+}
+
+/* ── Animações globais ────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Scrollbar customizada ────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
+}
+
+/* ── Utilidades ───────────────────────────────────────────────── */
+.text-center { text-align: center; }
+.text-primary { color: var(--primary); }
+.text-success { color: var(--success); }
+.text-error { color: var(--error); }
+.text-warning { color: var(--warning); }
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }

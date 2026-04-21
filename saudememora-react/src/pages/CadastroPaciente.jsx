@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { IMaskInput } from "react-imask";
 import { cadastrarPaciente } from "../services/pacienteService";
 import { useNavigate } from "react-router-dom";
-import "../styles/CadastroPaciente.css";
+import "../styles/pages/CadastroPaciente.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const CadastroPaciente = () => {
@@ -136,7 +136,7 @@ const CadastroPaciente = () => {
 
       if (result.success) {
         localStorage.setItem("paciente", JSON.stringify(result.dados));
-        navigate("/formulario-medico");
+        navigate("/ficha-medica");
       } else {
         if (result.message === "O email informado já está em uso.") {
           setFieldErrors((prev) => ({ ...prev, email: result.message }));

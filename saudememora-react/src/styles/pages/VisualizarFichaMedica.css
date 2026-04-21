@@ -1,9 +1,4 @@
-.container-custom {
-  max-width: 800px;
-  margin: auto;
-  padding: 2rem;
-  font-size: 1.1rem; /* Aumenta o tamanho geral do texto */
-}
+
 
 .header-flex {
   display: flex;
@@ -46,7 +41,6 @@
 .container-custom {
   max-width: 800px;
   margin: auto;
-  padding: 2rem;
   font-size: 1.1rem; /* Aumenta o tamanho geral do texto */
 }
 

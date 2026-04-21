@@ -20,3 +20,6 @@ Caused by: org.h2.jdbc.JdbcSQLNonTransientConnectionException: The connection wa
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:690)
 	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
 	... 16 more
+2026-04-21 15:58:26.194128-03:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "DS_OBSERVACOES CHARACTER VARYING(255)": "U&'Corrigi erros ortogr\\00e1ficos e unifiquei as informa\\00e7\\00f5es dos dois te... (329)"; SQL statement:
+insert into tb_receitas (nm_medico,crm_medico,dt_inclusao,dt_receita,id_documento,ds_imagem,ds_observacoes,id_paciente,ds_resumo,id_receita) values (?,?,?,?,?,?,?,?,?,default) [22001-232]

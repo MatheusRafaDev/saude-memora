@@ -8,21 +8,17 @@ import {
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import CadastroPaciente from "./pages/CadastroPaciente";
-import FormularioMedico from "./pages/FormularioMedico";
-import OCRLeituraCursiva from "./pages/OCRLeituraCursiva";
+import FichaMedica from "./pages/FichaMedica";
 import UploadDocumentos from "./pages/UploadDocumentos";
 import Perfil from "./pages/Perfil";
 import ListarDocumentos from "./pages/ListarDocumentos";
-import EditarPerfil from "./pages/EditarPerfil";
-import RelatorioDocumentos from "./pages/RelatorioDocumentos";
+
 import VisualizadorDocumento from "./pages/VisualizadorDocumento";
-import VisualizarFichaMedica from "./pages/VisualizarFichaMedica";
+
 import AlterarDocumento from "./pages/AlterarDocumento";
+import Nav from "./components/Nav";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./styles/global.css";
-import Layout from "./components/Layout";
-import { obterPaciente } from "./services/pacienteService";
-
 
 const isPacienteLoggedIn = () => {
   const data = localStorage.getItem("paciente");
@@ -39,6 +35,18 @@ const isPacienteLoggedIn = () => {
     localStorage.removeItem("paciente");
     return false;
   }
+};
+
+// Componente de Layout para páginas autenticadas
+const Layout = ({ children }) => {
+  return (
+    <>
+      <Nav />
+      <main className="main-content">
+        {children}
+      </main>
+    </>
+  );
 };
 
 const AuthWrapper = ({ children }) => {
@@ -62,7 +70,11 @@ const AuthWrapper = ({ children }) => {
     );
   }
 
-  return authState.isAuthenticated ? children : <Navigate to="/login" replace />;
+  return authState.isAuthenticated ? (
+    <Layout>{children}</Layout>
+  ) : (
+    <Navigate to="/login" replace />
+  );
 };
 
 const PublicWrapper = ({ children }) => {
@@ -91,148 +103,111 @@ const PublicWrapper = ({ children }) => {
 
 function App() {
   return (
-    <div className="app-container">
-      <Router>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <PublicWrapper>
-                <Navigate to="/login" replace />
-              </PublicWrapper>
-            }
-          />
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <PublicWrapper>
+              <Navigate to="/login" replace />
+            </PublicWrapper>
+          }
+        />
 
-          <Route
-            path="/login"
-            element={
-              <PublicWrapper>
-                <Login />
-              </PublicWrapper>
-            }
-          />
-          <Route
-            path="/criar-conta"
-            element={
-              <PublicWrapper>
-                <CadastroPaciente />
-              </PublicWrapper>
-            }
-          />
+        <Route
+          path="/login"
+          element={
+            <PublicWrapper>
+              <Login />
+            </PublicWrapper>
+          }
+        />
+        
+        <Route
+          path="/criar-conta"
+          element={
+            <PublicWrapper>
+              <CadastroPaciente />
+            </PublicWrapper>
+          }
+        />
 
-          <Route
-            path="/home"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <Home />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/perfil"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <Perfil />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/formulario-medico"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <FormularioMedico />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/relatorios"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <RelatorioDocumentos />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
+        <Route
+          path="/home"
+          element={
+            <AuthWrapper>
+              <Home />
+            </AuthWrapper>
+          }
+        />
+        
+        <Route
+          path="/perfil"
+          element={
+            <AuthWrapper>
+              <Perfil />
+            </AuthWrapper>
+          }
+        />
+        
+        <Route
+          path="/ficha-medica"
+          element={
+            <AuthWrapper>
+              <FichaMedica />
+            </AuthWrapper>
+          }
+        />
+        
 
-          <Route
-            path="/upload-documentos"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <UploadDocumentos />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/editar-documento"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <AlterarDocumento />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/alterar-perfil"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <EditarPerfil />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/meus-documentos"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <ListarDocumentos />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/visualizar-documento"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <VisualizadorDocumento />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
-          <Route
-            path="/visualizar-ficha"
-            element={
-              <AuthWrapper>
-                <Layout>
-                  <VisualizarFichaMedica />
-                </Layout>
-              </AuthWrapper>
-            }
-          />
+        <Route
+          path="/upload-documentos"
+          element={
+            <AuthWrapper>
+              <UploadDocumentos />
+            </AuthWrapper>
+          }
+        />
+        
+        <Route
+          path="/editar-documento"
+          element={
+            <AuthWrapper>
+              <AlterarDocumento />
+            </AuthWrapper>
+          }
+        />
+        
+        <Route
+          path="/meus-documentos"
+          element={
+            <AuthWrapper>
+              <ListarDocumentos />
+            </AuthWrapper>
+          }
+        />
+        
+        <Route
+          path="/visualizar-documento"
+          element={
+            <AuthWrapper>
+              <VisualizadorDocumento />
+            </AuthWrapper>
+          }
+        />
+        
 
-          <Route
-            path="*"
-            element={
-              <PublicWrapper>
-                <Navigate to="/login" replace />
-              </PublicWrapper>
-            }
-          />
-        </Routes>
-      </Router>
-    </div>
+
+        <Route
+          path="*"
+          element={
+            <PublicWrapper>
+              <Navigate to="/login" replace />
+            </PublicWrapper>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 

@@ -1,0 +1,176 @@
+/* Nav.css - place in ../styles/components/Nav.css */
+
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #dbeafe;
+  --primary-soft: #eff6ff;
+  --success: #16a34a;
+  --success-light: #dcfce7;
+  --error: #dc2626;
+  --error-light: #fee2e2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --bottom-h: 68px;
+}
+
+/* ── TOP NAV (Desktop) ─────────────────────────────────────────── */
+.sm-top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  z-index: 1050;
+}
+
+.sm-top-nav__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.sm-top-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--primary);
+}
+
+.sm-top-nav__menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sm-top-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  transition: background 0.15s, color 0.15s;
+}
+
+.sm-top-nav__item svg {
+  flex-shrink: 0;
+}
+
+.sm-top-nav__item:hover {
+  background: var(--gray-100);
+  color: var(--gray-800);
+}
+
+.sm-top-nav__item.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.sm-top-nav__item.active svg {
+  stroke: var(--primary);
+}
+
+/* ── BOTTOM NAV (Mobile) ──────────────────────────────────────── */
+.sm-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-h);
+  background: #fff;
+  border-top: 1px solid var(--gray-200);
+  z-index: 1050;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.07);
+}
+
+.sm-bottom-nav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px 10px;
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--gray-400);
+  transition: color 0.15s;
+}
+
+.sm-bottom-nav__item svg {
+  flex-shrink: 0;
+}
+
+.sm-bottom-nav__item.active {
+  color: var(--primary);
+}
+
+.sm-bottom-nav__item.active svg {
+  stroke: var(--primary);
+}
+
+/* ── Responsive Breakpoints ─────────────────────────────────── */
+@media (max-width: 991px) {
+  .sm-top-nav {
+    display: none;
+  }
+  
+  .sm-bottom-nav {
+    display: flex;
+  }
+}
+
+@media (max-width: 480px) {
+  .sm-bottom-nav__item span {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .sm-bottom-nav__item span {
+    display: none;
+  }
+  
+  .sm-bottom-nav__item svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Add padding to main content to account for fixed nav */
+body {
+  padding-top: 70px;
+  margin: 0;
+}
+
+@media (max-width: 991px) {
+  body {
+    padding-top: 0;
+    padding-bottom: var(--bottom-h);
+  }
+}

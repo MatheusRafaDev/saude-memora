@@ -1,369 +1,441 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { FiUpload, FiCamera, FiFileText, FiCheckCircle } from "react-icons/fi";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "../styles/UploadDocumento.css";
 
-import { ocrSpaceDuplo } from "../ocr/ocrSpace";
-import { formatarTextoOCR, extrairMedicamentosDoOCR } from "../services/OpenRouter";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { ocrSpaceDuplo } from "../ocr/ocrSpace";
+import {
+  formatarTextoOCR,
+  extrairMedicamentosDoOCR,
+} from "../services/OpenRouter";
 import { AdicionarDocumento } from "../documentos/AdicionarDocumento";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import "../styles/pages/UploadDocumentos.css";
 
+const Icon = ({ d, size = 20, stroke = "currentColor", sw = 1.8 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={stroke}
+    strokeWidth={sw}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d={d} />
+  </svg>
+);
+
+const ICONS = {
+  upload: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12",
+  camera: "M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 17a4 4 0 100-8 4 4 0 000 8z",
+  file: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+  check: "M5 13l4 4L19 7",
+  x: "M6 18L18 6M6 6l12 12",
+  refresh: "M4 4v5h.582m15.356 2A8 8 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8 8 0 01-15.357-2m15.357 2H15",
+  info: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  chevronRight: "M9 18l6-6-6-6",
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const fmtSize = (b) =>
+  b < 1024
+    ? `${b} B`
+    : b < 1048576
+    ? `${(b / 1024).toFixed(1)} KB`
+    : `${(b / 1048576).toFixed(1)} MB`;
+
+// ── Componente principal ─────────────────────────────────────────────────────
 export default function UploadDocumentos() {
-  const [documento, setDocumento] = useState(null);
+  const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [status, setStatus] = useState("Aguardando envio...");
-  const [progresso, setProgresso] = useState(0);
-  const [textoOCR, setTextoOCR] = useState("");
-  const [textoExibicao, setTextoExibicao] = useState("");
-  const [botaoHabilitado, setBotaoHabilitado] = useState(false);
-  const [tipoDocumento, setTipoDocumento] = useState("");
+  const [tipo, setTipo] = useState("");
   const [paciente, setPaciente] = useState(null);
-  const [mensagemErro, setMensagemErro] = useState("");
-  const [processando, setProcessando] = useState(false);
-  const [adicionandoDocumento, setAdicionandoDocumento] = useState(false);
-  const [remedios, setRemedios] = useState([]);
-  const [medicamentos, setMedicamentos] = useState([]);
-  const [quantidades, setQuantidades] = useState({});
-  const [formasDeUso, setFormasDeUso] = useState({});
-  const [errosQuantidade, setErrosQuantidade] = useState({});
+
+  // Processo silencioso
+  const [currentStep, setCurrentStep] = useState(0); // 0 idle, 1-4 processing, 5 done, -1 erro
+  const [stepError, setStepError] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const [processingStep, setProcessingStep] = useState("");
+
+  // Toast
+  const [toast, setToast] = useState({ show: false, msg: "", type: "info" });
+  const toastTimer = useRef(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    const pacienteData = JSON.parse(localStorage.getItem("paciente")) || {};
-    setPaciente(pacienteData);
-    return () => { if (preview) URL.revokeObjectURL(preview); };
-  }, [preview]);
+    const p = JSON.parse(localStorage.getItem("paciente") || "{}");
+    if (p?.id) setPaciente(p);
+  }, []);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (preview) URL.revokeObjectURL(preview);
-    setDocumento(file);
-    setPreview(URL.createObjectURL(file));
-    setStatus("Arquivo selecionado. Pronto para envio.");
-    setProgresso(0);
-    setTextoOCR("");
-    setTextoExibicao("");
-    setBotaoHabilitado(false);
-    setMensagemErro("");
-    setRemedios([]);
-    setMedicamentos([]);
-    setQuantidades({});
-    setFormasDeUso({});
-    setErrosQuantidade({});
+  const showToast = (msg, type = "info") => {
+    clearTimeout(toastTimer.current);
+    setToast({ show: true, msg, type });
+    toastTimer.current = setTimeout(
+      () => setToast((t) => ({ ...t, show: false })),
+      4000
+    );
   };
 
-  const handleCameraClick = () => document.getElementById("cameraInput").click();
-
-  const resetState = useCallback((initialStatus = "Aguardando envio...") => {
+  // ── Arquivo ────────────────────────────────────────────────────────────────
+  const applyFile = (f) => {
+    if (!f) return;
+    if (f.size > 10 * 1024 * 1024) {
+      showToast("Arquivo muito grande. Limite: 10 MB.", "error");
+      return;
+    }
     if (preview) URL.revokeObjectURL(preview);
-    setStatus(initialStatus);
-    setProgresso(0);
-    setTextoOCR("");
-    setTextoExibicao("");
-    setRemedios([]);
-    setMedicamentos([]);
-    setQuantidades({});
-    setFormasDeUso({});
-    setErrosQuantidade({});
-    setBotaoHabilitado(false);
-    setMensagemErro("");
-    setTipoDocumento("");
-    setDocumento(null);
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+    setCurrentStep(0);
+    setStepError("");
+  };
+
+  const removeFile = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(null);
     setPreview(null);
+    setCurrentStep(0);
+    setStepError("");
+  };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    applyFile(e.dataTransfer.files[0]);
+  };
+
+  // ── Submit silencioso ──────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!file) return showToast("Selecione um arquivo.", "error");
+    if (!tipo) return showToast("Selecione o tipo de documento.", "error");
+    if (!paciente?.id) return showToast("Nenhum paciente na sessão.", "error");
+
+    setCurrentStep(1);
+    setProcessingStep("Enviando imagem...");
+    setStepError("");
+
+    try {
+      // ── 1. OCR ─────────────────────────────────────────────────────────────
+      setProcessingStep("Realizando leitura OCR...");
+      const { texto1, texto2 } = await ocrSpaceDuplo(file);
+      
+      setCurrentStep(2);
+      
+      // ── 2. Formatar com IA ─────────────────────────────────────────────────
+      setProcessingStep("Corrigindo e estruturando com IA...");
+      const textoFormatado = await formatarTextoOCR(texto1, texto2);
+      
+      setCurrentStep(3);
+      
+      // ── 3. Extrair medicamentos (só receita) ───────────────────────────────
+      setProcessingStep("Processando informações...");
+      let medicamentos = [];
+      if (tipo === "R") {
+        const med = await extrairMedicamentosDoOCR(textoFormatado);
+        medicamentos = Array.isArray(med) ? med : [];
+      }
+      
+      setCurrentStep(4);
+      
+      // ── 4. Salvar ──────────────────────────────────────────────────────────
+      setProcessingStep("Salvando documento...");
+      const response = await AdicionarDocumento(
+        tipo,
+        textoFormatado,
+        paciente,
+        file,
+        navigate,
+        medicamentos
+      );
+
+      if (response?.success === false)
+        throw new Error(response.message || "Erro ao salvar.");
+
+      // ── Concluído ──────────────────────────────────────────────────────────
+      setCurrentStep(5);
+      setProcessingStep("");
+      showToast("Documento salvo com sucesso!", "success");
+      
+      // Reset automático após 3 segundos
+      setTimeout(() => {
+        resetForm();
+      }, 3000);
+    } catch (err) {
+      console.error("Erro no processamento:", err);
+      setCurrentStep(-1);
+      setStepError(err.message || "Erro inesperado no processamento.");
+      setProcessingStep("");
+      showToast("Erro: " + (err.message || "Tente novamente."), "error");
+    }
+  };
+
+  const resetForm = useCallback(() => {
+    removeFile();
+    setTipo("");
+    setCurrentStep(0);
+    setStepError("");
+    setProcessingStep("");
   }, [preview]);
 
-  const handleQuantidadeChange = (remedio, valor) => {
-    const erro = !valor.trim()
-      ? "Quantidade é obrigatória"
-      : !/^\d+(\s*\w*)?$/.test(valor)
-      ? "Formato inválido (ex: 30 comprimidos)"
-      : "";
-    setErrosQuantidade((prev) => ({ ...prev, [remedio]: erro }));
-    setQuantidades((prev) => ({ ...prev, [remedio]: valor }));
+  // ── Passos ─────────────────────────────────────────────────────────────────
+  const STEPS = [
+    { id: 1, label: "Enviando imagem", icon: "upload" },
+    { id: 2, label: "Leitura OCR", icon: "file" },
+    { id: 3, label: "Processamento IA", icon: "refresh" },
+    { id: 4, label: "Salvando documento", icon: "check" },
+  ];
+
+  const getStepStatus = (stepId) => {
+    if (currentStep === 5) return "completed";
+    if (currentStep === -1) {
+      // Se houve erro, marca como erro o passo atual ou o último que tentou
+      return stepId === Math.abs(currentStep) ? "error" : "pending";
+    }
+    if (stepId < currentStep) return "completed";
+    if (stepId === currentStep) return "active";
+    return "pending";
   };
 
-  const handleFormaUsoChange = (remedio, valor) =>
-    setFormasDeUso((prev) => ({ ...prev, [remedio]: valor }));
+  const isProcessing = currentStep >= 1 && currentStep <= 4;
+  const isDone = currentStep === 5;
+  const isError = currentStep === -1;
 
-  const handleUpload = async () => {
-    if (!documento) { setMensagemErro("Selecione ou tire uma foto do documento."); return; }
-    if (!tipoDocumento) { setMensagemErro("Selecione o tipo de documento antes de processar."); return; }
-    if (processando) return;
-
-    setProcessando(true);
-    setStatus("Enviando para OCR...");
-    setProgresso(0);
-    setMensagemErro("");
-
-    const intervalo = setInterval(() => {
-      setProgresso((prev) => {
-        if (prev >= 90) clearInterval(intervalo);
-        return Math.min(prev + 10, 90);
-      });
-    }, 300);
-
-    try {
-      // Uma única chamada HTTP ao backend — retorna texto1 e texto2
-      const { texto1, texto2 } = await ocrSpaceDuplo(documento);
-      setTextoOCR(texto1);
-
-      setStatus("Formatando texto com IA...");
-      const formatado = await formatarTextoOCR(texto1, texto2);
-      setTextoExibicao(formatado);
-
-      if (tipoDocumento === "R") {
-        setStatus("Extraindo medicamentos...");
-        const medicamentosExtraidos = await extrairMedicamentosDoOCR(formatado);
-        if (!Array.isArray(medicamentosExtraidos) || medicamentosExtraidos.length === 0) {
-          throw new Error("Nenhum medicamento encontrado no documento");
-        }
-        setMedicamentos(medicamentosExtraidos);
-        setRemedios(medicamentosExtraidos.map((m) => m.nome));
-        const inicialQuantidades = {};
-        const inicialFormas = {};
-        medicamentosExtraidos.forEach((med) => {
-          inicialQuantidades[med.nome] = med.quantidade || "";
-          inicialFormas[med.nome] = med.formaDeUso || "";
-        });
-        setQuantidades(inicialQuantidades);
-        setFormasDeUso(inicialFormas);
-      } else {
-        setMedicamentos([]);
-        setRemedios([]);
-        setQuantidades({});
-        setFormasDeUso({});
-      }
-
-      clearInterval(intervalo);
-      setProgresso(100);
-      setStatus("Documento processado com sucesso!");
-      setBotaoHabilitado(true);
-    } catch (erro) {
-      clearInterval(intervalo);
-      setProgresso(0);
-      setStatus("Erro ao processar o documento.");
-      setMensagemErro(erro.message || "Erro ao processar o documento");
-      setBotaoHabilitado(false);
-      console.error("Erro no processamento:", erro);
-    } finally {
-      setProcessando(false);
-    }
-  };
-
-  const handleAddDocument = async () => {
-    if (adicionandoDocumento) return;
-    if (!textoOCR) { setMensagemErro("Nenhum texto processado para adicionar."); return; }
-    if (!tipoDocumento) { setMensagemErro("Selecione o tipo de documento."); return; }
-    if (!paciente?.id) { setMensagemErro("Nenhum paciente selecionado."); return; }
-    if (!documento) { setMensagemErro("Nenhuma imagem do documento foi enviada."); return; }
-
-    if (tipoDocumento === "R") {
-      for (const remedio of remedios) {
-        if (!quantidades[remedio]?.trim()) {
-          setMensagemErro(`Informe a quantidade válida para: ${remedio}`);
-          setErrosQuantidade((prev) => ({ ...prev, [remedio]: "Quantidade é obrigatória" }));
-          return;
-        }
-      }
-    }
-
-    const medicamentosAtualizados = medicamentos.map((med) => ({
-      ...med,
-      quantidade: quantidades[med.nome] || med.quantidade,
-      formaDeUso: formasDeUso[med.nome] || med.formaDeUso,
-    }));
-
-    setAdicionandoDocumento(true);
-    setStatus("Salvando documento...");
-
-    try {
-      const response = await AdicionarDocumento(
-        tipoDocumento, textoExibicao, paciente, documento, navigate, medicamentosAtualizados
-      );
-      if (response?.success) {
-        resetState("Documento adicionado com sucesso!");
-      } else {
-        setMensagemErro(response?.message || "Erro ao adicionar documento");
-      }
-    } catch (error) {
-      setMensagemErro(error.message || "Erro ao adicionar o documento");
-    } finally {
-      setAdicionandoDocumento(false);
-    }
-  };
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div>
-      <div className="container upload-container mt-4">
-        <h4 className="text-center mb-3">
-          <FiUpload /> Processamento de Documento
-        </h4>
+    <div className="up-page">
+      {/* ── Toast ─────────────────────────────────────────────────── */}
+      <div
+        className={`up-toast up-toast--${toast.type}${
+          toast.show ? " show" : ""
+        }`}
+      >
+        <Icon
+          d={toast.type === "success" ? ICONS.check : ICONS.info}
+          size={16}
+        />
+        <span>{toast.msg}</span>
+      </div>
 
-        <div className="alert alert-info mt-3" role="alert">
-          📷 Para melhores resultados, tire fotos com boa iluminação e enquadramento. Imagens borradas ou escuras podem dificultar o reconhecimento do texto.
+      <div className="up-container">
+        <div className="up-header">
+          <h1 className="up-title">Enviar Documento</h1>
+          <p className="up-subtitle">
+            Upload de exames, receitas ou documentos clínicos
+          </p>
         </div>
 
-        {preview && (
-          <div className="d-flex justify-content-center mb-3" style={{ height: "400px" }}>
-            <TransformWrapper initialScale={1} minScale={1} maxScale={5} wheel={{ step: 0.1 }}>
-              {() => (
-                <TransformComponent
-                  wrapperStyle={{ width: "100%", height: "100%" }}
-                  contentStyle={{ width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}
+        {/* ── Upload zone ────────────────────────────────────────────── */}
+        <div
+          className={`up-dropzone ${dragging ? "dragging" : ""} ${
+            file ? "has-file" : ""
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          onClick={() => !file && !isProcessing && document.getElementById("up-file-input").click()}
+        >
+          <input
+            id="up-file-input"
+            type="file"
+            accept="image/*,.pdf"
+            hidden
+            onChange={(e) => applyFile(e.target.files[0])}
+          />
+          <input
+            id="up-camera-input"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            onChange={(e) => applyFile(e.target.files[0])}
+          />
+
+          {!file ? (
+            <div className="up-dropzone__empty">
+              <div className="up-dropzone__icon">
+                <Icon d={ICONS.upload} size={32} stroke="#2563eb" sw={1.8} />
+              </div>
+              <p className="up-dropzone__label">
+                Arraste ou clique para selecionar
+              </p>
+              <p className="up-dropzone__hint">PNG, JPG, PDF · máx. 10 MB</p>
+              <div className="up-dropzone__actions">
+                <button
+                  type="button"
+                  className="up-btn up-btn--outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    document.getElementById("up-file-input").click();
+                  }}
                 >
-                  <img
-                    src={preview}
-                    alt="Pré-visualização"
-                    className="img-fluid rounded shadow"
-                    style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", cursor: "grab" }}
-                  />
-                </TransformComponent>
-              )}
-            </TransformWrapper>
-          </div>
-        )}
-
-        <div className="form-group mt-3">
-          <label htmlFor="tipoDocumento"><strong>Tipo de Documento:</strong></label>
-          <select
-            id="tipoDocumento"
-            className="form-control"
-            value={tipoDocumento}
-            onChange={(e) => setTipoDocumento(e.target.value)}
-            disabled={processando || adicionandoDocumento}
-          >
-            <option value="">Selecione o tipo</option>
-            <option value="E">Exame</option>
-            <option value="R">Receita</option>
-            <option value="D">Documento Clínico</option>
-          </select>
-        </div>
-
-        <div className="button-group mt-3">
-          <button className="btn btn-secondary" onClick={handleCameraClick} disabled={processando || adicionandoDocumento}>
-            <FiCamera /> Tirar Foto
-          </button>
-
-          <label className={`btn btn-secondary ${processando || adicionandoDocumento ? "disabled" : ""}`}>
-            <FiFileText /> Escolher Arquivo
-            <input
-              id="cameraInput"
-              type="file"
-              accept="image/*,.pdf"
-              onChange={handleFileChange}
-              hidden
-              disabled={processando || adicionandoDocumento}
-            />
-          </label>
-
-          <button
-            className="btn btn-primary"
-            onClick={handleUpload}
-            disabled={!documento || processando || adicionandoDocumento}
-          >
-            {processando ? (
-              <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Processando...</>
-            ) : "🚀 Processar Documento"}
-          </button>
-        </div>
-
-        {progresso > 0 && (
-          <div className="progress mt-3">
-            <div className="progress-bar progress-bar-striped bg-success" style={{ width: `${progresso}%` }} />
-          </div>
-        )}
-
-        <div className="mt-3">
-          <strong>Status:</strong>{" "}
-          {status.includes("sucesso") ? (
-            <span className="text-success"><FiCheckCircle /> {status}</span>
-          ) : status}
-        </div>
-
-        {mensagemErro && (
-          <div className="alert alert-danger mt-3" role="alert">{mensagemErro}</div>
-        )}
-
-        {textoExibicao && (
-          <div className="mt-4">
-            <h5 className="mb-2">Texto extraído do documento:</h5>
-            <textarea
-              className="form-control"
-              rows="10"
-              value={textoExibicao}
-              onChange={(e) => setTextoExibicao(e.target.value)}
-              style={{ whiteSpace: "pre-wrap" }}
-              disabled={adicionandoDocumento}
-            />
-          </div>
-        )}
-
-        {tipoDocumento === "R" && medicamentos.length > 0 && (
-          <div className="mt-4">
-            <h5>Medicamentos encontrados:</h5>
-            <table className="table table-bordered table-striped table-hover">
-              <thead>
-                <tr><th colSpan="3">Medicamento</th></tr>
-              </thead>
-              <tbody>
-                {medicamentos.map((medicamento, index) => (
-                  <React.Fragment key={`med-${index}`}>
-                    <tr>
-                      <td colSpan="3" style={{ fontWeight: "bold", backgroundColor: "#f8f9fa" }}>
-                        {medicamento.nome}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Quantidade:</td>
-                      <td>
-                        <input
-                          type="text"
-                          className={`form-control ${errosQuantidade[medicamento.nome] ? "is-invalid" : ""}`}
-                          value={quantidades[medicamento.nome] || ""}
-                          onChange={(e) => handleQuantidadeChange(medicamento.nome, e.target.value)}
-                          disabled={adicionandoDocumento}
-                        />
-                        {errosQuantidade[medicamento.nome] && (
-                          <div className="invalid-feedback">{errosQuantidade[medicamento.nome]}</div>
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Forma de Uso:</td>
-                      <td colSpan="2">
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={formasDeUso[medicamento.nome] || ""}
-                          onChange={(e) => handleFormaUsoChange(medicamento.nome, e.target.value)}
-                          placeholder="Ex: 1 comprimido a cada 8 horas"
-                          disabled={adicionandoDocumento}
-                        />
-                      </td>
-                    </tr>
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-            <div className="alert alert-warning mt-3" role="alert">
-              ⚠️ <strong>Atenção:</strong> Verifique se a <strong>quantidade</strong> e a <strong>forma de uso dos medicamentos</strong> estão corretas antes de salvar.
+                  <Icon d={ICONS.file} size={16} />
+                  <span>Arquivo</span>
+                </button>
+                <button
+                  type="button"
+                  className="up-btn up-btn--outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    document.getElementById("up-camera-input").click();
+                  }}
+                >
+                  <Icon d={ICONS.camera} size={16} />
+                  <span>Câmera</span>
+                </button>
+              </div>
             </div>
+          ) : (
+            <div className="up-file-preview">
+              {preview && (
+                <img
+                  src={preview}
+                  alt="preview"
+                  className="up-file-preview__img"
+                />
+              )}
+              <div className="up-file-preview__info">
+                <span className="up-file-preview__name">{file.name}</span>
+                <span className="up-file-preview__size">{fmtSize(file.size)}</span>
+              </div>
+              {!isProcessing && (
+                <button
+                  type="button"
+                  className="up-file-preview__remove"
+                  title="Remover"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile();
+                  }}
+                >
+                  <Icon d={ICONS.x} size={18} />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Formulário ────────────────────────────────────────────── */}
+        <div className="up-form-card">
+          <div className="up-field">
+            <label htmlFor="up-tipo">Tipo de documento *</label>
+            <select
+              id="up-tipo"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              disabled={isProcessing}
+              className={isProcessing ? "disabled" : ""}
+            >
+              <option value="">Selecione o tipo...</option>
+              <option value="E">📋 Exame</option>
+              <option value="R">💊 Receita</option>
+              <option value="D">📄 Documento Clínico</option>
+            </select>
+          </div>
+        </div>
+
+        {/* ── Painel de progresso ───────────────────────────────────── */}
+        {(isProcessing || isDone || isError) && (
+          <div className={`up-progress-panel ${isError ? "error" : isDone ? "success" : ""}`}>
+            <div className="up-progress-header">
+              <div className="up-progress-icon">
+                {isDone && <Icon d={ICONS.check} size={24} stroke="#16a34a" />}
+                {isError && <Icon d={ICONS.x} size={24} stroke="#dc2626" />}
+                {isProcessing && <div className="up-progress-spinner" />}
+              </div>
+              <div className="up-progress-title">
+                {isDone && "Processamento concluído!"}
+                {isError && "Erro no processamento"}
+                {isProcessing && (
+                  <>
+                    <span className="up-progress-step-text">
+                      {processingStep}
+                    </span>
+                    <span className="up-progress-percent">
+                      {Math.round((currentStep / 4) * 100)}%
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="up-steps-container">
+              {STEPS.map((step) => {
+                const status = getStepStatus(step.id);
+                return (
+                  <div key={step.id} className={`up-step-item ${status}`}>
+                    <div className="up-step-indicator">
+                      {status === "completed" && (
+                        <Icon d={ICONS.check} size={14} stroke="#16a34a" sw={2.5} />
+                      )}
+                      {status === "active" && (
+                        <div className="up-step-spinner" />
+                      )}
+                      {status === "error" && (
+                        <Icon d={ICONS.x} size={14} stroke="#dc2626" sw={2.5} />
+                      )}
+                      {status === "pending" && (
+                        <div className="up-step-number">{step.id}</div>
+                      )}
+                    </div>
+                    <div className="up-step-label">{step.label}</div>
+                    {step.id < 4 && (
+                      <div className={`up-step-connector ${status === "completed" ? "completed" : ""}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Barra de progresso */}
+            <div className="up-progress-bar">
+              <div
+                className="up-progress-fill"
+                style={{
+                  width: isDone ? "100%" : isError ? "0%" : `${(currentStep / 4) * 100}%`,
+                }}
+              />
+            </div>
+
+            {isError && stepError && (
+              <div className="up-error-message">
+                <Icon d={ICONS.info} size={14} />
+                <span>{stepError}</span>
+              </div>
+            )}
           </div>
         )}
 
-        <div className="mt-3">
-          <button
-            className="btn btn-secondary w-100"
-            onClick={handleAddDocument}
-            disabled={!botaoHabilitado || adicionandoDocumento}
-          >
-            {adicionandoDocumento ? (
-              <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Salvando...</>
-            ) : "💾 Salvar Documento"}
-          </button>
-        </div>
+        {/* ── Botão principal ───────────────────────────────────────── */}
+        <button
+          className={`up-submit-btn ${isDone ? "success" : isError ? "error" : ""}`}
+          onClick={isDone || isError ? resetForm : handleSubmit}
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <div className="sm-spinner" />
+              <span>Processando...</span>
+            </>
+          ) : isDone ? (
+            <>
+              <Icon d={ICONS.upload} size={18} />
+              <span>Novo documento</span>
+            </>
+          ) : isError ? (
+            <>
+              <Icon d={ICONS.refresh} size={18} />
+              <span>Tentar novamente</span>
+            </>
+          ) : (
+            <>
+              <Icon d={ICONS.upload} size={18} />
+              <span>Processar documento</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

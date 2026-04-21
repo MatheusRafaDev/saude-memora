@@ -1,0 +1,143 @@
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #dbeafe;
+  --primary-soft: #eff6ff;
+  --success: #16a34a;
+  --success-light: #dcfce7;
+  --error: #dc2626;
+  --error-light: #fee2e2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --radius: 16px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* ── Home Page ───────────────────────────────────────────────────────────── */
+.hm-page {
+  min-height: 100vh;
+  padding: 32px 24px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hm-hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.hm-hero h1 {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 2rem;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.hm-hero p {
+  color: var(--gray-500);
+  font-size: 0.95rem;
+}
+
+.hm-desc {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.hm-desc h2 {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+}
+
+.hm-desc p {
+  color: var(--gray-600);
+  line-height: 1.65;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.hm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.hm-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24px 18px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hm-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.hm-card__icon {
+  width: 56px;
+  height: 56px;
+  background: var(--primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  font-size: 1.3rem;
+  color: var(--primary);
+}
+
+.hm-card__title {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--gray-800);
+  margin-bottom: 6px;
+}
+
+.hm-card__desc {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  margin: 0;
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .hm-page {
+    padding: 20px 14px 40px;
+  }
+  .hm-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hm-hero h1 {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .hm-grid {
+    grid-template-columns: 1fr;
+  }
+}
