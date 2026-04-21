@@ -319,7 +319,6 @@ const FormularioMedico = () => {
 
           <form>
             {perguntas.map((item) => {
-              console.log(respostas)
               if (item.dependeSexo && paciente.sexo?.toLowerCase() === "m") {
                 return null;
               }
