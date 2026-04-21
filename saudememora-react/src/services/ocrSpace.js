@@ -5,25 +5,28 @@
  * O frontend apenas pré-processa a imagem localmente (canvas) e envia
  * o arquivo resultante para POST /api/ocr/processar.
  *
- * Funções exportadas (interface mantida idêntica ao arquivo original):
- *   ocrSpace(file)      → string  (texto engine 1 — Tesseract via OCR.space)
- *   ocrSpace2(file)     → string  (texto engine 2 — OCR.space v2)
- *   smartOCR(file)      → string  (prefere engine 2; cai no engine 1)
- *   ocrSpaceDuplo(file) → { texto1, texto2 }  (ambos em uma chamada só)
+ * Funções exportadas (interface mantida idêntica ao arquivo anterior):
+ *   - ocrSpace(file)    → string  (texto do engine 1 — Tesseract via OCR.space)
+ *   - ocrSpace2(file)   → string  (texto do engine 2 — OCR.space v2)
+ *   - smartOCR(file)    → string  (tenta engine 2; fallback engine 1)
+ *   - ocrSpaceDuplo(file) → { texto1, texto2 }  (ambos em uma chamada)
  */
 
 import axiosInstance from '../axiosConfig';
 import ProcessarImagem from './utils/ProcessarImagem';
 
-// ── cache por arquivo para evitar requisições duplicadas ─────────────────────
-// Promise.all([ocrSpace(f), ocrSpace2(f)]) → apenas 1 chamada HTTP
+// ─── Cache de requisição por arquivo ──────────────────────────────────────────
+// Evita que Promise.all([ocrSpace(f), ocrSpace2(f)]) dispare duas chamadas HTTP.
 const _cache = new WeakMap();
 
 async function chamarOcrBackend(file) {
-  if (_cache.has(file)) return _cache.get(file);
+  if (_cache.has(file)) {
+    return _cache.get(file);
+  }
 
   const promise = (async () => {
     const processedBlob = await ProcessarImagem(file);
+
     const formData = new FormData();
     formData.append('imagem', processedBlob, file.name || 'imagem.png');
 
@@ -39,44 +42,49 @@ async function chamarOcrBackend(file) {
   })();
 
   _cache.set(file, promise);
+
+  // Remove do cache após a promise resolver (sucesso ou falha)
   promise.finally(() => _cache.delete(file));
+
   return promise;
 }
 
-/** Engine 1 — Tesseract via OCR.space */
+// ─── API pública ──────────────────────────────────────────────────────────────
+
+/** Engine 1 (Tesseract via OCR.space). */
 export async function ocrSpace(file) {
   try {
     const { texto1 } = await chamarOcrBackend(file);
     return texto1;
   } catch (err) {
-    console.error('[OCR] Erro engine 1:', err);
+    console.error('[OCR] Erro no engine 1:', err);
     return '';
   }
 }
 
-/** Engine 2 — OCR.space v2 (melhor para formulários/tabelas médicas) */
+/** Engine 2 (OCR.space v2 — melhor para formulários e tabelas). */
 export async function ocrSpace2(file) {
   try {
     const { texto2 } = await chamarOcrBackend(file);
     return texto2;
   } catch (err) {
-    console.error('[OCR] Erro engine 2:', err);
+    console.error('[OCR] Erro no engine 2:', err);
     return '';
   }
 }
 
-/** Prefere engine 2; cai no engine 1 se vier vazio */
+/** Retorna o melhor resultado: prefere engine 2, cai no engine 1. */
 export async function smartOCR(file) {
   try {
     const { texto1, texto2 } = await chamarOcrBackend(file);
     return texto2.trim() || texto1.trim();
   } catch (err) {
-    console.error('[OCR] Erro smartOCR:', err);
+    console.error('[OCR] Erro no smartOCR:', err);
     throw err;
   }
 }
 
-/** Retorna os dois textos em uma única chamada HTTP */
+/** Retorna ambos os textos em uma única chamada HTTP. */
 export async function ocrSpaceDuplo(file) {
   return chamarOcrBackend(file);
 }

@@ -27,15 +27,15 @@ public class AiService {
 
     private String limparMarkdown(String texto) {
         return texto.replaceAll("(?i)```json\\s*", "")
-                    .replaceAll("```", "")
-                    .trim();
+                .replaceAll("```", "")
+                .trim();
     }
 
     private String normalizarTexto(String texto) {
         if (texto == null || texto.isBlank()) return "";
         return texto.replaceAll("\\s+", " ")
-                    .replaceAll("([.!?])\\s*", "$1\n")
-                    .trim();
+                .replaceAll("([.!?])\\s*", "$1\n")
+                .trim();
     }
 
     // ─── OCR - formatação / unificação ──────────────────────────────────────────
@@ -55,9 +55,9 @@ public class AiService {
             """.formatted(unificado);
 
         return groq.chat(
-            "Você é um filtro de texto OCR médico. Corrija erros ortográficos, " +
-            "una informações duplicadas e preserve a estrutura clínica.",
-            prompt, 0.0, 2000
+                "Você é um filtro de texto OCR médico. Corrija erros ortográficos, " +
+                        "una informações duplicadas e preserve a estrutura clínica.",
+                prompt, 0.0, 2000
         );
     }
 
@@ -77,8 +77,8 @@ public class AiService {
             """.formatted(texto);
 
         return groq.chat(
-            "Você é um assistente que extrai apenas os dados médicos de formulários, sem realizar correções.",
-            prompt
+                "Você é um assistente que extrai apenas os dados médicos de formulários, sem realizar correções.",
+                prompt
         );
     }
 
@@ -122,8 +122,8 @@ public class AiService {
             """.formatted(texto);
 
         String raw = groq.chat(
-            "Você é um assistente que extrai apenas os dados médicos de formulários, sem realizar correções.",
-            prompt
+                "Você é um assistente que extrai apenas os dados médicos de formulários, sem realizar correções.",
+                prompt
         );
 
         return (ObjectNode) mapper.readTree(limparMarkdown(raw));
@@ -134,8 +134,8 @@ public class AiService {
      */
     public String ajustarTextoFormulario(String texto) throws Exception {
         String textoCorrigido = texto
-            .replaceAll("(?i)NORMAL\\s*A\\s*(ALTA|BAIXA)", "NORMAL")
-            .replaceAll("SIM\\s*\\(\\s*\\)", "NÃO");
+                .replaceAll("(?i)NORMAL\\s*A\\s*(ALTA|BAIXA)", "NORMAL")
+                .replaceAll("SIM\\s*\\(\\s*\\)", "NÃO");
 
         String prompt = """
             Leia o questionário abaixo e, ao final, retorne apenas as respostas exatamente como estão,
@@ -149,9 +149,9 @@ public class AiService {
             """.formatted(textoCorrigido);
 
         return groq.chat(
-            "Você é um assistente que ajusta respostas de formulários médicos com base em regras " +
-            "definidas para marcações incorretas ou omissas.",
-            prompt
+                "Você é um assistente que ajusta respostas de formulários médicos com base em regras " +
+                        "definidas para marcações incorretas ou omissas.",
+                prompt
         );
     }
 
@@ -168,9 +168,9 @@ public class AiService {
 
     public ObjectNode tratarOCRParaReceitas(String textoOCR) throws Exception {
         String textoTratado = textoOCR
-            .replaceAll("[\\u0300-\\u036f]", "")
-            .replaceAll("[^a-zA-Z0-9À-ÿ.,\\s/\\-]", "")
-            .trim();
+                .replaceAll("[\\u0300-\\u036f]", "")
+                .replaceAll("[^a-zA-Z0-9À-ÿ.,\\s/\\-]", "")
+                .trim();
 
         String prompt = """
             Interprete o texto OCR abaixo e extraia os dados em JSON estruturado para receitas médicas.
@@ -191,9 +191,9 @@ public class AiService {
             """.formatted(textoTratado);
 
         String raw = groq.chat(
-            "Você é um assistente que interpreta e organiza dados extraídos via OCR " +
-            "para inclusão em um sistema de receitas médicas.",
-            prompt, 0.0, 1500
+                "Você é um assistente que interpreta e organiza dados extraídos via OCR " +
+                        "para inclusão em um sistema de receitas médicas.",
+                prompt, 0.0, 1500
         );
 
         return (ObjectNode) mapper.readTree(limparMarkdown(raw));
@@ -224,9 +224,9 @@ public class AiService {
             """.formatted(textoTratado);
 
         String raw = groq.chat(
-            "Você é um assistente que interpreta e organiza dados extraídos via OCR " +
-            "para inclusão em um sistema de exames médicos.",
-            prompt, 0.2, 1500
+                "Você é um assistente que interpreta e organiza dados extraídos via OCR " +
+                        "para inclusão em um sistema de exames médicos.",
+                prompt, 0.2, 1500
         );
 
         return (ObjectNode) mapper.readTree(limparMarkdown(raw));
@@ -255,9 +255,9 @@ public class AiService {
             """.formatted(textoOCR);
 
         String raw = groq.chat(
-            "Você é um assistente que interpreta e organiza dados extraídos via OCR " +
-            "para inclusão em um sistema de documentos clínicos.",
-            prompt, 0.0, 1500
+                "Você é um assistente que interpreta e organiza dados extraídos via OCR " +
+                        "para inclusão em um sistema de documentos clínicos.",
+                prompt, 0.0, 1500
         );
 
         return (ObjectNode) mapper.readTree(limparMarkdown(raw));
@@ -267,9 +267,9 @@ public class AiService {
 
     public ArrayNode extrairMedicamentosDoOCR(String textoOCR) throws Exception {
         String textoTratado = textoOCR
-            .replaceAll("[\\u0300-\\u036f]", "")
-            .replaceAll("[^a-zA-Z0-9À-ÿ.,\\s/\\-]", "")
-            .trim();
+                .replaceAll("[\\u0300-\\u036f]", "")
+                .replaceAll("[^a-zA-Z0-9À-ÿ.,\\s/\\-]", "")
+                .trim();
 
         String prompt = """
             Extraia apenas os medicamentos do texto OCR abaixo, retornando um JSON no formato:
@@ -289,11 +289,21 @@ public class AiService {
             """.formatted(textoTratado);
 
         String raw = groq.chat(
-            "Você é um assistente que extrai medicamentos de textos OCR médicos.",
-            prompt, 0.1, 1000
+                "Você é um assistente que extrai medicamentos de textos OCR médicos.",
+                prompt, 0.1, 1000
         );
 
         JsonNode root = mapper.readTree(limparMarkdown(raw));
         return (ArrayNode) root.get("medicamentos");
+    }
+
+    // --- corrigirOrtografia ---
+    public String corrigirOrtografia(String texto) throws Exception {
+        if (texto == null || texto.isBlank()) return "";
+        String prompt = "Corrija apenas os erros ortograficos do texto a seguir, sem alterar o conteudo.\nTexto:\n" + texto;
+        return groq.chat(
+                "Voce e um revisor ortografico em portugues brasileiro. Corrija apenas ortografia e pontuacao.",
+                prompt, 0.0, 2000
+        );
     }
 }

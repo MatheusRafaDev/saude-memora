@@ -3,11 +3,10 @@ import { FiUpload, FiCamera, FiFileText, FiCheckCircle } from "react-icons/fi";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/UploadDocumento.css";
 
-import { ocrSpace, ocrSpace2 } from "../ocr/ocrSpace";
-import { formatarTextoOCR } from "../services/OpenRouter";
+import { ocrSpaceDuplo } from "../ocr/ocrSpace";
+import { formatarTextoOCR, extrairMedicamentosDoOCR } from "../services/OpenRouter";
 import { useNavigate } from "react-router-dom";
 import { AdicionarDocumento } from "../documentos/AdicionarDocumento";
-import { extrairMedicamentosDoOCR } from "../services/OpenRouter";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 export default function UploadDocumentos() {
@@ -30,61 +29,50 @@ export default function UploadDocumentos() {
   const [errosQuantidade, setErrosQuantidade] = useState({});
   const navigate = useNavigate();
 
-  // Carrega paciente do localStorage e faz cleanup da URL de preview
   useEffect(() => {
     const pacienteData = JSON.parse(localStorage.getItem("paciente")) || {};
     setPaciente(pacienteData);
-
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
+    return () => { if (preview) URL.revokeObjectURL(preview); };
   }, [preview]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Revogar URL anterior se existir
-      if (preview) URL.revokeObjectURL(preview);
-
-      setDocumento(file);
-      setPreview(URL.createObjectURL(file));
-      setStatus("Arquivo selecionado. Pronto para envio.");
-      setProgresso(0);
-      setTextoOCR("");
-      setTextoExibicao("");
-      setBotaoHabilitado(false);
-      setMensagemErro("");
-      setRemedios([]);
-      setQuantidades({});
-      setFormasDeUso({});
-      setErrosQuantidade({});
-    }
+    if (!file) return;
+    if (preview) URL.revokeObjectURL(preview);
+    setDocumento(file);
+    setPreview(URL.createObjectURL(file));
+    setStatus("Arquivo selecionado. Pronto para envio.");
+    setProgresso(0);
+    setTextoOCR("");
+    setTextoExibicao("");
+    setBotaoHabilitado(false);
+    setMensagemErro("");
+    setRemedios([]);
+    setMedicamentos([]);
+    setQuantidades({});
+    setFormasDeUso({});
+    setErrosQuantidade({});
   };
 
-  const handleCameraClick = () => {
-    document.getElementById("cameraInput").click();
-  };
+  const handleCameraClick = () => document.getElementById("cameraInput").click();
 
-  const resetState = useCallback(
-    (initialStatus = "Aguardando envio...") => {
-      if (preview) URL.revokeObjectURL(preview);
-      setStatus(initialStatus);
-      setProgresso(0);
-      setTextoOCR("");
-      setTextoExibicao("");
-      setRemedios([]);
-      setMedicamentos([]);
-      setQuantidades({});
-      setFormasDeUso({});
-      setErrosQuantidade({});
-      setBotaoHabilitado(false);
-      setMensagemErro("");
-      setTipoDocumento("");
-      setDocumento(null);
-      setPreview(null);
-    },
-    [preview]
-  );
+  const resetState = useCallback((initialStatus = "Aguardando envio...") => {
+    if (preview) URL.revokeObjectURL(preview);
+    setStatus(initialStatus);
+    setProgresso(0);
+    setTextoOCR("");
+    setTextoExibicao("");
+    setRemedios([]);
+    setMedicamentos([]);
+    setQuantidades({});
+    setFormasDeUso({});
+    setErrosQuantidade({});
+    setBotaoHabilitado(false);
+    setMensagemErro("");
+    setTipoDocumento("");
+    setDocumento(null);
+    setPreview(null);
+  }, [preview]);
 
   const handleQuantidadeChange = (remedio, valor) => {
     const erro = !valor.trim()
@@ -92,30 +80,20 @@ export default function UploadDocumentos() {
       : !/^\d+(\s*\w*)?$/.test(valor)
       ? "Formato inválido (ex: 30 comprimidos)"
       : "";
-
     setErrosQuantidade((prev) => ({ ...prev, [remedio]: erro }));
     setQuantidades((prev) => ({ ...prev, [remedio]: valor }));
   };
 
-  const handleFormaUsoChange = (remedio, valor) => {
+  const handleFormaUsoChange = (remedio, valor) =>
     setFormasDeUso((prev) => ({ ...prev, [remedio]: valor }));
-  };
 
   const handleUpload = async () => {
-    if (!documento) {
-      setMensagemErro("Selecione ou tire uma foto do documento.");
-      return;
-    }
-
-    if (!tipoDocumento) {
-      setMensagemErro("Selecione o tipo de documento antes de processar.");
-      return;
-    }
-
+    if (!documento) { setMensagemErro("Selecione ou tire uma foto do documento."); return; }
+    if (!tipoDocumento) { setMensagemErro("Selecione o tipo de documento antes de processar."); return; }
     if (processando) return;
 
     setProcessando(true);
-    setStatus("Enviando...");
+    setStatus("Enviando para OCR...");
     setProgresso(0);
     setMensagemErro("");
 
@@ -124,31 +102,25 @@ export default function UploadDocumentos() {
         if (prev >= 90) clearInterval(intervalo);
         return Math.min(prev + 10, 90);
       });
-    }, 200);
+    }, 300);
 
     try {
-      const [textoOriginal, textoOriginal2] = await Promise.all([
-        ocrSpace(documento),
-        ocrSpace2(documento),
-      ]);
+      // Uma única chamada HTTP ao backend — retorna texto1 e texto2
+      const { texto1, texto2 } = await ocrSpaceDuplo(documento);
+      setTextoOCR(texto1);
 
-      setTextoOCR(textoOriginal);
-
-      const formatado = await formatarTextoOCR(textoOriginal, textoOriginal2);
+      setStatus("Formatando texto com IA...");
+      const formatado = await formatarTextoOCR(texto1, texto2);
       setTextoExibicao(formatado);
 
       if (tipoDocumento === "R") {
+        setStatus("Extraindo medicamentos...");
         const medicamentosExtraidos = await extrairMedicamentosDoOCR(formatado);
-        if (
-          !Array.isArray(medicamentosExtraidos) ||
-          medicamentosExtraidos.length === 0
-        ) {
+        if (!Array.isArray(medicamentosExtraidos) || medicamentosExtraidos.length === 0) {
           throw new Error("Nenhum medicamento encontrado no documento");
         }
-
         setMedicamentos(medicamentosExtraidos);
         setRemedios(medicamentosExtraidos.map((m) => m.nome));
-
         const inicialQuantidades = {};
         const inicialFormas = {};
         medicamentosExtraidos.forEach((med) => {
@@ -169,14 +141,12 @@ export default function UploadDocumentos() {
       setStatus("Documento processado com sucesso!");
       setBotaoHabilitado(true);
     } catch (erro) {
-      console.error("Erro no processamento:", erro);
       clearInterval(intervalo);
       setProgresso(0);
       setStatus("Erro ao processar o documento.");
-      setTextoExibicao(erro.message || "Erro no processamento do documento");
-      setBotaoHabilitado(false);
       setMensagemErro(erro.message || "Erro ao processar o documento");
-      resetState("Erro ao processar. Tente novamente.");
+      setBotaoHabilitado(false);
+      console.error("Erro no processamento:", erro);
     } finally {
       setProcessando(false);
     }
@@ -184,38 +154,16 @@ export default function UploadDocumentos() {
 
   const handleAddDocument = async () => {
     if (adicionandoDocumento) return;
+    if (!textoOCR) { setMensagemErro("Nenhum texto processado para adicionar."); return; }
+    if (!tipoDocumento) { setMensagemErro("Selecione o tipo de documento."); return; }
+    if (!paciente?.id) { setMensagemErro("Nenhum paciente selecionado."); return; }
+    if (!documento) { setMensagemErro("Nenhuma imagem do documento foi enviada."); return; }
 
-    if (!textoOCR) {
-      setMensagemErro("Nenhum texto processado para adicionar.");
-      return;
-    }
-
-    if (!tipoDocumento) {
-      setMensagemErro("Selecione o tipo de documento.");
-      return;
-    }
-
-    if (!paciente || !paciente.id) {
-      setMensagemErro("Nenhum paciente selecionado.");
-      return;
-    }
-
-    if (!documento) {
-      setMensagemErro("Nenhuma imagem do documento foi enviada.");
-      return;
-    }
-
-    // Validação de medicamentos para receitas
     if (tipoDocumento === "R") {
       for (const remedio of remedios) {
-        if (!quantidades[remedio] || !quantidades[remedio].trim()) {
-          setMensagemErro(
-            `Informe a quantidade válida para o remédio: ${remedio}`
-          );
-          setErrosQuantidade((prev) => ({
-            ...prev,
-            [remedio]: "Quantidade é obrigatória",
-          }));
+        if (!quantidades[remedio]?.trim()) {
+          setMensagemErro(`Informe a quantidade válida para: ${remedio}`);
+          setErrosQuantidade((prev) => ({ ...prev, [remedio]: "Quantidade é obrigatória" }));
           return;
         }
       }
@@ -228,25 +176,18 @@ export default function UploadDocumentos() {
     }));
 
     setAdicionandoDocumento(true);
-    setStatus("Adicionando documento...");
+    setStatus("Salvando documento...");
 
     try {
       const response = await AdicionarDocumento(
-        tipoDocumento,
-        textoExibicao,
-        paciente,
-        documento,
-        navigate,
-        medicamentosAtualizados
+        tipoDocumento, textoExibicao, paciente, documento, navigate, medicamentosAtualizados
       );
-
-      if (response.success) {
+      if (response?.success) {
         resetState("Documento adicionado com sucesso!");
       } else {
-        setMensagemErro(response.message || "Erro ao adicionar documento");
+        setMensagemErro(response?.message || "Erro ao adicionar documento");
       }
     } catch (error) {
-      console.error("Erro ao adicionar documento:", error);
       setMensagemErro(error.message || "Erro ao adicionar o documento");
     } finally {
       setAdicionandoDocumento(false);
@@ -261,74 +202,34 @@ export default function UploadDocumentos() {
         </h4>
 
         <div className="alert alert-info mt-3" role="alert">
-          📷 Para melhores resultados, tire fotos com boa qualidade. Imagens
-          borradas ou escuras podem dificultar o reconhecimento do texto.
+          📷 Para melhores resultados, tire fotos com boa iluminação e enquadramento. Imagens borradas ou escuras podem dificultar o reconhecimento do texto.
         </div>
 
         {preview && (
-          <div
-            className="d-flex justify-content-center mb-3"
-            style={{ height: "400px" }}
-          >
-            <TransformWrapper
-              initialScale={1}
-              minScale={1}
-              maxScale={5}
-              wheel={{ step: 0.1 }}
-            >
-              {({ zoomIn, zoomOut, resetTransform }) => (
-                <>
-                  <div
-                    className="tools"
-                    style={{
-                      position: "absolute",
-                      zIndex: 10,
-                      top: "10px",
-                      left: "10px",
-                    }}
-                  ></div>
-                  <TransformComponent
-                    wrapperStyle={{
-                      width: "100%",
-                      height: "100%",
-                    }}
-                    contentStyle={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <img
-                      src={preview}
-                      alt="Pré-visualização"
-                      className="img-fluid rounded shadow"
-                      style={{
-                        maxHeight: "100%",
-                        maxWidth: "100%",
-                        objectFit: "contain",
-                        cursor: "grab",
-                      }}
-                    />
-                  </TransformComponent>
-                </>
+          <div className="d-flex justify-content-center mb-3" style={{ height: "400px" }}>
+            <TransformWrapper initialScale={1} minScale={1} maxScale={5} wheel={{ step: 0.1 }}>
+              {() => (
+                <TransformComponent
+                  wrapperStyle={{ width: "100%", height: "100%" }}
+                  contentStyle={{ width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}
+                >
+                  <img
+                    src={preview}
+                    alt="Pré-visualização"
+                    className="img-fluid rounded shadow"
+                    style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", cursor: "grab" }}
+                  />
+                </TransformComponent>
               )}
             </TransformWrapper>
           </div>
         )}
 
         <div className="form-group mt-3">
-          <label htmlFor="tipoDocumento">
-            <strong>Tipo de Documento:</strong>
-          </label>
+          <label htmlFor="tipoDocumento"><strong>Tipo de Documento:</strong></label>
           <select
             id="tipoDocumento"
-            className={`form-control ${
-              !tipoDocumento && mensagemErro.includes("tipo de documento")
-                ? "is-invalid"
-                : ""
-            }`}
+            className="form-control"
             value={tipoDocumento}
             onChange={(e) => setTipoDocumento(e.target.value)}
             disabled={processando || adicionandoDocumento}
@@ -341,19 +242,11 @@ export default function UploadDocumentos() {
         </div>
 
         <div className="button-group mt-3">
-          <button
-            className="btn btn-secondary"
-            onClick={handleCameraClick}
-            disabled={processando || adicionandoDocumento}
-          >
+          <button className="btn btn-secondary" onClick={handleCameraClick} disabled={processando || adicionandoDocumento}>
             <FiCamera /> Tirar Foto
           </button>
 
-          <label
-            className={`btn btn-secondary ${
-              processando || adicionandoDocumento ? "disabled" : ""
-            }`}
-          >
+          <label className={`btn btn-secondary ${processando || adicionandoDocumento ? "disabled" : ""}`}>
             <FiFileText /> Escolher Arquivo
             <input
               id="cameraInput"
@@ -371,44 +264,26 @@ export default function UploadDocumentos() {
             disabled={!documento || processando || adicionandoDocumento}
           >
             {processando ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-2"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                Processando...
-              </>
-            ) : (
-              "🚀 Processar Documento"
-            )}
+              <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Processando...</>
+            ) : "🚀 Processar Documento"}
           </button>
         </div>
 
         {progresso > 0 && (
           <div className="progress mt-3">
-            <div
-              className="progress-bar progress-bar-striped bg-success"
-              style={{ width: `${progresso}%` }}
-            />
+            <div className="progress-bar progress-bar-striped bg-success" style={{ width: `${progresso}%` }} />
           </div>
         )}
 
         <div className="mt-3">
           <strong>Status:</strong>{" "}
           {status.includes("sucesso") ? (
-            <span className="text-success">
-              <FiCheckCircle /> {status}
-            </span>
-          ) : (
-            status
-          )}
+            <span className="text-success"><FiCheckCircle /> {status}</span>
+          ) : status}
         </div>
 
         {mensagemErro && (
-          <div className="alert alert-danger mt-3" role="alert">
-            {mensagemErro}
-          </div>
+          <div className="alert alert-danger mt-3" role="alert">{mensagemErro}</div>
         )}
 
         {textoExibicao && (
@@ -428,55 +303,33 @@ export default function UploadDocumentos() {
         {tipoDocumento === "R" && medicamentos.length > 0 && (
           <div className="mt-4">
             <h5>Medicamentos encontrados:</h5>
-
             <table className="table table-bordered table-striped table-hover">
               <thead>
-                <tr>
-                  <th colSpan="3">Medicamento</th>
-                </tr>
+                <tr><th colSpan="3">Medicamento</th></tr>
               </thead>
               <tbody>
                 {medicamentos.map((medicamento, index) => (
                   <React.Fragment key={`med-${index}`}>
                     <tr>
-                      <td
-                        colSpan="3"
-                        style={{
-                          fontWeight: "bold",
-                          backgroundColor: "#f8f9fa",
-                        }}
-                      >
+                      <td colSpan="3" style={{ fontWeight: "bold", backgroundColor: "#f8f9fa" }}>
                         {medicamento.nome}
                       </td>
                     </tr>
-
                     <tr>
                       <td>Quantidade:</td>
                       <td>
                         <input
                           type="text"
-                          className={`form-control ${
-                            errosQuantidade[medicamento.nome]
-                              ? "is-invalid"
-                              : ""
-                          }`}
+                          className={`form-control ${errosQuantidade[medicamento.nome] ? "is-invalid" : ""}`}
                           value={quantidades[medicamento.nome] || ""}
-                          onChange={(e) =>
-                            handleQuantidadeChange(
-                              medicamento.nome,
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleQuantidadeChange(medicamento.nome, e.target.value)}
                           disabled={adicionandoDocumento}
                         />
                         {errosQuantidade[medicamento.nome] && (
-                          <div className="invalid-feedback">
-                            {errosQuantidade[medicamento.nome]}
-                          </div>
+                          <div className="invalid-feedback">{errosQuantidade[medicamento.nome]}</div>
                         )}
                       </td>
                     </tr>
-
                     <tr>
                       <td>Forma de Uso:</td>
                       <td colSpan="2">
@@ -484,12 +337,7 @@ export default function UploadDocumentos() {
                           type="text"
                           className="form-control"
                           value={formasDeUso[medicamento.nome] || ""}
-                          onChange={(e) =>
-                            handleFormaUsoChange(
-                              medicamento.nome,
-                              e.target.value
-                            )
-                          }
+                          onChange={(e) => handleFormaUsoChange(medicamento.nome, e.target.value)}
                           placeholder="Ex: 1 comprimido a cada 8 horas"
                           disabled={adicionandoDocumento}
                         />
@@ -500,10 +348,7 @@ export default function UploadDocumentos() {
               </tbody>
             </table>
             <div className="alert alert-warning mt-3" role="alert">
-              ⚠️ <strong>Atenção:</strong> Certifique-se de que a{" "}
-              <strong>quantidade</strong> e a{" "}
-              <strong>forma de uso dos medicamentos</strong> estejam corretas no
-              documento enviado.
+              ⚠️ <strong>Atenção:</strong> Verifique se a <strong>quantidade</strong> e a <strong>forma de uso dos medicamentos</strong> estão corretas antes de salvar.
             </div>
           </div>
         )}
@@ -515,17 +360,8 @@ export default function UploadDocumentos() {
             disabled={!botaoHabilitado || adicionandoDocumento}
           >
             {adicionandoDocumento ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-2"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                Salvando...
-              </>
-            ) : (
-              "💾 Salvar Documento"
-            )}
+              <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Salvando...</>
+            ) : "💾 Salvar Documento"}
           </button>
         </div>
       </div>
