@@ -3,16 +3,17 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "devCommand": "npm start",
-  "installCommand": "npm install",
   "framework": "create-react-app",
   "env": {
-    "REACT_APP_API_URL": "https://sua-api.render.com"
+    "REACT_APP_API_URL": "https://saude-memora.onrender.com"
   },
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://sua-api.render.com/api/$1"
+      "dest": "https://saude-memora.onrender.com/api/$1"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
