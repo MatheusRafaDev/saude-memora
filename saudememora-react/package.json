@@ -17,12 +17,13 @@
     "http-proxy-middleware": "^3.0.5",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
+    "lucide-react": "^1.8.0",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.9",
     "react-bootstrap-icons": "^1.11.6",
     "react-datepicker": "^8.4.0",
     "react-dom": "^19.1.0",
-    "react-icons": "^5.5.0",
+    "react-icons": "^5.6.0",
     "react-imask": "^7.6.1",
     "react-input-mask": "^2.0.4",
     "react-medium-image-zoom": "^5.2.14",
@@ -40,10 +41,17 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": ["react-app", "react-app/jest"]
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",

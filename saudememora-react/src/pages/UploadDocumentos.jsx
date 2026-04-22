@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ocrSpaceDuplo } from "../ocr/ocrSpace";
@@ -43,6 +42,12 @@ const fmtSize = (b) =>
     ? `${(b / 1024).toFixed(1)} KB`
     : `${(b / 1048576).toFixed(1)} MB`;
 
+// Verifica se o arquivo é uma imagem válida
+const isValidImage = (file) => {
+  const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/bmp", "image/tiff"];
+  return validTypes.includes(file.type);
+};
+
 // ── Componente principal ─────────────────────────────────────────────────────
 export default function UploadDocumentos() {
   const [file, setFile] = useState(null);
@@ -76,13 +81,21 @@ export default function UploadDocumentos() {
     );
   };
 
-  // ── Arquivo ────────────────────────────────────────────────────────────────
+  // ── Arquivo (apenas imagens) ────────────────────────────────────────────────
   const applyFile = (f) => {
     if (!f) return;
+    
+    // Verifica se é imagem
+    if (!isValidImage(f)) {
+      showToast("Formato não suportado. Use apenas imagens (JPG, PNG, WEBP, BMP, TIFF).", "error");
+      return;
+    }
+    
     if (f.size > 10 * 1024 * 1024) {
       showToast("Arquivo muito grande. Limite: 10 MB.", "error");
       return;
     }
+    
     if (preview) URL.revokeObjectURL(preview);
     setFile(f);
     setPreview(URL.createObjectURL(f));
@@ -101,7 +114,8 @@ export default function UploadDocumentos() {
   const onDrop = (e) => {
     e.preventDefault();
     setDragging(false);
-    applyFile(e.dataTransfer.files[0]);
+    const droppedFile = e.dataTransfer.files[0];
+    applyFile(droppedFile);
   };
 
   // ── Submit silencioso ──────────────────────────────────────────────────────
@@ -188,7 +202,6 @@ export default function UploadDocumentos() {
   const getStepStatus = (stepId) => {
     if (currentStep === 5) return "completed";
     if (currentStep === -1) {
-      // Se houve erro, marca como erro o passo atual ou o último que tentou
       return stepId === Math.abs(currentStep) ? "error" : "pending";
     }
     if (stepId < currentStep) return "completed";
@@ -240,7 +253,7 @@ export default function UploadDocumentos() {
           <input
             id="up-file-input"
             type="file"
-            accept="image/*,.pdf"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/bmp,image/tiff"
             hidden
             onChange={(e) => applyFile(e.target.files[0])}
           />
@@ -261,7 +274,7 @@ export default function UploadDocumentos() {
               <p className="up-dropzone__label">
                 Arraste ou clique para selecionar
               </p>
-              <p className="up-dropzone__hint">PNG, JPG, PDF · máx. 10 MB</p>
+              <p className="up-dropzone__hint">JPG, PNG, WEBP, BMP, TIFF · máx. 10 MB</p>
               <div className="up-dropzone__actions">
                 <button
                   type="button"
@@ -329,9 +342,9 @@ export default function UploadDocumentos() {
               className={isProcessing ? "disabled" : ""}
             >
               <option value="">Selecione o tipo...</option>
-              <option value="E">📋 Exame</option>
-              <option value="R">💊 Receita</option>
-              <option value="D">📄 Documento Clínico</option>
+              <option value="E">Exame</option>
+              <option value="R">Receita</option>
+              <option value="D">Documento Clínico</option>
             </select>
           </div>
         </div>

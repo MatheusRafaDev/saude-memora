@@ -11,23 +11,24 @@ import "react-datepicker/dist/react-datepicker.css";
 import "../styles/pages/ListarDocumentos.css";
 
 import {
-  FaPrescriptionBottle,
-  FaVials,
-  FaFileAlt,
-  FaFileUpload,
-  FaTrash,
-  FaEye,
-  FaUserMd,
-  FaTimes,
-  FaCheck,
-  FaEdit,
-  FaFilter,
-  FaSearch,
-  FaSort,
-  FaSortUp,
-  FaSortDown,
-  FaSpinner,
-} from "react-icons/fa";
+  Eye,
+  Edit,
+  Trash2,
+  Pill,
+  FlaskRound,
+  FileText,
+  Upload,
+  User,
+  X,
+  Check,
+  Filter,
+  Search,
+  ArrowUp,
+  ArrowDown,
+  Loader2,
+  Calendar,
+  Stethoscope,
+} from "lucide-react";
 
 // Componente de Toast separado
 const Toast = ({ show, message, type, onClose }) => {
@@ -44,7 +45,7 @@ const Toast = ({ show, message, type, onClose }) => {
     <div className={`notification ${type}`}>
       <span>{message}</span>
       <button onClick={onClose} className="notification-close">
-        <FaTimes />
+        <X size={16} />
       </button>
     </div>
   );
@@ -54,7 +55,7 @@ const Toast = ({ show, message, type, onClose }) => {
 const LoadingSpinner = () => (
   <div className="loading-container">
     <div className="loading-spinner-large">
-      <FaSpinner className="spinner-icon" />
+      <Loader2 className="spinner-icon" />
     </div>
     <p className="loading-text">Carregando documentos...</p>
   </div>
@@ -103,7 +104,7 @@ const ConfirmationModal = ({ show, message, onConfirm, onClose, loading }) => (
       <div className="modal-header">
         <h3 className="modal-title">Confirmar ação</h3>
         <button onClick={onClose} disabled={loading} className="modal-close-btn">
-          <FaTimes />
+          <X size={18} />
         </button>
       </div>
       <div className="modal-body">
@@ -116,11 +117,11 @@ const ConfirmationModal = ({ show, message, onConfirm, onClose, loading }) => (
         <button onClick={onConfirm} disabled={loading} className="modal-confirm-btn">
           {loading ? (
             <>
-              <FaSpinner className="spinner" /> Processando...
+              <Loader2 className="spinner" size={16} /> Processando...
             </>
           ) : (
             <>
-              <FaCheck /> Confirmar
+              <Check size={16} /> Confirmar
             </>
           )}
         </button>
@@ -129,8 +130,22 @@ const ConfirmationModal = ({ show, message, onConfirm, onClose, loading }) => (
   </ReactModal>
 );
 
-// Componente de Documento Item
+// Componente de Documento Item (CORRIGIDO)
 const DocumentoItem = ({ documento, tipo, onVisualizar, onAlterar, onDeletar }) => {
+  // Função para obter o ID correto da entidade (receita, exame ou documento clínico)
+  const getEntidadeId = useCallback(() => {
+    switch (tipo) {
+      case "D":
+        return documento.clinico?.id;
+      case "E":
+        return documento.exame?.id;
+      case "R":
+        return documento.receita?.id;  // CORRIGIDO: usa o ID da receita, não do documento
+      default:
+        return documento.documento?.id;
+    }
+  }, [documento, tipo]);
+
   const getDocumentoInfo = useMemo(() => {
     switch (tipo) {
       case "D":
@@ -138,7 +153,7 @@ const DocumentoItem = ({ documento, tipo, onVisualizar, onAlterar, onDeletar }) 
           titulo: documento.clinico?.tipoDoc || "Documento Clínico",
           meta: documento.clinico?.medico && (
             <div className="documento-meta">
-              <FaUserMd className="meta-icon" />
+              <User size={12} className="meta-icon" />
               <span>{documento.clinico.medico}</span>
               {documento.clinico.crm && (
                 <span className="crm">CRM: {documento.clinico.crm}</span>
@@ -152,6 +167,7 @@ const DocumentoItem = ({ documento, tipo, onVisualizar, onAlterar, onDeletar }) 
           titulo: documento.exame?.nomeExame || "Exame Clínico",
           meta: documento.exame?.laboratorio && (
             <div className="documento-meta">
+              <Stethoscope size={12} className="meta-icon" />
               <span>Laboratório: {documento.exame.laboratorio}</span>
             </div>
           ),
@@ -162,7 +178,7 @@ const DocumentoItem = ({ documento, tipo, onVisualizar, onAlterar, onDeletar }) 
           titulo: "Receita",
           meta: documento.receita?.medico && (
             <div className="documento-meta">
-              <FaUserMd className="meta-icon" />
+              <User size={12} className="meta-icon" />
               <span>{documento.receita.medico}</span>
               {documento.receita.crm && (
                 <span className="crm">CRM: {documento.receita.crm}</span>
@@ -183,9 +199,12 @@ const DocumentoItem = ({ documento, tipo, onVisualizar, onAlterar, onDeletar }) 
           <span className="documento-tipo">{getDocumentoInfo.titulo}</span>
           <span className="documento-id">ID: {documento.documento.id}</span>
           <div className="documento-data">
-            <span>Upload: {formatarData(documento.documento.dataUpload)}</span>
+            <span>
+              <Calendar size={12} className="data-icon" /> Upload: {formatarData(documento.documento.dataUpload)}
+            </span>
             {getDocumentoInfo.dataDocumento && (
               <span>
+                <Calendar size={12} className="data-icon" />
                 Data do {tipo === "D" ? "documento" : tipo === "E" ? "exame" : "receita"}:{" "}
                 {formatarData(getDocumentoInfo.dataDocumento)}
               </span>
@@ -196,25 +215,25 @@ const DocumentoItem = ({ documento, tipo, onVisualizar, onAlterar, onDeletar }) 
       </div>
       <div className="documento-actions">
         <button
-          className="btn-action"
+          className="btn-action2"
           onClick={() => onVisualizar(documento.documento.id, tipo)}
           title="Visualizar"
         >
-          <FaEye />
+          <Eye size={18} />
         </button>
         <button
-          className="btn-action primary"
-          onClick={() => onAlterar(tipo, documento[tipo.toLowerCase()]?.id)}
+          className="btn-action2 primary"
+          onClick={() => onAlterar(tipo, getEntidadeId())}  // CORRIGIDO: usa o ID correto da entidade
           title="Alterar"
         >
-          <FaEdit />
+          <Edit size={18} />
         </button>
         <button
-          className="btn-action danger"
+          className="btn-action2 danger"
           onClick={() => onDeletar(documento.documento.id, tipo)}
           title="Deletar"
         >
-          <FaTrash />
+          <Trash2 size={18} />
         </button>
       </div>
     </li>
@@ -414,7 +433,7 @@ export default function ListarDocumentos() {
     };
   }, [paciente, showNotification]);
 
-  // Aplicar filtros (memoizado)
+  // Aplicar filtros
   const aplicarFiltros = useCallback(() => {
     const { texto, tipo, dataInicio, dataFim } = filtros;
 
@@ -519,7 +538,6 @@ export default function ListarDocumentos() {
       documento = Array.isArray(res.data) ? res.data[0] : res.data;
       navigate("/visualizar-documento", { state: { documento, tipo } });
     } catch (err) {
-      console.error("Erro ao visualizar documento:", err);
       showNotification("Erro ao carregar o documento", "error");
     }
   }, [navigate, showNotification]);
@@ -604,10 +622,10 @@ export default function ListarDocumentos() {
             </span>
             <div className="action-buttons">
               <button className="btn-processar" onClick={() => navigate("/upload-documentos")}>
-                <FaFileUpload /> Processar Novo Documento
+                <Upload size={16} /> Processar Novo Documento
               </button>
               <button className={`btn-filter ${mostrarFiltros ? "active" : ""}`} onClick={() => setMostrarFiltros(!mostrarFiltros)}>
-                <FaFilter /> {mostrarFiltros ? "Ocultar Filtros" : "Mostrar Filtros"}
+                <Filter size={16} /> {mostrarFiltros ? "Ocultar Filtros" : "Mostrar Filtros"}
               </button>
             </div>
           </div>
@@ -618,7 +636,7 @@ export default function ListarDocumentos() {
             <div className="filtro-group">
               <label htmlFor="texto">Buscar:</label>
               <div className="search-input">
-                <FaSearch className="search-icon" />
+                <Search size={16} className="search-icon" />
                 <input
                   type="text"
                   id="texto"
@@ -691,7 +709,7 @@ export default function ListarDocumentos() {
               onClick={() => setOrdenacao({ ...ordenacao, direcao: ordenacao.direcao === "asc" ? "desc" : "asc" })}
               className="btn-ordenacao"
             >
-              {ordenacao.direcao === "asc" ? <FaSortUp /> : <FaSortDown />}
+              {ordenacao.direcao === "asc" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
             </button>
           </div>
 
@@ -726,7 +744,7 @@ export default function ListarDocumentos() {
           {documentosFiltrados.DocumentosClinicos.length > 0 && (
             <section className="documentos-section">
               <h2>
-                <FaFileAlt className="icon" /> Documentos Clínicos
+                <FileText size={18} className="icon" /> Documentos Clínicos
                 <span className="badge">{documentosFiltrados.DocumentosClinicos.length}</span>
               </h2>
               <ul className="documentos-list">
@@ -747,7 +765,7 @@ export default function ListarDocumentos() {
           {documentosFiltrados.Exames.length > 0 && (
             <section className="documentos-section">
               <h2>
-                <FaVials className="icon" /> Exames
+                <FlaskRound size={18} className="icon" /> Exames
                 <span className="badge">{documentosFiltrados.Exames.length}</span>
               </h2>
               <ul className="documentos-list">
@@ -768,7 +786,7 @@ export default function ListarDocumentos() {
           {documentosFiltrados.Receitas.length > 0 && (
             <section className="documentos-section">
               <h2>
-                <FaPrescriptionBottle className="icon" /> Receitas
+                <Pill size={18} className="icon" /> Receitas
                 <span className="badge">{documentosFiltrados.Receitas.length}</span>
               </h2>
               <ul className="documentos-list">

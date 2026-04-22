@@ -1,0 +1,510 @@
+/* styles/forms/DocumentoForm.css */
+/* Este arquivo deve ser importado em cada componente ou em um arquivo global */
+
+/* Container principal dos formulários */
+.documento-form-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.documento-form-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.documento-form-card:hover {
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Cabeçalho */
+.form-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1.5rem 2rem;
+  color: white;
+}
+
+.form-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.form-header-icon {
+  font-size: 1.75rem;
+}
+
+/* Área da imagem */
+.image-viewer {
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  position: relative;
+  overflow: hidden;
+}
+
+.image-viewer-header {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.image-control-btn {
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+
+.image-control-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.05);
+}
+
+/* Corpo do formulário */
+.form-body {
+  padding: 2rem;
+}
+
+/* Grupos de formulário */
+.form-group-custom {
+  margin-bottom: 1.5rem;
+}
+
+.form-label-custom {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-label-custom .label-icon {
+  color: #667eea;
+  font-size: 1rem;
+}
+
+.form-control-custom {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.form-control-custom:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+.form-control-custom:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+/* DatePicker customizado */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.datepicker-custom {
+  width: 100%;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.datepicker-custom:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+.datepicker-custom:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+/* Textareas */
+.textarea-custom {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.textarea-custom:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+/* Seção de Medicamentos (para Receita) */
+.medicamentos-section {
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.medicamentos-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.medicamento-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.medicamento-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.medicamento-remove-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #dc3545;
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.medicamento-item:hover .medicamento-remove-btn {
+  opacity: 1;
+}
+
+.medicamento-remove-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+/* Botões de ação */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e9ecef;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  padding: 0.875rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 12px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: #6c757d;
+  border: none;
+  padding: 0.875rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 12px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-2px);
+}
+
+/* Loading spinner */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 20px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e9ecef;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  margin-top: 1rem;
+  color: #667eea;
+  font-weight: 500;
+}
+
+/* Alertas e mensagens */
+.alert-custom {
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: none;
+}
+
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+}
+
+.alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #dc3545;
+}
+
+.alert-info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border-left: 4px solid #17a2b8;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .documento-form-container {
+    padding: 1rem;
+  }
+
+  .form-body {
+    padding: 1.5rem;
+  }
+
+  .form-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .form-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .btn-save,
+  .btn-cancel {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .medicamento-remove-btn {
+    opacity: 1;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-save,
+  .btn-cancel {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.documento-form-card {
+  animation: fadeIn 0.5s ease;
+}
+
+/* Estilização do scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Tooltip customizado */
+.tooltip-custom {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-custom .tooltip-text {
+  visibility: hidden;
+  background-color: #333;
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px 10px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip-custom:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Badge para status */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Grid de campos */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Divisor */
+.form-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e9ecef, transparent);
+  margin: 1.5rem 0;
+}
+
+/* Ícones nos campos */
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon .form-control-custom {
+  padding-left: 2.5rem;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #adb5bd;
+  font-size: 1rem;
+}

@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft, FaEdit, FaSave } from "react-icons/fa";
 
-import DocumentoClinicoForm from "../components/forms/DocumentoClinicoForm";
-import ExameForm from "../components/forms/ExameForm";
-import ReceitaForm from "../components/forms/ReceitaForm";
-import Notification from "../components/Notification";
+import DocumentoClinicoForm from "./forms/DocumentoClinicoForm";
+import ExameForm from "./forms/ExameForm";
+import ReceitaForm from "./forms/ReceitaForm";
+
+import Notification from "./Notification";
 
 import DocumentoClinicoService from "../services/DocumentoClinicoService";
 import ExameService from "../services/ExameService";

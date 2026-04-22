@@ -132,8 +132,6 @@ const CadastroPaciente = () => {
     try {
       const result = await cadastrarPaciente(dadosParaBackend);
 
-      console.log(result)
-
       if (result.success) {
         localStorage.setItem("paciente", JSON.stringify(result.dados));
         navigate("/ficha-medica");

@@ -8,7 +8,7 @@ import { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ExameService from "../../services/ExameService";
 import axiosInstance from '../../axiosConfig';
-
+import '../../styles/components/DocumentoForm.css';
 
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import {
@@ -20,6 +20,7 @@ import {
   FaMicroscope,
   FaSave,
   FaStickyNote,
+  FaTimes,
 } from "react-icons/fa";
 
 registerLocale('pt-BR', ptBR);
@@ -46,23 +47,18 @@ const ExameForm = ({ data: initialData, isLoading = false }) => {
   const parseDateString = (dateString) => {
     if (!dateString) return null;
     
-    // Se já for um objeto Date, retorna diretamente
     if (dateString instanceof Date) {
-      // Ajusta para o timezone local
       return new Date(
         dateString.getTime() + dateString.getTimezoneOffset() * 60000
       );
     }
     
-    // Se estiver no formato DD/MM/YYYY
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
       const [day, month, year] = dateString.split('/');
       const date = new Date(`${year}-${month}-${day}`);
-      // Ajuste para evitar problemas de timezone
       return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
     }
     
-    // Se estiver no formato YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       const date = new Date(dateString);
       return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
@@ -71,7 +67,6 @@ const ExameForm = ({ data: initialData, isLoading = false }) => {
     return null;
   };
 
-  // Formata a data para o backend (YYYY-MM-DD)
   const formatDateForBackend = (date) => {
     const d = parseDateString(date);
     if (!d) return "";
@@ -120,7 +115,6 @@ const ExameForm = ({ data: initialData, isLoading = false }) => {
     try {
       const { id, imagem, ...dados } = data;
 
-      // Formata a data para o formato do backend
       if (dados.dataExame) {
         dados.dataExame = formatDateForBackend(dados.dataExame);
       }
@@ -135,19 +129,16 @@ const ExameForm = ({ data: initialData, isLoading = false }) => {
     }
   };
 
+  const handleCancel = () => {
+      navigate("/meus-documentos");
+    
+  };
+
   return (
     <div className="mx-auto px-3" style={{ maxWidth: "900px" }}>
       <div className="card shadow-sm border-0 mb-4">
         <div className="card-header d-flex align-items-center justify-content-between bg-white border-bottom py-3">
-          <h2 className="mb-0 fs-5 fw-bold">Exame</h2>
-
-          <button
-            className="btn btn-outline-secondary btn-sm"
-            onClick={() => navigate("/meus-documentos")}
-            disabled={loading}
-          >
-            <FaArrowLeft className="me-1" /> Voltar
-          </button>
+          <h2 className="mb-0 fs-5 fw-bold">Editar Exame</h2>
         </div>
 
         {data.imagem && (
@@ -207,8 +198,7 @@ const ExameForm = ({ data: initialData, isLoading = false }) => {
               <div className="col-md-6">
                 <Form.Group controlId="nomeExame">
                   <Form.Label className="fw-semibold">
-                    <FaFileMedical className="me-1 text-primary" /> Nome do
-                    Exame
+                    <FaFileMedical className="me-1 text-primary" /> Nome do Exame
                   </Form.Label>
                   <Form.Control
                     type="text"
@@ -259,8 +249,7 @@ const ExameForm = ({ data: initialData, isLoading = false }) => {
               <div className="col-md-6">
                 <Form.Group controlId="dataExame">
                   <Form.Label className="fw-semibold">
-                    <FaCalendarAlt className="me-1 text-primary" /> Data do
-                    Exame
+                    <FaCalendarAlt className="me-1 text-primary" /> Data do Exame
                   </Form.Label>
                   <DatePicker
                     selected={data.dataExame}
@@ -331,12 +320,20 @@ const ExameForm = ({ data: initialData, isLoading = false }) => {
               </div>
             </div>
 
-            <div className="d-flex justify-content-center mt-4">
+            <div className="d-flex justify-content-center gap-3 mt-4">
               <button
                 type="button"
+                className="btn btn-secondary"
+                onClick={handleCancel}
+                disabled={loading || isLoading}
+              >
+                <FaTimes className="me-2" />
+                Cancelar
+              </button>
+              <button
+                type="submit"
                 className="btn btn-primary"
                 disabled={loading || isLoading}
-                onClick={handleUpdate}
               >
                 {loading ? (
                   <span

@@ -1,22 +1,8 @@
-/**
- * ocrSpace.js — OCR via backend.
- *
- * Todo o processamento com OCR.space é feito no servidor (Spring Boot).
- * O frontend apenas pré-processa a imagem localmente (canvas) e envia
- * o arquivo resultante para POST /api/ocr/processar.
- *
- * Funções exportadas (interface mantida idêntica ao arquivo original):
- *   ocrSpace(file)      → string  (texto engine 1 — Tesseract via OCR.space)
- *   ocrSpace2(file)     → string  (texto engine 2 — OCR.space v2)
- *   smartOCR(file)      → string  (prefere engine 2; cai no engine 1)
- *   ocrSpaceDuplo(file) → { texto1, texto2 }  (ambos em uma chamada só)
- */
 
 import axiosInstance from '../axiosConfig';
 import ProcessarImagem from './utils/ProcessarImagem';
 
-// ── cache por arquivo para evitar requisições duplicadas ─────────────────────
-// Promise.all([ocrSpace(f), ocrSpace2(f)]) → apenas 1 chamada HTTP
+
 const _cache = new WeakMap();
 
 async function chamarOcrBackend(file) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { IMaskInput } from 'react-imask';
 import ReactModal from "react-modal";
@@ -15,22 +15,31 @@ import {
   FaSave,
   FaTimesCircle,
   FaIdCard,
-  FaUserMd,
+  FaVenusMars,
   FaSignOutAlt,
+  FaSpinner,
 } from "react-icons/fa";
 import { atualizarPaciente, deletarPaciente } from "../services/pacienteService";
 import "../styles/pages/Perfil.css";
 
 ReactModal.setAppElement("#root");
 
+const SEXO_MAP = {
+  M: "Masculino",
+  F: "Feminino",
+  O: "Outro"
+};
+
 const Perfil = () => {
   const [paciente, setPaciente] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [dadosForm, setDadosForm] = useState({
     id: '',
     nome: '',
@@ -48,19 +57,38 @@ const Perfil = () => {
 
   // Carregar dados do paciente
   useEffect(() => {
-    const storedPaciente = localStorage.getItem("paciente");
-    if (storedPaciente) {
-      const pacienteData = JSON.parse(storedPaciente);
-      setPaciente(pacienteData);
-      setDadosForm({
-        ...pacienteData,
-        senha: '',
-        confirmarSenha: ''
-      });
-    } else {
-      navigate("/login");
-    }
+    const loadPaciente = async () => {
+      setInitialLoading(true);
+      const storedPaciente = localStorage.getItem("paciente");
+      if (storedPaciente) {
+        const pacienteData = JSON.parse(storedPaciente);
+        setPaciente(pacienteData);
+        setDadosForm({
+          ...pacienteData,
+          senha: '',
+          confirmarSenha: ''
+        });
+      } else {
+        navigate("/login");
+      }
+      setInitialLoading(false);
+    };
+    
+    loadPaciente();
   }, [navigate]);
+
+  // Aviso de alterações não salvas
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'Você tem alterações não salvas. Tem certeza que deseja sair?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,6 +96,8 @@ const Perfil = () => {
       ...prev,
       [name]: value,
     }));
+    
+    setHasUnsavedChanges(true);
 
     // Limpar erro do campo específico
     if (fieldErrors[name]) {
@@ -92,7 +122,7 @@ const Perfil = () => {
       isValid = false;
     }
 
-    // Validação do CPF (mesma regra do cadastro)
+    // Validação do CPF
     if (!cpf || cpf.replace(/\D/g, "").length !== 11) {
       newErrors.cpf = "CPF inválido";
       isValid = false;
@@ -103,7 +133,6 @@ const Perfil = () => {
       newErrors.dataNascimento = "Data de nascimento inválida";
       isValid = false;
     } else {
-      // Validar se a data é real
       const partes = dataNascimento.split('/');
       if (partes.length === 3) {
         const dia = parseInt(partes[0], 10);
@@ -123,7 +152,7 @@ const Perfil = () => {
       isValid = false;
     }
 
-    // Validação da senha (apenas se for preenchida)
+    // Validação da senha
     if (senha && senha.length < 6) {
       newErrors.senha = "A senha deve ter pelo menos 6 caracteres";
       isValid = false;
@@ -146,10 +175,27 @@ const Perfil = () => {
     return isValid;
   };
 
+  const getChangedFields = () => {
+    const changedFields = {};
+    const { confirmarSenha, ...dadosSemConfirmacao } = dadosForm;
+    
+    Object.keys(dadosSemConfirmacao).forEach(key => {
+      if (key === 'senha') {
+        // Só inclui senha se foi preenchida
+        if (dadosSemConfirmacao[key] && dadosSemConfirmacao[key] !== '') {
+          changedFields[key] = dadosSemConfirmacao[key];
+        }
+      } else if (dadosSemConfirmacao[key] !== paciente[key]) {
+        changedFields[key] = dadosSemConfirmacao[key];
+      }
+    });
+    
+    return changedFields;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      // Scroll para o primeiro campo com erro
       const firstErrorField = Object.keys(fieldErrors)[0];
       if (firstErrorField) {
         const el = document.querySelector(`[name="${firstErrorField}"]`);
@@ -165,10 +211,21 @@ const Perfil = () => {
     setError(null);
 
     try {
-      const { confirmarSenha, ...dadosParaBackend } = dadosForm;
-      const response = await atualizarPaciente(paciente.id, dadosParaBackend);
+      const changedFields = getChangedFields();
       
-      const updatedPaciente = { ...paciente, ...dadosParaBackend };
+      // Se não houver alterações, apenas sai do modo de edição
+      if (Object.keys(changedFields).length === 0) {
+        setIsEditing(false);
+        setHasUnsavedChanges(false);
+        setSuccessMessage("Nenhuma alteração foi feita");
+        setTimeout(() => setSuccessMessage(null), 3000);
+        setLoading(false);
+        return;
+      }
+      
+      const response = await atualizarPaciente(paciente.id, changedFields);
+      
+      const updatedPaciente = { ...paciente, ...changedFields };
       localStorage.setItem('paciente', JSON.stringify(updatedPaciente));
       setPaciente(updatedPaciente);
       
@@ -176,13 +233,14 @@ const Perfil = () => {
       setTimeout(() => setSuccessMessage(null), 3000);
       
       setIsEditing(false);
+      setHasUnsavedChanges(false);
       setDadosForm(prev => ({
         ...prev,
+        ...updatedPaciente,
         senha: '',
         confirmarSenha: ''
       }));
     } catch (error) {
-      // Verificar mensagens de erro específicas do backend
       if (error.response?.data?.message === "O email informado já está em uso.") {
         setFieldErrors(prev => ({ ...prev, email: error.response.data.message }));
         setError("E-mail já está em uso por outro usuário");
@@ -216,19 +274,40 @@ const Perfil = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("paciente");
-    navigate("/login");
+    if (hasUnsavedChanges) {
+      if (window.confirm('Você tem alterações não salvas. Tem certeza que deseja sair?')) {
+        localStorage.removeItem("paciente");
+        navigate("/login");
+      }
+    } else {
+      localStorage.removeItem("paciente");
+      navigate("/login");
+    }
   };
 
   const cancelEdit = () => {
-    setIsEditing(false);
-    setDadosForm({
-      ...paciente,
-      senha: '',
-      confirmarSenha: ''
-    });
-    setFieldErrors({});
-    setError(null);
+    if (hasUnsavedChanges) {
+      
+        setIsEditing(false);
+        setDadosForm({
+          ...paciente,
+          senha: '',
+          confirmarSenha: ''
+        });
+        setFieldErrors({});
+        setError(null);
+        setHasUnsavedChanges(false);
+      
+    } else {
+      setIsEditing(false);
+      setDadosForm({
+        ...paciente,
+        senha: '',
+        confirmarSenha: ''
+      });
+      setFieldErrors({});
+      setError(null);
+    }
   };
 
   const renderInfoField = (icon, label, value) => (
@@ -268,12 +347,26 @@ const Perfil = () => {
             Cancelar
           </button>
           <button onClick={handleDeleteProfile} className="btn-confirm-delete" disabled={loading}>
-            {loading ? "Deletando..." : <><FaCheck /> Confirmar</>}
+            {loading ? <><FaSpinner className="spinner" /> Deletando...</> : <><FaCheck /> Confirmar</>}
           </button>
         </div>
       </div>
     </ReactModal>
   );
+
+  // Loading inicial
+  if (initialLoading) {
+    return (
+      <div className="perfil-container">
+        <div className="perfil-card">
+          <div className="loading-spinner-container">
+            <FaSpinner className="spinner-large" />
+            <p>Carregando seus dados...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!paciente) {
     return (
@@ -331,7 +424,7 @@ const Perfil = () => {
               {renderInfoField(<FaUserAlt />, "Nome completo", paciente.nome)}
               {renderInfoField(<FaIdCard />, "CPF", paciente.cpf)}
               {renderInfoField(<FaCalendarAlt />, "Data de nascimento", paciente.dataNascimento)}
-              {renderInfoField(null, "Sexo", paciente.sexo === "M" ? "Masculino" : paciente.sexo === "F" ? "Feminino" : "Outro")}
+              {renderInfoField(<FaVenusMars />, "Sexo", SEXO_MAP[paciente.sexo] || "Não informado")}
               {renderInfoField(<FaEnvelope />, "E-mail", paciente.email)}
               {renderInfoField(<FaPhoneAlt />, "Telefone", paciente.telefone)}
               {renderInfoField(<FaMapMarkerAlt />, "Endereço", paciente.endereco)}
@@ -375,7 +468,10 @@ const Perfil = () => {
                   mask="000.000.000-00"
                   name="cpf"
                   value={dadosForm.cpf}
-                  onAccept={(value) => setDadosForm(prev => ({ ...prev, cpf: value }))}
+                  onAccept={(value) => {
+                    setDadosForm(prev => ({ ...prev, cpf: value }));
+                    setHasUnsavedChanges(true);
+                  }}
                   className={`form-input ${fieldErrors.cpf ? 'has-error' : ''}`}
                   required
                 />
@@ -388,7 +484,10 @@ const Perfil = () => {
                   mask="00/00/0000"
                   name="dataNascimento"
                   value={dadosForm.dataNascimento}
-                  onAccept={(value) => setDadosForm(prev => ({ ...prev, dataNascimento: value }))}
+                  onAccept={(value) => {
+                    setDadosForm(prev => ({ ...prev, dataNascimento: value }));
+                    setHasUnsavedChanges(true);
+                  }}
                   className={`form-input ${fieldErrors.dataNascimento ? 'has-error' : ''}`}
                   required
                 />
@@ -430,7 +529,10 @@ const Perfil = () => {
                   mask="(00) 00000-0000"
                   name="telefone"
                   value={dadosForm.telefone}
-                  onAccept={(value) => setDadosForm(prev => ({ ...prev, telefone: value }))}
+                  onAccept={(value) => {
+                    setDadosForm(prev => ({ ...prev, telefone: value }));
+                    setHasUnsavedChanges(true);
+                  }}
                   className="form-input"
                   placeholder="(00) 00000-0000"
                 />
@@ -476,12 +578,13 @@ const Perfil = () => {
 
             <div className="form-actions">
               <button type="submit" className="btn-save" disabled={loading}>
-                <FaSave /> {loading ? "Salvando..." : "Salvar alterações"}
+                {loading ? <><FaSpinner className="spinner" /> Salvando...</> : <><FaSave /> Salvar alterações</>}
               </button>
-              <button type="button" className="btn-cancel" onClick={cancelEdit}>
+              <button type="button" className="btn-cancel" onClick={cancelEdit} disabled={loading}>
                 <FaTimes /> Cancelar
               </button>
             </div>
+            
           </form>
         )}
       </div>

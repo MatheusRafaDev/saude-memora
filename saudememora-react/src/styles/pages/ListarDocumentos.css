@@ -609,7 +609,7 @@ body {
   gap: 8px;
 }
 
-.btn-action {
+.btn-action2 {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -623,30 +623,30 @@ body {
   color: var(--gray-600);
 }
 
-.btn-action:hover {
+.btn-action2:hover {
   transform: translateY(-2px);
 }
 
-.btn-action:active {
+.btn-action2:active {
   transform: translateY(0);
 }
 
-.btn-action.primary {
+.btn-action2.primary {
   background: var(--primary-soft);
   color: var(--primary);
 }
 
-.btn-action.primary:hover {
+.btn-action2.primary:hover {
   background: var(--primary);
   color: white;
 }
 
-.btn-action.danger {
+.btn-action2.danger {
   background: var(--error-light);
   color: var(--error);
 }
 
-.btn-action.danger:hover {
+.btn-action2.danger:hover {
   background: var(--error);
   color: white;
 }
@@ -1121,3 +1121,4 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gray-500);
 }
+
