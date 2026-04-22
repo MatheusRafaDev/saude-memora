@@ -6,15 +6,15 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     envVars:
-      - key: SPRING_DATASOURCE_URL
+      - key: DB_URL
         fromDatabase:
           name: saudememora-db
           property: connectionString
-      - key: SPRING_DATASOURCE_USERNAME
+      - key: DB_USERNAME
         fromDatabase:
           name: saudememora-db
           property: user
-      - key: SPRING_DATASOURCE_PASSWORD
+      - key: DB_PASSWORD
         fromDatabase:
           name: saudememora-db
           property: password
