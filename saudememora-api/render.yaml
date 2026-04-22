@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: saudememora-api
+    runtime: image
+    repo: https://github.com/MatheusRafaDev/saude-memora-api
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: saudememora-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: saudememora-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: saudememora-db
+          property: password
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+
+databases:
+  - name: saudememora-db
+    databaseName: saudememora
+    user: saudememora_user
+    plan: free
