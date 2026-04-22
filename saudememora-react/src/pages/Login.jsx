@@ -18,7 +18,7 @@ export default function Login() {
 
       if (result.success) {
         localStorage.setItem("paciente", JSON.stringify(result.data));
-        navigate("/home");
+        navigate("/inicio");
       } else {
         setErro(result.message || "Falha ao fazer login");
       }

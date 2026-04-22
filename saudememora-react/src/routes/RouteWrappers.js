@@ -81,5 +81,5 @@ export const PublicWrapper = ({ children }) => {
     );
   }
 
-  return authState.isAuthenticated ? <Navigate to="/home" replace /> : children;
+  return authState.isAuthenticated ? <Navigate to="/inicio" replace /> : children;
 };

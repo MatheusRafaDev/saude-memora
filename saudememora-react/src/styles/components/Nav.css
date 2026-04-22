@@ -20,6 +20,8 @@
   --gray-800: #1f2937;
   --gray-900: #111827;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --bottom-h: 68px;
 }
 
@@ -38,13 +40,14 @@
 .sm-top-nav__container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 70px;
+  gap: 20px;
 }
 
+/* Logo - fica no canto esquerdo */
 .sm-top-nav__brand {
   display: flex;
   align-items: center;
@@ -53,12 +56,16 @@
   font-weight: 800;
   font-size: 1.2rem;
   color: var(--primary);
+  flex-shrink: 0;
 }
 
+/* Menu centralizado */
 .sm-top-nav__menu {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  justify-content: center;
 }
 
 .sm-top-nav__item {
@@ -72,6 +79,7 @@
   font-weight: 500;
   color: var(--gray-600);
   transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .sm-top-nav__item svg {
@@ -91,6 +99,117 @@
 
 .sm-top-nav__item.active svg {
   stroke: var(--primary);
+}
+
+/* ── DROPDOWN DO PERFIL (Desktop) ─────────────────────────────── */
+.sm-top-nav__profile {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sm-top-nav__profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 8px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.sm-top-nav__profile-btn:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.profile-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.chevron-icon {
+  transition: transform 0.2s ease;
+  color: var(--gray-400);
+}
+
+.chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+  z-index: 1000;
+  animation: dropdownSlideIn 0.2s ease;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.dropdown-item:hover {
+  background: var(--gray-50);
+}
+
+.dropdown-item.logout {
+  color: var(--error);
+}
+
+.dropdown-item.logout:hover {
+  background: var(--error-light);
+}
+
+.dropdown-divider {
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--gray-200);
 }
 
 /* ── BOTTOM NAV (Mobile) ──────────────────────────────────────── */
@@ -120,6 +239,9 @@
   font-weight: 500;
   color: var(--gray-400);
   transition: color 0.15s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 .sm-bottom-nav__item svg {
@@ -134,6 +256,10 @@
   stroke: var(--primary);
 }
 
+.sm-bottom-nav__item:hover {
+  color: var(--gray-600);
+}
+
 /* ── Responsive Breakpoints ─────────────────────────────────── */
 @media (max-width: 991px) {
   .sm-top-nav {
@@ -142,6 +268,35 @@
   
   .sm-bottom-nav {
     display: flex;
+  }
+  
+  body {
+    padding-top: 0;
+    padding-bottom: var(--bottom-h);
+  }
+}
+
+@media (max-width: 1024px) {
+  .sm-top-nav__item span {
+    display: none;
+  }
+  
+  .sm-top-nav__item {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-name {
+    display: none;
+  }
+  
+  .sm-top-nav__profile-btn {
+    padding: 6px;
+  }
+  
+  .profile-dropdown {
+    min-width: 180px;
   }
 }
 
@@ -166,11 +321,4 @@
 body {
   padding-top: 70px;
   margin: 0;
-}
-
-@media (max-width: 991px) {
-  body {
-    padding-top: 0;
-    padding-bottom: var(--bottom-h);
-  }
 }

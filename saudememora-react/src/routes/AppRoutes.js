@@ -2,6 +2,8 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Login";
 import Home from "../pages/Home";
+import Inicio from "../pages/Inicio";
+import Relatorio from "../pages/Relatorio";
 import CadastroPaciente from "../pages/CadastroPaciente";
 import FichaMedica from "../pages/FichaMedica";
 import UploadDocumentos from "../pages/UploadDocumentos";
@@ -19,7 +21,7 @@ const AppRoutes = () => {
         path="/"
         element={
           <PublicWrapper>
-            <Navigate to="/login" replace />
+            <Home />
           </PublicWrapper>
         }
       />
@@ -43,10 +45,10 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/home"
+        path="/inicio"
         element={
           <AuthWrapper>
-            <Home />
+            <Inicio />
           </AuthWrapper>
         }
       />
@@ -101,6 +103,15 @@ const AppRoutes = () => {
         element={
           <AuthWrapper>
             <VisualizadorDocumento />
+          </AuthWrapper>
+        }
+      />
+
+      <Route
+        path="/relatorio"
+        element={
+          <AuthWrapper>
+            <Relatorio />
           </AuthWrapper>
         }
       />
