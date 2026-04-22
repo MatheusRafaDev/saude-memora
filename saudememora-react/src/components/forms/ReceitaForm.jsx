@@ -14,6 +14,8 @@ import {
   FaStickyNote,
 } from "react-icons/fa";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+
+
 import '../../styles/components/DocumentoForm.css';
 
 const ReceitaForm = ({ data: initialData, isLoading = false }) => {

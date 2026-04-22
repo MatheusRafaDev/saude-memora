@@ -12,6 +12,7 @@ import DocumentoClinicoService from "../services/DocumentoClinicoService";
 import ExameService from "../services/ExameService";
 import ReceitaService from "../services/ReceitaService";
 import MedicamentoService from "../services/MedicamentoService";
+import '../styles/components/DocumentoForm.css';
 
 const AlterarDocumento = () => {
   const navigate = useNavigate();
@@ -227,9 +228,7 @@ const AlterarDocumento = () => {
           />
         )}
 
-        <form >
           {renderFormByType()}
-        </form>
       </div>
     </div>
   );

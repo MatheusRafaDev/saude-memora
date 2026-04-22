@@ -8,6 +8,8 @@ import DocumentoClinicoService from "../../services/DocumentoClinicoService";
 import ptBR from 'date-fns/locale/pt-BR';
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import axiosInstance from '../../axiosConfig';
+import '../../styles/components/DocumentoForm.css';
+
 
 import {
   FaFileAlt,
@@ -19,7 +21,6 @@ import {
   FaStickyNote,
   FaInfoCircle,
 } from "react-icons/fa";
-import '../../styles/components/DocumentoForm.css';
 
 registerLocale('pt-BR', ptBR);
 

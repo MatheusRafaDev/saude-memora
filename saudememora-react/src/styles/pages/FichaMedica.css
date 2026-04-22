@@ -309,15 +309,15 @@
 
 /* Botão NÃO - Cinza quando ativo */
 .btn-nao.active {
-  background: var(--gray-200);
-  border-color: var(--gray-400);
-  color: var(--gray-800);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .btn-nao.active:hover {
-  background: var(--gray-300);
-  border-color: var(--gray-500);
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 /* Select de Pressão */

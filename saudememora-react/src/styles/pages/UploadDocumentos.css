@@ -568,3 +568,200 @@
     font-size: 0.875rem;
   }
 }
+
+/* Adicione ao final do arquivo CSS */
+
+/* ── Visualização de foto melhorada ───────────────────────────────────────── */
+.up-file-preview {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: var(--primary-soft);
+  position: relative;
+}
+
+.up-file-preview__thumbnail {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.up-file-preview__thumbnail:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+.up-file-preview__thumbnail:hover .up-file-preview__zoom-icon {
+  opacity: 1;
+}
+
+.up-file-preview__img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+.up-file-preview__zoom-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: white;
+}
+
+.up-file-preview__info {
+  flex: 1;
+}
+
+.up-file-preview__name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-800);
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.up-file-preview__size {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.up-file-preview__dimensions {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  margin-top: 4px;
+}
+
+.up-file-preview__remove {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--gray-500);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.up-file-preview__remove:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--error);
+  transform: scale(1.05);
+}
+
+/* ── Modal de visualização em tamanho real ───────────────────────────────── */
+.up-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.up-modal-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+  cursor: default;
+}
+
+.up-modal-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.up-modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.up-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.up-modal-info {
+  position: absolute;
+  bottom: -32px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+}
+
+/* ── Dropzone com preview expandido ────────────────────────────────────── */
+.up-dropzone.has-file:hover .up-file-preview {
+  background: var(--primary-soft);
+}
+
+/* Versão mobile */
+@media (max-width: 640px) {
+  .up-file-preview {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .up-file-preview__thumbnail {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .up-file-preview__img {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .up-file-preview__remove {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.9);
+  }
+  
+  .up-modal-content {
+    width: 95vw;
+  }
+}

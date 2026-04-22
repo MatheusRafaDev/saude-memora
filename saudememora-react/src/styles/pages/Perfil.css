@@ -312,7 +312,7 @@ select.form-input {
 }
 
 .btn-save {
-  background: linear-gradient(135deg, var(--success) 0%, #15803d 100%);
+  background: var(--primary);
   color: white;
 }
 
@@ -497,7 +497,7 @@ select.form-input {
 
 /* Estilos para botão Salvar (azul) */
 .btn-save {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: var(--primary);
   color: white;
   padding: 12px 24px;
   border: none;

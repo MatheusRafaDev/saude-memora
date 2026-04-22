@@ -1,3 +1,4 @@
+// Relatorio.jsx - Versão corrigida para estrutura de documentos
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import MedicamentoService from "../services/MedicamentoService";
@@ -24,6 +25,19 @@ const countBy = (arr, getFn) => {
     map[val] = (map[val] || 0) + 1;
   });
   return Object.entries(map).sort((a, b) => b[1] - a[1]);
+};
+
+// Mapeamento de tipoDocumento para nome legível
+const getTipoDocumentoNome = (tipo) => {
+  const tipos = {
+    'E': 'Exame',
+    'R': 'Receita',
+    'D': 'Documento',
+    'L': 'Laudo',
+    'A': 'Atestado',
+    'O': 'Outro'
+  };
+  return tipos[tipo] || 'Documento';
 };
 
 /* ── Sub-components ─────────────────────────────────────────── */
@@ -135,6 +149,87 @@ const FichaAlerts = ({ ficha }) => {
   );
 };
 
+/* ── Documentos Section - CORRIGIDO ───────────────────────────── */
+const DocumentosSection = ({ documentos, isLoading }) => {
+  if (isLoading) return <p className="rel-empty">Carregando documentos...</p>;
+  
+  // Verificar se documentos é um array
+  if (!documentos || !Array.isArray(documentos)) {
+    return <p className="rel-empty">Nenhum documento clínico encontrado</p>;
+  }
+  
+  // Se os documentos já estão no formato correto (array de documentos)
+  // Verificar se é array de documentos ou array de grupos
+  let docsFlat = [];
+  
+  if (documentos.length > 0) {
+    // Verificar se o primeiro item tem a propriedade 'documentos' (estrutura agrupada)
+    if (documentos[0] && documentos[0].documentos) {
+      docsFlat = documentos.flatMap(group => group.documentos || []);
+    } else {
+      // Estrutura direta de documentos
+      docsFlat = documentos;
+    }
+  }
+  
+  if (docsFlat.length === 0) {
+    return <p className="rel-empty">Nenhum documento clínico encontrado</p>;
+  }
+
+  console.log("Documentos processados:", docsFlat);
+
+  // Agrupar por tipo de documento
+  const porTipo = {};
+  docsFlat.forEach(doc => {
+    const tipo = getTipoDocumentoNome(doc.tipoDocumento || doc.tipo);
+    if (!porTipo[tipo]) porTipo[tipo] = [];
+    porTipo[tipo].push(doc);
+  });
+
+  return (
+    <div className="rel-card">
+      <SectionHead icon={Icon.clip} title="Documentos" count={docsFlat.length} />
+      {Object.entries(porTipo).map(([tipo, docs]) => (
+        <div key={tipo} style={{ marginBottom: "24px" }}>
+          <h3 style={{ fontSize: "14px", marginBottom: "12px", color: "var(--rel-blue)" }}>
+            {tipo}
+            <Badge label={docs.length} variant="blue" style={{ marginLeft: "8px" }} />
+          </h3>
+          <div className="rel-table-wrap">
+            <table className="rel-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Tipo</th>
+                  <th>Status</th>
+                  <th>Data de Upload</th>
+                  <th>Paciente</th>
+                </tr>
+              </thead>
+              <tbody>
+                {docs.map((doc, idx) => (
+                  <tr key={idx}>
+                    <td>#{doc.id}</td>
+                    <td>{getTipoDocumentoNome(doc.tipoDocumento || doc.tipo)}</td>
+                    <td>
+                      <Badge 
+                        label={doc.status || "Processado"} 
+                        variant={doc.status === "Processado" ? "green" : "amber"} 
+                      />
+                    </td>
+                    <td>{formatDate(doc.dataUpload)}</td>
+                    <td>{doc.paciente?.nome || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 /* ── Icons ──────────────────────────────────────────────────── */
 const Icon = {
   doc: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
@@ -145,7 +240,6 @@ const Icon = {
   bar: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
   cal: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
   shield: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  back: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>,
 };
 
 /* ════════════════════════════════════════════════════════════════
@@ -162,9 +256,11 @@ function Relatorio() {
   const [receitas, setReceitas] = useState([]);
   const [documentos, setDocumentos] = useState([]);
   const [ficha, setFicha] = useState(null);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   const loadData = useCallback(async (pac) => {
     setLoading(true);
+    setLoadingDocs(true);
     try {
       const [medRes, exaRes, recRes, docRes, fichaRes] = await Promise.allSettled([
         MedicamentoService.getAll(),
@@ -180,14 +276,16 @@ function Relatorio() {
         setExames(exaRes.value.data || []);
       if (recRes.status === "fulfilled" && recRes.value?.success)
         setReceitas(recRes.value.data || []);
-      if (docRes.status === "fulfilled" && docRes.value?.success)
+      if (docRes.status === "fulfilled" && docRes.value?.success) {
         setDocumentos(docRes.value.data || []);
+      }
       if (fichaRes.status === "fulfilled" && fichaRes.value?.success)
         setFicha(fichaRes.value.data);
     } catch (err) {
       console.error("Erro ao carregar relatório:", err);
     } finally {
       setLoading(false);
+      setLoadingDocs(false);
     }
   }, []);
 
@@ -199,7 +297,6 @@ function Relatorio() {
   }, [loadData, navigate]);
 
   /* ── derivações ──────────────────────────────────────────── */
-  // Medicamentos podem vir da listagem direta OU aninhados dentro das receitas
   const allMeds = medicamentos.length
     ? medicamentos
     : receitas.flatMap((r) => r.medicamentos || []);
@@ -215,14 +312,14 @@ function Relatorio() {
     .sort((a, b) => new Date(b.dataReceita || 0) - new Date(a.dataReceita || 0))
     .slice(0, 5);
 
-  const totalDocs = Array.isArray(documentos)
-    ? documentos.reduce((s, g) => s + (g.documentos?.length || 0), 0)
-    : 0;
+  // Calcular total de documentos corretamente
+  const totalDocs = Array.isArray(documentos) ? documentos.length : 0;
 
   const tabs = [
     { id: "resumo",       label: "Resumo",          icon: Icon.doc },
-    { id: "medicamentos", label: "Medicamentos",     icon: Icon.pill },
-    { id: "exames",       label: "Exames",           icon: Icon.pulse },
+    { id: "medicamentos", label: "Medicamentos",    icon: Icon.pill },
+    { id: "exames",       label: "Exames",          icon: Icon.pulse },
+    { id: "documentos",   label: "Documentos",      icon: Icon.clip },
     { id: "ficha",        label: "Alertas Clínicos", icon: Icon.warn },
   ];
 
@@ -241,7 +338,6 @@ function Relatorio() {
     <div className="rel-root">
       {/* ── Header ─────────────────────────────────────────── */}
       <header className="rel-header">
-
         <div className="rel-header__titles">
           <h1>Relatório Médico</h1>
           <span>{paciente?.nome}</span>
@@ -340,9 +436,9 @@ function Relatorio() {
                     <tbody>
                       {allMeds.map((m, i) => (
                         <tr key={i}>
-                          <td><strong>{m.nome || "—"}</strong></td>
+                          <td className="rel-table__wrap"><strong>{m.nome || "—"}</strong></td>
                           <td>{m.quantidade || "—"}</td>
-                          <td>{m.formaDeUso || "—"}</td>
+                          <td className="rel-table__wrap">{m.formaDeUso || "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -396,10 +492,10 @@ function Relatorio() {
                     <tbody>
                       {exames.map((e, i) => (
                         <tr key={i}>
-                          <td><strong>{getExameTipo(e)}</strong></td>
+                          <td className="rel-table__wrap"><strong>{getExameTipo(e)}</strong></td>
                           <td>{formatDate(e.dataExame)}</td>
                           <td>{e.laboratorio || "—"}</td>
-                          <td className="rel-table__trunc">{e.resultado || e.resumo || "—"}</td>
+                          <td className="rel-table__wrap">{e.resultado || e.resumo || "—"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -407,6 +503,15 @@ function Relatorio() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════
+            TAB: DOCUMENTOS - CORRIGIDO
+           ════════════════════════════════════════════════════ */}
+        {activeTab === "documentos" && (
+          <div className="rel-section rel-section--fade">
+            <DocumentosSection documentos={documentos} isLoading={loadingDocs} />
           </div>
         )}
 

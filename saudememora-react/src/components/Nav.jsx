@@ -80,12 +80,16 @@ const Nav = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const handleLogoClick = () => {
+    navigate("/inicio");
+  };
+
   return (
     <>
       {/* ── Top Nav — desktop ─────────────────────────────────── */}
       <nav className="sm-top-nav">
         <div className="sm-top-nav__container">
-          <div className="sm-top-nav__brand">
+          <div className="sm-top-nav__brand" onClick={handleLogoClick} style={{ cursor: "pointer" }}>
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
               <rect width="32" height="32" rx="8" fill="#2563eb"/>
               <path d="M16 24s-9-6.5-9-12a5 5 0 0110 0 5 5 0 0110 0c0 5.5-9 12-11 12z" fill="#fff" opacity=".9"/>

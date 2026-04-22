@@ -1,124 +1,225 @@
-/* styles/forms/DocumentoForm.css */
-/* Este arquivo deve ser importado em cada componente ou em um arquivo global */
+/* ── Document Form Styles ────────────────────────────────────────── */
+/* Design system consistente com SaúdeMemora */
 
-/* Container principal dos formulários */
-.documento-form-container {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
-  padding: 2rem 1rem;
+.documento-form-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  animation: fadeIn 0.4s ease;
 }
 
+/* Card principal */
 .documento-form-card {
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.1));
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--gray-200, #e2e8f0);
 }
 
 .documento-form-card:hover {
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.14));
 }
 
-/* Cabeçalho */
-.form-header {
+/* Header do formulário */
+.documento-form-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1.5rem 2rem;
-  color: white;
+  padding: 1.25rem 2rem;
+  border-bottom: none;
 }
 
-.form-header h2 {
+.documento-form-header h2 {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.form-header-icon {
-  font-size: 1.75rem;
+.documento-form-header-icon {
+  font-size: 1.5rem;
 }
 
-/* Área da imagem */
-.image-viewer {
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+/* Área da imagem com zoom */
+.documento-image-area {
+  background: var(--gray-100, #f1f5f9);
+  border-top: 1px solid var(--gray-200, #e2e8f0);
+  border-bottom: 1px solid var(--gray-200, #e2e8f0);
   position: relative;
+  min-height: 350px;
+  max-height: 450px;
   overflow: hidden;
 }
 
-.image-viewer-header {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 10;
+.documento-image-container {
+  width: 100%;
+  height: 100%;
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-50, #f8fafc);
 }
 
-.image-control-btn {
+.documento-image {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  cursor: grab;
+  transition: transform 0.1s ease;
+}
+
+.documento-image:active {
+  cursor: grabbing;
+}
+
+/* Controles de zoom */
+.image-zoom-controls {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 10;
   background: rgba(0, 0, 0, 0.6);
+  padding: 0.5rem;
+  border-radius: 40px;
+  backdrop-filter: blur(8px);
+}
+
+.zoom-btn {
+  background: transparent;
   border: none;
   color: white;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(5px);
-}
-
-.image-control-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-  transform: scale(1.05);
-}
-
-/* Corpo do formulário */
-.form-body {
-  padding: 2rem;
-}
-
-/* Grupos de formulário */
-.form-group-custom {
-  margin-bottom: 1.5rem;
-}
-
-.form-label-custom {
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: #495057;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.form-label-custom .label-icon {
-  color: #667eea;
   font-size: 1rem;
 }
 
-.form-control-custom {
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
+.zoom-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Body do formulário */
+.documento-form-body {
+  padding: 2rem;
+}
+
+/* Loading states */
+.documento-loading {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.documento-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--gray-200, #e2e8f0);
+  border-top-color: var(--primary, #2563eb);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.documento-loading-text {
+  color: var(--gray-600, #475569);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Grid de campos */
+.documento-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .documento-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Grupos de formulário */
+.documento-form-group {
+  margin-bottom: 0;
+}
+
+.documento-form-group-full {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .documento-form-group-full {
+    grid-column: span 1;
+  }
+}
+
+.documento-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-700, #334155);
+  margin-bottom: 0.5rem;
+}
+
+.documento-label-icon {
+  color: var(--primary, #2563eb);
+  font-size: 0.875rem;
+}
+
+.documento-input,
+.documento-select,
+.documento-textarea {
+  width: 100%;
   padding: 0.75rem 1rem;
-  transition: all 0.2s ease;
+  border: 2px solid var(--gray-200, #e2e8f0);
+  border-radius: 12px;
   font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background: white;
+  color: var(--gray-800, #1e293b);
 }
 
-.form-control-custom:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.documento-input:focus,
+.documento-select:focus,
+.documento-textarea:focus {
   outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.form-control-custom:disabled {
-  background-color: #f8f9fa;
+.documento-input:disabled,
+.documento-select:disabled,
+.documento-textarea:disabled {
+  background-color: var(--gray-100, #f1f5f9);
   cursor: not-allowed;
+  color: var(--gray-500, #64748b);
+}
+
+.documento-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.documento-textarea-sm {
+  min-height: 80px;
+}
+
+.documento-textarea-lg {
+  min-height: 150px;
 }
 
 /* DatePicker customizado */
@@ -126,269 +227,363 @@
   width: 100%;
 }
 
-.datepicker-custom {
+.documento-datepicker {
   width: 100%;
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
   padding: 0.75rem 1rem;
+  border: 2px solid var(--gray-200, #e2e8f0);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: white;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
 }
 
-.datepicker-custom:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.documento-datepicker:focus {
   outline: none;
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.datepicker-custom:disabled {
-  background-color: #f8f9fa;
+.documento-datepicker:disabled {
+  background-color: var(--gray-100, #f1f5f9);
   cursor: not-allowed;
 }
 
-/* Textareas */
-.textarea-custom {
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  transition: all 0.2s ease;
-  resize: vertical;
-  font-family: inherit;
-}
-
-.textarea-custom:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  outline: none;
-}
-
-/* Seção de Medicamentos (para Receita) */
+/* Seção de Medicamentos */
 .medicamentos-section {
-  background: #f8f9fa;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--gray-200, #e2e8f0);
+}
+
+.medicamentos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .medicamentos-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e9ecef;
+  gap: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-800, #1e293b);
+  margin: 0;
 }
 
-.medicamento-item {
-  background: white;
-  border-radius: 12px;
-  padding: 1rem;
+.medicamentos-title-icon {
+  color: var(--primary, #2563eb);
+  font-size: 1.25rem;
+}
+
+/* Formulário de adicionar medicamento */
+.medicamento-form {
+  background: var(--gray-50, #f8fafc);
+  padding: 1.25rem;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--gray-200, #e2e8f0);
+}
+
+.medicamento-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.medicamento-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Lista de medicamentos */
+.medicamentos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.medicamento-card {
+  background: white;
+  border: 1px solid var(--gray-200, #e2e8f0);
+  border-radius: 16px;
+  padding: 1rem;
   transition: all 0.2s ease;
   position: relative;
 }
 
-.medicamento-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+.medicamento-card:hover {
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+  border-color: var(--gray-300, #cbd5e1);
 }
 
-.medicamento-remove-btn {
+.medicamento-card-edit-mode {
+  background: var(--gray-50, #f8fafc);
+  border-color: var(--primary, #2563eb);
+}
+
+.medicamento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding-right: 2rem;
+}
+
+.medicamento-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.medicamento-field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.medicamento-field-value {
+  font-size: 0.9rem;
+  color: var(--gray-800, #1e293b);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.medicamento-actions {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: #dc3545;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.medicamento-action-btn {
+  background: transparent;
   border: none;
-  color: white;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  opacity: 0;
+  color: var(--gray-500, #64748b);
 }
 
-.medicamento-item:hover .medicamento-remove-btn {
-  opacity: 1;
+.medicamento-action-btn:hover {
+  background: var(--gray-100, #f1f5f9);
+  transform: scale(1.05);
 }
 
-.medicamento-remove-btn:hover {
-  background: #c82333;
-  transform: scale(1.1);
+.medicamento-action-btn-edit:hover {
+  color: var(--primary, #2563eb);
 }
 
-/* Botões de ação */
-.form-actions {
+.medicamento-action-btn-delete:hover {
+  background: var(--error-light, #fee2e2);
+  color: var(--error, #dc2626);
+}
+
+/* Botões de ação do formulário */
+.documento-form-actions {
   display: flex;
   justify-content: center;
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 2px solid #e9ecef;
+  border-top: 1px solid var(--gray-200, #e2e8f0);
 }
 
-.btn-save {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  padding: 0.875rem 2rem;
-  font-weight: 600;
-  font-size: 1rem;
+.btn-documento-primary,
+.btn-documento-secondary {
+  padding: 0.75rem 2rem;
   border-radius: 12px;
-  color: white;
-  display: flex;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
+  border: none;
 }
 
-.btn-save:hover:not(:disabled) {
+.btn-documento-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-documento-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
-.btn-save:disabled {
+.btn-documento-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-cancel {
-  background: #6c757d;
-  border: none;
-  padding: 0.875rem 2rem;
-  font-weight: 600;
-  font-size: 1rem;
+.btn-documento-secondary {
+  background: white;
+  color: var(--gray-700, #334155);
+  border: 1px solid var(--gray-300, #cbd5e1);
+}
+
+.btn-documento-secondary:hover:not(:disabled) {
+  background: var(--gray-100, #f1f5f9);
+  transform: translateY(-1px);
+}
+
+.btn-documento-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-documento-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Alertas e notificações */
+.documento-alert {
+  padding: 1rem;
   border-radius: 12px;
-  color: white;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
+  gap: 0.75rem;
+  animation: slideUp 0.3s ease;
 }
 
-.btn-cancel:hover:not(:disabled) {
-  background: #5a6268;
-  transform: translateY(-2px);
+.documento-alert-success {
+  background: var(--success-light, #dcfce7);
+  color: var(--success, #16a34a);
+  border-left: 4px solid var(--success, #16a34a);
 }
 
-/* Loading spinner */
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  display: flex;
+.documento-alert-error {
+  background: var(--error-light, #fee2e2);
+  color: var(--error, #dc2626);
+  border-left: 4px solid var(--error, #dc2626);
+}
+
+.documento-alert-warning {
+  background: var(--warning-light, #fef3c7);
+  color: var(--warning, #d97706);
+  border-left: 4px solid var(--warning, #d97706);
+}
+
+.documento-alert-info {
+  background: var(--primary-light, #dbeafe);
+  color: var(--primary, #2563eb);
+  border-left: 4px solid var(--primary, #2563eb);
+}
+
+/* Badges */
+.documento-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  padding: 0.25rem 0.75rem;
   border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #e9ecef;
-  border-top-color: #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.documento-badge-primary {
+  background: var(--primary-light, #dbeafe);
+  color: var(--primary, #2563eb);
 }
 
+.documento-badge-success {
+  background: var(--success-light, #dcfce7);
+  color: var(--success, #16a34a);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .documento-form-body {
+    padding: 1.5rem;
+  }
+
+  .documento-form-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .documento-form-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .documento-image-area {
+    min-height: 250px;
+  }
+
+  .btn-documento-primary,
+  .btn-documento-secondary {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .medicamento-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding-right: 2rem;
+  }
+
+  .medicamento-actions {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .documento-form-actions {
+    flex-direction: column;
+  }
+
+  .btn-documento-primary,
+  .btn-documento-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .medicamento-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .medicamento-form-actions {
+    justify-content: stretch;
+  }
+
+  .medicamento-form-actions button {
+    flex: 1;
+  }
+}
+
+/* Animações */
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-.loading-text {
-  margin-top: 1rem;
-  color: #667eea;
-  font-weight: 500;
-}
-
-/* Alertas e mensagens */
-.alert-custom {
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  border: none;
-}
-
-.alert-success {
-  background: #d4edda;
-  color: #155724;
-  border-left: 4px solid #28a745;
-}
-
-.alert-error {
-  background: #f8d7da;
-  color: #721c24;
-  border-left: 4px solid #dc3545;
-}
-
-.alert-info {
-  background: #d1ecf1;
-  color: #0c5460;
-  border-left: 4px solid #17a2b8;
-}
-
-/* Responsividade */
-@media (max-width: 768px) {
-  .documento-form-container {
-    padding: 1rem;
-  }
-
-  .form-body {
-    padding: 1.5rem;
-  }
-
-  .form-header {
-    padding: 1rem 1.5rem;
-  }
-
-  .form-header h2 {
-    font-size: 1.25rem;
-  }
-
-  .btn-save,
-  .btn-cancel {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
-  }
-
-  .medicamento-remove-btn {
-    opacity: 1;
-    top: 0.25rem;
-    right: 0.25rem;
-    width: 24px;
-    height: 24px;
-  }
-}
-
-@media (max-width: 576px) {
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .btn-save,
-  .btn-cancel {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* Animações */
 @keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -399,43 +594,30 @@
   }
 }
 
-.documento-form-card {
-  animation: fadeIn 0.5s ease;
-}
-
-/* Estilização do scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Tooltip customizado */
-.tooltip-custom {
+.documento-tooltip {
   position: relative;
   display: inline-block;
 }
 
-.tooltip-custom .tooltip-text {
+.documento-tooltip .tooltip-text {
   visibility: hidden;
-  background-color: #333;
+  background-color: var(--gray-800, #1e293b);
   color: white;
   text-align: center;
-  border-radius: 6px;
-  padding: 5px 10px;
+  border-radius: 8px;
+  padding: 4px 8px;
   position: absolute;
   z-index: 1;
   bottom: 125%;
@@ -447,64 +629,26 @@
   transition: opacity 0.3s;
 }
 
-.tooltip-custom:hover .tooltip-text {
+.documento-tooltip:hover .tooltip-text {
   visibility: visible;
   opacity: 1;
 }
 
-/* Badge para status */
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
+/* Scrollbar customizada para textareas */
+.documento-textarea::-webkit-scrollbar {
+  width: 6px;
 }
 
-.status-active {
-  background: #d4edda;
-  color: #155724;
+.documento-textarea::-webkit-scrollbar-track {
+  background: var(--gray-100, #f1f5f9);
+  border-radius: 10px;
 }
 
-.status-inactive {
-  background: #f8d7da;
-  color: #721c24;
+.documento-textarea::-webkit-scrollbar-thumb {
+  background: var(--gray-300, #cbd5e1);
+  border-radius: 10px;
 }
 
-.status-pending {
-  background: #fff3cd;
-  color: #856404;
-}
-
-/* Grid de campos */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-/* Divisor */
-.form-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #e9ecef, transparent);
-  margin: 1.5rem 0;
-}
-
-/* Ícones nos campos */
-.input-with-icon {
-  position: relative;
-}
-
-.input-with-icon .form-control-custom {
-  padding-left: 2.5rem;
-}
-
-.input-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #adb5bd;
-  font-size: 1rem;
+.documento-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400, #94a3b8);
 }

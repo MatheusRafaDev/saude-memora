@@ -1,3 +1,5 @@
+// Substitua a função UploadDocumentos pelo código abaixo (parte do preview):
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ocrSpaceDuplo } from "../ocr/ocrSpace";
@@ -32,6 +34,8 @@ const ICONS = {
   refresh: "M4 4v5h.582m15.356 2A8 8 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8 8 0 01-15.357-2m15.357 2H15",
   info: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
   chevronRight: "M9 18l6-6-6-6",
+  zoom: "M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z",
+  maximize: "M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -42,10 +46,34 @@ const fmtSize = (b) =>
     ? `${(b / 1024).toFixed(1)} KB`
     : `${(b / 1048576).toFixed(1)} MB`;
 
-// Verifica se o arquivo é uma imagem válida
 const isValidImage = (file) => {
   const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/bmp", "image/tiff"];
   return validTypes.includes(file.type);
+};
+
+// ── Componente de visualização da imagem ─────────────────────────────────────
+const ImagePreviewModal = ({ imageUrl, onClose, fileName, fileSize }) => {
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  return (
+    <div className="up-modal-overlay" onClick={onClose}>
+      <div className="up-modal-content" onClick={(e) => e.stopPropagation()}>
+        <img src={imageUrl} alt="Visualização ampliada" className="up-modal-image" />
+        <button className="up-modal-close" onClick={onClose}>
+          <Icon d={ICONS.x} size={24} />
+        </button>
+        <div className="up-modal-info">
+          {fileName} • {fmtSize(fileSize)}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // ── Componente principal ─────────────────────────────────────────────────────
@@ -54,9 +82,11 @@ export default function UploadDocumentos() {
   const [preview, setPreview] = useState(null);
   const [tipo, setTipo] = useState("");
   const [paciente, setPaciente] = useState(null);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [showModal, setShowModal] = useState(false);
 
   // Processo silencioso
-  const [currentStep, setCurrentStep] = useState(0); // 0 idle, 1-4 processing, 5 done, -1 erro
+  const [currentStep, setCurrentStep] = useState(0);
   const [stepError, setStepError] = useState("");
   const [dragging, setDragging] = useState(false);
   const [processingStep, setProcessingStep] = useState("");
@@ -81,11 +111,22 @@ export default function UploadDocumentos() {
     );
   };
 
-  // ── Arquivo (apenas imagens) ────────────────────────────────────────────────
+  // Obter dimensões da imagem
+  const getImageDimensions = (imageUrl) => {
+    const img = new Image();
+    img.onload = () => {
+      setImageDimensions({
+        width: img.width,
+        height: img.height
+      });
+    };
+    img.src = imageUrl;
+  };
+
+  // ── Arquivo ────────────────────────────────────────────────────────────────
   const applyFile = (f) => {
     if (!f) return;
     
-    // Verifica se é imagem
     if (!isValidImage(f)) {
       showToast("Formato não suportado. Use apenas imagens (JPG, PNG, WEBP, BMP, TIFF).", "error");
       return;
@@ -97,8 +138,11 @@ export default function UploadDocumentos() {
     }
     
     if (preview) URL.revokeObjectURL(preview);
+    
+    const objectUrl = URL.createObjectURL(f);
     setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setPreview(objectUrl);
+    getImageDimensions(objectUrl);
     setCurrentStep(0);
     setStepError("");
   };
@@ -107,8 +151,10 @@ export default function UploadDocumentos() {
     if (preview) URL.revokeObjectURL(preview);
     setFile(null);
     setPreview(null);
+    setImageDimensions({ width: 0, height: 0 });
     setCurrentStep(0);
     setStepError("");
+    setShowModal(false);
   };
 
   const onDrop = (e) => {
@@ -118,7 +164,7 @@ export default function UploadDocumentos() {
     applyFile(droppedFile);
   };
 
-  // ── Submit silencioso ──────────────────────────────────────────────────────
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!file) return showToast("Selecione um arquivo.", "error");
     if (!tipo) return showToast("Selecione o tipo de documento.", "error");
@@ -129,19 +175,16 @@ export default function UploadDocumentos() {
     setStepError("");
 
     try {
-      // ── 1. OCR ─────────────────────────────────────────────────────────────
       setProcessingStep("Realizando leitura OCR...");
       const { texto1, texto2 } = await ocrSpaceDuplo(file);
       
       setCurrentStep(2);
       
-      // ── 2. Formatar com IA ─────────────────────────────────────────────────
       setProcessingStep("Corrigindo e estruturando com IA...");
       const textoFormatado = await formatarTextoOCR(texto1, texto2);
       
       setCurrentStep(3);
       
-      // ── 3. Extrair medicamentos (só receita) ───────────────────────────────
       setProcessingStep("Processando informações...");
       let medicamentos = [];
       if (tipo === "R") {
@@ -151,7 +194,6 @@ export default function UploadDocumentos() {
       
       setCurrentStep(4);
       
-      // ── 4. Salvar ──────────────────────────────────────────────────────────
       setProcessingStep("Salvando documento...");
       const response = await AdicionarDocumento(
         tipo,
@@ -165,12 +207,10 @@ export default function UploadDocumentos() {
       if (response?.success === false)
         throw new Error(response.message || "Erro ao salvar.");
 
-      // ── Concluído ──────────────────────────────────────────────────────────
       setCurrentStep(5);
       setProcessingStep("");
       showToast("Documento salvo com sucesso!", "success");
       
-      // Reset automático após 3 segundos
       setTimeout(() => {
         resetForm();
       }, 3000);
@@ -216,7 +256,17 @@ export default function UploadDocumentos() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="up-page">
-      {/* ── Toast ─────────────────────────────────────────────────── */}
+      {/* Modal de visualização ampliada */}
+      {showModal && preview && (
+        <ImagePreviewModal
+          imageUrl={preview}
+          onClose={() => setShowModal(false)}
+          fileName={file?.name}
+          fileSize={file?.size}
+        />
+      )}
+
+      {/* Toast */}
       <div
         className={`up-toast up-toast--${toast.type}${
           toast.show ? " show" : ""
@@ -237,7 +287,7 @@ export default function UploadDocumentos() {
           </p>
         </div>
 
-        {/* ── Upload zone ────────────────────────────────────────────── */}
+        {/* Upload zone */}
         <div
           className={`up-dropzone ${dragging ? "dragging" : ""} ${
             file ? "has-file" : ""
@@ -302,22 +352,37 @@ export default function UploadDocumentos() {
             </div>
           ) : (
             <div className="up-file-preview">
-              {preview && (
-                <img
-                  src={preview}
-                  alt="preview"
-                  className="up-file-preview__img"
-                />
-              )}
+              <div 
+                className="up-file-preview__thumbnail"
+                onClick={() => !isProcessing && setShowModal(true)}
+              >
+                {preview && (
+                  <>
+                    <img
+                      src={preview}
+                      alt="Pré-visualização"
+                      className="up-file-preview__img"
+                    />
+                    <div className="up-file-preview__zoom-icon">
+                      <Icon d={ICONS.zoom} size={24} />
+                    </div>
+                  </>
+                )}
+              </div>
               <div className="up-file-preview__info">
                 <span className="up-file-preview__name">{file.name}</span>
                 <span className="up-file-preview__size">{fmtSize(file.size)}</span>
+                {imageDimensions.width > 0 && (
+                  <div className="up-file-preview__dimensions">
+                    {imageDimensions.width} × {imageDimensions.height} px
+                  </div>
+                )}
               </div>
               {!isProcessing && (
                 <button
                   type="button"
                   className="up-file-preview__remove"
-                  title="Remover"
+                  title="Remover arquivo"
                   onClick={(e) => {
                     e.stopPropagation();
                     removeFile();
@@ -330,7 +395,7 @@ export default function UploadDocumentos() {
           )}
         </div>
 
-        {/* ── Formulário ────────────────────────────────────────────── */}
+        {/* Formulário */}
         <div className="up-form-card">
           <div className="up-field">
             <label htmlFor="up-tipo">Tipo de documento *</label>
@@ -349,7 +414,7 @@ export default function UploadDocumentos() {
           </div>
         </div>
 
-        {/* ── Painel de progresso ───────────────────────────────────── */}
+        {/* Painel de progresso */}
         {(isProcessing || isDone || isError) && (
           <div className={`up-progress-panel ${isError ? "error" : isDone ? "success" : ""}`}>
             <div className="up-progress-header">
@@ -402,7 +467,6 @@ export default function UploadDocumentos() {
               })}
             </div>
 
-            {/* Barra de progresso */}
             <div className="up-progress-bar">
               <div
                 className="up-progress-fill"
@@ -421,7 +485,7 @@ export default function UploadDocumentos() {
           </div>
         )}
 
-        {/* ── Botão principal ───────────────────────────────────────── */}
+        {/* Botão principal */}
         <button
           className={`up-submit-btn ${isDone ? "success" : isError ? "error" : ""}`}
           onClick={isDone || isError ? resetForm : handleSubmit}

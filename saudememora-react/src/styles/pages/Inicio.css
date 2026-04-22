@@ -99,7 +99,6 @@
 .hm-card__icon {
   width: 56px;
   height: 56px;
-  background: var(--primary-light);
   border-radius: 50%;
   display: flex;
   align-items: center;
