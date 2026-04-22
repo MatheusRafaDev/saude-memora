@@ -14,6 +14,10 @@ public interface MedicamentoRepository extends JpaRepository<Medicamento, Long> 
 
     List<Medicamento> findByReceitaId(Long receitaId);
 
+    // ✅ NOVO: filtro por paciente (via receita -> documento -> paciente)
+    @Query("SELECT m FROM Medicamento m WHERE m.receita.documento.paciente.id = :pacienteId")
+    List<Medicamento> findByReceitaDocumentoPacienteId(@Param("pacienteId") Long pacienteId);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM Medicamento m WHERE m.receita.documento.id = :documentoId")

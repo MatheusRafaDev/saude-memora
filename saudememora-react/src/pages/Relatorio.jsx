@@ -10,103 +10,142 @@ import "../styles/pages/Relatorio.css";
 /* ── helpers ─────────────────────────────────────────────────── */
 const formatDate = (raw) => {
   if (!raw) return "—";
-  try {
-    return new Date(raw).toLocaleDateString("pt-BR");
-  } catch { return raw; }
+  try { return new Date(raw).toLocaleDateString("pt-BR"); }
+  catch { return raw; }
 };
 
-const countBy = (arr, key) => {
+// Exame usa "tipo" e "nomeExame", não "tipoExame"
+const getExameTipo = (e) => e.nomeExame || e.tipo || "Desconhecido";
+
+const countBy = (arr, getFn) => {
   const map = {};
   arr.forEach((item) => {
-    const val = item[key] || "Desconhecido";
+    const val = typeof getFn === "function" ? getFn(item) : (item[getFn] || "Desconhecido");
     map[val] = (map[val] || 0) + 1;
   });
   return Object.entries(map).sort((a, b) => b[1] - a[1]);
 };
 
-const Chip = ({ label, color = "blue" }) => (
-  <span className={`rel-chip rel-chip--${color}`}>{label}</span>
+/* ── Sub-components ─────────────────────────────────────────── */
+const Badge = ({ label, variant = "blue" }) => (
+  <span className={`rel-badge rel-badge--${variant}`}>{label}</span>
 );
 
-const StatCard = ({ icon, label, value, sub, color = "blue" }) => (
-  <div className={`rel-stat rel-stat--${color}`}>
-    <div className="rel-stat__icon">{icon}</div>
-    <div className="rel-stat__body">
-      <div className="rel-stat__value">{value}</div>
-      <div className="rel-stat__label">{label}</div>
-      {sub && <div className="rel-stat__sub">{sub}</div>}
+const KpiCard = ({ icon, label, value, caption, accent = "blue" }) => (
+  <div className={`rel-kpi rel-kpi--${accent}`}>
+    <div className="rel-kpi__icon">{icon}</div>
+    <div className="rel-kpi__body">
+      <div className="rel-kpi__value">{value}</div>
+      <div className="rel-kpi__label">{label}</div>
+      {caption && <div className="rel-kpi__caption">{caption}</div>}
     </div>
+    <div className="rel-kpi__glow" />
   </div>
 );
 
-const SectionTitle = ({ icon, title }) => (
-  <div className="rel-section-header">
-    <span className="rel-section-icon">{icon}</span>
-    <h2 className="rel-section-title">{title}</h2>
+const SectionHead = ({ icon, title, count }) => (
+  <div className="rel-shead">
+    <div className="rel-shead__icon">{icon}</div>
+    <h2 className="rel-shead__title">{title}</h2>
+    {count !== undefined && <span className="rel-shead__count">{count}</span>}
   </div>
 );
 
-/* ── Bar chart simples ──────────────────────────────────────── */
-const BarChart = ({ data, maxBars = 6 }) => {
+const BarChart = ({ data, maxBars = 7 }) => {
   const items = data.slice(0, maxBars);
   const max = items[0]?.[1] || 1;
+  if (!items.length) return <p className="rel-empty">Nenhum dado disponível</p>;
   return (
-    <div className="rel-bar-chart">
+    <div className="rel-bars">
       {items.map(([name, count], i) => (
-        <div key={i} className="rel-bar-row">
-          <span className="rel-bar-label" title={name}>{name}</span>
-          <div className="rel-bar-track">
-            <div
-              className="rel-bar-fill"
-              style={{ width: `${(count / max) * 100}%`, animationDelay: `${i * 80}ms` }}
-            />
+        <div key={i} className="rel-bars__row" style={{ "--delay": `${i * 70}ms` }}>
+          <span className="rel-bars__label" title={name}>{name}</span>
+          <div className="rel-bars__track">
+            <div className="rel-bars__fill" style={{ "--pct": `${(count / max) * 100}%` }} />
           </div>
-          <span className="rel-bar-count">{count}x</span>
+          <span className="rel-bars__n">{count}</span>
         </div>
       ))}
-      {items.length === 0 && (
-        <p className="rel-empty-text">Nenhum dado disponível</p>
-      )}
     </div>
   );
 };
 
-/* ── Alert badges da ficha ──────────────────────────────────── */
 const FichaAlerts = ({ ficha }) => {
-  if (!ficha) return <p className="rel-empty-text">Ficha médica não preenchida</p>;
+  if (!ficha) return <p className="rel-empty">Ficha médica não preenchida</p>;
 
-  const alerts = [];
-  if (ficha.alergias) alerts.push({ label: `Alergias: ${ficha.alergiasExtra || "Sim"}`, color: "red" });
-  if (ficha.alergiaMedicamentos) alerts.push({ label: `Alergia a medicamentos: ${ficha.alergiaMedicamentosExtra || "Sim"}`, color: "red" });
-  if (ficha.diabetes) alerts.push({ label: "Diabetes", color: "orange" });
-  if (ficha.doencaCardioVascular) alerts.push({ label: `Cardio: ${ficha.doencaCardioVascularExtra || "Sim"}`, color: "orange" });
-  if (ficha.tratamentoMedico) alerts.push({ label: `Tratamento: ${ficha.tratamentoMedicoExtra || "Em curso"}`, color: "yellow" });
-  if (ficha.reumatica) alerts.push({ label: "Febre Reumática", color: "yellow" });
-  if (ficha.coagulacao) alerts.push({ label: "Problemas de Coagulação", color: "red" });
-  if (ficha.hemorragicos) alerts.push({ label: "Hemorrágicos", color: "red" });
-  if (ficha.hiv) alerts.push({ label: "HIV", color: "purple" });
-  if (ficha.hepatite) alerts.push({ label: `Hepatite: ${ficha.hepatiteExtra || "Sim"}`, color: "orange" });
-  if (ficha.fumante) alerts.push({ label: "Fumante", color: "yellow" });
-  if (ficha.drogas) alerts.push({ label: "Uso de drogas", color: "purple" });
-  if (ficha.respiratorio) alerts.push({ label: `Respiratório: ${ficha.respiratorioExtra || "Sim"}`, color: "blue" });
-  if (ficha.gravidez) alerts.push({ label: `Gravidez: ${ficha.gravidezExtra || "Sim"}`, color: "pink" });
-  if (ficha.problemasAnestesia) alerts.push({ label: `Anestesia: ${ficha.problemasAnestesiaExtra || "Sim"}`, color: "orange" });
-  if (ficha.doencaFamilia) alerts.push({ label: `Histórico familiar: ${ficha.doencaFamiliaExtra || "Sim"}`, color: "blue" });
+  const risk = [];
+  const warn = [];
+  const info = [];
 
-  if (alerts.length === 0) {
+  if (ficha.alergias) risk.push(`Alergias${ficha.alergiasExtra ? ": " + ficha.alergiasExtra : ""}`);
+  if (ficha.alergiaMedicamentos) risk.push(`Alergia medicamentos${ficha.alergiaMedicamentosExtra ? ": " + ficha.alergiaMedicamentosExtra : ""}`);
+  if (ficha.coagulacao) risk.push("Prob. de Coagulação");
+  if (ficha.hemorragicos) risk.push("Hemorrágicos");
+  if (ficha.hiv) risk.push("HIV");
+  if (ficha.diabetes) warn.push(`Diabetes${ficha.diabetesExtra ? ": " + ficha.diabetesExtra : ""}`);
+  if (ficha.doencaCardioVascular) warn.push(`Cardiovascular${ficha.doencaCardioVascularExtra ? ": " + ficha.doencaCardioVascularExtra : ""}`);
+  if (ficha.hepatite) warn.push(`Hepatite${ficha.hepatiteExtra ? ": " + ficha.hepatiteExtra : ""}`);
+  if (ficha.problemasAnestesia) warn.push(`Anestesia${ficha.problemasAnestesiaExtra ? ": " + ficha.problemasAnestesiaExtra : ""}`);
+  if (ficha.tratamentoMedico) info.push(`Tratamento${ficha.tratamentoMedicoExtra ? ": " + ficha.tratamentoMedicoExtra : ""}`);
+  if (ficha.reumatica) info.push("Febre Reumática");
+  if (ficha.fumante) info.push("Fumante");
+  if (ficha.drogas) info.push("Uso de drogas");
+  if (ficha.respiratorio) info.push(`Respiratório${ficha.respiratorioExtra ? ": " + ficha.respiratorioExtra : ""}`);
+  if (ficha.gravidez) info.push(`Gravidez${ficha.gravidezExtra ? ": " + ficha.gravidezExtra : ""}`);
+  if (ficha.doencaFamilia) info.push(`Hist. familiar${ficha.doencaFamiliaExtra ? ": " + ficha.doencaFamiliaExtra : ""}`);
+
+  if (!risk.length && !warn.length && !info.length) {
     return (
-      <div className="rel-alert-ok">
-        <span>✓</span>
-        <p>Nenhum fator de risco registrado na ficha médica</p>
+      <div className="rel-ok">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span>Nenhum fator de risco registrado</span>
       </div>
     );
   }
 
   return (
-    <div className="rel-alerts-grid">
-      {alerts.map((a, i) => <Chip key={i} label={a.label} color={a.color} />)}
+    <div className="rel-alert-groups">
+      {risk.length > 0 && (
+        <div className="rel-alert-group">
+          <span className="rel-alert-group__label rel-alert-group__label--red">⚠ Alto risco</span>
+          <div className="rel-badge-wrap">
+            {risk.map((l, i) => <Badge key={i} label={l} variant="red" />)}
+          </div>
+        </div>
+      )}
+      {warn.length > 0 && (
+        <div className="rel-alert-group">
+          <span className="rel-alert-group__label rel-alert-group__label--orange">◆ Atenção</span>
+          <div className="rel-badge-wrap">
+            {warn.map((l, i) => <Badge key={i} label={l} variant="orange" />)}
+          </div>
+        </div>
+      )}
+      {info.length > 0 && (
+        <div className="rel-alert-group">
+          <span className="rel-alert-group__label rel-alert-group__label--blue">● Informativo</span>
+          <div className="rel-badge-wrap">
+            {info.map((l, i) => <Badge key={i} label={l} variant="blue" />)}
+          </div>
+        </div>
+      )}
     </div>
   );
+};
+
+/* ── Icons ──────────────────────────────────────────────────── */
+const Icon = {
+  doc: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+  pulse: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+  clip: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>,
+  pill: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.5 20H4a2 2 0 01-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H20a2 2 0 012 2v3"/><circle cx="18" cy="18" r="3"/><path d="M18 15v6M15 18h6"/></svg>,
+  warn: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  bar: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  cal: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  shield: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  back: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>,
 };
 
 /* ════════════════════════════════════════════════════════════════
@@ -135,15 +174,15 @@ function Relatorio() {
         buscarFichaMedica(pac.id),
       ]);
 
-      if (medRes.status === "fulfilled" && medRes.value.success)
+      if (medRes.status === "fulfilled" && medRes.value?.success)
         setMedicamentos(medRes.value.data || []);
-      if (exaRes.status === "fulfilled" && exaRes.value.success)
+      if (exaRes.status === "fulfilled" && exaRes.value?.success)
         setExames(exaRes.value.data || []);
-      if (recRes.status === "fulfilled" && recRes.value.success)
+      if (recRes.status === "fulfilled" && recRes.value?.success)
         setReceitas(recRes.value.data || []);
-      if (docRes.status === "fulfilled" && docRes.value.success)
+      if (docRes.status === "fulfilled" && docRes.value?.success)
         setDocumentos(docRes.value.data || []);
-      if (fichaRes.status === "fulfilled" && fichaRes.value.success)
+      if (fichaRes.status === "fulfilled" && fichaRes.value?.success)
         setFicha(fichaRes.value.data);
     } catch (err) {
       console.error("Erro ao carregar relatório:", err);
@@ -159,500 +198,338 @@ function Relatorio() {
     loadData(p);
   }, [loadData, navigate]);
 
-  /* ── derivações ─────────────────────────────────────────────── */
-  const medMaisUsados = countBy(medicamentos, "nome");
-  const examesPorTipo = countBy(exames, "tipoExame");
-  const recentesExames = [...exames].sort(
-    (a, b) => new Date(b.dataExame || 0) - new Date(a.dataExame || 0)
-  ).slice(0, 5);
-  const recentesMed = [...receitas].sort(
-    (a, b) => new Date(b.dataReceita || 0) - new Date(a.dataReceita || 0)
-  ).slice(0, 5);
+  /* ── derivações ──────────────────────────────────────────── */
+  // Medicamentos podem vir da listagem direta OU aninhados dentro das receitas
+  const allMeds = medicamentos.length
+    ? medicamentos
+    : receitas.flatMap((r) => r.medicamentos || []);
+
+  const medMaisUsados = countBy(allMeds, "nome");
+  const examesPorTipo = countBy(exames, getExameTipo);
+
+  const recentesExames = [...exames]
+    .sort((a, b) => new Date(b.dataExame || 0) - new Date(a.dataExame || 0))
+    .slice(0, 5);
+
+  const recentesMed = [...receitas]
+    .sort((a, b) => new Date(b.dataReceita || 0) - new Date(a.dataReceita || 0))
+    .slice(0, 5);
 
   const totalDocs = Array.isArray(documentos)
     ? documentos.reduce((s, g) => s + (g.documentos?.length || 0), 0)
     : 0;
 
   const tabs = [
-    { id: "resumo", label: "Resumo" },
-    { id: "medicamentos", label: "Medicamentos" },
-    { id: "exames", label: "Exames" },
-    { id: "ficha", label: "Alertas Clínicos" },
+    { id: "resumo",       label: "Resumo",          icon: Icon.doc },
+    { id: "medicamentos", label: "Medicamentos",     icon: Icon.pill },
+    { id: "exames",       label: "Exames",           icon: Icon.pulse },
+    { id: "ficha",        label: "Alertas Clínicos", icon: Icon.warn },
   ];
 
+  /* ── loading ─────────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="rel-loading">
-        <div className="rel-spinner" />
+      <div className="rel-splash">
+        <div className="rel-splash__ring" />
         <p>Carregando relatório…</p>
       </div>
     );
   }
 
+  /* ── render ──────────────────────────────────────────────── */
   return (
-    <div className="rel-page">
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="rel-header">
-        <div className="rel-header__left">
-          <button className="rel-back" onClick={() => navigate("/inicio")}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="rel-header__title">Relatório Médico</h1>
-            <p className="rel-header__sub">{paciente?.nome}</p>
-          </div>
-        </div>
-        <div className="rel-header__badge">
-          <span className="rel-header__date">
-            Atualizado em {new Date().toLocaleDateString("pt-BR")}
-          </span>
-        </div>
-      </div>
+    <div className="rel-root">
+      {/* ── Header ─────────────────────────────────────────── */}
+      <header className="rel-header">
 
-      {/* ── Tabs ───────────────────────────────────────────────── */}
-      <div className="rel-tabs">
+        <div className="rel-header__titles">
+          <h1>Relatório Médico</h1>
+          <span>{paciente?.nome}</span>
+        </div>
+        <div className="rel-header__date">
+          Atualizado em {new Date().toLocaleDateString("pt-BR")}
+        </div>
+      </header>
+
+      {/* ── Tabs ───────────────────────────────────────────── */}
+      <nav className="rel-nav">
         {tabs.map((t) => (
           <button
             key={t.id}
-            className={`rel-tab ${activeTab === t.id ? "rel-tab--active" : ""}`}
+            className={`rel-nav__btn ${activeTab === t.id ? "rel-nav__btn--active" : ""}`}
             onClick={() => setActiveTab(t.id)}
           >
-            {t.label}
+            <span className="rel-nav__icon">{t.icon}</span>
+            <span className="rel-nav__label">{t.label}</span>
           </button>
         ))}
-      </div>
+      </nav>
 
-      {/* ══════════════════════════════════════════════════════════
-          TAB: RESUMO
-         ══════════════════════════════════════════════════════════ */}
-      {activeTab === "resumo" && (
-        <div className="rel-content">
-          {/* Stats row */}
-          <div className="rel-stats-row">
-            <StatCard
-              color="blue"
-              label="Documentos"
-              value={totalDocs}
-              sub="Total digitalizado"
-              icon={
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-              }
-            />
-            <StatCard
-              color="green"
-              label="Exames"
-              value={exames.length}
-              sub="Registrados"
-              icon={
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              }
-            />
-            <StatCard
-              color="orange"
-              label="Receitas"
-              value={receitas.length}
-              sub="Emitidas"
-              icon={
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              }
-            />
-            <StatCard
-              color="purple"
-              label="Medicamentos"
-              value={medicamentos.length}
-              sub="Cadastrados"
-              icon={
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.5 20H4a2 2 0 01-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 011.66.9l.82 1.2a2 2 0 001.66.9H20a2 2 0 012 2v3" />
-                  <circle cx="18" cy="18" r="3" />
-                  <path d="M18 15v6M15 18h6" />
-                </svg>
-              }
-            />
-          </div>
+      <main className="rel-main">
 
-          <div className="rel-two-col">
-            {/* Top medicamentos */}
-            <div className="rel-card">
-              <SectionTitle
-                title="Medicamentos mais prescritos"
-                icon={
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <path d="M9 12h6M12 9v6" />
-                  </svg>
-                }
-              />
-              <BarChart data={medMaisUsados} />
+        {/* ════════════════════════════════════════════════════
+            TAB: RESUMO
+           ════════════════════════════════════════════════════ */}
+        {activeTab === "resumo" && (
+          <div className="rel-section rel-section--fade">
+            <div className="rel-kpis">
+              <KpiCard accent="blue"   icon={Icon.doc}   label="Documentos"    value={totalDocs}          caption="Digitalizados" />
+              <KpiCard accent="teal"   icon={Icon.pulse} label="Exames"         value={exames.length}      caption="Registrados" />
+              <KpiCard accent="amber"  icon={Icon.clip}  label="Receitas"       value={receitas.length}    caption="Emitidas" />
+              <KpiCard accent="violet" icon={Icon.pill}  label="Medicamentos"   value={allMeds.length}     caption="Cadastrados" />
             </div>
 
-            {/* Top exames */}
-            <div className="rel-card">
-              <SectionTitle
-                title="Tipos de exame mais comuns"
-                icon={
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                  </svg>
-                }
-              />
-              <BarChart data={examesPorTipo} />
-            </div>
-          </div>
-
-          {/* Alertas clínicos resumo */}
-          <div className="rel-card">
-            <SectionTitle
-              title="Fatores clínicos de atenção"
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              }
-            />
-            <FichaAlerts ficha={ficha} />
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════
-          TAB: MEDICAMENTOS
-         ══════════════════════════════════════════════════════════ */}
-      {activeTab === "medicamentos" && (
-        <div className="rel-content">
-          <div className="rel-card">
-            <SectionTitle
-              title="Ranking de Medicamentos"
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                  <polyline points="17 6 23 6 23 12" />
-                </svg>
-              }
-            />
-            <BarChart data={medMaisUsados} maxBars={10} />
-          </div>
-
-          <div className="rel-card">
-            <SectionTitle
-              title="Últimas Receitas"
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-              }
-            />
-            {recentesMed.length === 0 ? (
-              <p className="rel-empty-text">Nenhuma receita encontrada</p>
-            ) : (
-              <div className="rel-list">
-                {recentesMed.map((r, i) => (
-                  <div key={i} className="rel-list-item">
-                    <div className="rel-list-item__icon rel-list-item__icon--green">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-                      </svg>
-                    </div>
-                    <div className="rel-list-item__body">
-                      <span className="rel-list-item__title">
-                        {r.medico || "Médico não informado"}
-                      </span>
-                      <span className="rel-list-item__sub">
-                        {formatDate(r.dataReceita)} · CRM {r.crm || "—"}
-                      </span>
-                    </div>
-                    <Chip label="Receita" color="green" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="rel-card">
-            <SectionTitle
-              title="Todos os Medicamentos"
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <path d="M9 12h6M12 9v6" />
-                </svg>
-              }
-            />
-            {medicamentos.length === 0 ? (
-              <p className="rel-empty-text">Nenhum medicamento cadastrado</p>
-            ) : (
-              <div className="rel-table-wrap">
-                <table className="rel-table">
-                  <thead>
-                    <tr>
-                      <th>Nome</th>
-                      <th>Dosagem</th>
-                      <th>Frequência</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {medicamentos.map((m, i) => (
-                      <tr key={i}>
-                        <td><strong>{m.nome || "—"}</strong></td>
-                        <td>{m.dosagem || "—"}</td>
-                        <td>{m.frequencia || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════
-          TAB: EXAMES
-         ══════════════════════════════════════════════════════════ */}
-      {activeTab === "exames" && (
-        <div className="rel-content">
-          <div className="rel-card">
-            <SectionTitle
-              title="Distribuição por Tipo de Exame"
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              }
-            />
-            <BarChart data={examesPorTipo} maxBars={10} />
-          </div>
-
-          <div className="rel-card">
-            <SectionTitle
-              title="Exames Mais Recentes"
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              }
-            />
-            {recentesExames.length === 0 ? (
-              <p className="rel-empty-text">Nenhum exame encontrado</p>
-            ) : (
-              <div className="rel-list">
-                {recentesExames.map((e, i) => (
-                  <div key={i} className="rel-list-item">
-                    <div className="rel-list-item__icon rel-list-item__icon--blue">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                      </svg>
-                    </div>
-                    <div className="rel-list-item__body">
-                      <span className="rel-list-item__title">
-                        {e.tipoExame || "Tipo não informado"}
-                      </span>
-                      <span className="rel-list-item__sub">
-                        {formatDate(e.dataExame)} · {e.laboratorio || "Lab. não informado"}
-                      </span>
-                    </div>
-                    <Chip label={e.tipoExame || "Exame"} color="blue" />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="rel-card">
-            <SectionTitle
-              title="Histórico Completo de Exames"
-              icon={
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-              }
-            />
-            {exames.length === 0 ? (
-              <p className="rel-empty-text">Nenhum exame cadastrado</p>
-            ) : (
-              <div className="rel-table-wrap">
-                <table className="rel-table">
-                  <thead>
-                    <tr>
-                      <th>Tipo</th>
-                      <th>Data</th>
-                      <th>Laboratório</th>
-                      <th>Médico</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {exames.map((e, i) => (
-                      <tr key={i}>
-                        <td><strong>{e.tipoExame || "—"}</strong></td>
-                        <td>{formatDate(e.dataExame)}</td>
-                        <td>{e.laboratorio || "—"}</td>
-                        <td>{e.medico || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════
-          TAB: FICHA / ALERTAS CLÍNICOS
-         ══════════════════════════════════════════════════════════ */}
-      {activeTab === "ficha" && (
-        <div className="rel-content">
-          {ficha ? (
-            <>
+            <div className="rel-grid-2">
               <div className="rel-card">
-                <SectionTitle
-                  title="Alertas Clínicos Importantes"
-                  icon={
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                  }
-                />
-                <FichaAlerts ficha={ficha} />
+                <SectionHead icon={Icon.bar}  title="Medicamentos mais prescritos" count={medMaisUsados.length} />
+                <BarChart data={medMaisUsados} />
               </div>
+              <div className="rel-card">
+                <SectionHead icon={Icon.pulse} title="Tipos de exame mais comuns" count={examesPorTipo.length} />
+                <BarChart data={examesPorTipo} />
+              </div>
+            </div>
 
-              <div className="rel-two-col">
+            <div className="rel-card">
+              <SectionHead icon={Icon.warn} title="Fatores clínicos de atenção" />
+              <FichaAlerts ficha={ficha} />
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════
+            TAB: MEDICAMENTOS
+           ════════════════════════════════════════════════════ */}
+        {activeTab === "medicamentos" && (
+          <div className="rel-section rel-section--fade">
+            <div className="rel-card">
+              <SectionHead icon={Icon.bar} title="Ranking de Medicamentos" count={medMaisUsados.length} />
+              <BarChart data={medMaisUsados} maxBars={10} />
+            </div>
+
+            <div className="rel-card">
+              <SectionHead icon={Icon.cal} title="Últimas Receitas" count={recentesMed.length} />
+              {recentesMed.length === 0 ? (
+                <p className="rel-empty">Nenhuma receita encontrada</p>
+              ) : (
+                <ul className="rel-list">
+                  {recentesMed.map((r, i) => (
+                    <li key={i} className="rel-list__item">
+                      <div className="rel-list__dot rel-list__dot--teal">{Icon.clip}</div>
+                      <div className="rel-list__body">
+                        <strong>{r.medico || r.Medico || "Médico não informado"}</strong>
+                        <span>{formatDate(r.dataReceita)} · CRM {r.crmMedico || r.crm || "—"}</span>
+                      </div>
+                      <Badge label="Receita" variant="teal" />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="rel-card">
+              <SectionHead icon={Icon.pill} title="Todos os Medicamentos" count={allMeds.length} />
+              {allMeds.length === 0 ? (
+                <p className="rel-empty">Nenhum medicamento cadastrado</p>
+              ) : (
+                <div className="rel-table-wrap">
+                  <table className="rel-table">
+                    <thead>
+                      <tr><th>Nome</th><th>Quantidade</th><th>Forma de uso</th></tr>
+                    </thead>
+                    <tbody>
+                      {allMeds.map((m, i) => (
+                        <tr key={i}>
+                          <td><strong>{m.nome || "—"}</strong></td>
+                          <td>{m.quantidade || "—"}</td>
+                          <td>{m.formaDeUso || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════
+            TAB: EXAMES
+           ════════════════════════════════════════════════════ */}
+        {activeTab === "exames" && (
+          <div className="rel-section rel-section--fade">
+            <div className="rel-card">
+              <SectionHead icon={Icon.bar} title="Distribuição por Tipo de Exame" count={examesPorTipo.length} />
+              <BarChart data={examesPorTipo} maxBars={10} />
+            </div>
+
+            <div className="rel-card">
+              <SectionHead icon={Icon.cal} title="Exames Mais Recentes" count={recentesExames.length} />
+              {recentesExames.length === 0 ? (
+                <p className="rel-empty">Nenhum exame encontrado</p>
+              ) : (
+                <ul className="rel-list">
+                  {recentesExames.map((e, i) => (
+                    <li key={i} className="rel-list__item">
+                      <div className="rel-list__dot rel-list__dot--blue">{Icon.pulse}</div>
+                      <div className="rel-list__body">
+                        <strong>{getExameTipo(e)}</strong>
+                        <span>{formatDate(e.dataExame)} · {e.laboratorio || "Lab. não informado"}</span>
+                      </div>
+                      <Badge label={e.tipo || "Exame"} variant="blue" />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="rel-card">
+              <SectionHead icon={Icon.doc} title="Histórico Completo de Exames" count={exames.length} />
+              {exames.length === 0 ? (
+                <p className="rel-empty">Nenhum exame cadastrado</p>
+              ) : (
+                <div className="rel-table-wrap">
+                  <table className="rel-table">
+                    <thead>
+                      <tr><th>Nome / Tipo</th><th>Data</th><th>Laboratório</th><th>Resultado</th></tr>
+                    </thead>
+                    <tbody>
+                      {exames.map((e, i) => (
+                        <tr key={i}>
+                          <td><strong>{getExameTipo(e)}</strong></td>
+                          <td>{formatDate(e.dataExame)}</td>
+                          <td>{e.laboratorio || "—"}</td>
+                          <td className="rel-table__trunc">{e.resultado || e.resumo || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════
+            TAB: FICHA / ALERTAS
+           ════════════════════════════════════════════════════ */}
+        {activeTab === "ficha" && (
+          <div className="rel-section rel-section--fade">
+            {ficha ? (
+              <>
                 <div className="rel-card">
-                  <SectionTitle title="Dados Vitais" icon={
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                    </svg>
-                  } />
-                  <div className="rel-info-grid">
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">Pressão Arterial</span>
-                      <span className="rel-info-value">{ficha.pressao || "—"}</span>
-                    </div>
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">Diabetes</span>
-                      <span className={`rel-info-value ${ficha.diabetes ? "rel-info-value--alert" : ""}`}>
-                        {ficha.diabetes ? `Sim${ficha.diabetesExtra ? " — " + ficha.diabetesExtra : ""}` : "Não"}
-                      </span>
-                    </div>
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">Cardiovascular</span>
-                      <span className={`rel-info-value ${ficha.doencaCardioVascular ? "rel-info-value--alert" : ""}`}>
-                        {ficha.doencaCardioVascular ? `Sim${ficha.doencaCardioVascularExtra ? " — " + ficha.doencaCardioVascularExtra : ""}` : "Não"}
-                      </span>
-                    </div>
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">Respiratório</span>
-                      <span className={`rel-info-value ${ficha.respiratorio ? "rel-info-value--warn" : ""}`}>
-                        {ficha.respiratorio ? `Sim${ficha.respiratorioExtra ? " — " + ficha.respiratorioExtra : ""}` : "Não"}
-                      </span>
-                    </div>
+                  <SectionHead icon={Icon.warn} title="Alertas Clínicos Importantes" />
+                  <FichaAlerts ficha={ficha} />
+                </div>
+
+                <div className="rel-grid-2">
+                  <div className="rel-card">
+                    <SectionHead icon={Icon.pulse} title="Dados de Saúde" />
+                    <dl className="rel-dl">
+                      <div className="rel-dl__row">
+                        <dt>Pressão Arterial</dt>
+                        <dd>{ficha.pressao || "—"}</dd>
+                      </div>
+                      <div className="rel-dl__row">
+                        <dt>Diabetes</dt>
+                        <dd className={ficha.diabetes ? "rel-dl__dd--alert" : ""}>
+                          {ficha.diabetes ? `Sim${ficha.diabetesExtra ? " — " + ficha.diabetesExtra : ""}` : "Não"}
+                        </dd>
+                      </div>
+                      <div className="rel-dl__row">
+                        <dt>Cardiovascular</dt>
+                        <dd className={ficha.doencaCardioVascular ? "rel-dl__dd--alert" : ""}>
+                          {ficha.doencaCardioVascular
+                            ? `Sim${ficha.doencaCardioVascularExtra ? " — " + ficha.doencaCardioVascularExtra : ""}`
+                            : "Não"}
+                        </dd>
+                      </div>
+                      <div className="rel-dl__row">
+                        <dt>Respiratório</dt>
+                        <dd className={ficha.respiratorio ? "rel-dl__dd--warn" : ""}>
+                          {ficha.respiratorio
+                            ? `Sim${ficha.respiratorioExtra ? " — " + ficha.respiratorioExtra : ""}`
+                            : "Não"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <div className="rel-card">
+                    <SectionHead icon={Icon.shield} title="Histórico & Hábitos" />
+                    <dl className="rel-dl">
+                      <div className="rel-dl__row">
+                        <dt>Fumante</dt>
+                        <dd className={ficha.fumante ? "rel-dl__dd--warn" : ""}>
+                          {ficha.fumante ? "Sim" : ficha.fumou ? "Ex-fumante" : "Não"}
+                        </dd>
+                      </div>
+                      <div className="rel-dl__row">
+                        <dt>Drogas</dt>
+                        <dd className={ficha.drogas ? "rel-dl__dd--alert" : ""}>
+                          {ficha.drogas ? "Sim" : "Não"}
+                        </dd>
+                      </div>
+                      <div className="rel-dl__row">
+                        <dt>HIV</dt>
+                        <dd className={ficha.hiv ? "rel-dl__dd--alert" : ""}>
+                          {ficha.hiv ? "Positivo" : "Negativo / Não informado"}
+                        </dd>
+                      </div>
+                      <div className="rel-dl__row">
+                        <dt>Histórico Familiar</dt>
+                        <dd className={ficha.doencaFamilia ? "rel-dl__dd--warn" : ""}>
+                          {ficha.doencaFamilia ? ficha.doencaFamiliaExtra || "Sim" : "Sem registro"}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
                 </div>
 
                 <div className="rel-card">
-                  <SectionTitle title="Histórico & Hábitos" icon={
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                    </svg>
-                  } />
-                  <div className="rel-info-grid">
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">Fumante</span>
-                      <span className={`rel-info-value ${ficha.fumante ? "rel-info-value--warn" : ""}`}>
-                        {ficha.fumante ? "Sim" : ficha.fumou ? "Ex-fumante" : "Não"}
-                      </span>
+                  <SectionHead icon={Icon.pill} title="Alergias e Medicamentos" />
+                  <dl className="rel-dl rel-dl--4col">
+                    <div className="rel-dl__row">
+                      <dt>Alergias gerais</dt>
+                      <dd className={ficha.alergias ? "rel-dl__dd--alert" : ""}>
+                        {ficha.alergias ? ficha.alergiasExtra || "Sim" : "Não"}
+                      </dd>
                     </div>
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">Drogas</span>
-                      <span className={`rel-info-value ${ficha.drogas ? "rel-info-value--alert" : ""}`}>
-                        {ficha.drogas ? "Sim" : "Não"}
-                      </span>
+                    <div className="rel-dl__row">
+                      <dt>Alergia a medicamentos</dt>
+                      <dd className={ficha.alergiaMedicamentos ? "rel-dl__dd--alert" : ""}>
+                        {ficha.alergiaMedicamentos ? ficha.alergiaMedicamentosExtra || "Sim" : "Não"}
+                      </dd>
                     </div>
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">HIV</span>
-                      <span className={`rel-info-value ${ficha.hiv ? "rel-info-value--alert" : ""}`}>
-                        {ficha.hiv ? "Positivo" : "Negativo / Não informado"}
-                      </span>
+                    <div className="rel-dl__row">
+                      <dt>Problemas c/ anestesia</dt>
+                      <dd className={ficha.problemasAnestesia ? "rel-dl__dd--warn" : ""}>
+                        {ficha.problemasAnestesia ? ficha.problemasAnestesiaExtra || "Sim" : "Não"}
+                      </dd>
                     </div>
-                    <div className="rel-info-item">
-                      <span className="rel-info-label">Histórico Familiar</span>
-                      <span className={`rel-info-value ${ficha.doencaFamilia ? "rel-info-value--warn" : ""}`}>
-                        {ficha.doencaFamilia ? ficha.doencaFamiliaExtra || "Sim" : "Sem registro"}
-                      </span>
+                    <div className="rel-dl__row">
+                      <dt>Tratamento em curso</dt>
+                      <dd className={ficha.tratamentoMedico ? "rel-dl__dd--warn" : ""}>
+                        {ficha.tratamentoMedico ? ficha.tratamentoMedicoExtra || "Sim" : "Não"}
+                      </dd>
                     </div>
-                  </div>
+                  </dl>
                 </div>
-              </div>
-
-              <div className="rel-card">
-                <SectionTitle title="Alergias e Medicamentos" icon={
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                } />
-                <div className="rel-info-grid">
-                  <div className="rel-info-item">
-                    <span className="rel-info-label">Alergias gerais</span>
-                    <span className={`rel-info-value ${ficha.alergias ? "rel-info-value--alert" : ""}`}>
-                      {ficha.alergias ? ficha.alergiasExtra || "Sim" : "Não"}
-                    </span>
-                  </div>
-                  <div className="rel-info-item">
-                    <span className="rel-info-label">Alergia a medicamentos</span>
-                    <span className={`rel-info-value ${ficha.alergiaMedicamentos ? "rel-info-value--alert" : ""}`}>
-                      {ficha.alergiaMedicamentos ? ficha.alergiaMedicamentosExtra || "Sim" : "Não"}
-                    </span>
-                  </div>
-                  <div className="rel-info-item">
-                    <span className="rel-info-label">Problemas c/ anestesia</span>
-                    <span className={`rel-info-value ${ficha.problemasAnestesia ? "rel-info-value--warn" : ""}`}>
-                      {ficha.problemasAnestesia ? ficha.problemasAnestesiaExtra || "Sim" : "Não"}
-                    </span>
-                  </div>
-                  <div className="rel-info-item">
-                    <span className="rel-info-label">Tratamento em curso</span>
-                    <span className={`rel-info-value ${ficha.tratamentoMedico ? "rel-info-value--warn" : ""}`}>
-                      {ficha.tratamentoMedico ? ficha.tratamentoMedicoExtra || "Sim" : "Não"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="rel-card">
-              <div className="rel-empty">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
+              </>
+            ) : (
+              <div className="rel-card rel-card--empty">
+                {Icon.clip}
                 <h3>Ficha médica não preenchida</h3>
                 <p>Preencha sua ficha médica para visualizar alertas clínicos</p>
-                <button className="rel-btn-primary" onClick={() => navigate("/ficha-medica")}>
+                <button className="rel-btn" onClick={() => navigate("/ficha-medica")}>
                   Preencher Ficha Médica
                 </button>
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+
+      </main>
     </div>
   );
 }

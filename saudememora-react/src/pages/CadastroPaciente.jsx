@@ -1,15 +1,18 @@
+// CadastroPaciente.jsx
 import React, { useState } from "react";
 import { IMaskInput } from "react-imask";
 import { cadastrarPaciente } from "../services/pacienteService";
 import { useNavigate } from "react-router-dom";
 import "../styles/pages/CadastroPaciente.css";
-import "bootstrap/dist/css/bootstrap.min.css";
 
 const CadastroPaciente = () => {
   const navigate = useNavigate();
   const [aceitaTermos, setAceitaTermos] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const [formData, setFormData] = useState({
     nome: "",
@@ -43,7 +46,7 @@ const CadastroPaciente = () => {
   };
 
   const validateForm = () => {
-    const { nome, cpf, dataNascimento, sexo, senha, confirmarSenha } = formData;
+    const { nome, cpf, dataNascimento, sexo, email, senha, confirmarSenha } = formData;
     let isValid = true;
     const newErrors = {};
 
@@ -52,8 +55,11 @@ const CadastroPaciente = () => {
       isValid = false;
     }
 
-    if (!nome) {
+    if (!nome || nome.trim() === "") {
       newErrors.nome = "Nome completo é obrigatório";
+      isValid = false;
+    } else if (nome.trim().length < 3) {
+      newErrors.nome = "Nome deve ter pelo menos 3 caracteres";
       isValid = false;
     }
 
@@ -65,10 +71,27 @@ const CadastroPaciente = () => {
     if (!dataNascimento || dataNascimento.length !== 10) {
       newErrors.dataNascimento = "Data de nascimento inválida";
       isValid = false;
+    } else {
+      const partes = dataNascimento.split('/');
+      if (partes.length === 3) {
+        const dia = parseInt(partes[0], 10);
+        const mes = parseInt(partes[1], 10);
+        const ano = parseInt(partes[2], 10);
+        const data = new Date(ano, mes - 1, dia);
+        if (data.getFullYear() !== ano || data.getMonth() !== mes - 1 || data.getDate() !== dia) {
+          newErrors.dataNascimento = "Data de nascimento inválida";
+          isValid = false;
+        }
+      }
     }
 
     if (!sexo) {
       newErrors.sexo = "Selecione o sexo";
+      isValid = false;
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "E-mail inválido";
       isValid = false;
     }
 
@@ -90,12 +113,11 @@ const CadastroPaciente = () => {
 
     setFieldErrors(newErrors);
 
-    if (Object.keys(newErrors).length > 0 && !error.includes("termos")) {
+    if (Object.keys(newErrors).length > 0) {
       setError("Por favor, corrija os erros destacados");
     } else if (Object.keys(newErrors).length === 0 && error && error.includes("termos")) {
-      // mantém erro dos termos, se for o caso
       setError(error);
-    } else if (Object.keys(newErrors).length === 0) {
+    } else if (Object.keys(newErrors).length === 0 && !error?.includes("termos")) {
       setError("");
     }
 
@@ -109,23 +131,16 @@ const CadastroPaciente = () => {
     const isValid = validateForm();
     if (!isValid) {
       setIsSubmitting(false);
-
-      const firstErrorField = Object.keys(fieldErrors).find(
-        (field) => fieldErrors[field]
-      );
+      const firstErrorField = Object.keys(fieldErrors)[0];
       if (firstErrorField) {
         const el = document.querySelector(`[name="${firstErrorField}"]`);
         if (el) {
-          el.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
           el.focus();
         }
       }
       return;
     }
-
 
     const { confirmarSenha, ...dadosParaBackend } = formData;
 
@@ -138,8 +153,10 @@ const CadastroPaciente = () => {
       } else {
         if (result.message === "O email informado já está em uso.") {
           setFieldErrors((prev) => ({ ...prev, email: result.message }));
+          setError("E-mail já cadastrado");
         } else if (result.message === "O CPF informado já está em uso.") {
           setFieldErrors((prev) => ({ ...prev, cpf: result.message }));
+          setError("CPF já cadastrado");
         } else {
           setError(result.message || "Erro ao cadastrar. Tente novamente.");
         }
@@ -149,280 +166,291 @@ const CadastroPaciente = () => {
     } finally {
       setIsSubmitting(false);
     }
-
   };
 
-  const hasError = (fieldName) => {
-    return fieldErrors[fieldName] ? "is-invalid" : "";
-  };
+  const TermsModal = () => (
+    <div className="modal-overlay" onClick={() => setShowTermsModal(false)}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Termos e Condições</h2>
+          <button className="modal-close" onClick={() => setShowTermsModal(false)}>×</button>
+        </div>
+        <div className="modal-body">
+          <h3>1. Aceitação dos Termos</h3>
+          <p>Ao acessar e usar o sistema Saúde Memora, você concorda em cumprir estes termos e condições.</p>
+          
+          <h3>2. Privacidade e Dados</h3>
+          <p>Seus dados pessoais e informações de saúde serão tratados com confidencialidade e protegidos conforme a LGPD (Lei Geral de Proteção de Dados).</p>
+          
+          <h3>3. Responsabilidades do Usuário</h3>
+          <p>Você é responsável por fornecer informações precisas e verdadeiras durante o cadastro e uso do sistema.</p>
+          
+          <h3>4. Segurança da Conta</h3>
+          <p>Você é responsável por manter a confidencialidade de sua senha e por todas as atividades que ocorrerem em sua conta.</p>
+          
+          <h3>5. Uso do Sistema</h3>
+          <p>O sistema destina-se exclusivamente ao acompanhamento de informações médicas pessoais. Não substitui consultas médicas profissionais.</p>
+          
+          <h3>6. Modificações</h3>
+          <p>Reservamo-nos o direito de modificar estes termos a qualquer momento, com notificação aos usuários.</p>
+          
+          <h3>7. Cancelamento</h3>
+          <p>Você pode solicitar o cancelamento de sua conta a qualquer momento através do suporte.</p>
+          
+          <h3>8. Contato</h3>
+          <p>Em caso de dúvidas, entre em contato pelo e-mail: suporte@saudememora.com.br</p>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-terms" onClick={() => {
+            setAceitaTermos(true);
+            setShowTermsModal(false);
+          }}>
+            Li e Aceito os Termos
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container-fluid p-0 min-vh-100 d-flex align-items-center justify-content-center bg-light">
-      <div
-        className="card shadow-sm rounded-3 w-100 mx-3 mx-md-4"
-        style={{ maxWidth: "500px" }}
-      >
-        <div className="card-body p-3 p-md-4">
-          <h2 className="text-center mb-4">Criar conta</h2>
+    <div className="cadastro-container">
+      <div className="cadastro-card">
+        <div className="cadastro-header">
+          <div className="cadastro-logo">
+            <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="8" fill="#2563eb"/>
+              <path d="M16 24s-9-6.5-9-12a5 5 0 0110 0 5 5 0 0110 0c0 5.5-9 12-11 12z" fill="#fff" opacity=".9"/>
+              <path d="M9 16h3l2-4 2 8 2-4 1 2h4" stroke="#bfdbfe" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h1 className="cadastro-title">Criar Conta</h1>
+          <p className="cadastro-subtitle">Preencha seus dados para começar</p>
+        </div>
 
-          {error && !error.includes("termos") && (
-            <div
-              className="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4 desktop-only"
-              role="alert"
-            >
-              <i
-                className="bi bi-exclamation-triangle-fill me-2"
-                style={{ fontSize: "1.5rem" }}
-              ></i>
-              <div>
-                <strong>Erro!</strong> {error}
-              </div>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setError("")}
-                aria-label="Close"
-              ></button>
+        {error && (
+          <div className="alert-error">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{error}</span>
+            <button type="button" className="alert-close" onClick={() => setError("")}>×</button>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="cadastro-form" noValidate>
+          <div className="form-grid">
+            <div className="form-group full-width">
+              <input
+                type="text"
+                name="nome"
+                value={formData.nome}
+                onChange={handleChange}
+                className={`form-input ${fieldErrors.nome ? 'has-error' : ''}`}
+                placeholder="Nome completo *"
+                disabled={isSubmitting}
+              />
+              {fieldErrors.nome && <span className="field-error">{fieldErrors.nome}</span>}
             </div>
-          )}
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="row g-2">
-              {/* Nome */}
-              <div className="col-12">
-                <label className="form-label">
-                  Nome completo <span className="text-danger">*</span>
-                </label>
+            <div className="form-group">
+              <IMaskInput
+                mask="000.000.000-00"
+                name="cpf"
+                value={formData.cpf}
+                onAccept={(value) => {
+                  setFormData(prev => ({ ...prev, cpf: value }));
+                  if (fieldErrors.cpf) setFieldErrors(prev => ({ ...prev, cpf: null }));
+                }}
+                className={`form-input ${fieldErrors.cpf ? 'has-error' : ''}`}
+                placeholder="CPF *"
+                disabled={isSubmitting}
+              />
+              {fieldErrors.cpf && <span className="field-error">{fieldErrors.cpf}</span>}
+            </div>
+
+            <div className="form-group">
+              <IMaskInput
+                mask="00/00/0000"
+                name="dataNascimento"
+                value={formData.dataNascimento}
+                onAccept={(value) => {
+                  setFormData(prev => ({ ...prev, dataNascimento: value }));
+                  if (fieldErrors.dataNascimento) setFieldErrors(prev => ({ ...prev, dataNascimento: null }));
+                }}
+                className={`form-input ${fieldErrors.dataNascimento ? 'has-error' : ''}`}
+                placeholder="Data de Nascimento *"
+                disabled={isSubmitting}
+              />
+              {fieldErrors.dataNascimento && <span className="field-error">{fieldErrors.dataNascimento}</span>}
+            </div>
+
+            <div className="form-group">
+              <select
+                name="sexo"
+                value={formData.sexo}
+                onChange={handleChange}
+                className={`form-select ${fieldErrors.sexo ? 'has-error' : ''}`}
+                disabled={isSubmitting}
+              >
+                <option value="">Sexo *</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+                <option value="O">Outro</option>
+              </select>
+              {fieldErrors.sexo && <span className="field-error">{fieldErrors.sexo}</span>}
+            </div>
+
+            <div className="form-group">
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`form-input ${fieldErrors.email ? 'has-error' : ''}`}
+                placeholder="E-mail"
+                disabled={isSubmitting}
+              />
+              {fieldErrors.email && <span className="field-error">{fieldErrors.email}</span>}
+            </div>
+
+            <div className="form-group">
+              <IMaskInput
+                mask="(00) 00000-0000"
+                name="telefone"
+                value={formData.telefone}
+                onAccept={(value) => setFormData(prev => ({ ...prev, telefone: value }))}
+                className="form-input"
+                placeholder="Telefone"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <input
+                type="text"
+                name="endereco"
+                value={formData.endereco}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="Endereço completo"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="form-group">
+              <div className="password-wrapper">
                 <input
-                  type="text"
-                  name="nome"
-                  value={formData.nome}
-                  onChange={handleChange}
-                  className={`form-control ${hasError("nome")}`}
-                  placeholder="Digite seu nome completo"
-                  required
-                  autoComplete="name"
-                />
-                {fieldErrors.nome && (
-                  <div className="invalid-feedback d-flex align-items-center error-mobile-hide">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {fieldErrors.nome}
-                  </div>
-                )}
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">
-                  CPF <span className="text-danger">*</span>
-                </label>
-                <IMaskInput
-                  mask="000.000.000-00"
-                  name="cpf"
-                  value={formData.cpf}
-                  onChange={handleChange}
-                  className={`form-control ${hasError("cpf")}`}
-                  placeholder="000.000.000-00"
-                  required
-                  autoComplete="off"
-                />
-                {fieldErrors.cpf && (
-                  <div className="invalid-feedback d-flex align-items-center error-mobile-hide">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {fieldErrors.cpf}
-                  </div>
-                )}
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">
-                  Nascimento <span className="text-danger">*</span>
-                </label>
-                <IMaskInput
-                  mask="00/00/0000"
-                  name="dataNascimento"
-                  value={formData.dataNascimento}
-                  onChange={handleChange}
-                  className={`form-control ${hasError("dataNascimento")}`}
-                  placeholder="DD/MM/AAAA"
-                  required
-                  autoComplete="bday"
-                />
-                {fieldErrors.dataNascimento && (
-                  <div className="invalid-feedback d-flex align-items-center error-mobile-hide">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {fieldErrors.dataNascimento}
-                  </div>
-                )}
-              </div>
-
-              {/* Sexo e Email */}
-              <div className="col-md-6">
-                <label className="form-label">
-                  Sexo <span className="text-danger">*</span>
-                </label>
-                <select
-                  name="sexo"
-                  value={formData.sexo}
-                  onChange={handleChange}
-                  className={`form-select ${hasError("sexo")}`}
-                  required
-                >
-                  <option value="">Selecione</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Feminino</option>
-                </select>
-                {fieldErrors.sexo && (
-                  <div className="invalid-feedback d-flex align-items-center error-mobile-hide">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {fieldErrors.sexo}
-                  </div>
-                )}
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">E-mail</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`form-control ${fieldErrors.email ? "is-invalid" : ""}`}
-                  placeholder="Email"
-                  required
-                  autoComplete="email"
-                />
-                {fieldErrors.email && (
-                  <div className="invalid-feedback">
-                    {fieldErrors.email}
-                  </div>
-                )}
-              </div>
-
-              {/* Telefone e Endereço */}
-              <div className="col-md-6">
-                <label className="form-label">Telefone</label>
-                <IMaskInput
-                  mask="(00) 00000-0000"
-                  name="telefone"
-                  value={formData.telefone}
-                  onChange={handleChange}
-                  className="form-control"
-                  placeholder="(00) 00000-0000"
-                  autoComplete="text"
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Endereço</label>
-                <input
-                  type="text"
-                  name="endereco"
-                  value={formData.endereco}
-                  onChange={handleChange}
-                  className="form-control"
-                  placeholder="Rua, número, bairro"
-                  autoComplete="street-address"
-                />
-              </div>
-
-              {/* Senha */}
-              <div className="col-md-6">
-                <label className="form-label">
-                  Senha <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="senha"
                   value={formData.senha}
                   onChange={handleChange}
-                  className={`form-control ${fieldErrors.senha ? "is-invalid" : ""}`}
-                  placeholder="Senha"
-                  required
-                  autoComplete="new-password"
+                  className={`form-input ${fieldErrors.senha ? 'has-error' : ''}`}
+                  placeholder="Senha * (mínimo 6 caracteres)"
+                  disabled={isSubmitting}
                 />
-                {fieldErrors.senha && (
-                  <div className="invalid-feedback">
-                    {fieldErrors.senha}
-                  </div>
-                )}
-
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
               </div>
+              {fieldErrors.senha && <span className="field-error">{fieldErrors.senha}</span>}
+            </div>
 
-              {/* Confirmar senha */}
-              <div className="col-md-6">
-                <label className="form-label">
-                  Confirmar Senha <span className="text-danger">*</span>
-                </label>
+            <div className="form-group">
+              <div className="password-wrapper">
                 <input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   name="confirmarSenha"
                   value={formData.confirmarSenha}
                   onChange={handleChange}
-                  className={`form-control ${hasError("confirmarSenha")}`}
-                  placeholder="Repita a senha"
-                  required
-                  autoComplete="new-password"
+                  className={`form-input ${fieldErrors.confirmarSenha ? 'has-error' : ''}`}
+                  placeholder="Confirmar senha *"
+                  disabled={isSubmitting}
                 />
-                {fieldErrors.confirmarSenha && (
-                  <div className="invalid-feedback d-flex align-items-center error-mobile-hide">
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    {fieldErrors.confirmarSenha}
-                  </div>
-                )}
-              </div>
-
-              {/* Aceitar termos */}
-              <div className="col-12">
-                <div className="form-check">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="aceitaTermos"
-                    checked={aceitaTermos}
-                    onChange={() => setAceitaTermos(!aceitaTermos)}
-                  />
-                  <label className="form-check-label" htmlFor="aceitaTermos">
-                    Aceito os{" "}
-                    <a href="#termos" target="_blank" rel="noopener noreferrer">
-                      termos e condições
-                    </a>
-                    <span className="text-danger">*</span>
-                  </label>
-                </div>
-
-                {!aceitaTermos && error.includes("termos") && (
-                  <div
-                    className="text-danger small mt-1 d-flex align-items-center error-mobile-hide"
-                    style={{ fontWeight: "500" }}
-                  >
-                    <i className="bi bi-exclamation-triangle-fill me-1"></i>
-                    {error}
-                  </div>
-                )}
-              </div>
-
-              <div className="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
-
                 <button
                   type="button"
-                  className="btn btn-outline-secondary flex-grow-1 me-md-2"
-                  onClick={() => navigate("/login")}
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  Já tenho conta
-                </button>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Enviando..." : "Cadastrar"}
+                  {showConfirmPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
                 </button>
               </div>
+              {fieldErrors.confirmarSenha && <span className="field-error">{fieldErrors.confirmarSenha}</span>}
             </div>
-          </form>
+          </div>
+
+          <div className="terms-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={aceitaTermos}
+                onChange={() => setAceitaTermos(!aceitaTermos)}
+                disabled={isSubmitting}
+              />
+              <span>
+                Li e aceito os <button type="button" className="terms-link" onClick={() => setShowTermsModal(true)}>termos e condições</button>
+                <span className="required">*</span>
+              </span>
+            </label>
+          </div>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => navigate("/login")}
+              disabled={isSubmitting}
+            >
+              Já tenho conta
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="spinner"></span>
+                  Cadastrando...
+                </>
+              ) : (
+                "Cadastrar"
+              )}
+            </button>
+          </div>
+        </form>
+
+        <div className="cadastro-footer">
+          <p>© 2024 Saúde Memora</p>
         </div>
       </div>
+
+      {showTermsModal && <TermsModal />}
     </div>
   );
 };

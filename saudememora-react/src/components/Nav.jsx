@@ -68,7 +68,7 @@ const Nav = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("paciente");
-    navigate("/login");
+    navigate("/");
   };
 
   const handlePerfil = () => {

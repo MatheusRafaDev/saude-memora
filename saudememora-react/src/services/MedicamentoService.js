@@ -1,10 +1,23 @@
+// ============================================================
+// MedicamentoService.js  —  passa pacienteId em todas as chamadas
+// ============================================================
 import axiosInstance from "../axiosConfig";
 
+const getPacienteId = () => {
+  try {
+    const p = JSON.parse(localStorage.getItem("paciente") || "{}");
+    return p?.id ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const MedicamentoService = {
-  // 1) Obter todos os medicamentos
   getAll: async () => {
     try {
-      const response = await axiosInstance.get("/api/medicamentos");
+      const pacienteId = getPacienteId();
+      const params = pacienteId ? { pacienteId } : {};
+      const response = await axiosInstance.get("/api/medicamentos", { params });
       return { success: true, data: response.data };
     } catch (error) {
       console.error("Erro ao buscar medicamentos:", error);
@@ -15,7 +28,6 @@ const MedicamentoService = {
     }
   },
 
-  // 2) Obter um medicamento pelo ID
   getById: async (id) => {
     try {
       const response = await axiosInstance.get(`/api/medicamentos/${id}`);
@@ -29,7 +41,6 @@ const MedicamentoService = {
     }
   },
 
-  // 3) Obter medicamentos por ID da receita
   getMedicamentosByReceitaId: async (receitaId) => {
     try {
       const response = await axiosInstance.get(`/api/medicamentos/receita/${receitaId}`);
@@ -43,7 +54,6 @@ const MedicamentoService = {
     }
   },
 
-  // 4) Criar um novo medicamento
   create: async (medicamento) => {
     try {
       const response = await axiosInstance.post("/api/medicamentos", medicamento);
@@ -57,7 +67,6 @@ const MedicamentoService = {
     }
   },
 
-  // 5) Atualizar um medicamento existente
   update: async (id, medicamento) => {
     try {
       const response = await axiosInstance.put(`/api/medicamentos/${id}`, medicamento);
@@ -71,7 +80,6 @@ const MedicamentoService = {
     }
   },
 
-  // 6) Deletar um medicamento pelo ID
   delete: async (id) => {
     try {
       await axiosInstance.delete(`/api/medicamentos/${id}`);

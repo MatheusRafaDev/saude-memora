@@ -1,10 +1,24 @@
 import axiosInstance from "../axiosConfig";
 
+const getPacienteId = () => {
+  try {
+    const p = JSON.parse(localStorage.getItem("paciente") || "{}");
+    return p?.id ?? null;
+  } catch {
+    return null;
+  }
+};
+
 const ExameService = {
   // Buscar todos os exames
+
+
+
   getAll: async () => {
     try {
-      const response = await axiosInstance.get("/api/exames");
+      const pacienteId = getPacienteId();
+      const params = pacienteId ? { pacienteId } : {};
+      const response = await axiosInstance.get("/api/exames", { params });
       return { success: true, data: response.data };
     } catch (error) {
       console.error("Erro ao buscar todos os exames:", error);

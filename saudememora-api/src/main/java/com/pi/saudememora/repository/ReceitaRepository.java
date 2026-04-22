@@ -8,15 +8,19 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
-import java.util.List;
-
+@Repository
 public interface ReceitaRepository extends JpaRepository<Receita, Long> {
+
     List<Receita> findByDocumentoId(Long idDocumento);
+
+    // ✅ NOVO: filtro por paciente
+    List<Receita> findByPacienteId(Long pacienteId);
 
     @Transactional
     @Modifying
     @Query("DELETE FROM Receita r WHERE r.documento.id = :documentoId")
-    void deleteAllByDocumentoId(Long documentoId);
+    void deleteAllByDocumentoId(@Param("documentoId") Long documentoId);
 }

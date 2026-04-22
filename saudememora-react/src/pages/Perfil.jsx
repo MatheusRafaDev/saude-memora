@@ -277,7 +277,7 @@ const Perfil = () => {
     if (hasUnsavedChanges) {
       if (window.confirm('Você tem alterações não salvas. Tem certeza que deseja sair?')) {
         localStorage.removeItem("paciente");
-        navigate("/login");
+        navigate("/");
       }
     } else {
       localStorage.removeItem("paciente");

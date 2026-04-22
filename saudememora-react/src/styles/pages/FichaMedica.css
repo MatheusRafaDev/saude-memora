@@ -1,4 +1,4 @@
-/* FichaMedica.css */
+/* FichaMedica.css - Versão Otimizada */
 :root {
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
@@ -18,8 +18,8 @@
   --gray-700: #374151;
   --gray-800: #1f2937;
   --gray-900: #111827;
-  --radius: 16px;
-  --radius-lg: 20px;
+  --radius: 12px;
+  --radius-lg: 16px;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
@@ -44,7 +44,7 @@
 /* Header */
 .ficha-header {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  padding: 32px 32px;
+  padding: 28px 32px;
   text-align: center;
   color: white;
 }
@@ -52,7 +52,7 @@
 .ficha-title {
   font-size: 1.75rem;
   font-weight: 700;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
 }
 
 .ficha-subtitle {
@@ -63,7 +63,7 @@
 
 /* Botão de alternar modo */
 .ficha-toggle {
-  padding: 20px 32px 0 32px;
+  padding: 16px 32px 0 32px;
   text-align: right;
 }
 
@@ -71,8 +71,8 @@
   background: var(--primary-soft);
   color: var(--primary);
   border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
+  padding: 8px 18px;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -86,7 +86,7 @@
 
 /* Barra de Progresso */
 .progress-section {
-  padding: 24px 32px;
+  padding: 20px 32px;
   background: var(--gray-50);
   border-bottom: 1px solid var(--gray-200);
 }
@@ -95,7 +95,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--gray-600);
@@ -107,7 +107,7 @@
 }
 
 .progress-bar-container {
-  height: 8px;
+  height: 6px;
   background: var(--gray-200);
   border-radius: 99px;
   overflow: hidden;
@@ -122,12 +122,12 @@
 
 /* Mensagem */
 .ficha-message {
-  margin: 24px 32px 0 32px;
-  padding: 12px 20px;
+  margin: 20px 32px 0 32px;
+  padding: 10px 18px;
   border-radius: var(--radius);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 0.875rem;
   animation: slideDown 0.3s ease;
 }
@@ -146,19 +146,19 @@
 .ficha-message--success {
   background: var(--success-light);
   color: var(--success);
-  border-left: 4px solid var(--success);
+  border-left: 3px solid var(--success);
 }
 
 .ficha-message--error {
   background: var(--error-light);
   color: var(--error);
-  border-left: 4px solid var(--error);
+  border-left: 3px solid var(--error);
 }
 
 /* Informações do Paciente */
 .paciente-info,
 .saude-info {
-  padding: 24px 32px;
+  padding: 20px 32px;
   border-bottom: 1px solid var(--gray-200);
 }
 
@@ -166,7 +166,7 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--gray-700);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -175,18 +175,18 @@
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 0;
+  gap: 3px;
+  padding: 6px 0;
 }
 
 .info-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--gray-500);
   text-transform: uppercase;
@@ -203,14 +203,14 @@
 .saude-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .saude-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--gray-100);
 }
 
@@ -225,27 +225,27 @@
   font-size: 0.875rem;
   font-weight: 500;
   background: var(--gray-100);
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: 16px;
 }
 
 /* Formulário */
 .ficha-form {
-  padding: 32px;
+  padding: 24px 32px;
 }
 
 .perguntas-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .pergunta-card {
   background: var(--gray-50);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 16px;
   transition: all 0.2s ease;
 }
 
@@ -257,8 +257,8 @@
 .pergunta-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .pergunta-texto {
@@ -267,29 +267,31 @@
   font-size: 0.9375rem;
 }
 
-/* Botões Sim/Não */
+/* Botões Sim/Não - ESTILO OTIMIZADO */
 .btn-group-custom {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 0;
 }
 
 .btn-option {
   flex: 1;
-  padding: 10px 16px;
-  border: 1.5px solid var(--gray-200);
+  padding: 8px 16px;
+  border: 1.5px solid var(--gray-300);
   background: white;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--gray-600);
+  color: var(--gray-700);
+  text-align: center;
 }
 
 .btn-option:hover {
   border-color: var(--primary);
   background: var(--primary-soft);
+  transform: translateY(-1px);
 }
 
 /* Botão SIM - Azul quando ativo */
@@ -297,22 +299,33 @@
   background: var(--primary);
   border-color: var(--primary);
   color: white;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
-/* Botão NÃO - Branco com borda cinza quando ativo */
+.btn-sim.active:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+/* Botão NÃO - Cinza quando ativo */
 .btn-nao.active {
-  background: white;
-  border-color: var(--gray-300);
-  color: var(--gray-700);
-  box-shadow: var(--shadow-sm);
+  background: var(--gray-200);
+  border-color: var(--gray-400);
+  color: var(--gray-800);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-nao.active:hover {
+  background: var(--gray-300);
+  border-color: var(--gray-500);
 }
 
 /* Select de Pressão */
 .form-select-custom {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1.5px solid var(--gray-200);
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 0.875rem;
   background: white;
   cursor: pointer;
@@ -325,18 +338,18 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-/* Campo Extra */
+/* Campo Extra - MAIS COMPACTO */
 .extra-input-animated {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px dashed var(--gray-200);
-  animation: fadeInUp 0.3s ease;
+  animation: fadeInUp 0.2s ease;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-5px);
   }
   to {
     opacity: 1;
@@ -346,19 +359,19 @@
 
 .extra-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--gray-500);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .extra-input-field {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1.5px solid var(--gray-200);
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 0.875rem;
   transition: all 0.2s ease;
   background: white;
@@ -375,7 +388,7 @@
   display: flex;
   gap: 16px;
   justify-content: center;
-  padding-top: 24px;
+  padding-top: 20px;
   border-top: 1px solid var(--gray-200);
 }
 
@@ -383,8 +396,8 @@
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
   border: none;
-  padding: 12px 32px;
-  border-radius: 12px;
+  padding: 10px 28px;
+  border-radius: 10px;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
@@ -392,7 +405,7 @@
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
-  min-width: 220px;
+  min-width: 200px;
   justify-content: center;
 }
 
@@ -410,8 +423,8 @@
   background: var(--gray-100);
   color: var(--gray-700);
   border: 1px solid var(--gray-200);
-  padding: 12px 32px;
-  border-radius: 12px;
+  padding: 10px 28px;
+  border-radius: 10px;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
@@ -428,7 +441,7 @@
 
 /* Footer */
 .ficha-footer {
-  padding: 20px 32px 32px 32px;
+  padding: 16px 32px 24px 32px;
   text-align: center;
   border-top: 1px solid var(--gray-100);
 }
@@ -437,7 +450,7 @@
   background: transparent;
   color: var(--gray-500);
   border: none;
-  padding: 8px 16px;
+  padding: 6px 14px;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -449,8 +462,8 @@
 
 /* Spinner */
 .spinner {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
@@ -481,7 +494,7 @@
 
 @media (max-width: 768px) {
   .ficha-header {
-    padding: 24px 20px;
+    padding: 20px 20px;
   }
 
   .ficha-title {
@@ -489,20 +502,20 @@
   }
 
   .progress-section {
-    padding: 20px;
+    padding: 16px 20px;
   }
 
   .paciente-info,
   .saude-info {
-    padding: 20px;
+    padding: 16px 20px;
   }
 
   .ficha-form {
-    padding: 20px;
+    padding: 16px 20px;
   }
 
   .pergunta-card {
-    padding: 16px;
+    padding: 14px;
   }
 
   .form-actions {
@@ -522,11 +535,19 @@
   .info-grid {
     grid-template-columns: 1fr;
   }
+  
+  .btn-group-custom {
+    gap: 8px;
+  }
+  
+  .btn-option {
+    padding: 8px 12px;
+  }
 }
 
 @media (max-width: 480px) {
   .ficha-header {
-    padding: 20px 16px;
+    padding: 16px;
   }
 
   .ficha-title {
@@ -542,13 +563,13 @@
   }
 
   .btn-option {
-    padding: 8px 12px;
+    padding: 7px 10px;
     font-size: 0.8125rem;
   }
 
   .saude-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
   }
 }

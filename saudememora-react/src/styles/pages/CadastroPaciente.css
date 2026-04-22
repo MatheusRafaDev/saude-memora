@@ -1,38 +1,466 @@
-html, body {
-  height: 100%;
+/* CadastroPaciente.css - Versão Compacta */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #dbeafe;
+  --primary-soft: #eff6ff;
+  --success: #16a34a;
+  --error: #dc2626;
+  --error-light: #fee2e2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+* {
   margin: 0;
   padding: 0;
-  background-color: #f8fbff;
+  box-sizing: border-box;
 }
 
-.fullscreen-center {
-  height: 100%;
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #e9f7fc 0%, #dbeafe 100%);
+  min-height: 100vh;
+}
+
+.cadastro-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.cadastro-card {
+  max-width: 900px;
+  width: 100%;
+  background: white;
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header Compacto */
+.cadastro-header {
+  text-align: center;
+  padding: 24px 20px 20px;
+  background: linear-gradient(135deg, var(--primary-soft) 0%, white 100%);
+}
+
+.cadastro-logo {
   display: flex;
   justify-content: center;
-  align-items: center;
+  margin-bottom: 12px;
 }
 
-.saude-card {
-  width: 100%;
-  max-width: 600px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 0 20px rgba(0, 123, 255, 0.05);
-  padding: 30px;
-}
-/* Oculta mensagens de erro em telas pequenas (menos que 576px) */
-@media (max-width: 575.98px) {
-  .error-mobile-hide {
-    display: none !important;
-  }
-
-  /* Opcional: Ajuste o tamanho do botão para caber melhor */
-  .btn {
-    font-size: 1rem;
-  }
-}
-
-/* Estilo para alertas de erro com ícones */
-.alert .bi-exclamation-triangle-fill {
+.cadastro-title {
   font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.cadastro-subtitle {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+/* Alert Error */
+.alert-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin: 16px 20px 0;
+  background: var(--error-light);
+  border-left: 3px solid var(--error);
+  border-radius: 8px;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.alert-error svg {
+  flex-shrink: 0;
+  color: var(--error);
+}
+
+.alert-error span {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--error);
+  font-weight: 500;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--error);
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* Form Compacto */
+.cadastro-form {
+  padding: 20px 24px 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.form-input.has-error,
+.form-select.has-error {
+  border-color: var(--error);
+}
+
+/* Password Wrapper */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper .form-input {
+  padding-right: 36px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  color: var(--gray-400);
+  transition: color 0.2s ease;
+}
+
+/* Field Error */
+.field-error {
+  font-size: 0.7rem;
+  color: var(--error);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Terms Group Compacto */
+.terms-group {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--gray-700);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  margin: 0;
+}
+
+.terms-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  padding: 0;
+  margin: 0;
+}
+
+.terms-link:hover {
+  color: var(--primary-dark);
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--gray-700);
+  border: 1.5px solid var(--gray-300);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--gray-50);
+  border-color: var(--gray-400);
+}
+
+/* Footer Compacto */
+.cadastro-footer {
+  padding: 12px 20px;
+  text-align: center;
+  border-top: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+
+.cadastro-footer p {
+  font-size: 0.7rem;
+  color: var(--gray-500);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.modal-header h2 {
+  font-size: 1.2rem;
+  color: var(--gray-800);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--gray-400);
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body h3 {
+  font-size: 0.9rem;
+  color: var(--gray-800);
+  margin: 12px 0 6px;
+}
+
+.modal-body h3:first-child {
+  margin-top: 0;
+}
+
+.modal-body p {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.btn-terms {
+  width: 100%;
+  padding: 10px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-terms:hover {
+  background: var(--primary-dark);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .cadastro-container {
+    padding: 16px;
+  }
+  
+  .cadastro-card {
+    border-radius: 16px;
+  }
+  
+  .cadastro-header {
+    padding: 20px 16px;
+  }
+  
+  .cadastro-title {
+    font-size: 1.3rem;
+  }
+  
+  .cadastro-form {
+    padding: 16px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .modal-content {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .cadastro-logo svg {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .cadastro-title {
+    font-size: 1.2rem;
+  }
+  
+  .form-input,
+  .form-select {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
 }

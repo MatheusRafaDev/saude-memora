@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +31,7 @@ public class ReceitaController {
 
     private final ReceitaService receitaService;
     private final ObjectMapper objectMapper;
+
     @Autowired
     private ReceitaRepository receitaRepository;
     private MedicamentoRepository medicamentoRepository;
@@ -44,6 +44,21 @@ public class ReceitaController {
         this.objectMapper = objectMapper;
         this.medicamentoRepository = medicamentoRepository;
         this.receitaRepository = receitaRepository;
+    }
+
+    // ✅ CORRIGIDO: endpoint GET /api/receitas estava faltando — causava 405
+    // Aceita ?pacienteId=X para filtrar por usuário
+    @GetMapping
+    public ResponseEntity<List<Receita>> getAllReceitas(
+            @RequestParam(required = false) Long pacienteId) {
+        List<Receita> receitas;
+        if (pacienteId != null) {
+            receitas = receitaRepository.findByPacienteId(pacienteId);
+        } else {
+            receitas = receitaRepository.findAll();
+        }
+        if (receitas.isEmpty()) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(receitas);
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -128,7 +143,6 @@ public class ReceitaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getReceitaById(@PathVariable Long id) {

@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/medicamentos")
+@CrossOrigin(origins = "*")
 public class MedicamentoController {
 
     private static final Logger logger = LoggerFactory.getLogger(MedicamentoController.class);
@@ -41,9 +42,17 @@ public class MedicamentoController {
         }
     }
 
-
-    public ResponseEntity<List<Medicamento>> getAllMedicamentos() {
-        List<Medicamento> medicamentos = medicamentoRepository.findAll();
+    // ✅ CORRIGIDO: @GetMapping adicionado (estava faltando — causava 405)
+    @GetMapping
+    public ResponseEntity<List<Medicamento>> getAllMedicamentos(
+            @RequestParam(required = false) Long pacienteId) {
+        List<Medicamento> medicamentos;
+        if (pacienteId != null) {
+            // Filtro por paciente via receita -> documento -> paciente
+            medicamentos = medicamentoRepository.findByReceitaDocumentoPacienteId(pacienteId);
+        } else {
+            medicamentos = medicamentoRepository.findAll();
+        }
         if (medicamentos.isEmpty()) return ResponseEntity.noContent().build();
         return ResponseEntity.ok(medicamentos);
     }
@@ -57,15 +66,13 @@ public class MedicamentoController {
         return ResponseEntity.ok(medicamentos);
     }
 
-    // 3) Obter um medicamento pelo ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getMedicamentoById(@PathVariable Long id) {
         return medicamentoRepository.findById(id)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(500).body(null));
+                .orElse(ResponseEntity.status(404).body(null));
     }
 
-    // 4) Atualizar um medicamento existente
     @PutMapping("/{id}")
     public ResponseEntity<Medicamento> updateMedicamento(@PathVariable Long id, @RequestBody Medicamento medicamentoDetails) {
         try {
@@ -92,7 +99,7 @@ public class MedicamentoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    // 5) Deletar um medicamento pelo ID
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMedicamento(@PathVariable Long id) {
         return medicamentoRepository.findById(id)

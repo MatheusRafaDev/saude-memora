@@ -2,7 +2,6 @@ package com.pi.saudememora.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pi.saudememora.model.Documentos;
 import com.pi.saudememora.model.Exame;
 import com.pi.saudememora.repository.ExameRepository;
 import com.pi.saudememora.service.DocumentosService;
@@ -11,15 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 import java.util.Optional;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.web.server.ResponseStatusException;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -38,8 +35,6 @@ public class ExameController {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> salvarExameComImagem(
@@ -68,10 +63,17 @@ public class ExameController {
         }
     }
 
+    // ✅ ATUALIZADO: aceita ?pacienteId=X para filtrar por usuário
     @GetMapping
-    public ResponseEntity<List<Exame>> listarExames() {
+    public ResponseEntity<List<Exame>> listarExames(
+            @RequestParam(required = false) Long pacienteId) {
         try {
-            List<Exame> exames = exameService.findAll();
+            List<Exame> exames;
+            if (pacienteId != null) {
+                exames = exameRepository.findByDocumentoPacienteId(pacienteId);
+            } else {
+                exames = exameService.findAll();
+            }
             return exames.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(exames);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -110,10 +112,6 @@ public class ExameController {
     @PutMapping("/{id}")
     public ResponseEntity<Exame> atualizarExame(@PathVariable Long id, @RequestBody Exame exame) {
         try {
-
-            String jsonRecebido = objectMapper.writeValueAsString(exame);
-
-
             Exame exameExistente = exameService.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exame não encontrado"));
 
@@ -122,17 +120,12 @@ public class ExameController {
             exameExistente.setLaboratorio(exame.getLaboratorio());
             exameExistente.setResultado(exame.getResultado());
             exameExistente.setResumo(exame.getResumo());
-            exameExistente.setDataExame(exame.getDataExame());
             exameExistente.setObservacoes(exame.getObservacoes());
             exameExistente.setNomeExame(exame.getNomeExame());
-            exameExistente.setTipo(exame.getTipo());
-
 
             Exame exameAtualizado = exameService.save(exameExistente);
             return ResponseEntity.ok(exameAtualizado);
 
-        } catch (JsonProcessingException e) {
-            return ResponseEntity.badRequest().build();
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {

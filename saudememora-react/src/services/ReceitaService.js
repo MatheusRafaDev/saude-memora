@@ -1,10 +1,23 @@
+// ============================================================
+// ReceitaService.js  —  passa pacienteId em getAll
+// ============================================================
 import axiosInstance from "../axiosConfig";
-
+ 
+const getPacienteId = () => {
+  try {
+    const p = JSON.parse(localStorage.getItem("paciente") || "{}");
+    return p?.id ?? null;
+  } catch {
+    return null;
+  }
+};
+ 
 const ReceitaService = {
-  // Buscar todas as receitas
   getAll: async () => {
     try {
-      const response = await axiosInstance.get("/api/receitas");
+      const pacienteId = getPacienteId();
+      const params = pacienteId ? { pacienteId } : {};
+      const response = await axiosInstance.get("/api/receitas", { params });
       return { success: true, data: response.data };
     } catch (error) {
       console.error("Erro ao buscar todas as receitas:", error);
@@ -14,8 +27,7 @@ const ReceitaService = {
       };
     }
   },
-
-  // Buscar receita por ID
+ 
   getById: async (id) => {
     try {
       const response = await axiosInstance.get(`/api/receitas/${id}`);
@@ -28,8 +40,7 @@ const ReceitaService = {
       };
     }
   },
-
-  // Buscar receita por ID do documento
+ 
   getReceitaByDocumentoId: async (documentoId) => {
     try {
       const response = await axiosInstance.get(`/api/receitas/documento/${documentoId}`);
@@ -42,15 +53,11 @@ const ReceitaService = {
       };
     }
   },
-
-  // Criar uma nova receita
+ 
   create: async (receita) => {
     try {
-      
       const response = await axiosInstance.post("/api/receitas", receita, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
       return { success: true, data: response.data };
     } catch (error) {
@@ -61,8 +68,7 @@ const ReceitaService = {
       };
     }
   },
-
-  // Atualizar receita existente
+ 
   update: async (id, receita) => {
     try {
       const response = await axiosInstance.put(`/api/receitas/${id}`, receita);
@@ -75,8 +81,7 @@ const ReceitaService = {
       };
     }
   },
-
-  // Deletar receita por ID
+ 
   delete: async (id) => {
     try {
       await axiosInstance.delete(`/api/receitas/${id}`);
@@ -89,19 +94,15 @@ const ReceitaService = {
       };
     }
   },
-
-  // Criar receita com imagem
+ 
   createWithImage: async (formData) => {
     try {
       const response = await axiosInstance.post("/api/receitas", formData);
-      
       return response.data;
     } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Erro ao criar a receita."
-      );
+      throw new Error(error.response?.data?.message || "Erro ao criar a receita.");
     }
   },
 };
-
+ 
 export default ReceitaService;
