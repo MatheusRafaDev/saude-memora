@@ -1,16 +1,31 @@
 # 🏥 SaúdeMemora
 
-## 📌 Sobre o Projeto
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-green?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react" />
+  <img src="https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?style=for-the-badge&logo=springboot" />
+  <img src="https://img.shields.io/badge/PostgreSQL-15-316192?style=for-the-badge&logo=postgresql" />
+  <img src="https://img.shields.io/badge/OCR-AI-blueviolet?style=for-the-badge" />
+</p>
 
-O **SaúdeMemora** é um aplicativo desenvolvido como **trabalho final** do curso de **Análise e Desenvolvimento de Sistemas** no **Centro Universitário Senac**.
+> **Digitalize, organize e acesse documentos médicos com inteligência.**  
+> Aplicação que utiliza OCR + IA para transformar exames e receitas em dados estruturados.
 
-A aplicação tem como objetivo **digitalizar, organizar e centralizar documentos médicos**, como exames, receitas e prontuários, utilizando **OCR (Reconhecimento Óptico de Caracteres)** e **inteligência artificial** para extrair automaticamente informações relevantes a partir de imagens.
-
-O sistema transforma documentos físicos ou fotos em **dados estruturados**, facilitando o acesso rápido e seguro ao histórico de saúde do usuário.
-
-## 🔗 Acesso o site
+## 🔗 Acesse o projeto
 
 👉 https://saude-memora.vercel.app
+
+---
+
+## 🔐 Variáveis de Ambiente
+
+| Categoria | Variáveis |
+|----------|----------|
+| **Frontend** | REACT_APP_API_URL |
+| **Banco de Dados** | DB_URL, DB_USERNAME, DB_PASSWORD |
+| **APIs externas** | GROQ_API_KEY, OCR_SPACE_API_KEY |
+| **IA config** | IA_PROCESSING_MODE, IA_TIMEOUT_MS |
+| **OCR config** | OCR_LANGUAGE, OCR_ENGINE |
 
 ---
 
