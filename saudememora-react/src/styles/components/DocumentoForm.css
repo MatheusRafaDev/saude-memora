@@ -1,68 +1,96 @@
-/* ── Document Form Styles ────────────────────────────────────────── */
-/* Design system consistente com SaúdeMemora */
-
-.documento-form-wrapper {
-  max-width: 1000px;
-  margin: 0 auto;
-  animation: fadeIn 0.4s ease;
+/* DocumentoForm.css - Alinhado com o estilo UpDoc */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #dbeafe;
+  --primary-soft: #eff6ff;
+  --success: #16a34a;
+  --success-light: #dcfce7;
+  --error: #dc2626;
+  --error-light: #fee2e2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --radius: 16px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
 }
 
-/* Card principal */
-.documento-form-card {
-  background: white;
-  border-radius: 24px;
-  box-shadow: var(--shadow-md, 0 4px 16px rgba(0, 0, 0, 0.1));
+/* ── Layout principal ───────────────────────────────────────────────── */
+.doc-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--gray-50) 0%, #ffffff 100%);
+  padding: 32px 20px;
+}
+
+.doc-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── Card principal ──────────────────────────────────────────────── */
+.doc-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid var(--gray-200, #e2e8f0);
+  border: 1px solid var(--gray-100);
 }
 
-.documento-form-card:hover {
-  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.14));
+.doc-card:hover {
+  box-shadow: var(--shadow-lg);
 }
 
-/* Header do formulário */
-.documento-form-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1.25rem 2rem;
+/* ── Cabeçalho ───────────────────────────────────────────────────── */
+.doc-header {
+  background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-700) 100%);
+  padding: 24px 28px;
   border-bottom: none;
 }
 
-.documento-form-header h2 {
+.doc-header h2 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
   color: white;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
-.documento-form-header-icon {
+.doc-header-icon {
   font-size: 1.5rem;
 }
 
-/* Área da imagem com zoom */
-.documento-image-area {
-  background: var(--gray-100, #f1f5f9);
-  border-top: 1px solid var(--gray-200, #e2e8f0);
-  border-bottom: 1px solid var(--gray-200, #e2e8f0);
+/* ── Área da imagem com zoom ───────────────────────────────────────── */
+.doc-image-area {
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
   position: relative;
   min-height: 350px;
   max-height: 450px;
   overflow: hidden;
 }
 
-.documento-image-container {
+.doc-image-container {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gray-50, #f8fafc);
+  background: var(--gray-50);
 }
 
-.documento-image {
+.doc-image {
   max-height: 100%;
   max-width: 100%;
   object-fit: contain;
@@ -70,25 +98,25 @@
   transition: transform 0.1s ease;
 }
 
-.documento-image:active {
+.doc-image:active {
   cursor: grabbing;
 }
 
 /* Controles de zoom */
-.image-zoom-controls {
+.doc-zoom-controls {
   position: absolute;
-  bottom: 1rem;
-  right: 1rem;
+  bottom: 16px;
+  right: 16px;
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
   z-index: 10;
   background: rgba(0, 0, 0, 0.6);
-  padding: 0.5rem;
+  padding: 8px;
   border-radius: 40px;
   backdrop-filter: blur(8px);
 }
 
-.zoom-btn {
+.doc-zoom-btn {
   background: transparent;
   border: none;
   color: white;
@@ -103,490 +131,350 @@
   font-size: 1rem;
 }
 
-.zoom-btn:hover {
+.doc-zoom-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
 }
 
-/* Body do formulário */
-.documento-form-body {
-  padding: 2rem;
+/* ── Corpo do formulário ──────────────────────────────────────────── */
+.doc-body {
+  padding: 28px;
 }
 
-/* Loading states */
-.documento-loading {
+/* ── Loading states ───────────────────────────────────────────────── */
+.doc-loading {
   text-align: center;
-  padding: 3rem 2rem;
+  padding: 48px 32px;
 }
 
-.documento-loading-spinner {
+.doc-loading-spinner {
   width: 48px;
   height: 48px;
-  border: 3px solid var(--gray-200, #e2e8f0);
-  border-top-color: var(--primary, #2563eb);
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  margin: 0 auto 1rem;
+  margin: 0 auto 16px;
 }
 
-.documento-loading-text {
-  color: var(--gray-600, #475569);
-  font-size: 1rem;
+.doc-loading-text {
+  color: var(--gray-500);
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
-/* Grid de campos */
-.documento-form-grid {
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Grid de campos ───────────────────────────────────────────────── */
+.doc-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  gap: 20px;
 }
 
 @media (max-width: 768px) {
-  .documento-form-grid {
+  .doc-form-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 16px;
   }
 }
 
-/* Grupos de formulário */
-.documento-form-group {
-  margin-bottom: 0;
+/* ── Grupos de formulário ─────────────────────────────────────────── */
+.doc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.documento-form-group-full {
+.doc-field-full {
   grid-column: span 2;
 }
 
 @media (max-width: 768px) {
-  .documento-form-group-full {
+  .doc-field-full {
     grid-column: span 1;
   }
 }
 
-.documento-label {
+.doc-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--gray-700, #334155);
-  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0;
 }
 
-.documento-label-icon {
-  color: var(--primary, #2563eb);
+.doc-label-icon {
+  color: var(--primary);
   font-size: 0.875rem;
 }
 
-.documento-input,
-.documento-select,
-.documento-textarea {
+.doc-input,
+.doc-select,
+.doc-textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid var(--gray-200, #e2e8f0);
+  padding: 12px 16px;
+  border: 1.5px solid var(--gray-200);
   border-radius: 12px;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-family: inherit;
   transition: all 0.2s ease;
-  background: white;
-  color: var(--gray-800, #1e293b);
+  background: var(--gray-50);
+  color: var(--gray-800);
 }
 
-.documento-input:focus,
-.documento-select:focus,
-.documento-textarea:focus {
+.doc-input:focus,
+.doc-select:focus,
+.doc-textarea:focus {
   outline: none;
-  border-color: var(--primary, #2563eb);
+  border-color: var(--primary);
+  background: #fff;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.documento-input:disabled,
-.documento-select:disabled,
-.documento-textarea:disabled {
-  background-color: var(--gray-100, #f1f5f9);
+.doc-input:disabled,
+.doc-select:disabled,
+.doc-textarea:disabled {
+  background-color: var(--gray-100);
   cursor: not-allowed;
-  color: var(--gray-500, #64748b);
+  color: var(--gray-500);
+  opacity: 0.7;
 }
 
-.documento-textarea {
+.doc-textarea {
   resize: vertical;
   min-height: 100px;
 }
 
-.documento-textarea-sm {
-  min-height: 80px;
-}
-
-.documento-textarea-lg {
-  min-height: 150px;
-}
-
-/* DatePicker customizado */
+/* ── DatePicker customizado ───────────────────────────────────────── */
 .react-datepicker-wrapper {
   width: 100%;
 }
 
-.documento-datepicker {
+.doc-datepicker {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid var(--gray-200, #e2e8f0);
+  padding: 12px 16px;
+  border: 1.5px solid var(--gray-200);
   border-radius: 12px;
-  font-size: 0.95rem;
-  background: white;
+  font-size: 0.875rem;
+  background: var(--gray-50);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.documento-datepicker:focus {
+.doc-datepicker:focus {
   outline: none;
-  border-color: var(--primary, #2563eb);
+  border-color: var(--primary);
+  background: #fff;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.documento-datepicker:disabled {
-  background-color: var(--gray-100, #f1f5f9);
+.doc-datepicker:disabled {
+  background-color: var(--gray-100);
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
-/* Seção de Medicamentos */
-.medicamentos-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid var(--gray-200, #e2e8f0);
-}
-
-.medicamentos-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.medicamentos-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--gray-800, #1e293b);
-  margin: 0;
-}
-
-.medicamentos-title-icon {
-  color: var(--primary, #2563eb);
-  font-size: 1.25rem;
-}
-
-/* Formulário de adicionar medicamento */
-.medicamento-form {
-  background: var(--gray-50, #f8fafc);
-  padding: 1.25rem;
-  border-radius: 16px;
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--gray-200, #e2e8f0);
-}
-
-.medicamento-form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.medicamento-form-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-/* Lista de medicamentos */
-.medicamentos-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.medicamento-card {
-  background: white;
-  border: 1px solid var(--gray-200, #e2e8f0);
-  border-radius: 16px;
-  padding: 1rem;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.medicamento-card:hover {
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
-  border-color: var(--gray-300, #cbd5e1);
-}
-
-.medicamento-card-edit-mode {
-  background: var(--gray-50, #f8fafc);
-  border-color: var(--primary, #2563eb);
-}
-
-.medicamento-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  padding-right: 2rem;
-}
-
-.medicamento-field {
-  display: flex;
-  flex-direction: column;
-}
-
-.medicamento-field-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--gray-500, #64748b);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.25rem;
-}
-
-.medicamento-field-value {
-  font-size: 0.9rem;
-  color: var(--gray-800, #1e293b);
-  font-weight: 500;
-  word-break: break-word;
-}
-
-.medicamento-actions {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.medicamento-action-btn {
-  background: transparent;
-  border: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--gray-500, #64748b);
-}
-
-.medicamento-action-btn:hover {
-  background: var(--gray-100, #f1f5f9);
-  transform: scale(1.05);
-}
-
-.medicamento-action-btn-edit:hover {
-  color: var(--primary, #2563eb);
-}
-
-.medicamento-action-btn-delete:hover {
-  background: var(--error-light, #fee2e2);
-  color: var(--error, #dc2626);
-}
-
-/* Botões de ação do formulário */
-.documento-form-actions {
+/* ── Botões de ação ───────────────────────────────────────────────── */
+.doc-actions {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--gray-200, #e2e8f0);
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--gray-200);
 }
 
-.btn-documento-primary,
-.btn-documento-secondary {
-  padding: 0.75rem 2rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.95rem;
+.doc-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
   cursor: pointer;
   border: none;
+  transition: all 0.2s ease;
 }
 
-.btn-documento-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.doc-btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
 }
 
-.btn-documento-primary:hover:not(:disabled) {
+.doc-btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
 }
 
-.btn-documento-primary:disabled {
+.doc-btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-documento-secondary {
+.doc-btn-secondary {
   background: white;
-  color: var(--gray-700, #334155);
-  border: 1px solid var(--gray-300, #cbd5e1);
+  color: var(--gray-700);
+  border: 1.5px solid var(--gray-200);
 }
 
-.btn-documento-secondary:hover:not(:disabled) {
-  background: var(--gray-100, #f1f5f9);
+.doc-btn-secondary:hover:not(:disabled) {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
   transform: translateY(-1px);
 }
 
-.btn-documento-secondary:disabled {
+.doc-btn-secondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-documento-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+/* ── Seção de Medicamentos (para ReceitaForm) ─────────────────────── */
+.doc-meds-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 2px solid var(--gray-100);
 }
 
-/* Alertas e notificações */
-.documento-alert {
-  padding: 1rem;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
+.doc-meds-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  animation: slideUp 0.3s ease;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.documento-alert-success {
-  background: var(--success-light, #dcfce7);
-  color: var(--success, #16a34a);
-  border-left: 4px solid var(--success, #16a34a);
-}
-
-.documento-alert-error {
-  background: var(--error-light, #fee2e2);
-  color: var(--error, #dc2626);
-  border-left: 4px solid var(--error, #dc2626);
-}
-
-.documento-alert-warning {
-  background: var(--warning-light, #fef3c7);
-  color: var(--warning, #d97706);
-  border-left: 4px solid var(--warning, #d97706);
-}
-
-.documento-alert-info {
-  background: var(--primary-light, #dbeafe);
-  color: var(--primary, #2563eb);
-  border-left: 4px solid var(--primary, #2563eb);
-}
-
-/* Badges */
-.documento-badge {
-  display: inline-flex;
+.doc-meds-title {
+  display: flex;
   align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0;
+}
+
+.doc-meds-title-icon {
+  color: var(--primary);
+  font-size: 1.125rem;
+}
+
+.doc-med-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.doc-med-card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--gray-300);
+}
+
+.doc-med-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.doc-med-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doc-med-label {
+  font-size: 0.7rem;
   font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
 }
 
-.documento-badge-primary {
-  background: var(--primary-light, #dbeafe);
-  color: var(--primary, #2563eb);
+.doc-med-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-800);
 }
 
-.documento-badge-success {
-  background: var(--success-light, #dcfce7);
-  color: var(--success, #16a34a);
+.doc-med-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-100);
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-  .documento-form-body {
-    padding: 1.5rem;
-  }
-
-  .documento-form-header {
-    padding: 1rem 1.5rem;
-  }
-
-  .documento-form-header h2 {
-    font-size: 1.125rem;
-  }
-
-  .documento-image-area {
-    min-height: 250px;
-  }
-
-  .btn-documento-primary,
-  .btn-documento-secondary {
-    padding: 0.625rem 1.5rem;
-    font-size: 0.875rem;
-  }
-
-  .medicamento-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-    padding-right: 2rem;
-  }
-
-  .medicamento-actions {
-    top: 0.5rem;
-    right: 0.5rem;
-  }
+.doc-med-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-@media (max-width: 576px) {
-  .documento-form-actions {
-    flex-direction: column;
-  }
-
-  .btn-documento-primary,
-  .btn-documento-secondary {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .medicamento-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .medicamento-form-actions {
-    justify-content: stretch;
-  }
-
-  .medicamento-form-actions button {
-    flex: 1;
-  }
+.doc-med-btn-edit {
+  color: var(--primary);
 }
 
-/* Animações */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.doc-med-btn-edit:hover {
+  background: var(--primary-soft);
 }
 
-@keyframes fadeIn {
+.doc-med-btn-delete {
+  color: var(--error);
+}
+
+.doc-med-btn-delete:hover {
+  background: var(--error-light);
+}
+
+/* ── Alertas e notificações ───────────────────────────────────────── */
+.doc-alert {
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideDown 0.3s ease;
+}
+
+.doc-alert-error {
+  background: var(--error-light);
+  color: var(--error);
+  border-left: 4px solid var(--error);
+}
+
+.doc-alert-success {
+  background: var(--success-light);
+  color: var(--success);
+  border-left: 4px solid var(--success);
+}
+
+.doc-alert-info {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-left: 4px solid var(--primary);
+}
+
+@keyframes slideDown {
   from {
     opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
@@ -594,61 +482,69 @@
   }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
+/* ─── Botão de submit pequeno ──────────────────────────────────────── */
+.doc-submit-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ── Responsividade ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .doc-page {
+    padding: 20px 16px;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  
+  .doc-header {
+    padding: 18px 20px;
+  }
+  
+  .doc-header h2 {
+    font-size: 1.125rem;
+  }
+  
+  .doc-body {
+    padding: 20px;
+  }
+  
+  .doc-image-area {
+    min-height: 250px;
+  }
+  
+  .doc-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .doc-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+  }
+  
+  .doc-med-grid {
+    grid-template-columns: 1fr;
   }
 }
 
-/* Tooltip customizado */
-.documento-tooltip {
-  position: relative;
-  display: inline-block;
-}
-
-.documento-tooltip .tooltip-text {
-  visibility: hidden;
-  background-color: var(--gray-800, #1e293b);
-  color: white;
-  text-align: center;
-  border-radius: 8px;
-  padding: 4px 8px;
-  position: absolute;
-  z-index: 1;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-size: 0.75rem;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.documento-tooltip:hover .tooltip-text {
-  visibility: visible;
-  opacity: 1;
-}
-
-/* Scrollbar customizada para textareas */
-.documento-textarea::-webkit-scrollbar {
-  width: 6px;
-}
-
-.documento-textarea::-webkit-scrollbar-track {
-  background: var(--gray-100, #f1f5f9);
-  border-radius: 10px;
-}
-
-.documento-textarea::-webkit-scrollbar-thumb {
-  background: var(--gray-300, #cbd5e1);
-  border-radius: 10px;
-}
-
-.documento-textarea::-webkit-scrollbar-thumb:hover {
-  background: var(--gray-400, #94a3b8);
+/* Print styles */
+@media print {
+  .doc-page {
+    background: white;
+    padding: 0;
+  }
+  
+  .doc-header,
+  .doc-zoom-controls,
+  .doc-actions {
+    display: none;
+  }
+  
+  .doc-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
 }

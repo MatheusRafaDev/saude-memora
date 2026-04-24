@@ -10,7 +10,7 @@ import UploadDocumentos from "../pages/UploadDocumentos";
 import Perfil from "../pages/Perfil";
 import ListarDocumentos from "../pages/ListarDocumentos";
 import VisualizadorDocumento from "../pages/VisualizadorDocumento";
-import AlterarDocumento from "../components/AlterarDocumento"; 
+import AlterarDocumento from "../pages/AlterarDocumento"; 
 
 import { AuthWrapper, PublicWrapper } from "./RouteWrappers";
 
