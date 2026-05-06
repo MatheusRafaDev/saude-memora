@@ -567,18 +567,45 @@ export default function Home() {
           transition: all .2s; cursor: pointer; background: none; border: none;
           font-family: 'Outfit', sans-serif;
         }
-        .btn-ghost {
+  .btn-ghost {
   padding: 9px 20px;
   border-radius: 100px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   font-family: 'Outfit', sans-serif;
-  transition: all .2s;
-
-  color: black;
+  transition: all 0.25s ease;
+  
+  /* Estilos base - transparente com borda sutil */
   background: transparent;
-  border: 2px solid black;
+  border: 1.5px solid currentColor;
+  color: #334155;
+  
+  /* Efeito hover */
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+    color: #2563eb;
+    border-color: #2563eb;
+  }
+  
+  /* Efeito active */
+  &:active {
+    transform: translateY(0px);
+    background: rgba(0, 0, 0, 0.08);
+  }
+  
+  /* Quando o header está transparente (não scrolled) */
+  .transparent-header & {
+    color: white;
+    border-color: rgba(255, 255, 255, 0.5);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: white;
+      color: white;
+    }
+  }
 }
         .btn-primary {
           padding: 10px 22px; border-radius: 100px; font-weight: 600; font-size: 14px;
