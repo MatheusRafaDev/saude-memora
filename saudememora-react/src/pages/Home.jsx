@@ -259,6 +259,8 @@ export default function Home() {
         .btn-ghost {
           padding: 9px 20px; border-radius: 100px; font-weight: 600; font-size: 14px;
           cursor: pointer; background: transparent; font-family: 'Outfit', sans-serif; transition: all .2s;
+          color: black;
+          background: black;
         }
         .btn-primary {
           padding: 10px 22px; border-radius: 100px; font-weight: 600; font-size: 14px;
