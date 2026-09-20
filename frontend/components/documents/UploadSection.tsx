@@ -49,6 +49,77 @@ export function UploadSection() {
     }
   };
 
+  const processImageBeforeUpload = async (originalFile: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (!originalFile.type.startsWith('image/')) {
+        resolve(originalFile);
+        return;
+      }
+
+      const img = new Image();
+      const url = URL.createObjectURL(originalFile);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(originalFile);
+
+        const MAX_WIDTH = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        const contrast = 60; 
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          gray = factor * (gray - 128) + 128;
+          
+          if (gray > 255) gray = 255;
+          if (gray < 0) gray = 0;
+
+          data[i] = gray;
+          data[i + 1] = gray;
+          data[i + 2] = gray;
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const processedFile = new File([blob], originalFile.name, { type: 'image/jpeg' });
+              resolve(processedFile);
+            } else resolve(originalFile);
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      
+      img.onerror = () => resolve(originalFile);
+      img.src = url;
+    });
+  };
+
   const handleUpload = async () => {
     if (!file) return;
 
@@ -63,8 +134,10 @@ export function UploadSection() {
         if(uploadState !== "success" && uploadState !== "idle") setUploadState("extracting");
     }, 4500);
 
+    const fileToUpload = await processImageBeforeUpload(file);
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileToUpload);
     formData.append("type", docType);
 
     try {
