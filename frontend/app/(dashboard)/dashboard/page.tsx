@@ -130,7 +130,7 @@ export default function Dashboard() {
                   href={`/documents/${doc.id}`}
                   className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-soft transition-shadow hover:shadow-lift sm:grid-cols-[auto_minmax(0,1fr)_auto]"
                 >
-                  <DocTypeIcon type={doc.type} />
+                  <DocTypeIcon type={doc.type as import("@/lib/mock-data").DocType} />
                   <div className="min-w-0">
                     <p className="truncate font-medium">{doc.title}</p>
                     <p className="truncate text-sm text-muted-foreground">
@@ -138,7 +138,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="col-span-2 sm:col-span-1">
-                    <StatusBadge status={doc.status} />
+                    <StatusBadge status={doc.status as import("@/lib/mock-data").DocStatus} />
                   </div>
                 </Link>
               </li>

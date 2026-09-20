@@ -20,16 +20,31 @@ export function UploadModal({ isOpen, onClose, onSuccess }: UploadModalProps) {
   const [type, setType] = useState<string>("receita");
   const [isUploading, setIsUploading] = useState(false);
 
+  const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  const MAX_SIZE_MB = 10;
+
+  const validateFile = (f: File): string | null => {
+    if (!ACCEPTED_TYPES.includes(f.type)) return "Formato inválido. Use PNG, JPG, WebP ou PDF.";
+    if (f.size > MAX_SIZE_MB * 1024 * 1024) return `Arquivo muito grande. Máximo ${MAX_SIZE_MB}MB.`;
+    return null;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const f = e.target.files[0];
+      const err = validateFile(f);
+      if (err) { toast.error(err); return; }
+      setFile(f);
     }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+      const f = e.dataTransfer.files[0];
+      const err = validateFile(f);
+      if (err) { toast.error(err); return; }
+      setFile(f);
     }
   };
 

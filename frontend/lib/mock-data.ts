@@ -1,4 +1,4 @@
-export type DocStatus = "processed" | "pending" | "review";
+export type DocStatus = "processed" | "pending" | "review" | "pronto" | "processando" | "arquivado";
 export type DocType = "exame" | "receita" | "laudo";
 
 export type MedDoc = {
@@ -102,4 +102,7 @@ export const statusLabels: Record<DocStatus, string> = {
   processed: "Processado por IA",
   pending: "Pendente",
   review: "Revisar dados",
+  pronto: "Pronto",
+  processando: "Processando...",
+  arquivado: "Arquivado",
 };

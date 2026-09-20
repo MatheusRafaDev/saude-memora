@@ -41,7 +41,7 @@ public class GeminiOcrService : IOcrAiService
         }
 
         // Caso a chave exista, faz a chamada real pro Google Gemini
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={_apiKey}";
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={_apiKey}";
 
         // O prompt pede para atuar apenas como OCR (Reconhecimento Óptico de Caracteres)
         var prompt = $@"
@@ -164,7 +164,7 @@ public class GeminiOcrService : IOcrAiService
         {
             try
             {
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={apiKey}";
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={apiKey}";
                 var payload = new
                 {
                     contents = new[] { new { parts = new[] { new { text = prompt } } } },

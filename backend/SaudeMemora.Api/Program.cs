@@ -15,7 +15,6 @@ using BCrypt.Net;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using DotNetEnv;
-using SaudeMemora.Infrastructure.Data;
 
 // Load .env variables
 Env.Load();
@@ -103,6 +102,13 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
     if (existing != null)
     {
         return Results.BadRequest(new[] { "Email já cadastrado." });
+    }
+
+    // Verifica se CPF já existe
+    var existingCpf = await repo.GetByCpfAsync(dto.Cpf);
+    if (existingCpf != null)
+    {
+        return Results.BadRequest(new[] { "CPF já cadastrado." });
     }
 
     var paciente = new Paciente
@@ -235,6 +241,22 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
 }).RequireAuthorization();
 
+// Atualiza telefone e endereço do paciente autenticado
+app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Results.Unauthorized();
+
+    var paciente = await repo.GetByIdAsync(userId);
+    if (paciente == null) return Results.NotFound();
+
+    if (dto.Telefone != null) paciente.Telefone = dto.Telefone;
+    if (dto.Endereco != null) paciente.Endereco = dto.Endereco;
+
+    await repo.UpdateAsync(paciente);
+    return Results.Ok(new { Message = "Contato atualizado com sucesso." });
+}).RequireAuthorization();
+
 // ─── Document Endpoints ────────────────────────────────────────────────────
 
 // Processa upload de novo documento com OCR
@@ -363,14 +385,21 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
     });
 }).RequireAuthorization();
 
-// Exclui documento por ID
-app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo) =>
+// Exclui documento por ID (e remove do Cloudinary)
+app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
     var doc = await repo.GetByIdAsync(id);
     if (doc == null || doc.PatientId != userId) return Results.NotFound();
+
+    // Remove imagem do Cloudinary (se existir)
+    if (!string.IsNullOrWhiteSpace(doc.PublicId) && doc.PublicId != "mock_public_id_12345")
+    {
+        try { await storage.DeleteImageAsync(doc.PublicId); }
+        catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar imagem: {ex.Message}"); }
+    }
 
     await repo.DeleteAsync(id);
     return Results.Ok(new { message = "Documento deletado com sucesso." });
@@ -389,3 +418,5 @@ public record PerfilMedicoDto(
     List<string>? DoencasCronicas,
     List<MedicamentoContinuoDto>? MedicamentosContinuos
 );
+
+public record ContatoDto(string? Telefone, string? Endereco);

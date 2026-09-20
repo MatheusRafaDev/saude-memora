@@ -21,13 +21,20 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error("Preencha e-mail e senha.");
+      return;
+    }
     try {
       setIsLoading(true);
       const res = await api.post("/auth/login", { email, senha: password });
       toast.success("Login realizado com sucesso!");
       login(res.data.token, res.data.user);
     } catch (err: any) {
-      toast.error(err.response?.data?.[0] || "Erro ao fazer login");
+      const data = err.response?.data;
+      // Backend retorna array de strings (FluentValidation) ou objeto com mensagem
+      const msg = Array.isArray(data) ? data[0] : (data?.error ?? data?.message ?? "Erro ao fazer login. Verifique suas credenciais.");
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

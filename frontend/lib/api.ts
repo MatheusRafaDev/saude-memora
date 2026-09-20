@@ -2,7 +2,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 export const api = axios.create({
-  baseURL: "http://localhost:5204/api", // Base URL do backend em C#
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5204/api",
 });
 
 api.interceptors.request.use((config) => {
@@ -16,12 +16,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 404) {
-      // Se a API retornar 404 (usuário não encontrado no DB) ou 401 (token expirado), força logout
+    const status = error.response?.status;
+    // 401 = token expirado, 403 = sem permissão
+    if (status === 401 || status === 403) {
       Cookies.remove("sm_token");
       localStorage.removeItem("sm_user");
       if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = "/login";
       }
     }

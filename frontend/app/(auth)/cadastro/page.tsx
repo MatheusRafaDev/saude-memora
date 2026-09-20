@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -43,14 +44,16 @@ function validate(field: keyof Fields, value: string): string | null {
   if (field === "nome" && value.trim().split(" ").length < 2) return "Informe nome e sobrenome.";
   if (field === "cpf" && value.replace(/\D/g, "").length !== 11) return "CPF deve ter 11 dígitos.";
   if (field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "E-mail inválido.";
-  if (field === "senha" && value.length < 8) return "Mínimo de 8 caracteres.";
+  if (field === "senha" && value.length < 6) return "Mínimo de 6 caracteres.";
   if (field === "nascimento" && new Date(value) > new Date()) return "Data no futuro.";
   return null;
 }
 
 export default function CadastroPage() {
+  const router = useRouter();
   const [values, setValues] = useState<Fields>(empty);
   const [touched, setTouched] = useState<Partial<Record<keyof Fields, boolean>>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const errorFor = (field: keyof Fields) =>
     touched[field] ? validate(field, values[field]) : null;
@@ -63,6 +66,10 @@ export default function CadastroPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Marca todos como tocados para exibir erros
+    const allTouched = Object.keys(values).reduce((acc, k) => ({ ...acc, [k]: true }), {});
+    setTouched(allTouched as Partial<Record<keyof Fields, boolean>>);
+
     const hasErrors = (Object.keys(values) as (keyof Fields)[]).some(
       (key) => validate(key, values[key]) !== null
     );
@@ -73,6 +80,7 @@ export default function CadastroPage() {
     }
 
     try {
+      setIsLoading(true);
       await api.post("/auth/register", {
         nome: values.nome,
         cpf: values.cpf,
@@ -82,9 +90,13 @@ export default function CadastroPage() {
         senha: values.senha
       });
       toast.success("Conta criada com sucesso! Faça login.");
-      window.location.href = "/login";
+      router.push("/login");
     } catch (err: any) {
-      toast.error(err.response?.data?.[0] || "Erro ao criar conta");
+      const data = err.response?.data;
+      const msg = Array.isArray(data) ? data[0] : (data?.error ?? data?.message ?? "Erro ao criar conta.");
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -152,7 +164,7 @@ export default function CadastroPage() {
           id="senha"
           label="Senha"
           type="password"
-          placeholder="Mínimo de 8 caracteres"
+          placeholder="Mínimo de 6 caracteres"
           value={values.senha}
           error={errorFor("senha")}
           hint="Use letras, números e ao menos um símbolo."
@@ -166,8 +178,12 @@ export default function CadastroPage() {
           </span>
         </label>
 
-        <Button type="submit" size="lg" className="w-full rounded-xl">
-          Criar conta
+        <Button type="submit" size="lg" className="w-full rounded-xl" disabled={isLoading}>
+          {isLoading ? (
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando conta...</>
+          ) : (
+            "Criar conta"
+          )}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">

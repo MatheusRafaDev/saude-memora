@@ -183,7 +183,7 @@ export default function DocumentDetail() {
               </p>
             ) : (
               <ul className="mt-4 space-y-4">
-                {doc.medicines.map((med, i) => (
+                {doc.medicines.map((med: { name: string; dosage: string; schedule?: string }, i: number) => (
                   <li key={med.name} className="space-y-2">
                     <Label htmlFor={`med-${i}`}>Medicamento {i + 1}</Label>
                     <Input id={`med-${i}`} defaultValue={med.name} className="h-11 rounded-xl" />

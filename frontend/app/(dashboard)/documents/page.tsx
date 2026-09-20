@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, Search, SlidersHorizontal, Upload, UserRound, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { CalendarDays, Search, SlidersHorizontal, Upload, UserRound, MoreVertical, Pencil, Trash2, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 import { DocumentViewer } from "@/components/documents/DocumentViewer";
 import { UploadModal } from "@/components/documents/UploadModal";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 const tabs = [
   { value: "todos", label: "Todos os arquivos" },
@@ -31,9 +32,11 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchDocuments = () => {
-    api.get("/documents").then((res) => setDocuments(res.data)).catch(console.error);
+    setLoading(true);
+    api.get("/documents").then((res) => setDocuments(res.data)).catch(console.error).finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -44,11 +47,22 @@ export default function DocumentsPage() {
     return <DocumentViewer id={selectedDocId} onClose={() => setSelectedDocId(null)} />;
   }
 
-  const filtered = documents.filter(d => 
-    d.title?.toLowerCase().includes(query.toLowerCase()) || 
-    d.clinic?.toLowerCase().includes(query.toLowerCase()) ||
-    d.doctor?.toLowerCase().includes(query.toLowerCase())
-  );
+  // Filtra por aba e por texto de busca
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const filtered = documents
+    .filter((d) => {
+      if (tab === "receitas") return d.type === "receita";
+      if (tab === "exames") return d.type === "exame";
+      if (tab === "recentes") return d.createdAt && new Date(d.createdAt) >= sevenDaysAgo;
+      return true; // "todos"
+    })
+    .filter((d) =>
+      d.title?.toLowerCase().includes(query.toLowerCase()) ||
+      d.clinic?.toLowerCase().includes(query.toLowerCase()) ||
+      d.doctor?.toLowerCase().includes(query.toLowerCase())
+    );
 
   return (
     <AppShell 
@@ -108,17 +122,27 @@ export default function DocumentsPage() {
                       <Pencil className="mr-2 h-4 w-4" /> Editar
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="rounded-lg text-destructive focus:text-destructive cursor-pointer"
-                      onClick={async () => {
-                        if (confirm("Tem certeza que deseja excluir este documento?")) {
-                          try {
-                            await api.delete(`/documents/${doc.id}`);
-                            setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-                          } catch (error) {
-                            alert("Erro ao excluir o documento.");
+                      onClick={() => {
+                        toast(
+                          "Excluir documento?",
+                          {
+                            description: `"${doc.title}" será removido permanentemente.`,
+                            action: {
+                              label: "Excluir",
+                              onClick: async () => {
+                                try {
+                                  await api.delete(`/documents/${doc.id}`);
+                                  setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
+                                  toast.success("Documento excluído com sucesso.");
+                                } catch {
+                                  toast.error("Erro ao excluir o documento.");
+                                }
+                              },
+                            },
                           }
-                        }
+                        );
                       }}
                     >
                       <Trash2 className="mr-2 h-4 w-4" /> Excluir
