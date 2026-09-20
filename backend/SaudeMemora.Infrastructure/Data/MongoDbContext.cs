@@ -19,4 +19,5 @@ public class MongoDbContext
 
     public IMongoCollection<DocumentRecord> Documents => _database.GetCollection<DocumentRecord>("Documents");
     public IMongoCollection<Paciente> Pacientes => _database.GetCollection<Paciente>("Pacientes");
+    public IMongoCollection<FichaMedica> FichaMedicas => _database.GetCollection<FichaMedica>("FichaMedicas");
 }

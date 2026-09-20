@@ -26,10 +26,21 @@ type Fields = {
   nascimento: string;
   genero: string;
   email: string;
+  telefone: string;
+  endereco: string;
   senha: string;
+  confirmarSenha: string;
 };
 
-const empty: Fields = { nome: "", cpf: "", nascimento: "", genero: "", email: "", senha: "" };
+const empty: Fields = { nome: "", cpf: "", nascimento: "", genero: "", email: "", telefone: "", endereco: "", senha: "", confirmarSenha: "" };
+
+function maskPhone(value: string) {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  if (d.length > 10) return d.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  if (d.length > 6) return d.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
+  if (d.length > 2) return d.replace(/(\d{2})(\d{0,5})/, "($1) $2");
+  return d.replace(/(\d{0,2})/, "($1");
+}
 
 function maskCpf(value: string) {
   const d = value.replace(/\D/g, "").slice(0, 11);
@@ -39,12 +50,13 @@ function maskCpf(value: string) {
     .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
 }
 
-function validate(field: keyof Fields, value: string): string | null {
-  if (!value.trim()) return "Campo obrigatório.";
+function validate(field: keyof Fields, value: string, allValues?: Fields): string | null {
+  if (field !== "telefone" && field !== "endereco" && !value.trim()) return "Campo obrigatório.";
   if (field === "nome" && value.trim().split(" ").length < 2) return "Informe nome e sobrenome.";
   if (field === "cpf" && value.replace(/\D/g, "").length !== 11) return "CPF deve ter 11 dígitos.";
   if (field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "E-mail inválido.";
   if (field === "senha" && value.length < 6) return "Mínimo de 6 caracteres.";
+  if (field === "confirmarSenha" && allValues && value !== allValues.senha) return "As senhas não coincidem.";
   if (field === "nascimento" && new Date(value) > new Date()) return "Data no futuro.";
   return null;
 }
@@ -56,10 +68,14 @@ export default function CadastroPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const errorFor = (field: keyof Fields) =>
-    touched[field] ? validate(field, values[field]) : null;
+    touched[field] ? validate(field, values[field], values) : null;
 
   const set = (field: keyof Fields, value: string) => {
-    setValues((v) => ({ ...v, [field]: field === "cpf" ? maskCpf(value) : value }));
+    let finalValue = value;
+    if (field === "cpf") finalValue = maskCpf(value);
+    if (field === "telefone") finalValue = maskPhone(value);
+    
+    setValues((v) => ({ ...v, [field]: finalValue }));
     setTouched((t) => ({ ...t, [field]: true }));
   };
 
@@ -71,7 +87,7 @@ export default function CadastroPage() {
     setTouched(allTouched as Partial<Record<keyof Fields, boolean>>);
 
     const hasErrors = (Object.keys(values) as (keyof Fields)[]).some(
-      (key) => validate(key, values[key]) !== null
+      (key) => validate(key, values[key], values) !== null
     );
 
     if (hasErrors) {
@@ -87,6 +103,8 @@ export default function CadastroPage() {
         dataNascimento: values.nascimento,
         sexo: values.genero,
         email: values.email,
+        telefone: values.telefone,
+        endereco: values.endereco,
         senha: values.senha
       });
       toast.success("Conta criada com sucesso! Faça login.");
@@ -160,16 +178,46 @@ export default function CadastroPage() {
           onChange={(v) => set("email", v)}
         />
 
-        <Field
-          id="senha"
-          label="Senha"
-          type="password"
-          placeholder="Mínimo de 6 caracteres"
-          value={values.senha}
-          error={errorFor("senha")}
-          hint="Use letras, números e ao menos um símbolo."
-          onChange={(v) => set("senha", v)}
-        />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            id="telefone"
+            label="Telefone (opcional)"
+            placeholder="(00) 00000-0000"
+            inputMode="numeric"
+            value={values.telefone}
+            error={errorFor("telefone")}
+            onChange={(v) => set("telefone", v)}
+          />
+          <Field
+            id="endereco"
+            label="Endereço (opcional)"
+            placeholder="Rua, Número, Bairro"
+            value={values.endereco}
+            error={errorFor("endereco")}
+            onChange={(v) => set("endereco", v)}
+          />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            id="senha"
+            label="Senha"
+            type="password"
+            placeholder="Mínimo de 6 caracteres"
+            value={values.senha}
+            error={errorFor("senha")}
+            onChange={(v) => set("senha", v)}
+          />
+          <Field
+            id="confirmarSenha"
+            label="Confirmar Senha"
+            type="password"
+            placeholder="Repita a senha"
+            value={values.confirmarSenha}
+            error={errorFor("confirmarSenha")}
+            onChange={(v) => set("confirmarSenha", v)}
+          />
+        </div>
 
         <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
           <Checkbox id="terms" className="mt-0.5" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { UploadCloud, File, X, Loader2 } from "lucide-react";
+import { UploadCloud, File as FileIcon, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -56,6 +56,77 @@ export function UploadModal({ isOpen, onClose, onSuccess }: UploadModalProps) {
     }
   };
 
+  const processImageBeforeUpload = (originalFile: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (!originalFile.type.startsWith('image/')) {
+        resolve(originalFile); // Return as is for PDFs
+        return;
+      }
+
+      const img = new Image();
+      const url = URL.createObjectURL(originalFile);
+      
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(originalFile);
+
+        const MAX_WIDTH = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        const contrast = 60; 
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          gray = factor * (gray - 128) + 128;
+          
+          if (gray > 255) gray = 255;
+          if (gray < 0) gray = 0;
+
+          data[i] = gray;
+          data[i + 1] = gray;
+          data[i + 2] = gray;
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const processedFile = new File([blob], originalFile.name, { type: 'image/jpeg' });
+              resolve(processedFile);
+            } else resolve(originalFile);
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      
+      img.onerror = () => resolve(originalFile);
+      img.src = url;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
@@ -64,8 +135,12 @@ export function UploadModal({ isOpen, onClose, onSuccess }: UploadModalProps) {
     }
 
     setIsUploading(true);
+    
+    // Process image before upload
+    const fileToUpload = await processImageBeforeUpload(file);
+    
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileToUpload);
     formData.append("type", type);
 
     try {
@@ -138,7 +213,7 @@ export function UploadModal({ isOpen, onClose, onSuccess }: UploadModalProps) {
               <div className="flex items-center justify-between p-4 border border-border rounded-xl bg-card">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <File className="w-5 h-5 text-primary" />
+                    <FileIcon className="w-5 h-5 text-primary" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{file.name}</p>

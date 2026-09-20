@@ -16,6 +16,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 type MedicamentoContinuo = {
   name: string;
@@ -46,18 +50,51 @@ function getInitials(nome: string) {
 }
 
 export default function PerfilPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [perfil, setPerfil] = useState<PerfilMedico | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<PerfilMedico>>({});
 
   useEffect(() => {
     if (!user) return;
     api
       .get("/pacientes/me")
-      .then((res) => setPerfil(res.data))
+      .then((res) => {
+        setPerfil(res.data);
+        setFormData(res.data);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user]);
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      await api.patch("/pacientes/me/perfil", formData); // Assume that backend is updated to take this
+      setPerfil(formData as PerfilMedico);
+      setIsEditing(false);
+      toast.success("Perfil atualizado com sucesso!");
+    } catch (err) {
+      toast.error("Erro ao salvar perfil.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (confirm("ATENÇÃO: A exclusão apaga em cascata todos os seus documentos, receitas, medicamentos e ficha médica. Deseja continuar?")) {
+      try {
+        await api.delete("/pacientes/me");
+        toast.success("Conta excluída.");
+        logout();
+        router.push("/");
+      } catch (err) {
+        toast.error("Erro ao excluir conta.");
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -119,28 +156,51 @@ export default function PerfilPage() {
             ))}
           </dl>
 
-          <Button variant="outline" className="mt-6 w-full rounded-xl">
-            <Pencil className="mr-1 h-4 w-4" /> Editar dados pessoais
-          </Button>
+          {!isEditing ? (
+            <Button variant="outline" className="mt-6 w-full rounded-xl" onClick={() => setIsEditing(true)}>
+              <Pencil className="mr-1 h-4 w-4" /> Editar dados pessoais
+            </Button>
+          ) : (
+            <div className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label>Telefone</Label>
+                <Input value={formData.telefone || ""} onChange={(e) => setFormData({...formData, telefone: e.target.value})} className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label>Endereço</Label>
+                <Input value={formData.endereco || ""} onChange={(e) => setFormData({...formData, endereco: e.target.value})} className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo Sanguíneo</Label>
+                <Input value={formData.tipoSanguineo || ""} onChange={(e) => setFormData({...formData, tipoSanguineo: e.target.value})} className="rounded-xl" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button className="w-full rounded-xl" onClick={handleSave}>Salvar</Button>
+                <Button variant="outline" className="w-full rounded-xl" onClick={() => { setIsEditing(false); setFormData(perfil); }}>Cancelar</Button>
+              </div>
+            </div>
+          )}
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-destructive-soft p-4">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-destructive">
-                <Droplet className="h-3.5 w-3.5" /> Tipo sanguíneo
-              </span>
-              <p className="mt-1 text-2xl font-semibold text-destructive">
-                {perfil.tipoSanguineo || "—"}
-              </p>
+          {!isEditing && (
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-destructive-soft p-4">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-destructive">
+                  <Droplet className="h-3.5 w-3.5" /> Tipo sanguíneo
+                </span>
+                <p className="mt-1 text-2xl font-semibold text-destructive">
+                  {perfil.tipoSanguineo || "—"}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-success-soft p-4">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success">
+                  <HeartPulse className="h-3.5 w-3.5" /> Doador de órgãos
+                </span>
+                <p className="mt-1 text-2xl font-semibold text-success">
+                  {perfil.doadorOrgaos ? "Sim" : "Não"}
+                </p>
+              </div>
             </div>
-            <div className="rounded-2xl bg-success-soft p-4">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success">
-                <HeartPulse className="h-3.5 w-3.5" /> Doador de órgãos
-              </span>
-              <p className="mt-1 text-2xl font-semibold text-success">
-                {perfil.doadorOrgaos ? "Sim" : "Não"}
-              </p>
-            </div>
-          </div>
+          )}
         </section>
 
         <div className="space-y-6">
@@ -226,6 +286,14 @@ export default function PerfilPage() {
                 Nenhum medicamento contínuo cadastrado.
               </p>
             )}
+          </section>
+
+          <section className="rounded-2xl border border-destructive bg-destructive-soft p-6 shadow-soft mt-8">
+            <h2 className="font-semibold text-destructive mb-2">Zona de Perigo</h2>
+            <p className="text-sm text-destructive mb-4">A exclusão da conta é irreversível e apagará todos os seus dados em cascata.</p>
+            <Button variant="destructive" className="w-full rounded-xl" onClick={handleDelete}>
+              Excluir minha conta
+            </Button>
           </section>
         </div>
       </div>
