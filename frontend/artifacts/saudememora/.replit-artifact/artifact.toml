@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "SaúdeMemora"
+description = "A premium health document management web app for patients to upload, organize, and understand medical records with simulated OCR and AI extraction."
+version = "1.0.0"
+id = "artifacts/saudememora"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24012
+
+[services.development]
+run = "pnpm --filter @workspace/saudememora run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/saudememora", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/saudememora/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24012"
+BASE_PATH = "/"

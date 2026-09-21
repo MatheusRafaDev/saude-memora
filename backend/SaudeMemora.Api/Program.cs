@@ -203,44 +203,11 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
         Idade = idade,
         paciente.Sexo,
         paciente.Telefone,
-        paciente.Endereco,
-        paciente.TipoSanguineo,
-        paciente.DoadorOrgaos,
-        paciente.Alergias,
-        paciente.DoencasCronicas,
-        MedicamentosContinuos = paciente.MedicamentosContinuos.Select(m => new
-        {
-            name = m.Nome,
-            dosage = m.Dosagem,
-            schedule = m.Horario
-        })
+        paciente.Endereco
     });
 }).RequireAuthorization();
 
-// Atualiza o perfil médico do paciente autenticado
-app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilMedicoDto dto) =>
-{
-    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (userId == null) return Results.Unauthorized();
 
-    var paciente = await repo.GetByIdAsync(userId);
-    if (paciente == null) return Results.NotFound();
-
-    if (dto.TipoSanguineo != null) paciente.TipoSanguineo = dto.TipoSanguineo;
-    if (dto.DoadorOrgaos.HasValue) paciente.DoadorOrgaos = dto.DoadorOrgaos.Value;
-    if (dto.Alergias != null) paciente.Alergias = dto.Alergias;
-    if (dto.DoencasCronicas != null) paciente.DoencasCronicas = dto.DoencasCronicas;
-    if (dto.MedicamentosContinuos != null)
-        paciente.MedicamentosContinuos = dto.MedicamentosContinuos.Select(m => new MedicamentoContinuo
-        {
-            Nome = m.Nome,
-            Dosagem = m.Dosagem,
-            Horario = m.Horario
-        }).ToList();
-
-    await repo.UpdateAsync(paciente);
-    return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
-}).RequireAuthorization();
 
 // Atualiza telefone e endereço do paciente autenticado
 app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto) =>
@@ -298,7 +265,7 @@ app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepo
     if (userId == null) return Results.Unauthorized();
 
     var ficha = await repo.GetByPatientIdAsync(userId);
-    if (ficha == null) return Results.NotFound();
+    if (ficha == null) return Results.Ok(new { });
 
     return Results.Ok(ficha);
 }).RequireAuthorization();
@@ -323,6 +290,12 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     ficha.Bebe = dto.Bebe;
     ficha.HabitosGerais = dto.HabitosGerais;
     ficha.Observacoes = dto.Observacoes;
+    ficha.Condicoes = dto.Condicoes;
+    ficha.OutrasDoencas = dto.OutrasDoencas;
+    ficha.TipoSanguineo = dto.TipoSanguineo;
+    ficha.DoadorOrgaos = dto.DoadorOrgaos;
+    ficha.Alergias = dto.Alergias;
+    ficha.DoencasCronicas = dto.DoencasCronicas;
     
     await repo.UpdateAsync(ficha);
     return Results.Ok(ficha);
@@ -363,7 +336,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         ImageUrl = imageUrl,
         PublicId = publicId,
         Title = extractedData.Title,
-        Type = docType,
+        Type = !string.IsNullOrWhiteSpace(extractedData.Type) ? extractedData.Type.ToLower() : "receita",
         Status = "pronto", // poderia ser "processando" e usar webhooks se fosse fila
         Doctor = extractedData.Doctor,
         Clinic = extractedData.Clinic,
@@ -495,9 +468,12 @@ Você é um médico especialista montando um dossiê clínico (prontuário resum
 Aqui estão os dados do paciente:
 
 [Perfil]:
-Nome: {paciente?.Nome}, Idade/Sexo: {paciente?.Sexo}, Tipo Sanguíneo: {paciente?.TipoSanguineo}
-Alergias: {string.Join(", ", paciente?.Alergias ?? new List<string>())}
-Doenças Crônicas: {string.Join(", ", paciente?.DoencasCronicas ?? new List<string>())}
+Nome: {paciente?.Nome}, Idade/Sexo: {paciente?.Sexo}
+
+[Ficha Médica]:
+Tipo Sanguíneo: {ficha?.TipoSanguineo}
+Alergias: {string.Join(", ", ficha?.Alergias ?? new List<string>())}
+Doenças Crônicas: {string.Join(", ", ficha?.DoencasCronicas ?? new List<string>())}
 
 [Ficha Médica]:
 Histórico Familiar: {ficha?.HistoricoFamiliar}

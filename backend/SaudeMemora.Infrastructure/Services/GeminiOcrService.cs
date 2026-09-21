@@ -111,13 +111,14 @@ public class GeminiOcrService : IOcrAiService
     {
         var prompt = $@"
         ATENÇÃO: VOCÊ É UM EXTRATOR DE DADOS DE TEXTO.
-        Aqui está a transcrição bruta via OCR de um documento do tipo '{documentType}':
+        Aqui está a transcrição bruta via OCR de um documento médico:
         
         {rawText}
         
         Sua tarefa é ler este texto e extrair os dados. Se não achar algo de forma óbvia, retorne string vazia.
         Retorne estritamente um JSON no seguinte formato:
         {{
+            ""type"": ""O tipo de documento detectado: 'exame', 'receita', ou 'laudo'"",
             ""title"": ""O título que aparece no texto (ex: Receita Médica)"",
             ""doctor"": ""Nome literal do médico"",
             ""clinic"": ""Nome literal da clínica/hospital"",

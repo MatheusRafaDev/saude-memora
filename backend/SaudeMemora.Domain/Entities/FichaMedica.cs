@@ -34,4 +34,34 @@ public class FichaMedica
 
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("condicoes")]
+    public List<CondicaoMedica> Condicoes { get; set; } = new();
+
+    [BsonElement("outrasDoencas")]
+    public string OutrasDoencas { get; set; } = string.Empty;
+
+    [BsonElement("tipoSanguineo")]
+    public string? TipoSanguineo { get; set; }
+
+    [BsonElement("doadorOrgaos")]
+    public bool DoadorOrgaos { get; set; } = false;
+
+    [BsonElement("alergias")]
+    public List<string> Alergias { get; set; } = new();
+
+    [BsonElement("doencasCronicas")]
+    public List<string> DoencasCronicas { get; set; } = new();
+}
+
+public class CondicaoMedica
+{
+    [BsonElement("nome")]
+    public string Nome { get; set; } = string.Empty;
+
+    [BsonElement("tem")]
+    public bool Tem { get; set; } = false;
+
+    [BsonElement("detalhes")]
+    public string Detalhes { get; set; } = string.Empty;
 }

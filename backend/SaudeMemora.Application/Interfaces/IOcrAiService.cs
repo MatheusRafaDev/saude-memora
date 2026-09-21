@@ -9,6 +9,7 @@ public interface IOcrAiService
 
 public class ExtractedDocumentDto
 {
+    public string Type { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Doctor { get; set; } = string.Empty;
     public string Clinic { get; set; } = string.Empty;

@@ -91,8 +91,7 @@ public class DocumentProcessingService : IOcrAiService
 Você é um assistente médico de transcrição altamente preciso.
 Abaixo estão duas leituras de OCR da MESMA imagem. O Motor 1 foca em texto corrido, e o Motor 2 em tabelas.
 Sua tarefa: Unificar as duas extrações no texto final mais correto, corrigindo possíveis erros de digitação (ortografia) causados pelo OCR, mas SEMPRE mantendo as dosagens e números intocados.
-NÃO INCLUA INTRODUÇÕES OU CONCLUSÕES. RETORNE APENAS O TEXTO UNIFICADO E CORRIGIDO.
-
+NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLICAÇÕES. RETORNE APENAS O TEXTO UNIFICADO E CORRIGIDO DIRETAMENTE.
 [Motor 1]:
 {text1}
 
@@ -129,6 +128,7 @@ NÃO INCLUA INTRODUÇÕES OU CONCLUSÕES. RETORNE APENAS O TEXTO UNIFICADO E COR
         {
             jsonFormat = @"
             {
+                ""title"": ""Título ou nome principal do documento (ex: Receita da Dra. Amanda)"",
                 ""doctor"": ""Nome literal do médico"",
                 ""crm"": ""Número do CRM se houver"",
                 ""date"": ""Data legível no formato dd/MM/yyyy"",
@@ -143,6 +143,7 @@ NÃO INCLUA INTRODUÇÕES OU CONCLUSÕES. RETORNE APENAS O TEXTO UNIFICADO E COR
         {
             jsonFormat = @"
             {
+                ""title"": ""Título ou nome principal do documento (ex: Hemograma Completo)"",
                 ""examName"": ""Nome do exame principal"",
                 ""examType"": ""Categoria do exame (sangue, imagem, etc)"",
                 ""clinic"": ""Laboratório ou clínica"",
@@ -156,6 +157,7 @@ NÃO INCLUA INTRODUÇÕES OU CONCLUSÕES. RETORNE APENAS O TEXTO UNIFICADO E COR
         {
             jsonFormat = @"
             {
+                ""title"": ""Título ou nome principal do documento (ex: Atestado Médico)"",
                 ""doctor"": ""Nome literal do médico"",
                 ""specialty"": ""Especialidade médica"",
                 ""clinicalType"": ""Tipo de documento (laudo, atestado, etc)"",

@@ -15,6 +15,7 @@ public class MedicamentoContinuo
     public string Horario { get; set; } = string.Empty;
 }
 
+[BsonIgnoreExtraElements]
 public class Paciente
 {
     [BsonId]
@@ -44,21 +45,6 @@ public class Paciente
 
     [BsonElement("endereco")]
     public string? Endereco { get; set; }
-
-    [BsonElement("tipoSanguineo")]
-    public string? TipoSanguineo { get; set; }
-
-    [BsonElement("doadorOrgaos")]
-    public bool? DoadorOrgaos { get; set; }
-
-    [BsonElement("alergias")]
-    public List<string> Alergias { get; set; } = new();
-
-    [BsonElement("doencasCronicas")]
-    public List<string> DoencasCronicas { get; set; } = new();
-
-    [BsonElement("medicamentosContinuos")]
-    public List<MedicamentoContinuo> MedicamentosContinuos { get; set; } = new();
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
