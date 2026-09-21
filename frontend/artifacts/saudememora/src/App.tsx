@@ -32,13 +32,13 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/auth" component={Auth} />
-        <Route path="/dashboard">{() => <AppPage><Dashboard /></AppPage>}</Route>
-        <Route path="/documents">{() => <AppPage><Documents /></AppPage>}</Route>
-        <Route path="/documents/:id">{(params) => <AppPage><DocumentDetail id={params.id} /></AppPage>}</Route>
-        <Route path="/upload">{() => <AppPage><Upload /></AppPage>}</Route>
-        <Route path="/record">{() => <AppPage><Record /></AppPage>}</Route>
-        <Route path="/profile">{() => <AppPage><Profile /></AppPage>}</Route>
+        <Route path="/entrar" component={Auth} />
+        <Route path="/painel">{() => <AppPage><Dashboard /></AppPage>}</Route>
+        <Route path="/documentos">{() => <AppPage><Documents /></AppPage>}</Route>
+        <Route path="/documentos/:id">{(params) => <AppPage><DocumentDetail id={params.id} /></AppPage>}</Route>
+        <Route path="/enviar">{() => <AppPage><Upload /></AppPage>}</Route>
+        <Route path="/anamnese">{() => <AppPage><Record /></AppPage>}</Route>
+        <Route path="/perfil">{() => <AppPage><Profile /></AppPage>}</Route>
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>

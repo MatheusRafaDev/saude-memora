@@ -207,7 +207,23 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
     });
 }).RequireAuthorization();
 
+// Atualiza informações do paciente autenticado (Nome, Cpf, DataNascimento, Email)
+app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Results.Unauthorized();
 
+    var paciente = await repo.GetByIdAsync(userId);
+    if (paciente == null) return Results.NotFound();
+
+    if (!string.IsNullOrWhiteSpace(dto.Nome)) paciente.Nome = dto.Nome;
+    if (!string.IsNullOrWhiteSpace(dto.Cpf)) paciente.Cpf = dto.Cpf;
+    if (!string.IsNullOrWhiteSpace(dto.DataNascimento)) paciente.DataNascimento = dto.DataNascimento;
+    if (!string.IsNullOrWhiteSpace(dto.Email)) paciente.Email = dto.Email;
+
+    await repo.UpdateAsync(paciente);
+    return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
+}).RequireAuthorization();
 
 // Atualiza telefone e endereço do paciente autenticado
 app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto) =>
@@ -534,3 +550,5 @@ public record PerfilMedicoDto(
 );
 
 public record ContatoDto(string? Telefone, string? Endereco);
+
+public record PerfilUpdateDto(string? Nome, string? Cpf, string? DataNascimento, string? Email);

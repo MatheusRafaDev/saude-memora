@@ -59,12 +59,11 @@ export default function Profile() {
     try {
       await patchPerfil.mutateAsync({
         data: {
-          tipoSanguineo: form.bloodType,
-          doadorOrgaos: form.organDonor,
-          alergias: form.allergies ? form.allergies.split(',').map(s => s.trim()) : [],
-          doencasCronicas: form.chronicDiseases ? form.chronicDiseases.split(',').map(s => s.trim()) : [],
-          medicamentosContinuos: []
-        }
+          nome: form.name,
+          cpf: form.cpf,
+          dataNascimento: form.birthDate,
+          email: form.email
+        } as any
       });
 
       setSaved(true); 
@@ -79,7 +78,7 @@ export default function Profile() {
     try {
       await deleteAccount.mutateAsync();
       signOut();
-      window.location.href = '/auth';
+      window.location.href = '/entrar';
     } catch (err) {
       setError('Erro ao deletar a conta.');
       setShowDeleteConfirm(false);
@@ -105,10 +104,10 @@ export default function Profile() {
           <CircleUserRound size={20} className="ml-auto text-muted-foreground/60" />
         </div>
         <div className="grid gap-5 pt-6 md:grid-cols-2">
-          <Field label="Nome completo (somente leitura)" value={form.name} onChange={() => {}} id="name" disabled={true} />
-          <Field label="E-mail (somente leitura)" value={form.email} onChange={() => {}} id="email" type="email" disabled={true} />
-          <Field label="CPF (somente leitura)" value={form.cpf} onChange={() => {}} id="cpf" disabled={true} />
-          <Field label="Data de nascimento (somente leitura)" value={form.birthDate} onChange={() => {}} id="birth-date" type="date" disabled={true} />
+          <Field label="Nome completo" value={form.name} onChange={(v) => set('name', v)} id="name" />
+          <Field label="E-mail" value={form.email} onChange={(v) => set('email', v)} id="email" type="email" />
+          <Field label="CPF" value={form.cpf} onChange={(v) => set('cpf', v)} id="cpf" />
+          <Field label="Data de nascimento" value={form.birthDate} onChange={(v) => set('birthDate', v)} id="birth-date" type="date" />
         </div>
       </section>
 
@@ -139,7 +138,7 @@ export default function Profile() {
           <h2 className="text-base font-extrabold flex items-center gap-2">Sessão</h2>
           <p className="mt-1 text-xs text-muted-foreground">Sair com segurança do seu espaço no Saúde Memora.</p>
         </div>
-        <button type="button" onClick={() => { signOut(); window.location.href = '/auth'; }} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors">Sair da conta</button>
+        <button type="button" onClick={() => { signOut(); window.location.href = '/entrar'; }} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors">Sair da conta</button>
       </div>
     </section>
 

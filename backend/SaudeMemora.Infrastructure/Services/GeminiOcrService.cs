@@ -46,9 +46,8 @@ public class GeminiOcrService : IOcrAiService
         // O prompt pede para atuar apenas como OCR (Reconhecimento Óptico de Caracteres)
         var prompt = $@"
         Você é uma ferramenta de OCR (Reconhecimento Óptico de Caracteres).
-        Apenas transcreva literalmente TODO o texto contido na imagem, de cima para baixo.
-        Não adicione introduções, não tente organizar em JSON, não estruture os dados.
-        Retorne única e exclusivamente o texto cru que você enxerga na imagem.
+        Transcreva todo o texto contido na imagem organizando e indentando por seções claras (como PACIENTE, MÉDICO, EXAMES, RESULTADOS, DIAGNÓSTICO, DOSAGEM, MEDICAMENTOS).
+        Use títulos em MAIÚSCULAS para seções, quebras de linha e recuos para manter a leitura limpa, organizada e estruturada.
         URL DA IMAGEM: {imageUrl}
         ";
 
@@ -118,15 +117,15 @@ public class GeminiOcrService : IOcrAiService
         Sua tarefa é ler este texto e extrair os dados. Se não achar algo de forma óbvia, retorne string vazia.
         Retorne estritamente um JSON no seguinte formato:
         {{
-            ""type"": ""O tipo de documento detectado: 'exame', 'receita', ou 'laudo'"",
-            ""title"": ""O título que aparece no texto (ex: Receita Médica)"",
-            ""doctor"": ""Nome literal do médico"",
-            ""clinic"": ""Nome literal da clínica/hospital"",
+            ""type"": ""Identifique a categoria exata do documento médico (ex: 'Exame de Sangue', 'Exame de Imagem', 'Receita Médica', 'Laudo Médico', 'Atestado Médico', 'Vacinação', 'Encaminhamento', 'Prontuário', ou 'Outro Documento')"",
+            ""title"": ""O título descritivo do documento (ex: Hemograma Completo, Tomografia de Tórax, Receita de Amoxicilina)"",
+            ""doctor"": ""Nome do médico ou profissional de saúde (com Dr./Dra. se houver)"",
+            ""clinic"": ""Nome da clínica, hospital ou laboratório"",
             ""date"": ""Data legível no formato dd/MM/yyyy"",
-            ""summary"": ""Uma única frase resumindo o que é."",
-            ""diagnosis"": ""O CID ou diagnóstico, se houver explícito"",
+            ""summary"": ""Resumo clínico claro em uma ou duas frases sobre os principais achados ou itens prescritos."",
+            ""diagnosis"": ""O CID, diagnóstico ou conclusão principal expressa no documento"",
             ""medicines"": [
-                {{ ""name"": ""nome do remédio"", ""dosage"": ""dosagem escrita"" }}
+                {{ ""name"": ""nome do medicamento/substância"", ""dosage"": ""dosagem e posologia"" }}
             ]
         }}
         ";

@@ -47,7 +47,7 @@ export default function Auth() {
           localStorage.setItem('auth_token', result.token);
           setMessage('Acesso confirmado. Bem-vinda de volta.');
           setTimeout(() => {
-            window.location.href = '/dashboard';
+            window.location.href = '/painel';
           }, 450);
         } else {
           setError('Erro inesperado ao realizar login.');
@@ -70,7 +70,7 @@ export default function Auth() {
           localStorage.setItem('auth_token', result.token);
           setMessage('Sua conta foi criada. Vamos começar sua anamnese.');
           setTimeout(() => {
-            window.location.href = '/record';
+            window.location.href = '/anamnese';
           }, 800);
         } else {
           setMessage('Sua conta foi criada. Faça login para acessar.');

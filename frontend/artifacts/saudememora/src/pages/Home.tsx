@@ -36,9 +36,9 @@ export default function Home() {
         <nav className="hidden items-center gap-8 text-[12px] font-semibold text-muted-foreground md:flex">
           <a href="#como-funciona" className="transition-colors hover:text-primary">Como funciona</a>
           <a href="#cuidado" className="transition-colors hover:text-primary">Cuidado e privacidade</a>
-          <Link href="/auth" className="flex items-center gap-2 text-primary transition-colors hover:text-accent">Entrar <ArrowUpRight size={15} /></Link>
+          <Link href="/entrar" className="flex items-center gap-2 text-primary transition-colors hover:text-accent">Entrar <ArrowUpRight size={15} /></Link>
         </nav>
-        <Link href="/auth" className="rounded-xl bg-primary px-4 py-2.5 text-[12px] font-bold text-primary-foreground shadow-[0_10px_24px_hsl(var(--primary)/.16)] transition-transform hover:-translate-y-0.5 md:hidden">Entrar</Link>
+        <Link href="/entrar" className="rounded-xl bg-primary px-4 py-2.5 text-[12px] font-bold text-primary-foreground shadow-[0_10px_24px_hsl(var(--primary)/.16)] transition-transform hover:-translate-y-0.5 md:hidden">Entrar</Link>
       </header>
 
       <main>
@@ -56,7 +56,7 @@ export default function Home() {
               O SaúdeMemora organiza seus exames, receitas e relatórios em um espaço pessoal, seguro e fácil de entender — para você chegar mais preparado a cada conversa médica.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/auth" className="group flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[13px] font-bold text-primary-foreground shadow-[0_14px_28px_hsl(var(--primary)/.18)] transition-all hover:-translate-y-0.5">
+              <Link href="/entrar" className="group flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[13px] font-bold text-primary-foreground shadow-[0_14px_28px_hsl(var(--primary)/.18)] transition-all hover:-translate-y-0.5">
                 Criar meu espaço <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <a href="#como-funciona" className="flex h-12 items-center justify-center rounded-xl border border-border bg-card px-5 text-[13px] font-bold text-primary transition-colors hover:bg-muted">
@@ -148,7 +148,7 @@ export default function Home() {
         </section>
 
         <section className="mx-5 mb-8 overflow-hidden rounded-[28px] bg-primary md:mx-auto md:max-w-[1240px]">
-          <div className="relative px-6 py-12 md:px-14 md:py-16"><div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border border-primary-foreground/10" /><div className="absolute -bottom-32 right-28 h-80 w-80 rounded-full border border-primary-foreground/10" /><div className="relative max-w-[620px]"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-primary-foreground/60">comece por você</p><h2 className="mt-4 text-3xl font-extrabold tracking-[-.06em] text-primary-foreground md:text-5xl">Quando a sua história está organizada, tudo fica mais claro.</h2><Link href="/auth" className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-primary-foreground px-5 text-[13px] font-bold text-primary transition-transform hover:-translate-y-0.5">Criar meu espaço <ArrowRight size={17} /></Link></div></div>
+          <div className="relative px-6 py-12 md:px-14 md:py-16"><div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border border-primary-foreground/10" /><div className="absolute -bottom-32 right-28 h-80 w-80 rounded-full border border-primary-foreground/10" /><div className="relative max-w-[620px]"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-primary-foreground/60">comece por você</p><h2 className="mt-4 text-3xl font-extrabold tracking-[-.06em] text-primary-foreground md:text-5xl">Quando a sua história está organizada, tudo fica mais claro.</h2><Link href="/entrar" className="mt-7 inline-flex h-12 items-center gap-2 rounded-xl bg-primary-foreground px-5 text-[13px] font-bold text-primary transition-transform hover:-translate-y-0.5">Criar meu espaço <ArrowRight size={17} /></Link></div></div>
         </section>
       </main>
 

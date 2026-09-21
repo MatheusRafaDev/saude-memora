@@ -103,6 +103,37 @@
   .text-balance { text-wrap: balance; }
 }
 
+/* Robust Cross-Browser Glassmorphism Rules */
+.glass-header {
+  background-color: hsl(var(--background) / 0.9);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.glass-modal {
+  background-color: rgba(0, 0, 0, 0.65);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.glass-card {
+  background-color: hsl(var(--card) / 0.92);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.glass-badge {
+  background-color: rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+/* Ensure floating dropdowns are opaque and readable over text */
+.dropdown-opaque {
+  background-color: hsl(var(--card));
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
 .app-noise::after {
   content: '';
   position: fixed;
