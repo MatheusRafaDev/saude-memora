@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="MongoDB.Driver" Version="2.24.0" />
+    <PackageReference Include="DotNetEnv" Version="3.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SaudeMemora.Application\SaudeMemora.Application.csproj" />
+    <ProjectReference Include="..\SaudeMemora.Domain\SaudeMemora.Domain.csproj" />
+    <ProjectReference Include="..\SaudeMemora.Infrastructure\SaudeMemora.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

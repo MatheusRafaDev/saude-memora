@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SaudeMemora.Api/SaudeMemora.Api.csproj" />
+  <Project Path="SaudeMemora.Application/SaudeMemora.Application.csproj" />
+  <Project Path="SaudeMemora.Domain/SaudeMemora.Domain.csproj" />
+  <Project Path="SaudeMemora.Infrastructure/SaudeMemora.Infrastructure.csproj" />
+</Solution>
