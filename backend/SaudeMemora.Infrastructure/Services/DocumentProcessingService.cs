@@ -275,10 +275,17 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
                 dto.TextoExtraido = unifiedText;
                 return dto;
             }
-            catch
+            catch (Exception ex)
             {
-                return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = "Erro ao deserializar JSON da IA." };
+                Console.WriteLine($"Erro ao deserializar: {ex.Message}. JSON: {jsonResult}");
+                return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro de conversão (JSON): {ex.Message}" };
             }
+        }
+        else
+        {
+            var err = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Groq falhou com {response.StatusCode}: {err}");
+            return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro na API da IA (Groq): {response.StatusCode} - {err}" };
         }
 
         return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = "Falha ao extrair dados estruturados." };
