@@ -15,6 +15,21 @@ public class MedicamentoDocumento
     public string Horario { get; set; } = string.Empty;
 }
 
+public class LinhaIndentadaDocumento
+{
+    [BsonElement("tipo")]
+    public string Tipo { get; set; } = string.Empty;
+
+    [BsonElement("texto")]
+    public string Texto { get; set; } = string.Empty;
+
+    [BsonElement("chave")]
+    public string Chave { get; set; } = string.Empty;
+
+    [BsonElement("valor")]
+    public string Valor { get; set; } = string.Empty;
+}
+
 public class RegistroDocumento
 {
     [BsonId]
@@ -98,6 +113,9 @@ public class RegistroDocumento
 
     [BsonElement("textoExtraido")]
     public string TextoExtraido { get; set; } = string.Empty;
+
+    [BsonElement("conteudoIndentado")]
+    public List<LinhaIndentadaDocumento> ConteudoIndentado { get; set; } = new();
 
     [BsonElement("criadoEm")]
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;

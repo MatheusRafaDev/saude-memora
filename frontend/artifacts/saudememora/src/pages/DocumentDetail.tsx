@@ -6,57 +6,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
-function indentOcrText(rawText: string) {
-  if (!rawText) return [];
-
-  const lines = rawText
-    .split(/\r?\n/)
-    .map(line => line.trim())
-    .filter(Boolean);
-
-  const structured: { type: 'header' | 'keyvalue' | 'bullet' | 'text'; key?: string; value?: string; text: string; indentLevel: number }[] = [];
-
-  for (const line of lines) {
-    // Header detection
-    const isHeader =
-      (/^([A-ZÁÀÂÃÉÈÊÍÓÔÕÚÇ0-9\s\-\/\.]{3,}:?)$/.test(line) && line.length < 50) ||
-      /^(PACIENTE|MÉDICO|LAUDO|DIAGNOSTICO|DIAGNÓSTICO|RECEITA|EXAME|EXAMES|RESULTADO|RESULTADOS|OBSERVAÇÕES|IMPRESSÃO|CONCLUSÃO|INDICAÇÃO|DOSAGEM|MEDICAMENTOS|DATA|CONVENIO|CONVÊNIO|CRM):?/i.test(line);
-
-    if (isHeader) {
-      structured.push({
-        type: 'header',
-        text: line.replace(/:$/, ''),
-        indentLevel: 0
-      });
-    } else if (line.includes(':')) {
-      const parts = line.split(':');
-      const key = parts[0].trim();
-      const val = parts.slice(1).join(':').trim();
-      structured.push({
-        type: 'keyvalue',
-        key,
-        value: val,
-        text: line,
-        indentLevel: 1
-      });
-    } else if (/^[\-\*\•\>]/.test(line)) {
-      structured.push({
-        type: 'bullet',
-        text: line.replace(/^[\-\*\•\>]\s*/, ''),
-        indentLevel: 1
-      });
-    } else {
-      structured.push({
-        type: 'text',
-        text: line,
-        indentLevel: 2
-      });
-    }
-  }
-
-  return structured;
-}
-
 export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [match, params] = useRoute('/documentos/:id');
   const id = propId || (params as any)?.id;
@@ -245,39 +194,43 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
               {ocrViewMode === 'indented' ? (
                 <div className="rounded-xl border border-border bg-muted/20 p-5 space-y-2.5 font-mono text-xs overflow-auto max-h-[360px] scrollbar-thin">
-                  {indentOcrText(doc.textoExtraido).map((item, idx) => {
-                    if (item.type === 'header') {
+                  {(doc.conteudoIndentado || []).length > 0 ? (
+                    doc.conteudoIndentado.map((item: any, idx: number) => {
+                      if (item.tipo === 'header') {
+                        return (
+                          <div key={idx} className="pt-3 pb-1 border-b border-border/40 font-black text-accent flex items-center gap-2 text-xs uppercase tracking-wider">
+                            <span className="h-2 w-2 rounded-full bg-accent" />
+                            {item.texto}
+                          </div>
+                        );
+                      }
+                      if (item.tipo === 'keyvalue') {
+                        return (
+                          <div key={idx} className="pl-4 flex flex-wrap items-baseline gap-2">
+                            <span className="font-bold text-foreground bg-accent/10 border border-accent/20 px-2 py-0.5 rounded text-[11px]">
+                              {item.chave || item.texto.split(':')[0]}:
+                            </span>
+                            <span className="text-muted-foreground font-medium">{item.valor || item.texto.split(':').slice(1).join(':')}</span>
+                          </div>
+                        );
+                      }
+                      if (item.tipo === 'bullet') {
+                        return (
+                          <div key={idx} className="pl-6 flex items-start gap-2 text-muted-foreground">
+                            <span className="text-accent font-bold">•</span>
+                            <span>{item.texto.replace(/^[\-\*\•\>]\s*/, '')}</span>
+                          </div>
+                        );
+                      }
                       return (
-                        <div key={idx} className="pt-3 pb-1 border-b border-border/40 font-black text-accent flex items-center gap-2 text-xs uppercase tracking-wider">
-                          <span className="h-2 w-2 rounded-full bg-accent" />
-                          {item.text}
+                        <div key={idx} className="pl-8 text-muted-foreground/90 leading-relaxed font-normal">
+                          {item.texto}
                         </div>
                       );
-                    }
-                    if (item.type === 'keyvalue') {
-                      return (
-                        <div key={idx} className="pl-4 flex flex-wrap items-baseline gap-2">
-                          <span className="font-bold text-foreground bg-accent/10 border border-accent/20 px-2 py-0.5 rounded text-[11px]">
-                            {item.key}:
-                          </span>
-                          <span className="text-muted-foreground font-medium">{item.value || '—'}</span>
-                        </div>
-                      );
-                    }
-                    if (item.type === 'bullet') {
-                      return (
-                        <div key={idx} className="pl-6 flex items-start gap-2 text-muted-foreground">
-                          <span className="text-accent font-bold">•</span>
-                          <span>{item.text}</span>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div key={idx} className="pl-8 text-muted-foreground/90 leading-relaxed font-normal">
-                        {item.text}
-                      </div>
-                    );
-                  })}
+                    })
+                  ) : (
+                    <p className="text-muted-foreground italic">Nenhum conteúdo indentado extraído pela IA.</p>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-xl bg-muted/30 p-5">

@@ -430,7 +430,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         UrlImagens = urlImagens,
         IdPublicos = idPublicos,
         Titulo = extractedData.Titulo,
-        Tipo = !string.IsNullOrWhiteSpace(extractedData.Tipo) ? extractedData.Tipo.ToLower() : "receita",
+        Tipo = !string.IsNullOrWhiteSpace(extractedData.TipoIdentificado) ? extractedData.TipoIdentificado.ToLower() : (!string.IsNullOrWhiteSpace(extractedData.Tipo) ? extractedData.Tipo.ToLower() : type),
         Status = "pronto", // poderia ser "processando" e usar webhooks se fosse fila
         Medico = extractedData.Medico,
         Clinica = extractedData.Clinica,
@@ -443,6 +443,13 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         { 
             Nome = m.Nome, 
             Dosagem = m.Dosagem 
+        }).ToList(),
+        ConteudoIndentado = extractedData.ConteudoIndentado.Select(l => new LinhaIndentadaDocumento
+        {
+            Tipo = l.Tipo,
+            Texto = l.Texto,
+            Chave = l.Chave,
+            Valor = l.Valor
         }).ToList()
     };
 
@@ -521,6 +528,7 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         UrlImagem = doc.UrlImagem,
         UrlImagens = doc.UrlImagens,
         TextoExtraido = doc.TextoExtraido,
+        ConteudoIndentado = doc.ConteudoIndentado,
         CriadoEm = doc.CriadoEm
     });
 }).RequireAuthorization();

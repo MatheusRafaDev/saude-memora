@@ -15,9 +15,18 @@ public class CarteirinhaExtraidaDto
     public string NumeroCarteirinha { get; set; } = string.Empty;
 }
 
+public class LinhaIndentadaDto
+{
+    public string Tipo { get; set; } = string.Empty;
+    public string Texto { get; set; } = string.Empty;
+    public string Chave { get; set; } = string.Empty;
+    public string Valor { get; set; } = string.Empty;
+}
+
 public class DocumentoExtraidoDto
 {
     public string Tipo { get; set; } = string.Empty;
+    public string TipoIdentificado { get; set; } = string.Empty;
     public string Titulo { get; set; } = string.Empty;
     public string Medico { get; set; } = string.Empty;
     public string Clinica { get; set; } = string.Empty;
@@ -34,6 +43,7 @@ public class DocumentoExtraidoDto
     public string Conclusoes { get; set; } = string.Empty;
     public string Observacoes { get; set; } = string.Empty;
     public List<MedicamentoExtraidoDto> Medicamentos { get; set; } = new();
+    public List<LinhaIndentadaDto> ConteudoIndentado { get; set; } = new();
     public string TextoExtraido { get; set; } = string.Empty;
 }
 

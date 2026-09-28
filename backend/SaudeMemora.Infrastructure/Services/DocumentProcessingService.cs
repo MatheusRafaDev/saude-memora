@@ -219,55 +219,28 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
 
     private async Task<DocumentoExtraidoDto> ExtractStructuredDataAsync(string unifiedText, string documentType)
     {
-        string jsonFormat = "";
-        if (documentType.ToLower() == "receita")
+        var jsonFormat = @"
         {
-            jsonFormat = @"
-            {
-                ""titulo"": ""Título ou nome principal do documento (ex: Receita da Dra. Amanda)"",
-                ""medico"": ""Nome literal do médico"",
-                ""crm"": ""Número do CRM se houver"",
-                ""data"": ""Data legível no formato dd/MM/yyyy"",
-                ""observacoes"": ""Quaisquer observações do médico"",
-                ""resumo"": ""Uma frase curta resumindo a receita"",
-                ""medicamentos"": [
-                    { ""nome"": ""nome do remédio"", ""dosagem"": ""dosagem"", ""horario"": ""forma de uso/horário"" }
-                ]
-            }";
-        }
-        else if (documentType.ToLower() == "exame")
-        {
-            jsonFormat = @"
-            {
-                ""titulo"": ""Título ou nome principal do documento (ex: Hemograma Completo)"",
-                ""nomeExame"": ""Nome do exame principal"",
-                ""tipoExame"": ""Categoria do exame (sangue, imagem, etc)"",
-                ""clinica"": ""Laboratório ou clínica"",
-                ""data"": ""Data legível no formato dd/MM/yyyy"",
-                ""resultado"": ""Valores de resultado ou laudo principal"",
-                ""observacoes"": ""Observações ou valores de referência"",
-                ""resumo"": ""Resumo do resultado do exame""
-            }";
-        }
-        else // clinico
-        {
-            jsonFormat = @"
-            {
-                ""titulo"": ""Título ou nome principal do documento (ex: Atestado Médico)"",
-                ""medico"": ""Nome literal do médico"",
-                ""especialidade"": ""Especialidade médica"",
-                ""tipoClinico"": ""Tipo de documento (laudo, atestado, etc)"",
-                ""data"": ""Data legível no formato dd/MM/yyyy"",
-                ""conteudo"": ""Conteúdo principal do texto"",
-                ""conclusoes"": ""Conclusões médicas"",
-                ""resumo"": ""Resumo do documento clínico""
-            }";
-        }
+            ""tipoIdentificado"": ""analise o documento e classifique estritamente como 'receita', 'exame' ou 'clinico'. Pedido médico, receita ou prescrição é 'receita'. Laudo de exame ou resultado laboratorial é 'exame'. Atestados, relatórios ou outros são 'clinico'."",
+            ""titulo"": ""Título principal do documento (ex: Receita da Dra. Amanda, Hemograma Completo, etc)"",
+            ""medico"": ""Nome do médico se houver"",
+            ""clinica"": ""Laboratório ou clínica se houver"",
+            ""data"": ""Data legível no formato dd/MM/yyyy"",
+            ""resumo"": ""Resumo do documento clínico/resultado"",
+            ""diagnostico"": ""Diagnóstico, CID ou conclusão médica se houver"",
+            ""medicamentos"": [
+                { ""nome"": ""nome do remédio"", ""dosagem"": ""dosagem"", ""horario"": ""forma de uso/horário"" }
+            ],
+            ""conteudoIndentado"": [
+                { ""tipo"": ""use 'header' (para seções/títulos), 'keyvalue' (para campos como Nome: João), 'bullet' (itens de lista) ou 'text' (texto corrido)"", ""texto"": ""texto completo da linha estruturada"", ""chave"": ""se for keyvalue, qual a chave"", ""valor"": ""se for keyvalue, qual o valor"" }
+            ]
+        }";
 
         var prompt = $@"
 ATENÇÃO: VOCÊ É UM EXTRATOR DE DADOS DE TEXTO ESTRUTURADOS.
-Extraia as informações do texto unificado abaixo, categorizado como '{documentType}'.
-Se não achar algo de forma óbvia, retorne string vazia """".
+Extraia as informações do texto unificado abaixo. O usuário sugeriu que é um '{documentType}', mas você deve inferir o 'tipoIdentificado' correto.
+Identifique blocos de texto e converta em um 'conteudoIndentado' lógico para ser lido no frontend.
+Se não achar algum campo, retorne string vazia """".
 
 Texto unificado:
 {unifiedText}
