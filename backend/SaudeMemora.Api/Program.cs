@@ -430,7 +430,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         UrlImagens = urlImagens,
         IdPublicos = idPublicos,
         Titulo = extractedData.Titulo,
-        Tipo = !string.IsNullOrWhiteSpace(extractedData.TipoIdentificado) ? extractedData.TipoIdentificado.ToLower() : (!string.IsNullOrWhiteSpace(extractedData.Tipo) ? extractedData.Tipo.ToLower() : type),
+        Tipo = !string.IsNullOrWhiteSpace(extractedData.TipoIdentificado) ? extractedData.TipoIdentificado.ToLower() : (!string.IsNullOrWhiteSpace(extractedData.Tipo) ? extractedData.Tipo.ToLower() : docTipo),
         Status = "pronto", // poderia ser "processando" e usar webhooks se fosse fila
         Medico = extractedData.Medico,
         Clinica = extractedData.Clinica,
