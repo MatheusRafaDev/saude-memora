@@ -41,7 +41,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IOcrAiService, DocumentProcessingService>();
 
 // CORS
-var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') ?? new[] { "http://localhost:3000" };
+var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') ?? new[] { "http://localhost:3000", "http://localhost:5173" };
 
 builder.Services.AddCors(options =>
 {
@@ -203,7 +203,10 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
         Idade = idade,
         paciente.Sexo,
         paciente.Telefone,
-        paciente.Endereco
+        paciente.Endereco,
+        paciente.PlanoSaude,
+        paciente.NumeroCarteirinha,
+        paciente.UrlCarteirinha
     });
 }).RequireAuthorization();
 
@@ -220,6 +223,8 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     if (!string.IsNullOrWhiteSpace(dto.Cpf)) paciente.Cpf = dto.Cpf;
     if (!string.IsNullOrWhiteSpace(dto.DataNascimento)) paciente.DataNascimento = dto.DataNascimento;
     if (!string.IsNullOrWhiteSpace(dto.Email)) paciente.Email = dto.Email;
+    if (dto.PlanoSaude != null) paciente.PlanoSaude = dto.PlanoSaude;
+    if (dto.NumeroCarteirinha != null) paciente.NumeroCarteirinha = dto.NumeroCarteirinha;
 
     await repo.UpdateAsync(paciente);
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
@@ -241,6 +246,66 @@ app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPaciente
     return Results.Ok(new { Message = "Contato atualizado com sucesso." });
 }).RequireAuthorization();
 
+app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IOcrAiService ocr) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Results.Unauthorized();
+
+    var paciente = await repo.GetByIdAsync(userId);
+    if (paciente == null) return Results.NotFound();
+
+    if (!context.Request.HasFormContentType)
+        return Results.BadRequest("Formato inválido.");
+
+    var form = await context.Request.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+    if (file == null || file.Length == 0) return Results.BadRequest("Nenhum arquivo enviado.");
+
+    if (!string.IsNullOrEmpty(paciente.IdPublicoCarteirinha))
+        try { await storage.DeleteImageAsync(paciente.IdPublicoCarteirinha); } catch { }
+
+    using var stream = file.OpenReadStream();
+    var (url, id) = await storage.UploadImageAsync(stream, file.FileName);
+    
+    // IA Extração da Carteirinha
+    var extracted = await ocr.ExtractCarteirinhaDataAsync(url);
+
+    paciente.UrlCarteirinha = url;
+    paciente.IdPublicoCarteirinha = id;
+    
+    if (!string.IsNullOrWhiteSpace(extracted.PlanoSaude)) 
+        paciente.PlanoSaude = extracted.PlanoSaude;
+        
+    if (!string.IsNullOrWhiteSpace(extracted.NumeroCarteirinha)) 
+        paciente.NumeroCarteirinha = extracted.NumeroCarteirinha;
+
+    await repo.UpdateAsync(paciente);
+
+    return Results.Ok(new { 
+        url,
+        planoSaude = paciente.PlanoSaude,
+        numeroCarteirinha = paciente.NumeroCarteirinha
+    });
+}).RequireAuthorization();
+
+app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Results.Unauthorized();
+
+    var paciente = await repo.GetByIdAsync(userId);
+    if (paciente == null) return Results.NotFound();
+
+    if (!string.IsNullOrEmpty(paciente.IdPublicoCarteirinha))
+        try { await storage.DeleteImageAsync(paciente.IdPublicoCarteirinha); } catch { }
+
+    paciente.UrlCarteirinha = null;
+    paciente.IdPublicoCarteirinha = null;
+    await repo.UpdateAsync(paciente);
+
+    return Results.Ok();
+}).RequireAuthorization();
+
 // Exclui a conta do paciente e todos os seus dados em cascata
 app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IImageStorageService storage) =>
 {
@@ -248,18 +313,18 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
     if (userId == null) return Results.Unauthorized();
 
     // 1. Pega os documentos para apagar imagens
-    var docs = await docRepo.GetAllByPatientIdAsync(userId);
+    var docs = await docRepo.GetAllByPacienteIdAsync(userId);
     foreach (var doc in docs)
     {
-        if (!string.IsNullOrWhiteSpace(doc.PublicId) && doc.PublicId != "mock_public_id_12345")
+        if (!string.IsNullOrWhiteSpace(doc.IdPublico) && doc.IdPublico != "mock_public_id_12345")
         {
-            try { await storage.DeleteImageAsync(doc.PublicId); } catch { /* ignora erros do cloudinary no cascade */ }
+            try { await storage.DeleteImageAsync(doc.IdPublico); } catch { /* ignora erros do cloudinary no cascade */ }
         }
         await docRepo.DeleteAsync(doc.Id!);
     }
 
     // 2. Apaga a ficha médica
-    var ficha = await fichaRepo.GetByPatientIdAsync(userId);
+    var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
     if (ficha != null)
     {
         // Precisamos adicionar Delete no repo se quisermos apagar
@@ -280,7 +345,7 @@ app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepo
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
-    var ficha = await repo.GetByPatientIdAsync(userId);
+    var ficha = await repo.GetByPacienteIdAsync(userId);
     if (ficha == null) return Results.Ok(new { });
 
     return Results.Ok(ficha);
@@ -291,10 +356,10 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
-    var ficha = await repo.GetByPatientIdAsync(userId);
+    var ficha = await repo.GetByPacienteIdAsync(userId);
     if (ficha == null)
     {
-        dto.PatientId = userId;
+        dto.PacienteId = userId;
         await repo.CreateAsync(dto);
         return Results.Ok(dto);
     }
@@ -329,42 +394,55 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         return Results.BadRequest("Formato inválido. Esperado multipart/form-data.");
 
     var form = await context.Request.ReadFormAsync();
-    var file = form.Files.GetFile("file");
-    var docType = form["type"].ToString();
+    var files = form.Files;
+    var docTipo = form["type"].ToString();
 
-    if (file == null || file.Length == 0)
+    if (files.Count == 0)
         return Results.BadRequest("Nenhum arquivo enviado.");
 
-    if (string.IsNullOrWhiteSpace(docType))
-        docType = "receita"; // fallback padrao
+    if (string.IsNullOrWhiteSpace(docTipo))
+        docTipo = "receita"; // fallback padrao
+
+    var urlImagens = new List<string>();
+    var idPublicos = new List<string>();
 
     // 1. Upload pro Cloudinary
-    using var stream = file.OpenReadStream();
-    var (imageUrl, publicId) = await storage.UploadImageAsync(stream, file.FileName);
+    foreach (var file in files)
+    {
+        if (file.Length == 0) continue;
+        using var stream = file.OpenReadStream();
+        var (UrlImagem, IdPublico) = await storage.UploadImageAsync(stream, file.FileName);
+        urlImagens.Add(UrlImagem);
+        idPublicos.Add(IdPublico);
+    }
 
-    // 2. Extração de Dados via Gemini (OCR AI)
-    var extractedData = await ocr.ExtractDocumentDataAsync(imageUrl, docType);
+    if (urlImagens.Count == 0) return Results.BadRequest("Nenhum arquivo válido.");
+
+    // 2. Extração de Dados via OCR e IA (suportando múltiplas páginas)
+    var extractedData = await ocr.ExtractMultipleDocumentsDataAsync(urlImagens, docTipo);
 
     // 3. Salvar no MongoDB
-    var docRecord = new DocumentRecord
+    var docRecord = new RegistroDocumento
     {
-        PatientId = userId,
-        ImageUrl = imageUrl,
-        PublicId = publicId,
-        Title = extractedData.Title,
-        Type = !string.IsNullOrWhiteSpace(extractedData.Type) ? extractedData.Type.ToLower() : "receita",
+        PacienteId = userId,
+        UrlImagem = urlImagens.First(), // fallback para frontends antigos
+        IdPublico = idPublicos.First(),
+        UrlImagens = urlImagens,
+        IdPublicos = idPublicos,
+        Titulo = extractedData.Titulo,
+        Tipo = !string.IsNullOrWhiteSpace(extractedData.Tipo) ? extractedData.Tipo.ToLower() : "receita",
         Status = "pronto", // poderia ser "processando" e usar webhooks se fosse fila
-        Doctor = extractedData.Doctor,
-        Clinic = extractedData.Clinic,
-        Date = extractedData.Date,
-        Summary = extractedData.Summary,
-        Diagnosis = extractedData.Diagnosis,
-        ExtractedText = extractedData.ExtractedText,
-        CreatedAt = DateTime.UtcNow,
-        Medicines = extractedData.Medicines.Select(m => new DocumentMedicine 
+        Medico = extractedData.Medico,
+        Clinica = extractedData.Clinica,
+        Data = extractedData.Data,
+        Resumo = extractedData.Resumo,
+        Diagnostico = extractedData.Diagnostico,
+        TextoExtraido = extractedData.TextoExtraido,
+        CriadoEm = DateTime.UtcNow,
+        Medicamentos = extractedData.Medicamentos.Select(m => new MedicamentoDocumento 
         { 
-            Name = m.Name, 
-            Dosage = m.Dosage 
+            Nome = m.Nome, 
+            Dosagem = m.Dosagem 
         }).ToList()
     };
 
@@ -380,23 +458,24 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
-    var docs = await repo.GetAllByPatientIdAsync(userId);
+    var docs = await repo.GetAllByPacienteIdAsync(userId);
 
     return Results.Ok(docs.Select(d => new
     {
         id = d.Id,
-        title = d.Title,
-        type = d.Type,
+        Titulo = d.Titulo,
+        Tipo = d.Tipo,
         status = d.Status,
-        doctor = d.Doctor,
-        clinic = d.Clinic,
-        date = d.Date,
-        summary = d.Summary,
-        diagnosis = d.Diagnosis,
-        medicines = d.Medicines.Select(m => new { name = m.Name, dosage = m.Dosage }),
-        imageUrl = d.ImageUrl,
-        createdAt = d.CreatedAt
-    }).OrderByDescending(d => d.createdAt));
+        Medico = d.Medico,
+        Clinica = d.Clinica,
+        Data = d.Data,
+        Resumo = d.Resumo,
+        Diagnostico = d.Diagnostico,
+        Medicamentos = d.Medicamentos.Select(m => new { Nome = m.Nome, Dosagem = m.Dosagem }),
+        UrlImagem = d.UrlImagem,
+        UrlImagens = d.UrlImagens,
+        CriadoEm = d.CriadoEm
+    }).OrderByDescending(d => d.CriadoEm));
 }).RequireAuthorization();
 
 // Contagens de documentos por tipo (para métricas do dashboard)
@@ -405,16 +484,16 @@ app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentReposit
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
-    var docs = await repo.GetAllByPatientIdAsync(userId);
+    var docs = await repo.GetAllByPacienteIdAsync(userId);
     var list = docs.ToList();
 
     return Results.Ok(new
     {
         total = list.Count,
-        exames = list.Count(d => d.Type == "exame"),
-        receitas = list.Count(d => d.Type == "receita"),
-        laudos = list.Count(d => d.Type == "laudo"),
-        receitasAtivas = list.Count(d => d.Type == "receita" && d.Status == "pronto")
+        exames = list.Count(d => d.Tipo == "exame"),
+        receitas = list.Count(d => d.Tipo == "receita"),
+        laudos = list.Count(d => d.Tipo == "laudo"),
+        receitasAtivas = list.Count(d => d.Tipo == "receita" && d.Status == "pronto")
     });
 }).RequireAuthorization();
 
@@ -425,23 +504,24 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
     if (userId == null) return Results.Unauthorized();
 
     var doc = await repo.GetByIdAsync(id);
-    if (doc == null || doc.PatientId != userId) return Results.NotFound();
+    if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
     return Results.Ok(new
     {
         id = doc.Id,
-        title = doc.Title,
-        type = doc.Type,
+        Titulo = doc.Titulo,
+        Tipo = doc.Tipo,
         status = doc.Status,
-        doctor = doc.Doctor,
-        clinic = doc.Clinic,
-        date = doc.Date,
-        summary = doc.Summary,
-        diagnosis = doc.Diagnosis,
-        medicines = doc.Medicines.Select(m => new { name = m.Name, dosage = m.Dosage }),
-        imageUrl = doc.ImageUrl,
-        extractedText = doc.ExtractedText,
-        createdAt = doc.CreatedAt
+        Medico = doc.Medico,
+        Clinica = doc.Clinica,
+        Data = doc.Data,
+        Resumo = doc.Resumo,
+        Diagnostico = doc.Diagnostico,
+        Medicamentos = doc.Medicamentos.Select(m => new { Nome = m.Nome, Dosagem = m.Dosagem }),
+        UrlImagem = doc.UrlImagem,
+        UrlImagens = doc.UrlImagens,
+        TextoExtraido = doc.TextoExtraido,
+        CriadoEm = doc.CriadoEm
     });
 }).RequireAuthorization();
 
@@ -452,12 +532,12 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     if (userId == null) return Results.Unauthorized();
 
     var doc = await repo.GetByIdAsync(id);
-    if (doc == null || doc.PatientId != userId) return Results.NotFound();
+    if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
     // Remove imagem do Cloudinary (se existir)
-    if (!string.IsNullOrWhiteSpace(doc.PublicId) && doc.PublicId != "mock_public_id_12345")
+    if (!string.IsNullOrWhiteSpace(doc.IdPublico) && doc.IdPublico != "mock_public_id_12345")
     {
-        try { await storage.DeleteImageAsync(doc.PublicId); }
+        try { await storage.DeleteImageAsync(doc.IdPublico); }
         catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar imagem: {ex.Message}"); }
     }
 
@@ -473,11 +553,11 @@ app.MapGet("/api/reports/generate", async (int months, ClaimsPrincipal user, IPa
     if (userId == null) return Results.Unauthorized();
 
     var paciente = await repo.GetByIdAsync(userId);
-    var ficha = await fichaRepo.GetByPatientIdAsync(userId);
-    var allDocs = await docRepo.GetAllByPatientIdAsync(userId);
+    var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
+    var allDocs = await docRepo.GetAllByPacienteIdAsync(userId);
 
-    var limitDate = DateTime.UtcNow.AddMonths(-months);
-    var recentDocs = allDocs.Where(d => d.CreatedAt >= limitDate).ToList();
+    var limitData = DateTime.UtcNow.AddMonths(-months);
+    var recentDocs = allDocs.Where(d => d.CriadoEm >= limitData).ToList();
 
     var prompt = $@"
 Você é um médico especialista montando um dossiê clínico (prontuário resumido) para outro médico ler antes da consulta.
@@ -502,10 +582,10 @@ Obs: {ficha?.Observacoes}
 ";
     foreach (var doc in recentDocs)
     {
-        prompt += $"\n- {doc.Date} | {doc.Type.ToUpper()} | {doc.Title}: {doc.Summary} | Diagnóstico: {doc.Diagnosis}";
-        if (doc.Medicines.Count > 0)
+        prompt += $"\n- {doc.Data} | {doc.Tipo.ToUpper()} | {doc.Titulo}: {doc.Resumo} | Diagnóstico: {doc.Diagnostico}";
+        if (doc.Medicamentos.Count > 0)
         {
-            prompt += $" | Remédios: {string.Join(", ", doc.Medicines.Select(m => m.Name + " " + m.Dosage))}";
+            prompt += $" | Remédios: {string.Join(", ", doc.Medicamentos.Select(m => m.Nome + " " + m.Dosagem))}";
         }
     }
 
@@ -517,7 +597,7 @@ Obs: {ficha?.Observacoes}
     using var http = new HttpClient();
     var payload = new
     {
-        model = "groq/compound",
+        model = "llama-3.3-70b-versatile",
         messages = new[] { new { role = "user", content = prompt } },
         temperature = 0.3
     };
@@ -551,4 +631,6 @@ public record PerfilMedicoDto(
 
 public record ContatoDto(string? Telefone, string? Endereco);
 
-public record PerfilUpdateDto(string? Nome, string? Cpf, string? DataNascimento, string? Email);
+public record PerfilUpdateDto(string? Nome, string? Cpf, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha);
+
+

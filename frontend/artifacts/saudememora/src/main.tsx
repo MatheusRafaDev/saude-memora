@@ -11,6 +11,15 @@ setAuthTokenGetter(() => localStorage.getItem('auth_token'));
 // The proxy in vite will handle /api calls.
 setBaseUrl(import.meta.env.BASE_URL.replace(/\/$/, ''));
 
+// Register PWA Service Worker
+if ('serviceWorker' in navigator) {
+  import('virtual:pwa-register').then(({ registerSW }) => {
+    registerSW({ immediate: true });
+  }).catch((err) => {
+    console.error('Failed to register PWA:', err);
+  });
+}
+
 createRoot(document.getElementById('root')!, {
   // Keeps caught errors off reportError(), which would raise the dev overlay.
   onCaughtError: (error, errorInfo) => {
@@ -21,3 +30,4 @@ createRoot(document.getElementById('root')!, {
     <App />
   </ErrorBoundary>,
 );
+

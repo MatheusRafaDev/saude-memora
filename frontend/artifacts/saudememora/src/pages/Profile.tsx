@@ -1,6 +1,7 @@
-import { useState, useEffect, type FormEvent } from 'react';
-import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { useGetApiPacientesMe, usePatchApiPacientesMePerfil, useDeleteApiPacientesMe } from '@workspace/api-client-react';
+import { useState, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
+import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle, CreditCard, ImagePlus, LoaderCircle, Trash2 } from 'lucide-react';
+import { useGetApiPacientesMe, usePatchApiPacientesMePerfil, useDeleteApiPacientesMe, customFetch } from '@workspace/api-client-react';
+import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/lib/store';
 
 export default function Profile() {
@@ -17,8 +18,15 @@ export default function Profile() {
     bloodType: '',
     organDonor: false,
     allergies: '',
-    chronicDiseases: ''
+    chronicDiseases: '',
+    planoSaude: '',
+    numeroCarteirinha: '',
+    urlCarteirinha: ''
   });
+
+  const { toast } = useToast();
+  const [uploadingCard, setUploadingCard] = useState(false);
+  const cardInputRef = useRef<HTMLInputElement>(null);
 
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +52,10 @@ export default function Profile() {
         bloodType: p.tipoSanguineo || '',
         organDonor: p.doadorOrgaos || false,
         allergies: (p.alergias || []).join(', '),
-        chronicDiseases: (p.doencasCronicas || []).join(', ')
+        chronicDiseases: (p.doencasCronicas || []).join(', '),
+        planoSaude: p.planoSaude || '',
+        numeroCarteirinha: p.numeroCarteirinha || '',
+        urlCarteirinha: p.urlCarteirinha || ''
       });
     }
   }, [profileRaw]);
@@ -62,7 +73,9 @@ export default function Profile() {
           nome: form.name,
           cpf: form.cpf,
           dataNascimento: form.birthDate,
-          email: form.email
+          email: form.email,
+          planoSaude: form.planoSaude,
+          numeroCarteirinha: form.numeroCarteirinha
         } as any
       });
 
@@ -82,6 +95,45 @@ export default function Profile() {
     } catch (err) {
       setError('Erro ao deletar a conta.');
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleUploadCarteirinha = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingCard(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await customFetch('/api/pacientes/me/carteirinha', {
+        method: 'POST',
+        body: formData as any
+      }) as any;
+      
+      setForm(prev => ({ 
+        ...prev, 
+        urlCarteirinha: res.url,
+        planoSaude: res.planoSaude || prev.planoSaude,
+        numeroCarteirinha: res.numeroCarteirinha || prev.numeroCarteirinha
+      }));
+      toast({ description: 'Carteirinha anexada e lida com sucesso!' });
+    } catch (err) {
+      setError('Erro ao enviar a imagem da carteirinha.');
+    } finally {
+      setUploadingCard(false);
+    }
+  };
+
+  const handleRemoveCarteirinha = async () => {
+    if (!form.urlCarteirinha) return;
+    try {
+      await customFetch('/api/pacientes/me/carteirinha', { method: 'DELETE' });
+      setForm(prev => ({ ...prev, urlCarteirinha: '' }));
+      toast({ description: 'Carteirinha removida.' });
+    } catch (err) {
+      setError('Erro ao remover a imagem da carteirinha.');
     }
   };
 
@@ -108,6 +160,55 @@ export default function Profile() {
           <Field label="E-mail" value={form.email} onChange={(v) => set('email', v)} id="email" type="email" />
           <Field label="CPF" value={form.cpf} onChange={(v) => set('cpf', v)} id="cpf" />
           <Field label="Data de nascimento" value={form.birthDate} onChange={(v) => set('birthDate', v)} id="birth-date" type="date" />
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-5 md:p-7">
+        <div className="flex items-center gap-4 border-b border-border/70 pb-6">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-lg font-extrabold text-accent">
+            <CreditCard size={24} />
+          </div>
+          <div><h2 className="text-base font-extrabold">Convênio e Carteirinha</h2><p className="mt-1 text-xs text-muted-foreground">Deixe sua carteirinha sempre à mão e de fácil acesso.</p></div>
+        </div>
+        <div className="grid gap-5 pt-6 md:grid-cols-[1fr_250px]">
+          <div className="space-y-5">
+            <Field label="Nome do Plano de Saúde" value={form.planoSaude} onChange={(v) => set('planoSaude', v)} id="plano-saude" />
+            <Field label="Número da Carteirinha" value={form.numeroCarteirinha} onChange={(v) => set('numeroCarteirinha', v)} id="num-carteirinha" />
+          </div>
+          
+          <div>
+            <span className="mb-2 block text-[11px] font-bold">Foto da Carteirinha</span>
+            {form.urlCarteirinha ? (
+              <div className="relative overflow-hidden rounded-xl border border-border group w-full max-w-[250px] aspect-[1.6/1]">
+                <img src={form.urlCarteirinha} alt="Carteirinha do Convênio" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button type="button" onClick={handleRemoveCarteirinha} className="flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-red-700">
+                    <Trash2 size={14} /> Remover
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => cardInputRef.current?.click()}
+                disabled={uploadingCard}
+                className="flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 hover:border-accent hover:bg-muted/60 transition-colors cursor-pointer text-muted-foreground disabled:opacity-50"
+              >
+                {uploadingCard ? (
+                  <>
+                    <LoaderCircle size={24} className="animate-spin text-accent" />
+                    <span className="text-xs font-bold mt-1 text-center px-4">Lendo com IA...</span>
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus size={24} className="text-accent" />
+                    <span className="text-xs font-bold mt-1 text-center px-4">Anexar frente da carteirinha</span>
+                  </>
+                )}
+              </button>
+            )}
+            <input type="file" ref={cardInputRef} className="hidden" accept="image/*" onChange={handleUploadCarteirinha} />
+          </div>
         </div>
       </section>
 
@@ -164,3 +265,4 @@ export default function Profile() {
 function Field({ label, value, onChange, id, type = 'text', disabled = false }: { label: string; value: string; onChange: (value: string) => void; id: string; type?: string; disabled?: boolean }) {
   return <label className="block"><span className="mb-2 block text-[11px] font-bold">{label}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} data-testid={`input-profile-${id}`} className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm outline-none focus:ring-4 focus:ring-accent/10 disabled:opacity-60" /></label>;
 }
+

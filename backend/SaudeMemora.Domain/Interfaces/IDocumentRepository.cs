@@ -4,8 +4,8 @@ namespace SaudeMemora.Domain.Interfaces;
 
 public interface IDocumentRepository
 {
-    Task<IEnumerable<DocumentRecord>> GetAllByPatientIdAsync(string userId);
-    Task<DocumentRecord?> GetByIdAsync(string id);
-    Task<DocumentRecord> CreateAsync(DocumentRecord docRecord);
+    Task<IEnumerable<RegistroDocumento>> GetAllByPacienteIdAsync(string userId);
+    Task<RegistroDocumento?> GetByIdAsync(string id);
+    Task<RegistroDocumento> CreateAsync(RegistroDocumento docRecord);
     Task DeleteAsync(string id);
 }

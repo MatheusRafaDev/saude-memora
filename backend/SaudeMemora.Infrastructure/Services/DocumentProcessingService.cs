@@ -19,7 +19,7 @@ public class DocumentProcessingService : IOcrAiService
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
     }
 
-    public async Task<ExtractedDocumentDto> ExtractDocumentDataAsync(string imageUrl, string documentType)
+    public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType)
     {
         if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_groqApiKey))
         {
@@ -45,6 +45,102 @@ public class DocumentProcessingService : IOcrAiService
 
         // 3. Extrair dados estruturados
         return await ExtractStructuredDataAsync(unifiedText, documentType);
+    }
+
+    public async Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType)
+    {
+        if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_groqApiKey))
+            throw new Exception("Faltam chaves de API (OCR_SPACE_API_KEY ou GROQ_API_KEY). Configure no .env.");
+
+        var allTexts = new List<string>();
+
+        foreach (var url in imageUrls)
+        {
+            var engine1Task = CallOcrSpaceAsync(url, 1);
+            var engine2Task = CallOcrSpaceAsync(url, 2);
+            await Task.WhenAll(engine1Task, engine2Task);
+            
+            string textEngine1 = engine1Task.Result;
+            string textEngine2 = engine2Task.Result;
+            
+            if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
+                continue;
+                
+            string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2);
+            allTexts.Add(unifiedText);
+        }
+
+        if (allTexts.Count == 0)
+            throw new Exception("Nenhum texto encontrado em nenhuma das imagens enviadas.");
+
+        string finalUnifiedText = string.Join("\n\n--- PRÓXIMA PÁGINA/IMAGEM ---\n\n", allTexts);
+
+        return await ExtractStructuredDataAsync(finalUnifiedText, documentType);
+    }
+
+    public async Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_groqApiKey))
+            return new CarteirinhaExtraidaDto();
+
+        var engine1Task = CallOcrSpaceAsync(imageUrl, 1);
+        var engine2Task = CallOcrSpaceAsync(imageUrl, 2);
+        await Task.WhenAll(engine1Task, engine2Task);
+        
+        string textEngine1 = engine1Task.Result;
+        string textEngine2 = engine2Task.Result;
+
+        if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
+            return new CarteirinhaExtraidaDto();
+
+        string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2);
+
+        var jsonFormat = @"
+        {
+            ""planoSaude"": ""Nome do plano de saúde ou seguradora (ex: Bradesco Saúde, Amil, Unimed, SulAmérica, NotreDame, Cassi, etc.)"",
+            ""numeroCarteirinha"": ""Número de identificação do segurado/carteirinha. Apenas números e letras, sem formatação extra.""
+        }";
+
+        var prompt = $@"
+Você é um EXTRATOR DE DADOS DE CARTEIRINHAS DE PLANO DE SAÚDE.
+Extraia as informações do texto OCR da carteirinha abaixo.
+Se não achar algo de forma óbvia, retorne string vazia """".
+
+Texto unificado:
+{unifiedText}
+
+Retorne ESTRITAMENTE um JSON no seguinte formato:
+{jsonFormat}
+";
+
+        var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+        var payload = new
+        {
+            model = "llama-3.3-70b-versatile",
+            messages = new[] { new { role = "user", content = prompt } },
+            temperature = 0.0,
+            response_format = new { type = "json_object" }
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
+        request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
+        request.Content = JsonContent.Create(payload);
+
+        var response = await _httpClient.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+            var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+            
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            try
+            {
+                return JsonSerializer.Deserialize<CarteirinhaExtraidaDto>(jsonResult, options) ?? new CarteirinhaExtraidaDto();
+            }
+            catch { }
+        }
+
+        return new CarteirinhaExtraidaDto();
     }
 
     private async Task<string> CallOcrSpaceAsync(string imageUrl, int engine)
@@ -101,7 +197,7 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
         var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            model = "groq/compound", // Substitui o antigo llama-3.3-70b-versatile
+            model = "llama-3.3-70b-versatile",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0
         };
@@ -121,21 +217,21 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
         return text1.Length > text2.Length ? text1 : text2;
     }
 
-    private async Task<ExtractedDocumentDto> ExtractStructuredDataAsync(string unifiedText, string documentType)
+    private async Task<DocumentoExtraidoDto> ExtractStructuredDataAsync(string unifiedText, string documentType)
     {
         string jsonFormat = "";
         if (documentType.ToLower() == "receita")
         {
             jsonFormat = @"
             {
-                ""title"": ""Título ou nome principal do documento (ex: Receita da Dra. Amanda)"",
-                ""doctor"": ""Nome literal do médico"",
+                ""titulo"": ""Título ou nome principal do documento (ex: Receita da Dra. Amanda)"",
+                ""medico"": ""Nome literal do médico"",
                 ""crm"": ""Número do CRM se houver"",
-                ""date"": ""Data legível no formato dd/MM/yyyy"",
-                ""observations"": ""Quaisquer observações do médico"",
-                ""summary"": ""Uma frase curta resumindo a receita"",
-                ""medicines"": [
-                    { ""name"": ""nome do remédio"", ""dosage"": ""dosagem"", ""schedule"": ""forma de uso/horário"" }
+                ""data"": ""Data legível no formato dd/MM/yyyy"",
+                ""observacoes"": ""Quaisquer observações do médico"",
+                ""resumo"": ""Uma frase curta resumindo a receita"",
+                ""medicamentos"": [
+                    { ""nome"": ""nome do remédio"", ""dosagem"": ""dosagem"", ""horario"": ""forma de uso/horário"" }
                 ]
             }";
         }
@@ -143,35 +239,35 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
         {
             jsonFormat = @"
             {
-                ""title"": ""Título ou nome principal do documento (ex: Hemograma Completo)"",
-                ""examName"": ""Nome do exame principal"",
-                ""examType"": ""Categoria do exame (sangue, imagem, etc)"",
-                ""clinic"": ""Laboratório ou clínica"",
-                ""date"": ""Data legível no formato dd/MM/yyyy"",
-                ""result"": ""Valores de resultado ou laudo principal"",
-                ""observations"": ""Observações ou valores de referência"",
-                ""summary"": ""Resumo do resultado do exame""
+                ""titulo"": ""Título ou nome principal do documento (ex: Hemograma Completo)"",
+                ""nomeExame"": ""Nome do exame principal"",
+                ""tipoExame"": ""Categoria do exame (sangue, imagem, etc)"",
+                ""clinica"": ""Laboratório ou clínica"",
+                ""data"": ""Data legível no formato dd/MM/yyyy"",
+                ""resultado"": ""Valores de resultado ou laudo principal"",
+                ""observacoes"": ""Observações ou valores de referência"",
+                ""resumo"": ""Resumo do resultado do exame""
             }";
         }
         else // clinico
         {
             jsonFormat = @"
             {
-                ""title"": ""Título ou nome principal do documento (ex: Atestado Médico)"",
-                ""doctor"": ""Nome literal do médico"",
-                ""specialty"": ""Especialidade médica"",
-                ""clinicalType"": ""Tipo de documento (laudo, atestado, etc)"",
-                ""date"": ""Data legível no formato dd/MM/yyyy"",
-                ""content"": ""Conteúdo principal do texto"",
-                ""conclusions"": ""Conclusões médicas"",
-                ""summary"": ""Resumo do documento clínico""
+                ""titulo"": ""Título ou nome principal do documento (ex: Atestado Médico)"",
+                ""medico"": ""Nome literal do médico"",
+                ""especialidade"": ""Especialidade médica"",
+                ""tipoClinico"": ""Tipo de documento (laudo, atestado, etc)"",
+                ""data"": ""Data legível no formato dd/MM/yyyy"",
+                ""conteudo"": ""Conteúdo principal do texto"",
+                ""conclusoes"": ""Conclusões médicas"",
+                ""resumo"": ""Resumo do documento clínico""
             }";
         }
 
         var prompt = $@"
 ATENÇÃO: VOCÊ É UM EXTRATOR DE DADOS DE TEXTO ESTRUTURADOS.
 Extraia as informações do texto unificado abaixo, categorizado como '{documentType}'.
-Se não achar algo de forma óbvia, retorne string vazia "".
+Se não achar algo de forma óbvia, retorne string vazia """".
 
 Texto unificado:
 {unifiedText}
@@ -183,7 +279,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            model = "groq/compound", // Substitui o antigo llama-3.3-70b-versatile
+            model = "llama-3.3-70b-versatile",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             response_format = new { type = "json_object" }
@@ -202,16 +298,16 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             try
             {
-                var dto = JsonSerializer.Deserialize<ExtractedDocumentDto>(jsonResult, options) ?? new ExtractedDocumentDto();
-                dto.ExtractedText = unifiedText;
+                var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+                dto.TextoExtraido = unifiedText;
                 return dto;
             }
             catch
             {
-                return new ExtractedDocumentDto { ExtractedText = unifiedText, Summary = "Erro ao deserializar JSON da IA." };
+                return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = "Erro ao deserializar JSON da IA." };
             }
         }
 
-        return new ExtractedDocumentDto { ExtractedText = unifiedText, Summary = "Falha ao extrair dados estruturados." };
+        return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = "Falha ao extrair dados estruturados." };
     }
 }

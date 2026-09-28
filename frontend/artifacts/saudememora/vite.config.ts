@@ -2,6 +2,7 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
@@ -21,6 +22,29 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'Saúde Memora',
+        short_name: 'S.Memora',
+        description: 'Prontuário Médico Inteligente',
+        theme_color: '#0d9488',
+        background_color: '#ffffff',
+        display: 'standalone',
+        icons: [
+          {
+            src: '/pwa-192x192.jpg',
+            sizes: '192x192',
+            type: 'image/jpeg'
+          },
+          {
+            src: '/pwa-512x512.jpg',
+            sizes: '512x512',
+            type: 'image/jpeg'
+          }
+        ]
+      }
+    }),
     ...(process.env.NODE_ENV !== 'production' &&
     process.env.REPL_ID !== undefined
       ? [

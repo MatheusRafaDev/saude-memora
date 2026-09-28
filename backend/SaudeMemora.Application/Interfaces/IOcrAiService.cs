@@ -4,34 +4,42 @@ namespace SaudeMemora.Application.Interfaces;
 
 public interface IOcrAiService
 {
-    Task<ExtractedDocumentDto> ExtractDocumentDataAsync(string imageUrl, string documentType);
+    Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType);
+    Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType);
+    Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl);
 }
 
-public class ExtractedDocumentDto
+public class CarteirinhaExtraidaDto
 {
-    public string Type { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
-    public string Doctor { get; set; } = string.Empty;
-    public string Clinic { get; set; } = string.Empty;
-    public string Date { get; set; } = string.Empty;
-    public string Summary { get; set; } = string.Empty;
-    public string Diagnosis { get; set; } = string.Empty;
+    public string PlanoSaude { get; set; } = string.Empty;
+    public string NumeroCarteirinha { get; set; } = string.Empty;
+}
+
+public class DocumentoExtraidoDto
+{
+    public string Tipo { get; set; } = string.Empty;
+    public string Titulo { get; set; } = string.Empty;
+    public string Medico { get; set; } = string.Empty;
+    public string Clinica { get; set; } = string.Empty;
+    public string Data { get; set; } = string.Empty;
+    public string Resumo { get; set; } = string.Empty;
+    public string Diagnostico { get; set; } = string.Empty;
     public string Crm { get; set; } = string.Empty;
-    public string ExamName { get; set; } = string.Empty;
-    public string ExamType { get; set; } = string.Empty;
-    public string Result { get; set; } = string.Empty;
-    public string Specialty { get; set; } = string.Empty;
-    public string ClinicalType { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
-    public string Conclusions { get; set; } = string.Empty;
-    public string Observations { get; set; } = string.Empty;
-    public List<ExtractedMedicineDto> Medicines { get; set; } = new();
-    public string ExtractedText { get; set; } = string.Empty;
+    public string NomeExame { get; set; } = string.Empty;
+    public string TipoExame { get; set; } = string.Empty;
+    public string Resultado { get; set; } = string.Empty;
+    public string Especialidade { get; set; } = string.Empty;
+    public string TipoClinico { get; set; } = string.Empty;
+    public string Conteudo { get; set; } = string.Empty;
+    public string Conclusoes { get; set; } = string.Empty;
+    public string Observacoes { get; set; } = string.Empty;
+    public List<MedicamentoExtraidoDto> Medicamentos { get; set; } = new();
+    public string TextoExtraido { get; set; } = string.Empty;
 }
 
-public class ExtractedMedicineDto
+public class MedicamentoExtraidoDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string Dosage { get; set; } = string.Empty;
-    public string Schedule { get; set; } = string.Empty;
+    public string Nome { get; set; } = string.Empty;
+    public string Dosagem { get; set; } = string.Empty;
+    public string Horario { get; set; } = string.Empty;
 }

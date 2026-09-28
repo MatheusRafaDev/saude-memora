@@ -11,3 +11,4 @@ export function LourdesHeartMark({
     <img src="/logo.png" alt="SaúdeMemora Logo" className={className} style={{ objectFit: 'contain' }} />
   );
 }
+

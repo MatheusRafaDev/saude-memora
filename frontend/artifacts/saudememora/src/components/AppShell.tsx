@@ -3,8 +3,8 @@ import { Link, useLocation } from 'wouter';
 import { Activity, BookOpen, FileText, LogOut, Menu, ShieldCheck, UserRound, X } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
-import { UploadModal } from '@/components/UploadModal';
-import { useGetApiPacientesMe } from '@workspace/api-client-react';
+import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
+import { useGetApiPacientesMe, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 
 const navItems = [
   { href: '/painel', label: 'Visão geral', icon: Activity },
@@ -18,12 +18,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { signOut } = useStore();
   const { data: profileRaw } = useGetApiPacientesMe();
+  const { data: fichaRaw, isLoading: isFichaLoading } = useGetApiFichaMedicaMe();
   const profile = (profileRaw as unknown as any) || { nome: 'Usuário', email: '' };
 
   const [currentDate, setCurrentDate] = useState('');
   useEffect(() => {
     setCurrentDate(new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
   }, []);
+
+  // Force anamnese completion if it doesn't exist yet
+  useEffect(() => {
+    if (!isFichaLoading && fichaRaw !== undefined) {
+      const ficha = fichaRaw as any;
+      if (Object.keys(ficha).length === 0) {
+        if (location !== '/anamnese') {
+          setLocation('/anamnese');
+        }
+      }
+    }
+  }, [fichaRaw, isFichaLoading, location, setLocation]);
 
   const active = navItems.find((item) => location.startsWith(item.href))?.href;
   const navigate = (href: string) => { setMobileOpen(false); setLocation(href); };
@@ -60,7 +73,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link href="/perfil" data-testid="link-header-profile" className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-[11px] font-extrabold text-primary hover:border-accent">{profile.nome ? profile.nome.split(' ').map((n: string) => n[0]).slice(0, 2).join('') : '?'}</Link>
           </div>
         </header>
-        <main className="mx-auto max-w-[1440px] px-5 py-7 md:px-10 md:py-10">{children}</main>
+        <main className="mx-auto max-w-[1440px] px-5 py-7 md:px-10 md:py-10 pb-24 md:pb-10">{children}</main>
+        
+        {/* Global Floating Action Button */}
+        <button 
+          onClick={triggerUploadModal} 
+          className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-30 flex items-center gap-2 rounded-full bg-accent px-5 py-4 text-white shadow-xl shadow-accent/20 transition-transform hover:scale-105 active:scale-95"
+        >
+          <div className="rounded-full bg-white/20 p-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </div>
+          <span className="font-bold tracking-tight">Adicionar Documento</span>
+        </button>
       </div>
 
       {/* Global Upload Modal mounted at body level */}
@@ -68,3 +92,5 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+

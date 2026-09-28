@@ -1,26 +1,26 @@
 export type DocumentType = 'exam' | 'prescription' | 'report';
 export type DocumentStatus = 'processed' | 'processing' | 'review';
 
-export type Medicine = { name: string; dosage: string };
+export type Medicine = { nome: string; dosagem: string };
 
 export type MedicalDocument = {
   id: string;
-  title: string;
-  date: string;
-  doctor: string;
-  clinic: string;
-  type: DocumentType;
+  titulo: string;
+  data: string;
+  medico: string;
+  clinica: string;
+  tipo: DocumentType;
   status: DocumentStatus;
-  summary: string;
-  diagnosis: string;
-  medicines: Medicine[];
+  resumo: string;
+  diagnostico: string;
+  medicamentos: Medicine[];
 };
 
 export type UserProfile = {
-  name: string;
+  nome: string;
   email: string;
   cpf: string;
-  birthDate: string;
+  birthdata: string;
   phone: string;
   bloodType: string;
   allergies: string;
@@ -38,4 +38,7 @@ export type MedicalRecord = {
   notes: string;
 };
 
-export type Activity = { id: string; label: string; timestamp: string; type: 'upload' | 'edit' | 'view' | 'profile' };
+export type Activity = { id: string; label: string; timestamp: string; tipo: 'upload' | 'edit' | 'view' | 'profile' };
+
+
+

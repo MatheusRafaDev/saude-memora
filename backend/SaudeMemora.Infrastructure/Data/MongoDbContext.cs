@@ -11,13 +11,13 @@ public class MongoDbContext
     public MongoDbContext(IConfiguration configuration)
     {
         var connectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? configuration.GetSection("MongoDbSettings:ConnectionString").Value;
-        var databaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? configuration.GetSection("MongoDbSettings:DatabaseName").Value;
+        var databaseName = (Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? configuration.GetSection("MongoDbSettings:DatabaseName").Value) + "_BR";
 
         var client = new MongoClient(connectionString);
         _database = client.GetDatabase(databaseName);
     }
 
-    public IMongoCollection<DocumentRecord> Documents => _database.GetCollection<DocumentRecord>("Documents");
+    public IMongoCollection<RegistroDocumento> Documentos => _database.GetCollection<RegistroDocumento>("Documentos");
     public IMongoCollection<Paciente> Pacientes => _database.GetCollection<Paciente>("Pacientes");
     public IMongoCollection<FichaMedica> FichaMedicas => _database.GetCollection<FichaMedica>("FichaMedicas");
 }

@@ -57,11 +57,11 @@ export default function Documents() {
 
     return documents.filter((doc) => {
       // 1. Text Search Filter
-      const fullText = `${doc.title} ${doc.doctor} ${doc.clinic} ${doc.type} ${doc.summary}`.toLowerCase();
+      const fullText = `${doc.titulo} ${doc.medico} ${doc.clinica} ${doc.tipo} ${doc.resumo}`.toLowerCase();
       const matchesSearch = fullText.includes(query.toLowerCase());
 
       // 2. Category / Type Filter
-      const docTypeLower = (doc.type || '').toLowerCase();
+      const docTypeLower = (doc.tipo || '').toLowerCase();
       let matchesCategory = true;
       if (selectedCategory !== 'all') {
         matchesCategory = docTypeLower.includes(selectedCategory.toLowerCase());
@@ -69,7 +69,7 @@ export default function Documents() {
 
       // 3. Period Filter
       let matchesPeriod = true;
-      const docDate = new Date(doc.createdAt || doc.date).getTime();
+      const docDate = new Date(doc.criadoEm || doc.data).getTime();
       if (selectedPeriod === '30days') {
         matchesPeriod = docDate >= thirtyDaysAgo;
       } else if (selectedPeriod === '6months') {
@@ -231,23 +231,23 @@ export default function Documents() {
                     <td className="py-3.5 px-3 font-bold text-foreground">
                       <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
                         <FileText size={16} className="text-accent shrink-0" />
-                        <span className="truncate max-w-[200px]">{doc.title || 'Documento sem título'}</span>
+                        <span className="truncate max-w-[200px]">{doc.titulo || 'Documento sem título'}</span>
                       </Link>
                     </td>
                     <td className="py-3.5 px-3">
                       <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
                         <BrainCircuit size={10} />
-                        {doc.type || 'Documento'}
+                        {doc.tipo || 'Documento'}
                       </span>
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground font-medium">
-                      {doc.doctor || doc.clinic || 'Não informado'}
+                      {doc.medico || doc.clinica || 'Não informado'}
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground font-mono">
-                      {doc.date || new Date(doc.createdAt).toLocaleDateString('pt-BR')}
+                      {doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground max-w-[280px]">
-                      <p className="truncate font-normal">{doc.summary || 'Resumo extraído pela inteligência artificial.'}</p>
+                      <p className="truncate font-normal">{doc.resumo || 'Resumo extraído pela inteligência artificial.'}</p>
                     </td>
                     <td className="py-3.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
@@ -299,3 +299,4 @@ export default function Documents() {
     </div>
   );
 }
+

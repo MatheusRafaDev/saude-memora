@@ -10,9 +10,9 @@ public class FichaMedica
     [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
 
-    [BsonElement("patientId")]
+    [BsonElement("pacienteId")]
     [Required]
-    public string PatientId { get; set; } = string.Empty;
+    public string PacienteId { get; set; } = string.Empty;
 
     [BsonElement("historicoFamiliar")]
     public string HistoricoFamiliar { get; set; } = string.Empty;

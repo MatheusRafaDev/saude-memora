@@ -46,6 +46,18 @@ public class Paciente
     [BsonElement("endereco")]
     public string? Endereco { get; set; }
 
+    [BsonElement("planoSaude")]
+    public string? PlanoSaude { get; set; }
+
+    [BsonElement("numeroCarteirinha")]
+    public string? NumeroCarteirinha { get; set; }
+
+    [BsonElement("urlCarteirinha")]
+    public string? UrlCarteirinha { get; set; }
+
+    [BsonElement("idPublicoCarteirinha")]
+    public string? IdPublicoCarteirinha { get; set; }
+
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

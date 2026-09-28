@@ -15,12 +15,41 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   const [internalOpen, setInternalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [stage, setStage] = useState<'idle' | 'processing' | 'done'>('idle');
   const [resultId, setResultId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files!)]);
+    }
+  };
+
+  useEffect(() => {
+    if (files.length === 0) {
+      setPreviewUrls([]);
+      return;
+    }
+    const urls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [files]);
 
   useEffect(() => {
     setMounted(true);
@@ -33,10 +62,36 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
 
+  useEffect(() => {
+    if (!isOpen || stage !== 'idle') return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const newFiles: File[] = [];
+      for (const item of items) {
+        if (item.type.startsWith('image/') || item.type === 'application/pdf') {
+          const pastedFile = item.getAsFile();
+          if (pastedFile) {
+            newFiles.push(pastedFile);
+          }
+        }
+      }
+      if (newFiles.length > 0) {
+        setFiles(prev => [...prev, ...newFiles]);
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('paste', handlePaste as any);
+    return () => window.removeEventListener('paste', handlePaste as any);
+  }, [isOpen, stage]);
+
   if (!isOpen || !mounted) return null;
 
   const resetModal = () => {
-    setFile(null);
+    setFiles([]);
     setStage('idle');
     setResultId(null);
     setError('');
@@ -49,13 +104,13 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   };
 
   const startUpload = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
     setStage('processing');
     setError('');
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      files.forEach(f => formData.append('file', f));
 
       const res = (await customFetch('/api/documents/upload', {
         method: 'POST',
@@ -114,31 +169,57 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
           </p>
         </div>
 
+
+
         {/* Stage IDLE: Select File & Upload */}
         {stage === 'idle' && (
           <div className="space-y-5">
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="group relative flex min-h-[200px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-accent/40 bg-secondary/30 p-6 transition-all hover:border-accent hover:bg-secondary/60 cursor-pointer"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`group relative flex min-h-[200px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
+                isDragging 
+                  ? 'border-primary bg-primary/10 scale-[1.02]' 
+                  : 'border-accent/40 bg-secondary/30 hover:border-accent hover:bg-secondary/60'
+              }`}
             >
               <input
                 ref={fileRef}
                 type="file"
+                multiple
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                onChange={(e) => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
               />
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-card text-accent shadow-xs transition-transform group-hover:-translate-y-1">
-                <UploadCloud size={26} />
-              </span>
-              <h3 className="mt-4 text-sm font-extrabold text-foreground">
-                {file ? file.name : 'Clique para selecionar ou arraste o arquivo'}
+              {files.length > 0 ? (
+                <div className="flex flex-wrap gap-2 justify-center items-center p-4">
+                  {files.map((file, i) => (
+                    <div key={i} className="flex flex-col items-center">
+                      {file.type.startsWith('image/') ? (
+                        <img src={previewUrls[i]} alt="Preview" className="h-16 w-auto rounded object-contain shadow-sm border border-border" />
+                      ) : (
+                        <span className="flex h-16 w-16 items-center justify-center rounded shadow-xs bg-primary text-white">
+                          <FileText size={20} />
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-xs transition-transform ${isDragging ? 'bg-primary text-white scale-110' : 'bg-card text-accent group-hover:-translate-y-1'}`}>
+                  <UploadCloud size={26} />
+                </span>
+              )}
+              <h3 className={`mt-2 text-sm font-extrabold ${isDragging || files.length > 0 ? 'text-primary' : 'text-foreground'}`}>
+                {files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : (isDragging ? 'Solte o arquivo aqui' : 'Clique, arraste ou cole (Ctrl+V) os arquivos')}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">PDF, JPG ou PNG (até 20 MB)</p>
-              {file && (
+              {files.length > 0 && (
                 <span className="mt-3 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1 text-[11px] font-bold text-accent">
-                  Arquivo selecionado ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  Tamanho total: {(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB
                 </span>
               )}
             </button>
@@ -165,7 +246,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <button
                 type="button"
                 onClick={startUpload}
-                disabled={!file}
+                disabled={files.length === 0}
                 className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-all shadow-sm cursor-pointer"
               >
                 Processar Documento <Sparkles size={15} />
@@ -182,7 +263,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             </div>
             <div>
               <h3 className="text-base font-extrabold">Identificando conteúdo via IA...</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Extraindo informações clínicas do arquivo {file?.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Extraindo informações clínicas de {files.length} arquivo(s)...</p>
             </div>
 
             <div className="mx-auto max-w-[380px]">
@@ -209,7 +290,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   Documento Extraído e Classificado!
                 </p>
                 <p className="text-[11px] text-emerald-800 dark:text-emerald-300 truncate max-w-[340px]">
-                  {file?.name}
+                  {files.length} arquivo(s) processado(s)
                 </p>
               </div>
             </div>
@@ -246,3 +327,5 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 export function triggerUploadModal() {
   window.dispatchEvent(new CustomEvent('open-upload-modal'));
 }
+
+

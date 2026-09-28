@@ -7,24 +7,24 @@ namespace SaudeMemora.Infrastructure.Repositories;
 
 public class DocumentRepository : IDocumentRepository
 {
-    private readonly IMongoCollection<DocumentRecord> _documents;
+    private readonly IMongoCollection<RegistroDocumento> _documents;
 
     public DocumentRepository(MongoDbContext context)
     {
-        _documents = context.Documents;
+        _documents = context.Documentos;
     }
 
-    public async Task<IEnumerable<DocumentRecord>> GetAllByPatientIdAsync(string userId)
+    public async Task<IEnumerable<RegistroDocumento>> GetAllByPacienteIdAsync(string userId)
     {
-        return await _documents.Find(d => d.PatientId == userId).ToListAsync();
+        return await _documents.Find(d => d.PacienteId == userId).ToListAsync();
     }
 
-    public async Task<DocumentRecord?> GetByIdAsync(string id)
+    public async Task<RegistroDocumento?> GetByIdAsync(string id)
     {
         return await _documents.Find(d => d.Id == id).FirstOrDefaultAsync();
     }
 
-    public async Task<DocumentRecord> CreateAsync(DocumentRecord docRecord)
+    public async Task<RegistroDocumento> CreateAsync(RegistroDocumento docRecord)
     {
         await _documents.InsertOneAsync(docRecord);
         return docRecord;

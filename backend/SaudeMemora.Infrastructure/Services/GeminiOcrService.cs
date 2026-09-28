@@ -17,25 +17,25 @@ public class GeminiOcrService : IOcrAiService
         _apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["GeminiSettings:ApiKey"];
     }
 
-    public async Task<ExtractedDocumentDto> ExtractDocumentDataAsync(string imageUrl, string documentType)
+    public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType)
     {
         // Fallback gracioso: Se o usuário não providenciou a API Key ainda,
         // geramos um mock para não travar a aplicação dele na demonstração
         if (string.IsNullOrWhiteSpace(_apiKey) || _apiKey == "YOUR_GEMINI_API_KEY")
         {
             await Task.Delay(2000); // simula delay de rede
-            return new ExtractedDocumentDto
+            return new DocumentoExtraidoDto
             {
-                Title = $"Análise simulada de {documentType}",
-                Doctor = "Dr. IA Mock (Chave Gemini não configurada)",
-                Clinic = "Clínica SaúdeMemora",
-                Date = DateTime.Now.ToString("dd/MM/yyyy"),
-                Summary = "Isso é um dado de simulação. Para extrair os dados reais da imagem enviada, configure sua chave do Google Gemini no appsettings.json.",
-                Diagnosis = "Processamento pendente de IA",
-                ExtractedText = "[TEXTO MOCKADO DA IMAGEM]",
-                Medicines = new List<ExtractedMedicineDto>
+                Titulo = $"Análise simulada de {documentType}",
+                Medico = "Dr. IA Mock (Chave Gemini não configurada)",
+                Clinica = "Clínica SaúdeMemora",
+                Data = DateTime.Now.ToString("dd/MM/yyyy"),
+                Resumo = "Isso é um dado de simulação. Para extrair os dados reais da imagem enviada, configure sua chave do Google Gemini no appsettings.json.",
+                Diagnostico = "Processamento pendente de IA",
+                TextoExtraido = "[TEXTO MOCKADO DA IMAGEM]",
+                Medicamentos = new List<MedicamentoExtraidoDto>
                 {
-                    new ExtractedMedicineDto { Name = "Configurar_Chave_Gemini", Dosage = "1 vez ao dia" }
+                    new MedicamentoExtraidoDto { Nome = "Configurar_Chave_Gemini", Dosagem = "1 vez ao dia" }
                 }
             };
         }
@@ -106,7 +106,7 @@ public class GeminiOcrService : IOcrAiService
         return await ParseTextToStructuredDataAsync(textContent, documentType, _apiKey, groqApiKey);
     }
 
-    private async Task<ExtractedDocumentDto> ParseTextToStructuredDataAsync(string rawText, string documentType, string? apiKey, string? groqKey)
+    private async Task<DocumentoExtraidoDto> ParseTextToStructuredDataAsync(string rawText, string documentType, string? apiKey, string? groqKey)
     {
         var prompt = $@"
         ATENÇÃO: VOCÊ É UM EXTRATOR DE DADOS DE TEXTO.
@@ -117,15 +117,15 @@ public class GeminiOcrService : IOcrAiService
         Sua tarefa é ler este texto e extrair os dados. Se não achar algo de forma óbvia, retorne string vazia.
         Retorne estritamente um JSON no seguinte formato:
         {{
-            ""type"": ""Identifique a categoria exata do documento médico (ex: 'Exame de Sangue', 'Exame de Imagem', 'Receita Médica', 'Laudo Médico', 'Atestado Médico', 'Vacinação', 'Encaminhamento', 'Prontuário', ou 'Outro Documento')"",
-            ""title"": ""O título descritivo do documento (ex: Hemograma Completo, Tomografia de Tórax, Receita de Amoxicilina)"",
-            ""doctor"": ""Nome do médico ou profissional de saúde (com Dr./Dra. se houver)"",
-            ""clinic"": ""Nome da clínica, hospital ou laboratório"",
-            ""date"": ""Data legível no formato dd/MM/yyyy"",
-            ""summary"": ""Resumo clínico claro em uma ou duas frases sobre os principais achados ou itens prescritos."",
-            ""diagnosis"": ""O CID, diagnóstico ou conclusão principal expressa no documento"",
-            ""medicines"": [
-                {{ ""name"": ""nome do medicamento/substância"", ""dosage"": ""dosagem e posologia"" }}
+            ""tipo"": ""Identifique a categoria exata do documento médico (ex: 'Exame de Sangue', 'Exame de Imagem', 'Receita Médica', 'Laudo Médico', 'Atestado Médico', 'Vacinação', 'Encaminhamento', 'Prontuário', ou 'Outro Documento')"",
+            ""titulo"": ""O título descritivo do documento (ex: Hemograma Completo, Tomografia de Tórax, Receita de Amoxicilina)"",
+            ""medico"": ""Nome do médico ou profissional de saúde (com Dr./Dra. se houver)"",
+            ""clinica"": ""Nome da clínica, hospital ou laboratório"",
+            ""data"": ""Data legível no formato dd/MM/yyyy"",
+            ""resumo"": ""Resumo clínico claro em uma ou duas frases sobre os principais achados ou itens prescritos."",
+            ""diagnostico"": ""O CID, diagnóstico ou conclusão principal expressa no documento"",
+            ""medicamentos"": [
+                {{ ""nome"": ""nome do medicamento/substância"", ""dosagem"": ""dosagem e posologia"" }}
             ]
         }}
         ";
@@ -183,22 +183,22 @@ public class GeminiOcrService : IOcrAiService
         try 
         {
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var dto = JsonSerializer.Deserialize<ExtractedDocumentDto>(jsonResult, options) ?? new ExtractedDocumentDto();
-            dto.ExtractedText = rawText; // Mantenha o texto bruto do OCR no DTO final
+            var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+            dto.TextoExtraido = rawText; // Mantenha o texto bruto do OCR no DTO final
             return dto;
         }
         catch
         {
             // Fallback total se tudo der errado (ao menos preservamos o OCR bruto)
-            return new ExtractedDocumentDto
+            return new DocumentoExtraidoDto
             {
-                Title = $"Documento Digitalizado ({documentType})",
-                Doctor = "Não identificado",
-                Clinic = "Não identificado",
-                Date = DateTime.Now.ToString("dd/MM/yyyy"),
-                Summary = "Texto transcrito via OCR direto, mas falhou ao estruturar.",
-                ExtractedText = rawText,
-                Medicines = new List<ExtractedMedicineDto>()
+                Titulo = $"Documento Digitalizado ({documentType})",
+                Medico = "Não identificado",
+                Clinica = "Não identificado",
+                Data = DateTime.Now.ToString("dd/MM/yyyy"),
+                Resumo = "Texto transcrito via OCR direto, mas falhou ao estruturar.",
+                TextoExtraido = rawText,
+                Medicamentos = new List<MedicamentoExtraidoDto>()
             };
         }
     }
@@ -243,3 +243,4 @@ public class GeminiOcrService : IOcrAiService
         return content ?? "";
     }
 }
+

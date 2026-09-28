@@ -20,9 +20,9 @@ public class FichaMedicaRepository : IFichaMedicaRepository
         return ficha;
     }
 
-    public async Task<FichaMedica?> GetByPatientIdAsync(string patientId)
+    public async Task<FichaMedica?> GetByPacienteIdAsync(string PacienteId)
     {
-        var filter = Builders<FichaMedica>.Filter.Eq(f => f.PatientId, patientId);
+        var filter = Builders<FichaMedica>.Filter.Eq(f => f.PacienteId, PacienteId);
         return await _fichas.Find(filter).FirstOrDefaultAsync();
     }
 
@@ -31,3 +31,5 @@ public class FichaMedicaRepository : IFichaMedicaRepository
         await _fichas.ReplaceOneAsync(f => f.Id == ficha.Id, ficha);
     }
 }
+
+

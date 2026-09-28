@@ -86,8 +86,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   }
 
   const doc = docRaw as unknown as any;
-  const date = new Date(doc.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-  const typeLabel = doc.type || 'Documento';
+  const date = new Date(doc.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const typeLabel = doc.tipo || 'Documento';
 
   return (
     <div className="page-enter space-y-7">
@@ -124,9 +124,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <CalendarDays size={12} /> {date}
             </span>
           </div>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-[-.06em] md:text-[40px]">{doc.title}</h1>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-[-.06em] md:text-[40px]">{doc.titulo}</h1>
           <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Stethoscope size={15} /> {doc.doctor || 'Profissional não informado'} <span className="text-border">·</span> {doc.clinic || 'Clínica não informada'}
+            <Stethoscope size={15} /> {doc.medico || 'Profissional não informado'} <span className="text-border">·</span> {doc.clinica || 'Clínica não informada'}
           </p>
         </div>
         <span className="flex w-fit items-center gap-2 rounded-xl border border-accent/30 bg-secondary px-3 py-2 text-[11px] font-bold text-secondary-foreground">
@@ -138,16 +138,22 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         <section className="rounded-2xl border border-border bg-[hsl(205_25%_89%)] p-4 md:p-5">
           <div className="mb-3 flex items-center justify-between">
             <span className="font-mono text-[9px] uppercase tracking-[.16em] text-muted-foreground">documento original</span>
-            {doc.imageUrl && (
-              <a href={doc.imageUrl} target="_blank" rel="noreferrer" className="rounded-lg bg-card px-3 py-2 text-[10px] font-bold text-primary hover:bg-secondary">
+            {(doc.urlImagens?.length > 0 ? doc.urlImagens[0] : doc.urlImagem) && (
+              <a href={doc.urlImagens?.length > 0 ? doc.urlImagens[0] : doc.urlImagem} target="_blank" rel="noreferrer" className="rounded-lg bg-card px-3 py-2 text-[10px] font-bold text-primary hover:bg-secondary">
                 Ver imagem
               </a>
             )}
           </div>
           
           <div className="relative min-h-[440px] flex items-center justify-center overflow-hidden rounded-xl bg-[#fdfcf8] p-4 text-[#45504f] shadow-[0_5px_18px_rgba(32,60,67,.12)]">
-            {doc.imageUrl ? (
-              <img src={doc.imageUrl} alt="Documento Original" className="w-full h-auto rounded shadow-sm" />
+            {doc.urlImagens?.length > 0 ? (
+              <div className="flex flex-col gap-4 w-full">
+                {doc.urlImagens.map((url: string, i: number) => (
+                  <img key={i} src={url} alt={`Documento ${i + 1}`} className="w-full h-auto rounded shadow-sm" />
+                ))}
+              </div>
+            ) : doc.urlImagem ? (
+              <img src={doc.urlImagem} alt="Documento Original" className="w-full h-auto rounded shadow-sm" />
             ) : (
               <p className="text-sm text-muted-foreground">Imagem não disponível.</p>
             )}
@@ -163,11 +169,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </span>
               <h2 className="text-base font-extrabold">Resumo da Inteligência Artificial</h2>
             </div>
-            <p className="mt-4 text-[14px] leading-7 text-foreground/80 font-medium">{doc.summary || 'Resumo não extraído.'}</p>
-            {doc.diagnosis && (
+            <p className="mt-4 text-[14px] leading-7 text-foreground/80 font-medium">{doc.resumo || 'Resumo não extraído.'}</p>
+            {doc.diagnostico && (
               <div className="mt-4 rounded-xl bg-muted/60 p-4">
                 <p className="font-mono text-[9px] uppercase tracking-[.15em] text-muted-foreground">diagnóstico / interpretação</p>
-                <p className="mt-1.5 text-sm font-extrabold text-foreground">{doc.diagnosis}</p>
+                <p className="mt-1.5 text-sm font-extrabold text-foreground">{doc.diagnostico}</p>
               </div>
             )}
           </div>
@@ -182,12 +188,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 <h2 className="text-base font-extrabold">Medicamentos Identificados</h2>
               </div>
               <span className="font-mono text-[10px] font-bold text-muted-foreground">
-                {(doc.medicines?.length || 0).toString().padStart(2, '0')}
+                {(doc.medicamentos?.length || 0).toString().padStart(2, '0')}
               </span>
             </div>
-            {doc.medicines?.length ? (
+            {doc.medicamentos?.length ? (
               <div className="mt-4 space-y-2.5">
-                {doc.medicines.map((medicine: any) => (
+                {doc.medicamentos.map((medicine: any) => (
                   <div key={medicine.name} className="flex items-center justify-between rounded-xl bg-muted/60 p-3.5">
                     <div>
                       <p className="text-xs font-extrabold text-foreground">{medicine.name}</p>
@@ -205,7 +211,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
 
           {/* Indented OCR Text Section */}
-          {doc.extractedText && (
+          {doc.textoExtraido && (
             <div className="rounded-2xl border border-border bg-card p-5 md:p-6 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-4 mb-4">
                 <div className="flex items-center gap-2.5">
@@ -239,7 +245,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
               {ocrViewMode === 'indented' ? (
                 <div className="rounded-xl border border-border bg-muted/20 p-5 space-y-2.5 font-mono text-xs overflow-auto max-h-[360px] scrollbar-thin">
-                  {indentOcrText(doc.extractedText).map((item, idx) => {
+                  {indentOcrText(doc.textoExtraido).map((item, idx) => {
                     if (item.type === 'header') {
                       return (
                         <div key={idx} className="pt-3 pb-1 border-b border-border/40 font-black text-accent flex items-center gap-2 text-xs uppercase tracking-wider">
@@ -276,7 +282,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               ) : (
                 <div className="rounded-xl bg-muted/30 p-5">
                   <pre className="font-mono whitespace-pre-wrap text-[11px] leading-6 text-muted-foreground overflow-auto max-h-[300px] scrollbar-thin">
-                    {doc.extractedText}
+                    {doc.textoExtraido}
                   </pre>
                 </div>
               )}
@@ -315,3 +321,4 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     </div>
   );
 }
+

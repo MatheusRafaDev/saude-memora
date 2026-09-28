@@ -41,7 +41,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     addDocument: (document) => {
       setDocuments((old) => [document, ...old]);
-      setActivities((old) => [{ id: `act-${Date.now()}`, label: `${document.title} adicionado`, timestamp: 'Agora', type: 'upload' }, ...old]);
+      setActivities((old) => [{ id: `act-${Date.now()}`, label: `${document.titulo} adicionado`, timestamp: 'Agora', type: 'upload' }, ...old]);
     },
   }), [isAuthenticated, profile, record, documents, activities]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -52,3 +52,4 @@ export function useStore() {
   if (!store) throw new Error('useStore must be used inside StoreProvider');
   return store;
 }
+
