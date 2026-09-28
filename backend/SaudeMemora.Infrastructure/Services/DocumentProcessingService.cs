@@ -197,7 +197,7 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
         var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            model = "llama-3.3-70b-versatile",
+            model = "llama3-70b-8192",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0
         };
@@ -252,7 +252,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            model = "llama-3.3-70b-versatile",
+            model = "llama3-70b-8192",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             response_format = new { type = "json_object" }
