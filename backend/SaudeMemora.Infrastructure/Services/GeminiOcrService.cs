@@ -106,6 +106,21 @@ public class GeminiOcrService : IOcrAiService
         return await ParseTextToStructuredDataAsync(textContent, documentType, _apiKey, groqApiKey);
     }
 
+    public async Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType)
+    {
+        if (imageUrls == null || imageUrls.Count == 0) 
+            throw new ArgumentException("A lista de imagens está vazia.");
+            
+        // Fallback básico para a primeira imagem (se este serviço antigo for chamado)
+        return await ExtractDocumentDataAsync(imageUrls.First(), documentType);
+    }
+
+    public Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl)
+    {
+        // Fallback mock
+        return Task.FromResult(new CarteirinhaExtraidaDto());
+    }
+
     private async Task<DocumentoExtraidoDto> ParseTextToStructuredDataAsync(string rawText, string documentType, string? apiKey, string? groqKey)
     {
         var prompt = $@"
