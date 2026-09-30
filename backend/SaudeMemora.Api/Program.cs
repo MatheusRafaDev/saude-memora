@@ -37,8 +37,7 @@ builder.Services.AddScoped<IImageStorageService, CloudinaryStorageService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 
-builder.Services.AddHttpClient();
-builder.Services.AddScoped<IOcrAiService, DocumentProcessingService>();
+builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>();
 
 // CORS
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') ?? new[] { "http://localhost:3000", "http://localhost:5173" };
@@ -268,7 +267,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     var (url, id) = await storage.UploadImageAsync(stream, file.FileName);
     
     // IA Extração da Carteirinha
-    var extracted = await ocr.ExtractCarteirinhaDataAsync(url);
+    var extracted = await ocr.ExtractCarteirinhaDataAsync(url, context.RequestAborted);
 
     paciente.UrlCarteirinha = url;
     paciente.IdPublicoCarteirinha = id;
@@ -419,7 +418,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
     if (urlImagens.Count == 0) return Results.BadRequest("Nenhum arquivo válido.");
 
     // 2. Extração de Dados via OCR e IA (suportando múltiplas páginas)
-    var extractedData = await ocr.ExtractMultipleDocumentsDataAsync(urlImagens, docTipo);
+    var extractedData = await ocr.ExtractMultipleDocumentsDataAsync(urlImagens, docTipo, context.RequestAborted);
 
     // 3. Salvar no MongoDB
     var docRecord = new RegistroDocumento

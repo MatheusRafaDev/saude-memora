@@ -17,7 +17,7 @@ public class GeminiOcrService : IOcrAiService
         _apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["GeminiSettings:ApiKey"];
     }
 
-    public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType)
+    public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType, CancellationToken cancellationToken = default)
     {
         // Fallback gracioso: Se o usuário não providenciou a API Key ainda,
         // geramos um mock para não travar a aplicação dele na demonstração
@@ -106,7 +106,7 @@ public class GeminiOcrService : IOcrAiService
         return await ParseTextToStructuredDataAsync(textContent, documentType, _apiKey, groqApiKey);
     }
 
-    public async Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType)
+    public async Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType, CancellationToken cancellationToken = default)
     {
         if (imageUrls == null || imageUrls.Count == 0) 
             throw new ArgumentException("A lista de imagens está vazia.");
@@ -115,7 +115,7 @@ public class GeminiOcrService : IOcrAiService
         return await ExtractDocumentDataAsync(imageUrls.First(), documentType);
     }
 
-    public Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl)
+    public Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl, CancellationToken cancellationToken = default)
     {
         // Fallback mock
         return Task.FromResult(new CarteirinhaExtraidaDto());

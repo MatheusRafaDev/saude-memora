@@ -4,9 +4,9 @@ namespace SaudeMemora.Application.Interfaces;
 
 public interface IOcrAiService
 {
-    Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType);
-    Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType);
-    Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl);
+    Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType, CancellationToken cancellationToken = default);
+    Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType, CancellationToken cancellationToken = default);
+    Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl, CancellationToken cancellationToken = default);
 }
 
 public class CarteirinhaExtraidaDto

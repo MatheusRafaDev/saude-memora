@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SaudeMemora.Application.DTOs;
 using SaudeMemora.Application.Interfaces;
 
@@ -11,15 +12,17 @@ public class DocumentProcessingService : IOcrAiService
     private readonly HttpClient _httpClient;
     private readonly string? _ocrSpaceApiKey;
     private readonly string? _groqApiKey;
+    private readonly ILogger<DocumentProcessingService> _logger;
 
-    public DocumentProcessingService(HttpClient httpClient, IConfiguration config)
+    public DocumentProcessingService(HttpClient httpClient, IConfiguration config, ILogger<DocumentProcessingService> logger)
     {
         _httpClient = httpClient;
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
+        _logger = logger;
     }
 
-    public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType)
+    public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_groqApiKey))
         {
@@ -27,8 +30,8 @@ public class DocumentProcessingService : IOcrAiService
         }
 
         // 1. Chamar os dois motores do OCR.space em paralelo
-        var engine1Task = CallOcrSpaceAsync(imageUrl, 1);
-        var engine2Task = CallOcrSpaceAsync(imageUrl, 2);
+        var engine1Task = CallOcrSpaceAsync(imageUrl, 1, cancellationToken);
+        var engine2Task = CallOcrSpaceAsync(imageUrl, 2, cancellationToken);
 
         await Task.WhenAll(engine1Task, engine2Task);
 
@@ -41,13 +44,13 @@ public class DocumentProcessingService : IOcrAiService
         }
 
         // 2. Unificar textos com a Groq
-        string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2);
+        string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2, cancellationToken);
 
         // 3. Extrair dados estruturados
-        return await ExtractStructuredDataAsync(unifiedText, documentType);
+        return await ExtractStructuredDataAsync(unifiedText, documentType, cancellationToken);
     }
 
-    public async Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType)
+    public async Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_groqApiKey))
             throw new Exception("Faltam chaves de API (OCR_SPACE_API_KEY ou GROQ_API_KEY). Configure no .env.");
@@ -56,8 +59,8 @@ public class DocumentProcessingService : IOcrAiService
 
         foreach (var url in imageUrls)
         {
-            var engine1Task = CallOcrSpaceAsync(url, 1);
-            var engine2Task = CallOcrSpaceAsync(url, 2);
+            var engine1Task = CallOcrSpaceAsync(url, 1, cancellationToken);
+            var engine2Task = CallOcrSpaceAsync(url, 2, cancellationToken);
             await Task.WhenAll(engine1Task, engine2Task);
             
             string textEngine1 = engine1Task.Result;
@@ -66,7 +69,7 @@ public class DocumentProcessingService : IOcrAiService
             if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
                 continue;
                 
-            string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2);
+            string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2, cancellationToken);
             allTexts.Add(unifiedText);
         }
 
@@ -75,16 +78,16 @@ public class DocumentProcessingService : IOcrAiService
 
         string finalUnifiedText = string.Join("\n\n--- PRÓXIMA PÁGINA/IMAGEM ---\n\n", allTexts);
 
-        return await ExtractStructuredDataAsync(finalUnifiedText, documentType);
+        return await ExtractStructuredDataAsync(finalUnifiedText, documentType, cancellationToken);
     }
 
-    public async Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl)
+    public async Task<CarteirinhaExtraidaDto> ExtractCarteirinhaDataAsync(string imageUrl, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_groqApiKey))
             return new CarteirinhaExtraidaDto();
 
-        var engine1Task = CallOcrSpaceAsync(imageUrl, 1);
-        var engine2Task = CallOcrSpaceAsync(imageUrl, 2);
+        var engine1Task = CallOcrSpaceAsync(imageUrl, 1, cancellationToken);
+        var engine2Task = CallOcrSpaceAsync(imageUrl, 2, cancellationToken);
         await Task.WhenAll(engine1Task, engine2Task);
         
         string textEngine1 = engine1Task.Result;
@@ -93,7 +96,7 @@ public class DocumentProcessingService : IOcrAiService
         if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
             return new CarteirinhaExtraidaDto();
 
-        string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2);
+        string unifiedText = await UnifyTextsWithGroqAsync(textEngine1, textEngine2, cancellationToken);
 
         var jsonFormat = @"
         {
@@ -126,10 +129,10 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
         request.Content = JsonContent.Create(payload);
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode)
         {
-            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>();
+            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
             var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
             
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
@@ -137,24 +140,32 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
             {
                 return JsonSerializer.Deserialize<CarteirinhaExtraidaDto>(jsonResult, options) ?? new CarteirinhaExtraidaDto();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Erro ao deserializar carteirinha: {JsonResult}", jsonResult);
+            }
+        }
+        else
+        {
+            var err = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogError("Groq falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
         }
 
         return new CarteirinhaExtraidaDto();
     }
 
-    private async Task<string> CallOcrSpaceAsync(string imageUrl, int engine)
+    private async Task<string> CallOcrSpaceAsync(string imageUrl, int engine, CancellationToken cancellationToken)
     {
         var encodedUrl = Uri.EscapeDataString(imageUrl);
         var url = $"https://api.ocr.space/parse/imageurl?apikey={_ocrSpaceApiKey}&url={encodedUrl}&ocrengine={engine}&language=por";
         
         try
         {
-            var response = await _httpClient.GetAsync(url);
-            var rawJson = await response.Content.ReadAsStringAsync();
+            var response = await _httpClient.GetAsync(url, cancellationToken);
+            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"Erro OCR API HTTP {response.StatusCode}: {rawJson}");
+                _logger.LogError("Erro OCR API HTTP {StatusCode}: {RawJson}", response.StatusCode, rawJson);
                 return "";
             }
             
@@ -164,7 +175,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
             if (result.TryGetProperty("IsErroredOnProcessing", out var isErrored) && isErrored.GetBoolean())
             {
                 var errMessage = result.TryGetProperty("ErrorMessage", out var msg) ? msg.ToString() : "Erro desconhecido";
-                Console.WriteLine($"Erro do Motor OCR {engine}: {errMessage}");
+                _logger.LogWarning("Erro do Motor OCR {Engine}: {ErrMessage}", engine, errMessage);
                 return "";
             }
 
@@ -174,14 +185,18 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
                 return parsedText ?? "";
             }
         }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Chamada OCR Engine {Engine} foi cancelada.", engine);
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro OCR Engine {engine}: {ex.Message}");
+            _logger.LogError(ex, "Erro OCR Engine {Engine}", engine);
         }
         return "";
     }
 
-    private async Task<string> UnifyTextsWithGroqAsync(string text1, string text2)
+    private async Task<string> UnifyTextsWithGroqAsync(string text1, string text2, CancellationToken cancellationToken)
     {
         var prompt = $@"
 Você é um assistente médico de transcrição altamente preciso.
@@ -206,18 +221,34 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
         request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
         request.Content = JsonContent.Create(payload);
 
-        var response = await _httpClient.SendAsync(request);
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>();
-            return groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                return groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+            }
+            else 
+            {
+                var err = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Groq falhou na unificação de texto. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Chamada Groq de unificação cancelada.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro na unificação via Groq.");
         }
         
         // Em caso de falha, retorna o que tiver mais conteúdo
         return text1.Length > text2.Length ? text1 : text2;
     }
 
-    private async Task<DocumentoExtraidoDto> ExtractStructuredDataAsync(string unifiedText, string documentType)
+    private async Task<DocumentoExtraidoDto> ExtractStructuredDataAsync(string unifiedText, string documentType, CancellationToken cancellationToken)
     {
         var jsonFormat = @"
         {
@@ -262,32 +293,43 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
         request.Content = JsonContent.Create(payload);
 
-        var response = await _httpClient.SendAsync(request);
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>();
-            var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
-            
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            try
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
             {
-                var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                dto.TextoExtraido = unifiedText;
-                return dto;
+                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+                
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                try
+                {
+                    var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+                    dto.TextoExtraido = unifiedText;
+                    return dto;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Erro ao deserializar extração. JSON: {JsonResult}", jsonResult);
+                    return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro de conversão (JSON): {ex.Message}" };
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Erro ao deserializar: {ex.Message}. JSON: {jsonResult}");
-                return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro de conversão (JSON): {ex.Message}" };
+                var err = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Groq falhou na extração de dados estruturados. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+                return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro na API da IA (Groq): {response.StatusCode} - {err}" };
             }
         }
-        else
+        catch (OperationCanceledException)
         {
-            var err = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Groq falhou com {response.StatusCode}: {err}");
-            return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro na API da IA (Groq): {response.StatusCode} - {err}" };
+            _logger.LogInformation("Chamada Groq de extração cancelada.");
+            return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = "Extração cancelada pelo usuário." };
         }
-
-        return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = "Falha ao extrair dados estruturados." };
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro na chamada HTTP para a Groq.");
+            return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = "Falha ao extrair dados estruturados." };
+        }
     }
 }
