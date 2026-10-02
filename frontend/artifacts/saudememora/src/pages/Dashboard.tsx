@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import { Link } from 'wouter';
 import {
   ChevronRight, FilePlus2, FileText,
   Droplets, AlertTriangle, FlaskConical, Pill,
   Stethoscope, Plus, User, BookOpen, Activity, BarChart3, PieChart, TrendingUp,
-  Heart, Cigarette, Wine, Shield, Phone, CalendarDays, CreditCard
+  Heart, Cigarette, Wine, Shield, Phone, CalendarDays, CreditCard, X
 } from 'lucide-react';
 import { useGetApiPacientesMe, useGetApiDocuments, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
 
 export default function Dashboard() {
+  const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
+
   const { data: profile, isLoading: profileLoading } = useGetApiPacientesMe();
   const { data: documentsRaw, isLoading: docsLoading } = useGetApiDocuments();
   const { data: fichaRaw, isLoading: fichaLoading } = useGetApiFichaMedicaMe();
@@ -216,9 +219,9 @@ export default function Dashboard() {
                   <p className="text-[10px] text-muted-foreground font-mono">{user.numeroCarteirinha}</p>
                 )}
                 {user.urlCarteirinha && (
-                  <a href={user.urlCarteirinha} target="_blank" rel="noopener noreferrer" className="mt-2.5 flex items-center justify-center gap-2 w-full rounded-lg border border-accent/20 bg-accent/10 py-2 text-xs font-bold text-accent hover:bg-accent/20 transition-colors">
+                  <button onClick={() => setIsCarteirinhaOpen(true)} className="mt-2.5 flex items-center justify-center gap-2 w-full rounded-lg border border-accent/20 bg-accent/10 py-2 text-xs font-bold text-accent hover:bg-accent/20 transition-colors">
                     <CreditCard size={14} /> Abrir Carteirinha
-                  </a>
+                  </button>
                 )}
               </div>
             )}
@@ -446,6 +449,68 @@ export default function Dashboard() {
             )}
           </div>
         </section>
+      )}
+
+      {/* ── Modal da Carteirinha ── */}
+      {isCarteirinhaOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsCarteirinhaOpen(false)} />
+          <div className="relative w-full max-w-md rounded-2xl bg-card shadow-2xl overflow-hidden flex flex-col max-h-full">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <CreditCard size={18} className="text-primary" />
+                Sua Carteirinha
+              </h2>
+              <button
+                onClick={() => setIsCarteirinhaOpen(false)}
+                className="rounded-full p-1.5 hover:bg-muted text-muted-foreground transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="p-5 overflow-y-auto space-y-5">
+              {/* Imagem da carteirinha */}
+              {user.urlCarteirinha && (
+                <div className="rounded-xl overflow-hidden border border-border/50 bg-black/5 flex items-center justify-center">
+                  <img 
+                    src={user.urlCarteirinha} 
+                    alt="Carteirinha" 
+                    className="max-h-[300px] w-full object-contain"
+                  />
+                </div>
+              )}
+              
+              {/* Inputs informativos (ReadOnly no Dashboard) */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Convênio / Plano de Saúde</label>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={user.planoSaude || 'Não informado'} 
+                    className="mt-1 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-semibold text-foreground outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Número da Carteirinha</label>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={user.numeroCarteirinha || 'Não informado'} 
+                    className="mt-1 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-mono font-semibold text-foreground outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-border bg-muted/20">
+              <Link href="/perfil" className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors">
+                Editar no Perfil
+              </Link>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

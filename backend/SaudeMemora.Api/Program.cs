@@ -16,6 +16,7 @@ using BCrypt.Net;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using DotNetEnv;
+using Microsoft.Extensions.Caching.Distributed;
 
 // Load .env variables
 Env.Load();
@@ -150,9 +151,25 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     }
 
     var paciente = await repo.GetByEmailAsync(dto.Email);
-    if (paciente == null || !BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
+    if (paciente == null)
     {
-        return Results.BadRequest(new[] { "Email ou senha invÃ¡lidos." });
+        return Results.BadRequest(new[] { "Email ou senha inválidos." });
+    }
+
+    try
+    {
+        if (!BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
+        {
+            return Results.BadRequest(new[] { "Email ou senha inválidos." });
+        }
+    }
+    catch
+    {
+        // Fallback for mock data without BCrypt hash
+        if (paciente.Senha != dto.Senha)
+        {
+            return Results.BadRequest(new[] { "Email ou senha inválidos." });
+        }
     }
 
     // Generate Token
@@ -192,10 +209,14 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
 // â”€â”€â”€ Paciente Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Retorna o perfil mÃ©dico completo do paciente autenticado
-app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo) =>
+app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
+
+    var cacheKey = $"paciente_v2_{userId}";
+    var cached = await cache.GetStringAsync(cacheKey);
+    if (cached != null) return Results.Content(cached, "application/json");
 
     var paciente = await repo.GetByIdAsync(userId);
     if (paciente == null) return Results.NotFound();
@@ -208,7 +229,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
         if (nascimento.Date > DateTime.Today.AddYears(-idade)) idade--;
     }
 
-    return Results.Ok(new
+    var result = new
     {
         paciente.Id,
         paciente.Nome,
@@ -222,11 +243,14 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
         paciente.PlanoSaude,
         paciente.NumeroCarteirinha,
         paciente.UrlCarteirinha
-    });
+    };
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+    await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+    return Results.Ok(result);
 }).RequireAuthorization();
 
-// Atualiza informaÃ§Ãµes do paciente autenticado (Nome, Cpf, DataNascimento, Email)
-app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto) =>
+// Atualiza informações do paciente autenticado (Nome, Cpf, DataNascimento, Email)
+app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -242,11 +266,12 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     if (dto.NumeroCarteirinha != null) paciente.NumeroCarteirinha = dto.NumeroCarteirinha;
 
     await repo.UpdateAsync(paciente);
+    await cache.RemoveAsync($"paciente_v2_{userId}");
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
 }).RequireAuthorization();
 
-// Atualiza telefone e endereÃ§o do paciente autenticado
-app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto) =>
+// Atualiza telefone e endereço do paciente autenticado
+app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -258,10 +283,11 @@ app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPaciente
     if (dto.Endereco != null) paciente.Endereco = dto.Endereco;
 
     await repo.UpdateAsync(paciente);
+    await cache.RemoveAsync($"paciente_v2_{userId}");
     return Results.Ok(new { Message = "Contato atualizado com sucesso." });
 }).RequireAuthorization();
 
-app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IOcrAiService ocr) =>
+app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IOcrAiService ocr, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -295,6 +321,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
         paciente.NumeroCarteirinha = extracted.NumeroCarteirinha;
 
     await repo.UpdateAsync(paciente);
+    await cache.RemoveAsync($"paciente_v2_{userId}");
 
     return Results.Ok(new { 
         url,
@@ -303,7 +330,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     });
 }).RequireAuthorization();
 
-app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage) =>
+app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -317,6 +344,7 @@ app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPac
     paciente.UrlCarteirinha = null;
     paciente.IdPublicoCarteirinha = null;
     await repo.UpdateAsync(paciente);
+    await cache.RemoveAsync($"paciente_v2_{userId}");
 
     return Results.Ok();
 }).RequireAuthorization();
@@ -356,18 +384,25 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
 
 // â”€â”€â”€ Ficha MÃ©dica Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo) =>
+app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
+    var cacheKey = $"ficha_v2_{userId}";
+    var cached = await cache.GetStringAsync(cacheKey);
+    if (cached != null) return Results.Content(cached, "application/json");
+
     var ficha = await repo.GetByPacienteIdAsync(userId);
     if (ficha == null) return Results.Ok(new { });
 
-    return Results.Ok(ficha);
+    var result = ficha;
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+    await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+    return Results.Ok(result);
 }).RequireAuthorization();
 
-app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, FichaMedica dto) =>
+app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, FichaMedica dto, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -377,6 +412,7 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     {
         dto.PacienteId = userId;
         await repo.CreateAsync(dto);
+        await cache.RemoveAsync($"ficha_v2_{userId}");
         return Results.Ok(dto);
     }
     
@@ -395,13 +431,14 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     ficha.DoencasCronicas = dto.DoencasCronicas;
     
     await repo.UpdateAsync(ficha);
+    await cache.RemoveAsync($"ficha_v2_{userId}");
     return Results.Ok(ficha);
 }).RequireAuthorization();
 
 // â”€â”€â”€ Document Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Processa upload de novo documento com OCR
-app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal user, IDocumentRepository docRepo, IImageStorageService storage, IOcrAiService ocr) =>
+app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal user, IDocumentRepository docRepo, IImageStorageService storage, IOcrAiService ocr, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -411,13 +448,9 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
 
     var form = await context.Request.ReadFormAsync();
     var files = form.Files;
-    var docTipo = form["type"].ToString();
-
-    if (files.Count == 0)
-        return Results.BadRequest("Nenhum arquivo enviado.");
-
-    if (string.IsNullOrWhiteSpace(docTipo))
-        docTipo = "receita"; // fallback padrao
+    var docTipo = form["documentType"].ToString();
+    if (string.IsNullOrWhiteSpace(docTipo)) docTipo = form["type"].ToString();
+    if (string.IsNullOrWhiteSpace(docTipo)) docTipo = "exame"; // fallback padrão
 
     var urlImagens = new List<string>();
     var idPublicos = new List<string>();
@@ -470,20 +503,26 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
     };
 
     var createdDoc = await docRepo.CreateAsync(docRecord);
+    await cache.RemoveAsync($"documents_v3_{userId}");
+    await cache.RemoveAsync($"documents_count_v3_{userId}");
 
     return Results.Ok(new { id = createdDoc.Id, message = "Documento processado com sucesso!" });
 }).RequireAuthorization();
 
 
 // Lista todos os documentos do paciente autenticado
-app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo) =>
+app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
+    var cacheKey = $"documents_v3_{userId}";
+    var cached = await cache.GetStringAsync(cacheKey);
+    if (cached != null) return Results.Content(cached, "application/json");
+
     var docs = await repo.GetAllByPacienteIdAsync(userId);
 
-    return Results.Ok(docs.Select(d => new
+    var result = docs.Select(d => new
     {
         id = d.Id,
         titulo = d.Titulo,
@@ -498,26 +537,51 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
         urlImagens = d.UrlImagens,
         criadoEm = d.CriadoEm
-    }).OrderByDescending(d => d.criadoEm));
+    }).OrderByDescending(d => d.criadoEm).ToList();
+
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+    await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+    return Results.Ok(result);
 }).RequireAuthorization();
 
-// Contagens de documentos por tipo (para mÃ©tricas do dashboard)
-app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentRepository repo) =>
+app.MapGet("/api/debug-docs", async (IDocumentRepository repo) =>
+{
+    var docs = await repo.GetAllByPacienteIdAsync("67756f70dc0df8ab884562ad");
+    var result = docs.Select(d => new
+    {
+        id = d.Id,
+        titulo = d.Titulo,
+        tipo = d.Tipo,
+        criadoEm = d.CriadoEm
+    }).OrderByDescending(d => d.criadoEm).ToList();
+    return Results.Ok(result);
+});
+
+// Contagens de documentos por tipo (para métricas do dashboard)
+app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
+    var cacheKey = $"documents_count_v3_{userId}";
+    var cached = await cache.GetStringAsync(cacheKey);
+    if (cached != null) return Results.Content(cached, "application/json");
+
     var docs = await repo.GetAllByPacienteIdAsync(userId);
     var list = docs.ToList();
 
-    return Results.Ok(new
+    var result = new
     {
         total = list.Count,
         exames = list.Count(d => d.Tipo == "exame"),
         receitas = list.Count(d => d.Tipo == "receita"),
         laudos = list.Count(d => d.Tipo == "laudo"),
         receitasAtivas = list.Count(d => d.Tipo == "receita" && d.Status == "pronto")
-    });
+    };
+
+    var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+    await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+    return Results.Ok(result);
 }).RequireAuthorization();
 
 // Busca documento por ID
@@ -550,7 +614,7 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
 }).RequireAuthorization();
 
 // Editar um documento
-app.MapPut("/api/documents/{id}", async (string id, [FromBody] DocumentUpdateDto updateDto, ClaimsPrincipal user, IDocumentRepository repo) =>
+app.MapPut("/api/documents/{id}", async (string id, [Microsoft.AspNetCore.Mvc.FromBody] DocumentUpdateDto updateDto, ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -567,11 +631,12 @@ app.MapPut("/api/documents/{id}", async (string id, [FromBody] DocumentUpdateDto
     doc.Crm = updateDto.Crm ?? doc.Crm;
 
     await repo.UpdateAsync(doc);
+    await cache.RemoveAsync($"documents_{userId}");
     return Results.Ok(new { message = "Documento atualizado com sucesso." });
 }).RequireAuthorization();
 
 // Exclui documento por ID (e remove do Cloudinary)
-app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage) =>
+app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -595,6 +660,8 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     }
 
     await repo.DeleteAsync(id);
+    await cache.RemoveAsync($"documents_v2_{userId}");
+    await cache.RemoveAsync($"documents_count_v2_{userId}");
     return Results.Ok(new { message = "Documento deletado com sucesso." });
 }).RequireAuthorization();
 

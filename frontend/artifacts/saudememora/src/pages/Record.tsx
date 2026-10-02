@@ -286,15 +286,15 @@ export default function Record() {
     return <div className="page-enter p-12 text-center text-muted-foreground">Carregando ficha médica...</div>;
   }
 
-  return <div className="page-enter mx-auto max-w-[800px] space-y-4">
+  return <div className="page-enter mx-auto max-w-4xl space-y-3">
     <section>
       <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">contexto de saúde</p>
       <h1 className="mt-1 text-2xl font-extrabold tracking-[-.06em] md:text-3xl">Minha anamnese</h1>
       <p className="mt-1 max-w-[570px] text-xs leading-5 text-muted-foreground">Atualize suas informações de saúde. Suas respostas são salvas automaticamente.</p>
     </section>
     
-    <form onSubmit={save} className="space-y-4">
-      <section id="sec-disease" className="rounded-xl border border-border bg-card p-4 md:p-5">
+    <form onSubmit={save} className="space-y-3">
+      <section id="sec-disease" className="rounded-xl border border-border bg-card p-3.5 md:p-4">
         <div className="flex items-start gap-3 border-b border-border/70 pb-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-accent"><ClipboardList size={17} /></span>
           <div>
@@ -303,10 +303,10 @@ export default function Record() {
           </div>
         </div>
         
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-2.5">
           {conditions.map((cond, index) => (
-            <div key={cond.nome} className={`rounded-xl border transition-colors ${cond.tem ? 'border-accent/40 bg-accent/5' : 'border-border bg-muted/30'} p-3 md:p-4`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div key={cond.nome} className={`rounded-xl border transition-colors ${cond.tem ? 'border-accent/40 bg-accent/5' : 'border-border bg-muted/30'} p-2.5 md:p-3`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-sm font-bold">{cond.nome}</span>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => updateCondition(index, 'tem', true)} className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${cond.tem ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-background text-muted-foreground hover:bg-muted border border-border'}`}>Sim</button>
@@ -315,7 +315,7 @@ export default function Record() {
               </div>
               
               {cond.tem && (
-                <div className="mt-4 pt-4 border-t border-accent/20 page-enter">
+                <div className="mt-3 pt-3 border-t border-accent/20 page-enter">
                   <Field label="Detalhes (quando diagnosticado, medicações em uso, etc)" value={cond.detalhes} onChange={(v) => updateCondition(index, 'detalhes', v)} id={`cond-${index}`} textarea />
                 </div>
               )}
@@ -326,9 +326,9 @@ export default function Record() {
             <Field label="Outras doenças ou observações de saúde" value={form.outrasDoencas} onChange={(v) => set('outrasDoencas', v)} id="outras-doencas" textarea />
           </div>
           
-          <div className="pt-4 border-t border-border/70">
-            <h3 className="text-sm font-bold mb-4">Informações Importantes</h3>
-            <div className="space-y-6">
+          <div className="pt-3 border-t border-border/70">
+            <h3 className="text-sm font-bold mb-3">Informações Importantes</h3>
+            <div className="space-y-4">
 
               {/* Blood Type Select */}
               <div>
@@ -378,8 +378,8 @@ export default function Record() {
             </div>
           </div>
           
-          <div id="sec-blood" className="pt-4 border-t border-border/70">
-            <div id="sec-family" className="grid gap-5 pt-4 md:grid-cols-2">
+          <div id="sec-blood" className="pt-3 border-t border-border/70">
+            <div id="sec-family" className="grid gap-4 pt-3 md:grid-cols-2">
               <Field label="Histórico familiar (Ex: Mãe teve câncer, Pai infartou)" value={form.familyHistory} onChange={(v) => set('familyHistory', v)} id="family-history" />
               <Field label="Cirurgias e internações prévias" value={form.surgeries} onChange={(v) => set('surgeries', v)} id="surgeries" />
             </div>
@@ -387,7 +387,7 @@ export default function Record() {
         </div>
       </section>
       
-      <section id="sec-habits" className="rounded-xl border border-border bg-card p-4 md:p-5">
+      <section id="sec-habits" className="rounded-xl border border-border bg-card p-3.5 md:p-4">
         <div className="flex items-start gap-3 border-b border-border/70 pb-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-accent"><FileText size={17} /></span>
           <div>
@@ -395,12 +395,12 @@ export default function Record() {
           </div>
         </div>
         
-        <div className="grid gap-3 pt-4 md:grid-cols-2">
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-4">
+        <div className="grid gap-2 pt-3 md:grid-cols-2">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-3">
             <input type="checkbox" checked={form.smoker} onChange={(e) => set('smoker', e.target.checked)} className="h-4 w-4 accent-[hsl(var(--accent))]" />
             <span><span className="block text-xs font-bold">Fuma</span></span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-4">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-3">
             <input type="checkbox" checked={form.alcohol} onChange={(e) => set('alcohol', e.target.checked)} className="h-4 w-4 accent-[hsl(var(--accent))]" />
             <span><span className="block text-xs font-bold">Consome álcool</span></span>
           </label>

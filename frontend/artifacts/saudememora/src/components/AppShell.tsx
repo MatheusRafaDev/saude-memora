@@ -10,7 +10,6 @@ const navItems = [
   { href: '/painel',     label: 'Visão geral',   icon: Activity  },
   { href: '/documentos', label: 'Documentos',     icon: FileText  },
   { href: '/anamnese',   label: 'Anamnese',       icon: BookOpen  },
-  { href: '/perfil',     label: 'Meu perfil',     icon: UserRound },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -53,8 +52,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             {/* Logo */}
             <Link href="/painel" className="flex items-center gap-2.5 shrink-0" data-testid="link-brand">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-                <LourdesHeartMark className="h-5 w-5 text-white" />
+              <span className="flex items-center justify-center">
+                <LourdesHeartMark className="h-7 w-7" />
               </span>
               <span className="leading-tight hidden sm:block">
                 <span className="block text-[14px] font-bold tracking-[-0.04em] text-foreground">
@@ -70,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="h-5 w-px bg-border/50 hidden md:block" />
 
             {/* Nav items */}
-            <nav className="flex items-center gap-0.5 flex-1">
+            <nav className="flex items-center justify-center gap-1 flex-1">
               {navItems.map(({ href, label, icon: Icon }) => {
                 const isActive = active === href;
                 return (
@@ -163,9 +162,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                     />
                     <div className="absolute right-0 top-full mt-2 z-20 w-[220px] rounded-2xl border border-border bg-card shadow-xl shadow-black/20 overflow-hidden">
                       {/* User info */}
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-[13px] font-semibold text-foreground truncate">{profile.nome}</p>
-                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">{profile.email}</p>
+                      <div className="border-b border-border p-1.5">
+                        <button
+                          onClick={() => navigate('/perfil')}
+                          className="w-full text-left rounded-xl px-3 py-2 hover:bg-muted transition-colors"
+                        >
+                          <p className="text-[13px] font-semibold text-foreground truncate">{profile.nome}</p>
+                          <p className="text-[11px] text-muted-foreground truncate mt-0.5">{profile.email}</p>
+                        </button>
                       </div>
                       {/* Nav links in dropdown for mobile */}
                       <div className="sm:hidden py-1.5 border-b border-border">
@@ -180,8 +184,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                           </button>
                         ))}
                       </div>
-                      {/* Sign out */}
+                      {/* Options */}
                       <div className="py-1.5">
+                        <button
+                          onClick={() => navigate('/perfil')}
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground hover:bg-muted transition-colors"
+                        >
+                          <UserRound size={14} />
+                          Meu perfil
+                        </button>
                         <button
                           onClick={() => { signOut(); navigate('/entrar'); }}
                           data-testid="button-signout"

@@ -54,14 +54,17 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       setIsSaving(true);
       await customFetch(`/api/documents/${id}`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          Titulo:      formData.titulo,
-          Medico:      formData.medico,
-          Clinica:     formData.clinica,
-          Data:        formData.data,
-          Resumo:      formData.resumo,
-          Diagnostico: formData.diagnostico,
-          Crm:         formData.crm,
+          titulo:      formData.titulo,
+          medico:      formData.medico,
+          clinica:     formData.clinica,
+          data:        formData.data,
+          resumo:      formData.resumo,
+          diagnostico: formData.diagnostico,
+          crm:         formData.crm,
         })
       });
       toast({ description: 'Documento atualizado com sucesso!' });
@@ -431,11 +434,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 </span>
               </div>
               <div className="mt-6 space-y-3">
-                {doc.medicamentos.map((medicine: any) => (
-                  <div key={medicine.name} className="flex items-center justify-between rounded-2xl border border-border/40 bg-muted/30 p-4 transition-colors hover:bg-muted/60">
+                {doc.medicamentos.map((medicine: any, idx: number) => (
+                  <div key={medicine.nome || idx} className="flex items-center justify-between rounded-2xl border border-border/40 bg-muted/30 p-4 transition-colors hover:bg-muted/60">
                     <div>
-                      <p className="text-sm font-extrabold text-foreground">{medicine.name}</p>
-                      <p className="mt-1 text-xs font-medium text-muted-foreground">{medicine.dosage}</p>
+                      <p className="text-sm font-extrabold text-foreground">{medicine.nome}</p>
+                      <p className="mt-1 text-xs font-medium text-muted-foreground">
+                        {medicine.dosagem} {medicine.horario && `• ${medicine.horario}`}
+                      </p>
                     </div>
                     <ChevronRight size={18} className="text-muted-foreground/50" />
                   </div>

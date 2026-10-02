@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useLocation } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { usePostApiAuthLogin, usePostApiAuthRegister } from '@workspace/api-client-react';
@@ -91,14 +91,12 @@ export default function Auth() {
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-[hsl(var(--sidebar-primary)/.07)] blur-3xl" />
 
         {/* Logo */}
-        <div className="relative flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
-            <LourdesHeartMark className="h-7 w-7" />
-          </span>
+        <Link href="/" className="relative flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          <LourdesHeartMark className="h-8 w-8" />
           <span className="text-[15px] font-bold tracking-[-0.04em]">
             saúde<span className="text-[hsl(var(--sidebar-primary))]">memora</span>
           </span>
-        </div>
+        </Link>
 
         {/* Tagline */}
         <div className="relative mt-auto max-w-[380px] pb-8">
@@ -128,14 +126,12 @@ export default function Auth() {
         <div className="w-full max-w-[400px] page-enter">
 
           {/* Mobile logo */}
-          <div className="mb-8 flex items-center gap-2 lg:hidden">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <LourdesHeartMark className="h-6 w-6" strokeWidth={1.7} />
-            </span>
+          <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden hover:opacity-80 transition-opacity">
+            <LourdesHeartMark className="h-7 w-7 text-accent" />
             <span className="text-[15px] font-bold tracking-[-0.04em]">
               saúde<span className="text-accent">memora</span>
             </span>
-          </div>
+          </Link>
 
           {/* Heading */}
           <div className="mb-7">

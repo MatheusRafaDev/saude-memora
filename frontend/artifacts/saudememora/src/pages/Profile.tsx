@@ -26,6 +26,7 @@ export default function Profile() {
 
   const { toast } = useToast();
   const [uploadingCard, setUploadingCard] = useState(false);
+  const [cardExtracted, setCardExtracted] = useState<{ plano?: string; numero?: string } | null>(null);
   const cardInputRef = useRef<HTMLInputElement>(null);
   const cameraCardRef = useRef<HTMLInputElement>(null);
 
@@ -104,6 +105,7 @@ export default function Profile() {
     if (!file) return;
 
     setUploadingCard(true);
+    setCardExtracted(null);
     setError('');
     try {
       const formData = new FormData();
@@ -113,17 +115,38 @@ export default function Profile() {
         body: formData as any
       }) as any;
       
+      const extracted = {
+        plano: res.planoSaude || '',
+        numero: res.numeroCarteirinha || ''
+      };
+      setCardExtracted(extracted);
+      
       setForm(prev => ({ 
         ...prev, 
         urlCarteirinha: res.url,
         planoSaude: res.planoSaude || prev.planoSaude,
         numeroCarteirinha: res.numeroCarteirinha || prev.numeroCarteirinha
       }));
-      toast({ description: 'Carteirinha anexada e lida com sucesso!' });
+
+      // Build toast message showing what AI found
+      const aiFound = [];
+      if (extracted.plano) aiFound.push(`Plano: ${extracted.plano}`);
+      if (extracted.numero) aiFound.push(`Nº: ${extracted.numero}`);
+      toast({ 
+        description: aiFound.length
+          ? `✓ Carteirinha lida pela IA! ${aiFound.join(' · ')}`
+          : '✓ Carteirinha salva. Preencha o plano e número manualmente se necessário.'
+      });
+
+      // Refetch to sync with server (cache was cleared)
+      await refetch();
     } catch (err) {
-      setError('Erro ao enviar a imagem da carteirinha.');
+      setError('Erro ao enviar a imagem da carteirinha. Tente novamente.');
     } finally {
       setUploadingCard(false);
+      // Reset input so the same file can be re-uploaded
+      if (cardInputRef.current) cardInputRef.current.value = '';
+      if (cameraCardRef.current) cameraCardRef.current.value = '';
     }
   };
 
@@ -131,8 +154,10 @@ export default function Profile() {
     if (!form.urlCarteirinha) return;
     try {
       await customFetch('/api/pacientes/me/carteirinha', { method: 'DELETE' });
-      setForm(prev => ({ ...prev, urlCarteirinha: '' }));
-      toast({ description: 'Carteirinha removida.' });
+      setForm(prev => ({ ...prev, urlCarteirinha: '', planoSaude: '', numeroCarteirinha: '' }));
+      setCardExtracted(null);
+      await refetch();
+      toast({ description: 'Carteirinha removida com sucesso.' });
     } catch (err) {
       setError('Erro ao remover a imagem da carteirinha.');
     }
@@ -180,13 +205,25 @@ export default function Profile() {
           <div>
             <span className="mb-2 block text-[11px] font-bold">Foto da Carteirinha</span>
             {form.urlCarteirinha ? (
-              <div className="relative overflow-hidden rounded-xl border border-border group w-full max-w-[250px] aspect-[1.6/1]">
-                <img src={form.urlCarteirinha} alt="Carteirinha do Convênio" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button type="button" onClick={handleRemoveCarteirinha} className="flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-red-700">
-                    <Trash2 size={14} /> Remover
-                  </button>
+              <div className="space-y-2">
+                <div className="relative overflow-hidden rounded-xl border border-border group w-full max-w-[250px] aspect-[1.6/1]">
+                  <img src={form.urlCarteirinha} alt="Carteirinha do Convênio" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onClick={() => cardInputRef.current?.click()} className="flex items-center gap-2 rounded-lg bg-white/20 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-white/30">
+                      <ImagePlus size={13} /> Trocar foto
+                    </button>
+                    <button type="button" onClick={handleRemoveCarteirinha} className="flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-red-700">
+                      <Trash2 size={13} /> Remover
+                    </button>
+                  </div>
                 </div>
+                {cardExtracted && (cardExtracted.plano || cardExtracted.numero) && (
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/8 px-3 py-2 max-w-[250px]">
+                    <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 mb-1">✦ Lido pela IA</p>
+                    {cardExtracted.plano && <p className="text-[11px] text-emerald-800 dark:text-emerald-200 truncate">{cardExtracted.plano}</p>}
+                    {cardExtracted.numero && <p className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300">{cardExtracted.numero}</p>}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
