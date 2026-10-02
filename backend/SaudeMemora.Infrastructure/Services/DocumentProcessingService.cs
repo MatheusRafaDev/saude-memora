@@ -118,21 +118,25 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
 {jsonFormat}
 ";
 
-        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_geminiApiKey}";
+        var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            contents = new[] { new { parts = new[] { new { text = prompt } } } },
-            generationConfig = new { temperature = 0.0 }
+            model = "mixtral-8x7b-32768",
+            messages = new[] { new { role = "user", content = prompt } },
+            temperature = 0.0,
+            response_format = new { type = "json_object" }
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, geminiUrl);
+        var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
+        if (!string.IsNullOrWhiteSpace(_groqApiKey))
+            request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
         request.Content = JsonContent.Create(payload);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode)
         {
-            var geminiJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-            var jsonResult = geminiJson.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString() ?? "";
+            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+            var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
             
             jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
 
@@ -149,7 +153,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         else
         {
             var err = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogError("Gemini falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+            _logger.LogError("Groq falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
         }
 
         return new CarteirinhaExtraidaDto();
@@ -210,14 +214,17 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
 [Motor 2]:
 {text2}
 ";
-        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={_geminiApiKey}";
+        var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            contents = new[] { new { parts = new[] { new { text = prompt } } } },
-            generationConfig = new { temperature = 0.0 }
+            model = "openai/gpt-oss-120b",
+            messages = new[] { new { role = "user", content = prompt } },
+            temperature = 0.0
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, geminiUrl);
+        var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
+        if (!string.IsNullOrWhiteSpace(_groqApiKey))
+            request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
         request.Content = JsonContent.Create(payload);
 
         try
@@ -225,22 +232,22 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
             var response = await _httpClient.SendAsync(request, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                var geminiJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-                return geminiJson.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString() ?? "";
+                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                return groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
             }
             else 
             {
                 var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Gemini falhou na unificação de texto. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+                _logger.LogError("Groq falhou na unificação de texto. HTTP {StatusCode}: {Error}", response.StatusCode, err);
             }
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Chamada Gemini de unificação cancelada.");
+            _logger.LogInformation("Chamada Groq de unificação cancelada.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro na unificação via Gemini.");
+            _logger.LogError(ex, "Erro na unificação via Groq.");
         }
         
         // Em caso de falha, retorna o que tiver mais conteúdo
@@ -290,62 +297,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato (sem markdown, sem explicaçõe
 {jsonFormat}
 ";
 
-        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={_geminiApiKey}";
-        var payload = new
-        {
-            contents = new[] { new { parts = new[] { new { text = prompt } } } },
-            generationConfig = new
-            {
-                temperature = 0.0,
-                maxOutputTokens = 4096,
-                responseMimeType = "application/json"
-            }
-        };
-
-        var request = new HttpRequestMessage(HttpMethod.Post, geminiUrl);
-        request.Content = JsonContent.Create(payload);
-
-        try
-        {
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var geminiJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-                var jsonResult = geminiJson.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString() ?? "";
-                
-                jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                try
-                {
-                    var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                    dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-                    return dto;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Erro ao deserializar extração via Gemini. JSON: {JsonResult}", jsonResult);
-                    _logger.LogWarning("Acionando fallback Groq devido a JSON malformado do Gemini.");
-                    return await FallbackToGroqAsync(unifiedText, prompt, cancellationToken);
-                }
-            }
-            else
-            {
-                var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Gemini falhou na extração de dados estruturados. HTTP {StatusCode}: {Error}", response.StatusCode, err);
-                return await FallbackToGroqAsync(unifiedText, prompt, cancellationToken);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation("Chamada Gemini de extração cancelada.");
-            return await FallbackToGroqAsync(unifiedText, prompt, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro na chamada HTTP para a Gemini.");
-            return await FallbackToGroqAsync(unifiedText, prompt, cancellationToken);
-        }
+        return await FallbackToGroqAsync(unifiedText, prompt, cancellationToken);
     }
 
     private async Task<DocumentoExtraidoDto> FallbackToGroqAsync(string unifiedText, string prompt, CancellationToken cancellationToken)
@@ -362,7 +314,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato (sem markdown, sem explicaçõe
             var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
             var payload = new
             {
-                model = "llama-3.1-8b-instant",
+                model = "openai/gpt-oss-120b",
                 messages = new[] { new { role = "user", content = prompt } },
                 temperature = 0.0,
                 max_tokens = 4096,

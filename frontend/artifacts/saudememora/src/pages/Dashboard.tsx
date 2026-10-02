@@ -3,7 +3,7 @@ import {
   ChevronRight, FilePlus2, FileText,
   Droplets, AlertTriangle, FlaskConical, Pill,
   Stethoscope, Plus, User, BookOpen, Activity, BarChart3, PieChart, TrendingUp,
-  Heart, Cigarette, Wine, Shield, Phone, CalendarDays,
+  Heart, Cigarette, Wine, Shield, Phone, CalendarDays, CreditCard
 } from 'lucide-react';
 import { useGetApiPacientesMe, useGetApiDocuments, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
@@ -208,12 +208,17 @@ export default function Dashboard() {
               </span>
             </div>
             {/* Plan */}
-            {user.planoSaude && (
-              <div className="pt-1 border-t border-border/40">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Plano de saúde</p>
-                <p className="text-xs font-medium text-foreground mt-0.5">{user.planoSaude}</p>
+            {(user.planoSaude || user.numeroCarteirinha || user.urlCarteirinha) && (
+              <div className="pt-3 border-t border-border/40">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Convênio</p>
+                {user.planoSaude && <p className="text-xs font-bold text-foreground mt-0.5">{user.planoSaude}</p>}
                 {user.numeroCarteirinha && (
                   <p className="text-[10px] text-muted-foreground font-mono">{user.numeroCarteirinha}</p>
+                )}
+                {user.urlCarteirinha && (
+                  <a href={user.urlCarteirinha} target="_blank" rel="noopener noreferrer" className="mt-2.5 flex items-center justify-center gap-2 w-full rounded-lg border border-accent/20 bg-accent/10 py-2 text-xs font-bold text-accent hover:bg-accent/20 transition-colors">
+                    <CreditCard size={14} /> Abrir Carteirinha
+                  </a>
                 )}
               </div>
             )}

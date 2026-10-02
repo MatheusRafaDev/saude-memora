@@ -644,24 +644,26 @@ Obs: {ficha?.Observacoes}
 
     prompt += "\n\nCrie um relatÃ³rio mÃ©dico coeso, profissional e bem formatado em Markdown destacando os pontos principais, evoluÃ§Ã£o e estado atual. Seja direto.";
 
-    var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
-    if (string.IsNullOrEmpty(geminiKey)) return Results.BadRequest("GEMINI_API_KEY nÃ£o configurada.");
+    var groqKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
+    if (string.IsNullOrEmpty(groqKey)) return Results.BadRequest("GROQ_API_KEY nÃ£o configurada.");
 
     using var http = new HttpClient();
     var payload = new
     {
-        contents = new[] { new { parts = new[] { new { text = prompt } } } },
-        generationConfig = new { temperature = 0.3 }
+        model = "openai/gpt-oss-120b",
+        messages = new[] { new { role = "user", content = prompt } },
+        temperature = 0.3
     };
 
-    var req = new HttpRequestMessage(HttpMethod.Post, $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={geminiKey}");
+    var req = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
+    req.Headers.Add("Authorization", $"Bearer {groqKey}");
     req.Content = System.Net.Http.Json.JsonContent.Create(payload);
 
     var res = await http.SendAsync(req);
     if (!res.IsSuccessStatusCode) return Results.StatusCode(500);
 
     var json = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-    var report = json.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString();
+    var report = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
     return Results.Ok(new { Report = report });
 }).RequireAuthorization();

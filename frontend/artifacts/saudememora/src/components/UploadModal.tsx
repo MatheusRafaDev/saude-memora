@@ -22,6 +22,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   const [error, setError] = useState('');
 
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   const [isDragging, setIsDragging] = useState(false);
 
@@ -193,6 +194,14 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 className="hidden"
                 onChange={(e) => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
               />
+              <input
+                ref={cameraRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])}
+              />
               {files.length > 0 ? (
                 <div className="flex flex-wrap gap-2 justify-center items-center p-4">
                   {files.map((file, i) => (
@@ -213,9 +222,17 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 </span>
               )}
               <h3 className={`mt-2 text-sm font-extrabold ${isDragging || files.length > 0 ? 'text-primary' : 'text-foreground'}`}>
-                {files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : (isDragging ? 'Solte o arquivo aqui' : 'Clique, arraste ou cole (Ctrl+V) os arquivos')}
+                {files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : (isDragging ? 'Solte o arquivo aqui' : 'Clique para escolher arquivos')}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">PDF, JPG ou PNG (até 20 MB)</p>
+              
+              {files.length === 0 && (
+                <div className="mt-4 flex gap-3">
+                  <span className="rounded-lg border border-border bg-card px-3 py-2 text-[11px] font-bold text-primary shadow-sm hover:bg-muted">Procurar arquivos</span>
+                  <span onClick={(e) => { e.stopPropagation(); cameraRef.current?.click(); }} className="rounded-lg border border-border bg-accent text-accent-foreground px-3 py-2 text-[11px] font-bold flex items-center gap-1.5 hover:bg-accent/90 shadow-sm"><ImagePlus size={14} /> Usar Câmera</span>
+                </div>
+              )}
+
               {files.length > 0 && (
                 <span className="mt-3 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1 text-[11px] font-bold text-accent">
                   Tamanho total: {(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB

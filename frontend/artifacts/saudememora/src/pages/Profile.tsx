@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
-import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle, CreditCard, ImagePlus, LoaderCircle, Trash2 } from 'lucide-react';
+import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle, CreditCard, ImagePlus, LoaderCircle, Trash2, Camera } from 'lucide-react';
 import { useGetApiPacientesMe, usePatchApiPacientesMePerfil, useDeleteApiPacientesMe, customFetch } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/lib/store';
@@ -27,6 +27,7 @@ export default function Profile() {
   const { toast } = useToast();
   const [uploadingCard, setUploadingCard] = useState(false);
   const cardInputRef = useRef<HTMLInputElement>(null);
+  const cameraCardRef = useRef<HTMLInputElement>(null);
 
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -188,12 +189,7 @@ export default function Profile() {
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => cardInputRef.current?.click()}
-                disabled={uploadingCard}
-                className="flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 hover:border-accent hover:bg-muted/60 transition-colors cursor-pointer text-muted-foreground disabled:opacity-50"
-              >
+              <div className="flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
                 {uploadingCard ? (
                   <>
                     <LoaderCircle size={24} className="animate-spin text-accent" />
@@ -201,13 +197,23 @@ export default function Profile() {
                   </>
                 ) : (
                   <>
-                    <ImagePlus size={24} className="text-accent" />
-                    <span className="text-xs font-bold mt-1 text-center px-4">Anexar frente da carteirinha</span>
+                    <div className="flex items-center justify-center gap-5 w-full">
+                       <button type="button" onClick={() => cardInputRef.current?.click()} className="flex flex-col items-center justify-center gap-1.5 hover:text-accent transition-colors flex-1 py-2">
+                         <ImagePlus size={22} />
+                         <span className="text-[10px] font-bold">Arquivo</span>
+                       </button>
+                       <div className="w-[2px] bg-border/60 h-8 rounded-full"></div>
+                       <button type="button" onClick={() => cameraCardRef.current?.click()} className="flex flex-col items-center justify-center gap-1.5 hover:text-accent transition-colors flex-1 py-2">
+                         <Camera size={22} />
+                         <span className="text-[10px] font-bold">Câmera</span>
+                       </button>
+                    </div>
                   </>
                 )}
-              </button>
+              </div>
             )}
             <input type="file" ref={cardInputRef} className="hidden" accept="image/*" onChange={handleUploadCarteirinha} />
+            <input type="file" ref={cameraCardRef} className="hidden" accept="image/*" capture="environment" onChange={handleUploadCarteirinha} />
           </div>
         </div>
       </section>
