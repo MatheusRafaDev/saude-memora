@@ -218,7 +218,7 @@ export default function Documents() {
               <thead>
                 <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   <th className="py-3 px-3">Título do Documento</th>
-                  <th className="py-3 px-3">Tipo (IA)</th>
+                  <th className="py-3 px-3">Tipo</th>
                   <th className="py-3 px-3">Médico / Clínica</th>
                   <th className="py-3 px-3">Data do Registro</th>
                   <th className="py-3 px-3">Resumo / Diagnóstico</th>
@@ -236,7 +236,7 @@ export default function Documents() {
                     </td>
                     <td className="py-3.5 px-3">
                       <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
-                        <BrainCircuit size={10} />
+                        
                         {doc.tipo || 'Documento'}
                       </span>
                     </td>
@@ -264,7 +264,7 @@ export default function Documents() {
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => toast({ description: 'Edição estará disponível em breve.' })}>
                               <Pencil size={14} className="mr-2" /> Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-950" onClick={() => setDocumentToDelete(doc.id)}>
+                            <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
                               <Trash2 size={14} className="mr-2" /> Apagar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -290,7 +290,7 @@ export default function Documents() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-500 hover:bg-red-600 text-white font-bold">
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold">
               Apagar
             </AlertDialogAction>
           </AlertDialogFooter>

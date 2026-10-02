@@ -212,15 +212,12 @@ export default function Profile() {
         </div>
       </section>
 
-      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row pb-8 border-b border-border">
-        <p className="flex items-center gap-2 text-[11px] text-muted-foreground"><ShieldCheck size={14} className="text-accent" /> Seus dados estão protegidos</p>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-3 pb-8 border-b border-border">
           {error && <span className="text-xs text-red-500 font-bold">{error}</span>}
           <button type="submit" disabled={patchPerfil.isPending} data-testid="button-save-profile" className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground hover:-translate-y-0.5 disabled:opacity-50">
             {saved ? <><Check size={16} /> Alterações salvas</> : <><Save size={16} /> Salvar alterações</>}
           </button>
         </div>
-      </div>
     </form>
 
     <section className="rounded-2xl border border-border bg-card p-5 md:p-7">

@@ -130,12 +130,11 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   };
 
   const finishAndNavigate = () => {
-    const id = resultId;
     handleClose();
-    if (id) {
-      setLocation(`/documentos/${id}`);
+    if (resultId) {
+      window.location.href = `/documentos/${resultId}`;
     } else {
-      setLocation('/documentos');
+      window.location.href = '/documentos';
     }
   };
 

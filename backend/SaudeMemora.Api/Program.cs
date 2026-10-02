@@ -6,6 +6,7 @@ using SaudeMemora.Application.Interfaces;
 using SaudeMemora.Domain.Entities;
 using SaudeMemora.Domain.Interfaces;
 using SaudeMemora.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Infrastructure.Repositories;
 using SaudeMemora.Infrastructure.Services;
 using System.IdentityModel.Tokens.Jwt;
@@ -532,6 +533,27 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
     });
 }).RequireAuthorization();
 
+// Editar um documento
+app.MapPut("/api/documents/{id}", async (string id, [FromBody] DocumentUpdateDto updateDto, ClaimsPrincipal user, IDocumentRepository repo) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Results.Unauthorized();
+
+    var doc = await repo.GetByIdAsync(id);
+    if (doc == null || doc.PacienteId != userId) return Results.NotFound();
+
+    doc.Titulo = updateDto.Titulo ?? doc.Titulo;
+    doc.Medico = updateDto.Medico ?? doc.Medico;
+    doc.Clinica = updateDto.Clinica ?? doc.Clinica;
+    doc.Data = updateDto.Data ?? doc.Data;
+    doc.Resumo = updateDto.Resumo ?? doc.Resumo;
+    doc.Diagnostico = updateDto.Diagnostico ?? doc.Diagnostico;
+    doc.Crm = updateDto.Crm ?? doc.Crm;
+
+    await repo.UpdateAsync(doc);
+    return Results.Ok(new { message = "Documento atualizado com sucesso." });
+}).RequireAuthorization();
+
 // Exclui documento por ID (e remove do Cloudinary)
 app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage) =>
 {
@@ -541,11 +563,28 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     var doc = await repo.GetByIdAsync(id);
     if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
-    // Remove imagem do Cloudinary (se existir)
+    // Remove imagem do Cloudinary (Fire-and-forget para ficar mais rápido)
     if (!string.IsNullOrWhiteSpace(doc.IdPublico) && doc.IdPublico != "mock_public_id_12345")
     {
-        try { await storage.DeleteImageAsync(doc.IdPublico); }
-        catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar imagem: {ex.Message}"); }
+        _ = Task.Run(async () => {
+            try { await storage.DeleteImageAsync(doc.IdPublico); }
+            catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar imagem: {ex.Message}"); }
+        });
+    }
+    
+    // Remove múltiplas imagens se houver
+    if (doc.IdPublicos != null && doc.IdPublicos.Any())
+    {
+        _ = Task.Run(async () => {
+            foreach (var publicId in doc.IdPublicos)
+            {
+                if (publicId != "mock_public_id_12345")
+                {
+                    try { await storage.DeleteImageAsync(publicId); }
+                    catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar imagem múltipla: {ex.Message}"); }
+                }
+            }
+        });
     }
 
     await repo.DeleteAsync(id);
@@ -598,26 +637,24 @@ Obs: {ficha?.Observacoes}
 
     prompt += "\n\nCrie um relatório médico coeso, profissional e bem formatado em Markdown destacando os pontos principais, evolução e estado atual. Seja direto.";
 
-    var groqKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
-    if (string.IsNullOrEmpty(groqKey)) return Results.BadRequest("GROQ_API_KEY não configurada.");
+    var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
+    if (string.IsNullOrEmpty(geminiKey)) return Results.BadRequest("GEMINI_API_KEY não configurada.");
 
     using var http = new HttpClient();
     var payload = new
     {
-        model = "llama-3.3-70b-versatile",
-        messages = new[] { new { role = "user", content = prompt } },
-        temperature = 0.3
+        contents = new[] { new { parts = new[] { new { text = prompt } } } },
+        generationConfig = new { temperature = 0.3 }
     };
 
-    var req = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
-    req.Headers.Add("Authorization", $"Bearer {groqKey}");
+    var req = new HttpRequestMessage(HttpMethod.Post, $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={geminiKey}");
     req.Content = System.Net.Http.Json.JsonContent.Create(payload);
 
     var res = await http.SendAsync(req);
     if (!res.IsSuccessStatusCode) return Results.StatusCode(500);
 
     var json = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-    var report = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+    var report = json.GetProperty("candidates")[0].GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString();
 
     return Results.Ok(new { Report = report });
 }).RequireAuthorization();
@@ -640,4 +677,14 @@ public record ContatoDto(string? Telefone, string? Endereco);
 
 public record PerfilUpdateDto(string? Nome, string? Cpf, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha);
 
+public class DocumentUpdateDto
+{
+    public string? Titulo { get; set; }
+    public string? Medico { get; set; }
+    public string? Clinica { get; set; }
+    public string? Data { get; set; }
+    public string? Resumo { get; set; }
+    public string? Diagnostico { get; set; }
+    public string? Crm { get; set; }
+}
 

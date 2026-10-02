@@ -34,4 +34,9 @@ public class DocumentRepository : IDocumentRepository
     {
         await _documents.DeleteOneAsync(d => d.Id == id);
     }
+
+    public async Task UpdateAsync(RegistroDocumento docRecord)
+    {
+        await _documents.ReplaceOneAsync(d => d.Id == docRecord.Id, docRecord);
+    }
 }

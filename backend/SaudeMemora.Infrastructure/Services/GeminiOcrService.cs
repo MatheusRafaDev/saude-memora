@@ -41,7 +41,7 @@ public class GeminiOcrService : IOcrAiService
         }
 
         // Caso a chave exista, faz a chamada real pro Google Gemini
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={_apiKey}";
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={_apiKey}";
 
         // O prompt pede para atuar apenas como OCR (Reconhecimento Óptico de Caracteres)
         var prompt = $@"
@@ -155,7 +155,7 @@ public class GeminiOcrService : IOcrAiService
                 var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
                 var payload = new
                 {
-                    model = "groq/compound",
+                    model = "llama-3.3-70b-versatile",
                     messages = new[] { new { role = "user", content = prompt } },
                     temperature = 0.0,
                     response_format = new { type = "json_object" }
@@ -179,7 +179,7 @@ public class GeminiOcrService : IOcrAiService
         {
             try
             {
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={apiKey}";
+                var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={apiKey}";
                 var payload = new
                 {
                     contents = new[] { new { parts = new[] { new { text = prompt } } } },
@@ -224,7 +224,7 @@ public class GeminiOcrService : IOcrAiService
         
         var payload = new
         {
-            model = "qwen/qwen3.8-27b",
+            model = "meta-llama/llama-4-scout-17b-16e-instruct",
             messages = new[]
             {
                 new 
