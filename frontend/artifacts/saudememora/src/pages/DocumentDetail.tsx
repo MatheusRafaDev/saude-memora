@@ -4,7 +4,7 @@ import {
   ArrowLeft, CalendarDays, ChevronRight, FileCheck2, Info, Pill, 
   Stethoscope, MoreVertical, Trash2, Pencil, Code, Save, X, 
   ClipboardList, IdCard, User, Building2, FlaskConical, Activity, 
-  Building, FileText, ChevronDown, ChevronUp
+  Building, FileText, ChevronDown, ChevronUp, Copy
 } from 'lucide-react';
 import { useGetApiDocumentsId, useDeleteApiDocumentsId, customFetch } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -54,7 +54,15 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       setIsSaving(true);
       await customFetch(`/api/documents/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          Titulo:      formData.titulo,
+          Medico:      formData.medico,
+          Clinica:     formData.clinica,
+          Data:        formData.data,
+          Resumo:      formData.resumo,
+          Diagnostico: formData.diagnostico,
+          Crm:         formData.crm,
+        })
       });
       toast({ description: 'Documento atualizado com sucesso!' });
       setIsEditing(false);
@@ -99,87 +107,103 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </button>
             </>
           ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:bg-muted transition-colors">
-                  <MoreVertical size={18} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem className="text-xs font-bold cursor-pointer" onClick={() => setIsEditing(true)}>
-                  <Pencil size={14} className="mr-2" /> Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setShowDeleteConfirm(true)}>
-                  <Trash2 size={14} className="mr-2" /> Apagar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex gap-2">
+              <button onClick={() => setIsEditing(true)} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-bold text-foreground hover:bg-muted transition-colors">
+                <Pencil size={15} /> Editar
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:bg-muted transition-colors">
+                    <MoreVertical size={18} />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setShowDeleteConfirm(true)}>
+                    <Trash2 size={14} className="mr-2" /> Apagar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
       </div>
 
       {/* Header Section */}
-      <section className="flex flex-col justify-between gap-5 md:flex-row md:items-start rounded-3xl border border-border/60 bg-card p-6 md:p-8 shadow-sm">
-        <div className="w-full max-w-3xl">
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-accent/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[.1em] text-accent">
+      <section className="relative overflow-hidden flex flex-col gap-3 rounded-2xl border border-border/40 bg-gradient-to-br from-white to-[hsl(205_40%_97%)] dark:from-card dark:to-[hsl(205_20%_8%)] p-4 md:p-5 shadow-sm">
+        <div className="absolute -top-10 -right-10 p-10 opacity-[0.03] pointer-events-none rotate-12">
+          <FileText size={150} />
+        </div>
+        <div className="relative w-full z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="w-full">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="rounded-md bg-blue-500/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
               {typeLabel}
             </span>
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-              <CalendarDays size={13} /> {date}
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+              <CalendarDays size={12} /> {date}
             </span>
-            <span className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-[10px] font-bold text-foreground">
-              <FileCheck2 size={13} className="text-primary" /> Arquivado
+            <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+              <FileCheck2 size={12} /> Arquivado
             </span>
           </div>
           
           {isEditing ? (
-            <div className="mt-6 space-y-5">
+            <div className="space-y-4 mt-2">
               <input
                 type="text"
                 name="titulo"
                 value={formData.titulo}
                 onChange={handleChange}
-                className="w-full text-3xl font-extrabold tracking-[-.04em] md:text-4xl bg-transparent border-b border-border/50 focus:border-primary outline-none pb-2 transition-colors"
+                className="w-full text-xl font-bold tracking-tight md:text-2xl bg-transparent border-b border-border/50 focus:border-primary outline-none pb-1 transition-colors"
                 placeholder="Título do Documento"
               />
-              <div className="grid sm:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Stethoscope size={14} /> Médico(a)</label>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Stethoscope size={12} /> Médico(a)</label>
                   <input
                     type="text"
                     name="medico"
                     value={formData.medico}
                     onChange={handleChange}
-                    className="w-full text-sm bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                    className="w-full text-sm bg-muted/30 border border-border rounded-lg px-3 py-2 outline-none focus:border-primary transition-colors"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Building size={14} /> Clínica / Hospital</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Building size={12} /> Clínica / Hospital</label>
                   <input
                     type="text"
                     name="clinica"
                     value={formData.clinica}
                     onChange={handleChange}
-                    className="w-full text-sm bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                    className="w-full text-sm bg-muted/30 border border-border rounded-lg px-3 py-2 outline-none focus:border-primary transition-colors"
                   />
                 </div>
               </div>
             </div>
           ) : (
-            <>
-              <h1 className="mt-5 text-3xl font-extrabold tracking-[-.04em] md:text-4xl text-foreground">{doc.titulo}</h1>
-              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Stethoscope size={16} className="text-accent" /> {doc.medico || 'Profissional não informado'}
-                </span>
-                <span className="text-border">|</span>
-                <span className="flex items-center gap-1.5">
-                  <Building size={16} className="text-accent" /> {doc.clinica || 'Clínica não informada'}
-                </span>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <h1 className="text-xl font-bold tracking-tight md:text-2xl text-slate-800 dark:text-slate-100">{doc.titulo}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-white/50 dark:bg-black/20 px-2.5 py-1 rounded-lg border border-border/40">
+                  <div className="flex text-blue-600 dark:text-blue-400">
+                    <Stethoscope size={13} />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {doc.medico || 'Não informado'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/50 dark:bg-black/20 px-2.5 py-1 rounded-lg border border-border/40">
+                  <div className="flex text-indigo-600 dark:text-indigo-400">
+                    <Building size={13} />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {doc.clinica || 'Não informada'}
+                  </span>
+                </div>
               </div>
-            </>
+            </div>
           )}
+          </div>
         </div>
       </section>
 
@@ -200,17 +224,15 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               )}
             </div>
             
-            <div className="relative min-h-[400px] flex items-center justify-center overflow-hidden rounded-2xl bg-white dark:bg-card p-4 text-[#45504f] shadow-sm border border-border/30">
+          <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white p-3 border border-border/30 max-h-[600px]">
               {doc.urlImagens?.length > 0 ? (
-                <div className="flex flex-col gap-4 w-full">
+                <div className="flex flex-col gap-3 w-full">
                   {doc.urlImagens.map((url: string, i: number) => (
-                    <img key={i} src={url} alt={`Documento ${i + 1}`} className="w-full h-auto rounded-xl shadow-sm border border-border/20" />
+                    <img key={i} src={url} alt={`Documento ${i + 1}`} className="w-full h-auto object-contain max-h-[600px] rounded-lg border border-border/20" />
                   ))}
                 </div>
-              ) : doc.urlImagem ? (
-                <img src={doc.urlImagem} alt="Documento Original" className="w-full h-auto object-contain max-h-[700px] rounded-xl shadow-sm border border-border/20" />
               ) : (
-                <p className="text-sm text-muted-foreground">Imagem não disponível.</p>
+                <p className="text-sm text-muted-foreground py-8">Imagem não disponível.</p>
               )}
             </div>
           </section>
@@ -218,23 +240,39 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           {/* Raw Text Section (Collapsible) */}
           {doc.textoExtraido && !isEditing && (
             <section className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm transition-all">
-              <button 
-                onClick={() => setIsRawTextOpen(!isRawTextOpen)}
-                className="flex w-full items-center justify-between outline-none"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <div className="flex w-full items-center justify-between">
+                <button 
+                  onClick={() => setIsRawTextOpen(!isRawTextOpen)}
+                  className="flex flex-1 items-center gap-3 outline-none text-left"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent shrink-0">
                     <Code size={20} />
                   </span>
-                  <div className="text-left">
+                  <div>
                     <h2 className="text-base font-extrabold text-foreground">Transcrição Original</h2>
                     <p className="text-xs font-medium text-muted-foreground mt-0.5">Texto lido por OCR</p>
                   </div>
+                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(doc.textoExtraido);
+                      toast({ description: 'Copiado para a área de transferência!' });
+                    }}
+                    className="flex h-8 items-center gap-1.5 px-3 rounded-lg bg-muted/30 border border-border/50 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-accent/10 transition-colors"
+                    title="Copiar texto"
+                  >
+                    <Copy size={13} /> <span className="hidden sm:inline">Copiar</span>
+                  </button>
+                  <button 
+                    onClick={() => setIsRawTextOpen(!isRawTextOpen)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    {isRawTextOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
                 </div>
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
-                  {isRawTextOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                </div>
-              </button>
+              </div>
 
               {isRawTextOpen && (
                 <div className="mt-5 rounded-2xl bg-muted/20 border border-border/40 p-5">
@@ -256,7 +294,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Info size={20} />
               </span>
-              <h2 className="text-lg font-extrabold text-foreground">Resumo do Documento</h2>
+              <h2 className="text-base font-bold text-foreground">Resumo do Documento</h2>
             </div>
             
             {isEditing ? (
@@ -335,7 +373,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                     <ClipboardList size={20} />
                   </span>
-                  <h2 className="text-lg font-extrabold text-foreground">Informações Adicionais</h2>
+                  <h2 className="text-base font-bold text-foreground">Informações Adicionais</h2>
                 </div>
                 
                 {isEditing ? (
@@ -362,14 +400,14 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                     {allFields.map((field, idx) => (
-                      <div key={idx} className="flex flex-col gap-1.5 rounded-2xl border border-border/40 bg-muted/20 px-5 py-4 transition-colors hover:bg-muted/40">
-                        <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.12em] text-muted-foreground font-bold">
+                      <div key={idx} className="flex flex-col gap-1 rounded-xl border border-border/40 bg-card p-3 shadow-sm transition-colors hover:border-primary/30">
+                        <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/80 font-bold">
                           {getIcon(field.chave)}
                           {field.chave}
                         </span>
-                        <span className="text-[14px] font-extrabold text-foreground mt-0.5 break-words">{field.valor}</span>
+                        <span className="text-xs font-semibold text-foreground mt-0.5 break-words">{field.valor}</span>
                       </div>
                     ))}
                   </div>
@@ -386,7 +424,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                     <Pill size={20} />
                   </span>
-                  <h2 className="text-lg font-extrabold text-foreground">Medicamentos</h2>
+                  <h2 className="text-base font-bold text-foreground">Medicamentos</h2>
                 </div>
                 <span className="font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">
                   {(doc.medicamentos?.length || 0).toString().padStart(2, '0')}

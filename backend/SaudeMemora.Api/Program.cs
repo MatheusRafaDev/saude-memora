@@ -76,6 +76,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+// Configure Caching (Redis or Memory Fallback)
+var redisConn = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConn))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConn;
+        options.InstanceName = "SaudeMemora_";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -89,7 +104,7 @@ app.UseCors("AllowNextJs");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ─── Auth Endpoints ────────────────────────────────────────────────────────
+// â”€â”€â”€ Auth Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<RegisterPacienteDto> validator, IPacienteRepository repo) =>
 {
@@ -102,14 +117,14 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
     var existing = await repo.GetByEmailAsync(dto.Email);
     if (existing != null)
     {
-        return Results.BadRequest(new[] { "Email já cadastrado." });
+        return Results.BadRequest(new[] { "Email jÃ¡ cadastrado." });
     }
 
-    // Verifica se CPF já existe
+    // Verifica se CPF jÃ¡ existe
     var existingCpf = await repo.GetByCpfAsync(dto.Cpf);
     if (existingCpf != null)
     {
-        return Results.BadRequest(new[] { "CPF já cadastrado." });
+        return Results.BadRequest(new[] { "CPF jÃ¡ cadastrado." });
     }
 
     var paciente = new Paciente
@@ -137,7 +152,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null || !BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
     {
-        return Results.BadRequest(new[] { "Email ou senha inválidos." });
+        return Results.BadRequest(new[] { "Email ou senha invÃ¡lidos." });
     }
 
     // Generate Token
@@ -174,9 +189,9 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     });
 });
 
-// ─── Paciente Endpoints ────────────────────────────────────────────────────
+// â”€â”€â”€ Paciente Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Retorna o perfil médico completo do paciente autenticado
+// Retorna o perfil mÃ©dico completo do paciente autenticado
 app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -210,7 +225,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
     });
 }).RequireAuthorization();
 
-// Atualiza informações do paciente autenticado (Nome, Cpf, DataNascimento, Email)
+// Atualiza informaÃ§Ãµes do paciente autenticado (Nome, Cpf, DataNascimento, Email)
 app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -230,7 +245,7 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
 }).RequireAuthorization();
 
-// Atualiza telefone e endereço do paciente autenticado
+// Atualiza telefone e endereÃ§o do paciente autenticado
 app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -255,7 +270,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     if (paciente == null) return Results.NotFound();
 
     if (!context.Request.HasFormContentType)
-        return Results.BadRequest("Formato inválido.");
+        return Results.BadRequest("Formato invÃ¡lido.");
 
     var form = await context.Request.ReadFormAsync();
     var file = form.Files.GetFile("file");
@@ -267,7 +282,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     using var stream = file.OpenReadStream();
     var (url, id) = await storage.UploadImageAsync(stream, file.FileName);
     
-    // IA Extração da Carteirinha
+    // IA ExtraÃ§Ã£o da Carteirinha
     var extracted = await ocr.ExtractCarteirinhaDataAsync(url, context.RequestAborted);
 
     paciente.UrlCarteirinha = url;
@@ -316,29 +331,30 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
     var docs = await docRepo.GetAllByPacienteIdAsync(userId);
     foreach (var doc in docs)
     {
-        if (!string.IsNullOrWhiteSpace(doc.IdPublico) && doc.IdPublico != "mock_public_id_12345")
+        foreach (var pubId in doc.IdPublicos)
         {
-            try { await storage.DeleteImageAsync(doc.IdPublico); } catch { /* ignora erros do cloudinary no cascade */ }
+            if (!string.IsNullOrWhiteSpace(pubId))
+                try { await storage.DeleteImageAsync(pubId); } catch { }
         }
         await docRepo.DeleteAsync(doc.Id!);
     }
 
-    // 2. Apaga a ficha médica
+    // 2. Apaga a ficha mÃ©dica
     var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
     if (ficha != null)
     {
         // Precisamos adicionar Delete no repo se quisermos apagar
-        // Vamos apenas ignorar, ou adicionar a exclusão (vou deixar pra lá e adicionar o método no repo dps ou só não apagar)
-        // Oops, o FichaMedicaRepository não tem DeleteAsync. Vou deixar órfão por enquanto ou eu não apago a ficha. 
+        // Vamos apenas ignorar, ou adicionar a exclusÃ£o (vou deixar pra lÃ¡ e adicionar o mÃ©todo no repo dps ou sÃ³ nÃ£o apagar)
+        // Oops, o FichaMedicaRepository nÃ£o tem DeleteAsync. Vou deixar Ã³rfÃ£o por enquanto ou eu nÃ£o apago a ficha. 
     }
 
     // 3. Apaga o paciente
     await repo.DeleteAsync(userId);
 
-    return Results.Ok(new { Message = "Conta excluída com sucesso." });
+    return Results.Ok(new { Message = "Conta excluÃ­da com sucesso." });
 }).RequireAuthorization();
 
-// ─── Ficha Médica Endpoints ────────────────────────────────────────────────
+// â”€â”€â”€ Ficha MÃ©dica Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo) =>
 {
@@ -382,7 +398,7 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     return Results.Ok(ficha);
 }).RequireAuthorization();
 
-// ─── Document Endpoints ────────────────────────────────────────────────────
+// â”€â”€â”€ Document Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Processa upload de novo documento com OCR
 app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal user, IDocumentRepository docRepo, IImageStorageService storage, IOcrAiService ocr) =>
@@ -391,7 +407,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
     if (userId == null) return Results.Unauthorized();
 
     if (!context.Request.HasFormContentType)
-        return Results.BadRequest("Formato inválido. Esperado multipart/form-data.");
+        return Results.BadRequest("Formato invÃ¡lido. Esperado multipart/form-data.");
 
     var form = await context.Request.ReadFormAsync();
     var files = form.Files;
@@ -416,23 +432,22 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         idPublicos.Add(IdPublico);
     }
 
-    if (urlImagens.Count == 0) return Results.BadRequest("Nenhum arquivo válido.");
+    if (urlImagens.Count == 0) return Results.BadRequest("Nenhum arquivo vÃ¡lido.");
 
-    // 2. Extração de Dados via OCR e IA (suportando múltiplas páginas)
+    // 2. ExtraÃ§Ã£o de Dados via OCR e IA (suportando mÃºltiplas pÃ¡ginas)
     var extractedData = await ocr.ExtractMultipleDocumentsDataAsync(urlImagens, docTipo, context.RequestAborted);
 
     // 3. Salvar no MongoDB
     var docRecord = new RegistroDocumento
     {
         PacienteId = userId,
-        UrlImagem = urlImagens.First(), // fallback para frontends antigos
-        IdPublico = idPublicos.First(),
         UrlImagens = urlImagens,
         IdPublicos = idPublicos,
-        Titulo = extractedData.Titulo,
+        Titulo = !string.IsNullOrWhiteSpace(extractedData.Titulo) ? extractedData.Titulo : "Documento Digitalizado",
         Tipo = !string.IsNullOrWhiteSpace(extractedData.TipoIdentificado) ? extractedData.TipoIdentificado.ToLower() : (!string.IsNullOrWhiteSpace(extractedData.Tipo) ? extractedData.Tipo.ToLower() : docTipo),
-        Status = "pronto", // poderia ser "processando" e usar webhooks se fosse fila
+        Status = "pronto",
         Medico = extractedData.Medico,
+        Crm = extractedData.Crm,
         Clinica = extractedData.Clinica,
         Data = extractedData.Data,
         Resumo = extractedData.Resumo,
@@ -442,7 +457,8 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         Medicamentos = extractedData.Medicamentos.Select(m => new MedicamentoDocumento 
         { 
             Nome = m.Nome, 
-            Dosagem = m.Dosagem 
+            Dosagem = m.Dosagem,
+            Horario = m.Horario
         }).ToList(),
         ConteudoIndentado = extractedData.ConteudoIndentado.Select(l => new LinhaIndentadaDocumento
         {
@@ -470,22 +486,22 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
     return Results.Ok(docs.Select(d => new
     {
         id = d.Id,
-        Titulo = d.Titulo,
-        Tipo = d.Tipo,
+        titulo = d.Titulo,
+        tipo = d.Tipo,
         status = d.Status,
-        Medico = d.Medico,
-        Clinica = d.Clinica,
-        Data = d.Data,
-        Resumo = d.Resumo,
-        Diagnostico = d.Diagnostico,
-        Medicamentos = d.Medicamentos.Select(m => new { Nome = m.Nome, Dosagem = m.Dosagem }),
-        UrlImagem = d.UrlImagem,
-        UrlImagens = d.UrlImagens,
-        CriadoEm = d.CriadoEm
-    }).OrderByDescending(d => d.CriadoEm));
+        medico = d.Medico,
+        crm = d.Crm,
+        clinica = d.Clinica,
+        data = d.Data,
+        resumo = d.Resumo,
+        diagnostico = d.Diagnostico,
+        medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
+        urlImagens = d.UrlImagens,
+        criadoEm = d.CriadoEm
+    }).OrderByDescending(d => d.criadoEm));
 }).RequireAuthorization();
 
-// Contagens de documentos por tipo (para métricas do dashboard)
+// Contagens de documentos por tipo (para mÃ©tricas do dashboard)
 app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentRepository repo) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -516,20 +532,20 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
     return Results.Ok(new
     {
         id = doc.Id,
-        Titulo = doc.Titulo,
-        Tipo = doc.Tipo,
+        titulo = doc.Titulo,
+        tipo = doc.Tipo,
         status = doc.Status,
-        Medico = doc.Medico,
-        Clinica = doc.Clinica,
-        Data = doc.Data,
-        Resumo = doc.Resumo,
-        Diagnostico = doc.Diagnostico,
-        Medicamentos = doc.Medicamentos.Select(m => new { Nome = m.Nome, Dosagem = m.Dosagem }),
-        UrlImagem = doc.UrlImagem,
-        UrlImagens = doc.UrlImagens,
-        TextoExtraido = doc.TextoExtraido,
-        ConteudoIndentado = doc.ConteudoIndentado,
-        CriadoEm = doc.CriadoEm
+        medico = doc.Medico,
+        crm = doc.Crm,
+        clinica = doc.Clinica,
+        data = doc.Data,
+        resumo = doc.Resumo,
+        diagnostico = doc.Diagnostico,
+        medicamentos = doc.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
+        urlImagens = doc.UrlImagens,
+        textoExtraido = doc.TextoExtraido,
+        conteudoIndentado = doc.ConteudoIndentado,
+        criadoEm = doc.CriadoEm
     });
 }).RequireAuthorization();
 
@@ -563,25 +579,16 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     var doc = await repo.GetByIdAsync(id);
     if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
-    // Remove imagem do Cloudinary (Fire-and-forget para ficar mais rápido)
-    if (!string.IsNullOrWhiteSpace(doc.IdPublico) && doc.IdPublico != "mock_public_id_12345")
-    {
-        _ = Task.Run(async () => {
-            try { await storage.DeleteImageAsync(doc.IdPublico); }
-            catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar imagem: {ex.Message}"); }
-        });
-    }
-    
-    // Remove múltiplas imagens se houver
+    // Remove todas as imagens do Cloudinary (Fire-and-forget)
     if (doc.IdPublicos != null && doc.IdPublicos.Any())
     {
         _ = Task.Run(async () => {
             foreach (var publicId in doc.IdPublicos)
             {
-                if (publicId != "mock_public_id_12345")
+                if (!string.IsNullOrWhiteSpace(publicId))
                 {
                     try { await storage.DeleteImageAsync(publicId); }
-                    catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar imagem múltipla: {ex.Message}"); }
+                    catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar: {ex.Message}"); }
                 }
             }
         });
@@ -591,7 +598,7 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     return Results.Ok(new { message = "Documento deletado com sucesso." });
 }).RequireAuthorization();
 
-// ─── Relatório Endpoints ───────────────────────────────────────────────────
+// â”€â”€â”€ RelatÃ³rio Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.MapGet("/api/reports/generate", async (int months, ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IConfiguration config) =>
 {
@@ -606,39 +613,39 @@ app.MapGet("/api/reports/generate", async (int months, ClaimsPrincipal user, IPa
     var recentDocs = allDocs.Where(d => d.CriadoEm >= limitData).ToList();
 
     var prompt = $@"
-Você é um médico especialista montando um dossiê clínico (prontuário resumido) para outro médico ler antes da consulta.
-Aqui estão os dados do paciente:
+VocÃª Ã© um mÃ©dico especialista montando um dossiÃª clÃ­nico (prontuÃ¡rio resumido) para outro mÃ©dico ler antes da consulta.
+Aqui estÃ£o os dados do paciente:
 
 [Perfil]:
 Nome: {paciente?.Nome}, Idade/Sexo: {paciente?.Sexo}
 
-[Ficha Médica]:
-Tipo Sanguíneo: {ficha?.TipoSanguineo}
+[Ficha MÃ©dica]:
+Tipo SanguÃ­neo: {ficha?.TipoSanguineo}
 Alergias: {string.Join(", ", ficha?.Alergias ?? new List<string>())}
-Doenças Crônicas: {string.Join(", ", ficha?.DoencasCronicas ?? new List<string>())}
+DoenÃ§as CrÃ´nicas: {string.Join(", ", ficha?.DoencasCronicas ?? new List<string>())}
 
-[Ficha Médica]:
-Histórico Familiar: {ficha?.HistoricoFamiliar}
+[Ficha MÃ©dica]:
+HistÃ³rico Familiar: {ficha?.HistoricoFamiliar}
 Cirurgias: {ficha?.Cirurgias}
 Fuma: {ficha?.Fuma}, Bebe: {ficha?.Bebe}
-Hábitos: {ficha?.HabitosGerais}
+HÃ¡bitos: {ficha?.HabitosGerais}
 Obs: {ficha?.Observacoes}
 
-[Documentos e Exames Recentes (últimos {months} meses)]:
+[Documentos e Exames Recentes (Ãºltimos {months} meses)]:
 ";
     foreach (var doc in recentDocs)
     {
-        prompt += $"\n- {doc.Data} | {doc.Tipo.ToUpper()} | {doc.Titulo}: {doc.Resumo} | Diagnóstico: {doc.Diagnostico}";
+        prompt += $"\n- {doc.Data} | {doc.Tipo.ToUpper()} | {doc.Titulo}: {doc.Resumo} | DiagnÃ³stico: {doc.Diagnostico}";
         if (doc.Medicamentos.Count > 0)
         {
-            prompt += $" | Remédios: {string.Join(", ", doc.Medicamentos.Select(m => m.Nome + " " + m.Dosagem))}";
+            prompt += $" | RemÃ©dios: {string.Join(", ", doc.Medicamentos.Select(m => m.Nome + " " + m.Dosagem))}";
         }
     }
 
-    prompt += "\n\nCrie um relatório médico coeso, profissional e bem formatado em Markdown destacando os pontos principais, evolução e estado atual. Seja direto.";
+    prompt += "\n\nCrie um relatÃ³rio mÃ©dico coeso, profissional e bem formatado em Markdown destacando os pontos principais, evoluÃ§Ã£o e estado atual. Seja direto.";
 
     var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
-    if (string.IsNullOrEmpty(geminiKey)) return Results.BadRequest("GEMINI_API_KEY não configurada.");
+    if (string.IsNullOrEmpty(geminiKey)) return Results.BadRequest("GEMINI_API_KEY nÃ£o configurada.");
 
     using var http = new HttpClient();
     var payload = new
@@ -661,7 +668,7 @@ Obs: {ficha?.Observacoes}
 
 app.Run();
 
-// ─── DTOs auxiliares ───────────────────────────────────────────────────────
+// â”€â”€â”€ DTOs auxiliares â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 public record MedicamentoContinuoDto(string Nome, string Dosagem, string Horario);
 

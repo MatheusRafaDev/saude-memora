@@ -45,6 +45,7 @@ public class DocumentoExtraidoDto
     public List<MedicamentoExtraidoDto> Medicamentos { get; set; } = new();
     public List<LinhaIndentadaDto> ConteudoIndentado { get; set; } = new();
     public string TextoExtraido { get; set; } = string.Empty;
+    public string TextoFormatado { get; set; } = string.Empty;
 }
 
 public class MedicamentoExtraidoDto

@@ -98,13 +98,7 @@ public class RegistroDocumento
     [BsonElement("diagnostico")]
     public string Diagnostico { get; set; } = string.Empty;
 
-    // Armazenamento original
-    [BsonElement("urlImagem")]
-    public string UrlImagem { get; set; } = string.Empty;
-
-    [BsonElement("idPublico")]
-    public string IdPublico { get; set; } = string.Empty;
-
+    // Armazenamento de imagens (suporta múltiplas páginas)
     [BsonElement("urlImagens")]
     public List<string> UrlImagens { get; set; } = new();
 

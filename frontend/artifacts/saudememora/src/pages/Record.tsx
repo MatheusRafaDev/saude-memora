@@ -20,6 +20,13 @@ const CHRONIC_DISEASE_OPTIONS = [
   'Doença Celíaca', 'Lúpus', 'Doença de Parkinson', 'Alzheimer', 'Refluxo Gastroesofágico'
 ];
 
+const HABIT_OPTIONS = [
+  'Pratico exercícios regulares', 'Sedentário(a)', 'Musculação / Crossfit', 'Corrida / Caminhada', 'Natação / Ciclismo', 
+  'Durmo 8h/dia', 'Durmo menos de 6h', 'Insônia', 'Ronco / Apneia',
+  'Alimentação balanceada', 'Dieta restritiva / Jejum', 'Consumo muito doce/açúcar', 'Bebo 2L+ de água por dia',
+  'Uso de telas antes de dormir', 'Meditação / Yoga', 'Terapia Psicológica'
+];
+
 const PREDEFINED_CONDITIONS = [
   'Hipertensão (Pressão alta)',
   'Diabetes',
@@ -186,7 +193,7 @@ export default function Record() {
     surgeries: '',
     smoker: false,
     alcohol: false,
-    habits: '',
+    habitsList: [] as string[],
     notes: '',
     outrasDoencas: '',
     bloodType: '',
@@ -206,7 +213,7 @@ export default function Record() {
         surgeries: r.cirurgias || '',
         smoker: !!r.fuma,
         alcohol: !!r.bebe,
-        habits: r.habitosGerais || '',
+        habitsList: r.habitosGerais ? r.habitosGerais.split(',').map((h: string) => h.trim()).filter(Boolean) : [],
         notes: r.observacoes || '',
         outrasDoencas: r.outrasDoencas || '',
         bloodType: r.tipoSanguineo || '',
@@ -235,8 +242,8 @@ export default function Record() {
     });
   };
 
-  const save = async (event: FormEvent) => { 
-    event.preventDefault();
+  const save = async (event?: FormEvent) => { 
+    if (event) event.preventDefault();
     setError('');
     setSaved(false);
 
@@ -248,7 +255,7 @@ export default function Record() {
           cirurgias: form.surgeries,
           fuma: form.smoker,
           bebe: form.alcohol,
-          habitosGerais: form.habits,
+          habitosGerais: form.habitsList.join(', '),
           observacoes: form.notes,
           condicoes: conditions,
           outrasDoencas: form.outrasDoencas,
@@ -259,37 +266,46 @@ export default function Record() {
         } as any
       });
       setSaved(true); 
-      await refetch();
+      // Do not await refetch() on auto-save to prevent focus loss issues
       window.setTimeout(() => setSaved(false), 2400); 
     } catch (err) {
       setError('Erro ao salvar ficha.');
     }
   };
 
+  // Auto-save debounce
+  useEffect(() => {
+    if (!recordRaw) return; // Only auto-save if we have loaded the data
+    const timer = setTimeout(() => {
+      save();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [form, conditions]);
+
   if (isLoading) {
     return <div className="page-enter p-12 text-center text-muted-foreground">Carregando ficha médica...</div>;
   }
 
-  return <div className="page-enter mx-auto max-w-[980px] space-y-8">
+  return <div className="page-enter mx-auto max-w-[800px] space-y-4">
     <section>
       <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">contexto de saúde</p>
-      <h1 className="mt-2 text-3xl font-extrabold tracking-[-.06em] md:text-[40px]">Minha anamnese</h1>
-      <p className="mt-2 max-w-[570px] text-sm leading-6 text-muted-foreground">Um pouco mais sobre você ajuda a tornar cada conversa médica mais completa. Atualize quando quiser.</p>
+      <h1 className="mt-1 text-2xl font-extrabold tracking-[-.06em] md:text-3xl">Minha anamnese</h1>
+      <p className="mt-1 max-w-[570px] text-xs leading-5 text-muted-foreground">Atualize suas informações de saúde. Suas respostas são salvas automaticamente.</p>
     </section>
     
-    <form onSubmit={save} className="space-y-5">
-      <section className="rounded-2xl border border-border bg-card p-5 md:p-7">
-        <div className="flex items-start gap-3 border-b border-border/70 pb-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent"><ClipboardList size={19} /></span>
+    <form onSubmit={save} className="space-y-4">
+      <section id="sec-disease" className="rounded-xl border border-border bg-card p-4 md:p-5">
+        <div className="flex items-start gap-3 border-b border-border/70 pb-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-accent"><ClipboardList size={17} /></span>
           <div>
-            <h2 className="text-base font-extrabold">Histórico de Doenças</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Condições crônicas e histórico de saúde pessoal.</p>
+            <h2 className="text-sm font-extrabold">Histórico de Doenças</h2>
+            <p className="text-[11px] text-muted-foreground">Condições crônicas e histórico de saúde pessoal.</p>
           </div>
         </div>
         
-        <div className="mt-6 space-y-5">
+        <div className="mt-4 space-y-3">
           {conditions.map((cond, index) => (
-            <div key={cond.nome} className={`rounded-xl border transition-colors ${cond.tem ? 'border-accent/40 bg-accent/5' : 'border-border bg-muted/30'} p-4 md:p-5`}>
+            <div key={cond.nome} className={`rounded-xl border transition-colors ${cond.tem ? 'border-accent/40 bg-accent/5' : 'border-border bg-muted/30'} p-3 md:p-4`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <span className="text-sm font-bold">{cond.nome}</span>
                 <div className="flex items-center gap-2">
@@ -333,14 +349,16 @@ export default function Record() {
               </div>
 
               {/* Allergies Autocomplete Multi-Select */}
-              <AutocompleteMultiSelect
-                label="Alergias conhecidas"
-                placeholder="Digite para pesquisar alergias (ex: Dipirona, Penicilina, Amendoim)..."
-                options={ALLERGY_OPTIONS}
-                selected={form.allergies}
-                onChange={(items) => set('allergies', items)}
-                chipColorClass="bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
-              />
+              <div id="sec-allergy">
+                <AutocompleteMultiSelect
+                  label="Alergias conhecidas"
+                  placeholder="Digite para pesquisar alergias (ex: Dipirona, Penicilina, Amendoim)..."
+                  options={ALLERGY_OPTIONS}
+                  selected={form.allergies}
+                  onChange={(items) => set('allergies', items)}
+                  chipColorClass="bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
+                />
+              </div>
 
               {/* Chronic Diseases Autocomplete Multi-Select */}
               <AutocompleteMultiSelect
@@ -360,8 +378,8 @@ export default function Record() {
             </div>
           </div>
           
-          <div className="pt-4 border-t border-border/70">
-            <div className="grid gap-5 pt-4 md:grid-cols-2">
+          <div id="sec-blood" className="pt-4 border-t border-border/70">
+            <div id="sec-family" className="grid gap-5 pt-4 md:grid-cols-2">
               <Field label="Histórico familiar (Ex: Mãe teve câncer, Pai infartou)" value={form.familyHistory} onChange={(v) => set('familyHistory', v)} id="family-history" />
               <Field label="Cirurgias e internações prévias" value={form.surgeries} onChange={(v) => set('surgeries', v)} id="surgeries" />
             </div>
@@ -369,16 +387,15 @@ export default function Record() {
         </div>
       </section>
       
-      <section className="rounded-2xl border border-border bg-card p-5 md:p-7">
-        <div className="flex items-start gap-3 border-b border-border/70 pb-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent"><FileText size={19} /></span>
+      <section id="sec-habits" className="rounded-xl border border-border bg-card p-4 md:p-5">
+        <div className="flex items-start gap-3 border-b border-border/70 pb-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-accent"><FileText size={17} /></span>
           <div>
-            <h2 className="text-base font-extrabold">Hábitos e rotina</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Não existe resposta certa. Só a que representa você hoje.</p>
+            <h2 className="text-sm font-extrabold">Hábitos e rotina</h2>
           </div>
         </div>
         
-        <div className="grid gap-5 pt-6 md:grid-cols-2">
+        <div className="grid gap-3 pt-4 md:grid-cols-2">
           <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-4">
             <input type="checkbox" checked={form.smoker} onChange={(e) => set('smoker', e.target.checked)} className="h-4 w-4 accent-[hsl(var(--accent))]" />
             <span><span className="block text-xs font-bold">Fuma</span></span>
@@ -389,20 +406,30 @@ export default function Record() {
           </label>
         </div>
         
-        <div className="mt-5">
-          <Field label="Outros hábitos (Exercício, sono, etc.)" value={form.habits} onChange={(v) => set('habits', v)} id="habits" />
+        <div className="mt-6">
+          <AutocompleteMultiSelect
+            label="Outros hábitos e estilo de vida"
+            placeholder="Digite para adicionar (ex: Durmo 8h, Sedentário)..."
+            options={HABIT_OPTIONS}
+            selected={form.habitsList}
+            onChange={(items) => set('habitsList', items)}
+            chipColorClass="bg-accent/10 border-accent/30 text-accent hover:bg-accent/20"
+          />
         </div>
         <div className="mt-5">
           <Field label="Algo mais que seu médico deveria saber?" value={form.notes} onChange={(v) => set('notes', v)} id="notes" textarea />
         </div>
       </section>
       
-      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-        <p className="text-[11px] text-muted-foreground">Preencha com cuidado.</p>
+      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row border-t border-border/60 pt-4 pb-12">
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+          <Check size={13} className={saved ? "text-emerald-500" : "text-muted-foreground/50"} /> 
+          {patchFicha.isPending ? 'Salvando alterações...' : saved ? 'Todas as alterações foram salvas' : 'Preencha com cuidado'}
+        </p>
         <div className="flex items-center gap-3">
           {error && <span className="text-xs text-red-500 font-bold">{error}</span>}
-          <button type="submit" disabled={patchFicha.isPending} data-testid="button-save-record" className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground hover:-translate-y-0.5 disabled:opacity-50">
-            {saved ? <><Check size={16} /> Salvo com cuidado</> : <><Save size={16} /> Salvar anamnese</>}
+          <button type="submit" disabled={patchFicha.isPending} data-testid="button-save-record" className="flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground hover:-translate-y-0.5 disabled:opacity-50">
+            {saved ? <><Check size={15} /> Salvo</> : <><Save size={15} /> Salvar</>}
           </button>
         </div>
       </div>
@@ -410,12 +437,12 @@ export default function Record() {
   </div>;
 }
 
-function Field({ label, value, onChange, id, textarea = false }: { label: string; value: string; onChange: (value: string) => void; id: string; textarea?: boolean }) {
+function Field({ label, value, onChange, id, textarea = false, placeholder = '' }: { label: string; value: string; onChange: (value: string) => void; id: string; textarea?: boolean; placeholder?: string }) {
   return <label className="block">
     <span className="mb-2 block text-[11px] font-bold">{label}</span>
     {textarea ? 
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} data-testid={`input-record-${id}`} rows={3} className="w-full resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-accent/10" /> : 
-      <input value={value} onChange={(e) => onChange(e.target.value)} data-testid={`input-record-${id}`} className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm outline-none focus:ring-4 focus:ring-accent/10" />
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} data-testid={`input-record-${id}`} placeholder={placeholder} rows={2} className="w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-xs outline-none placeholder:text-muted-foreground/45 focus:ring-4 focus:ring-accent/10" /> : 
+      <input value={value} onChange={(e) => onChange(e.target.value)} data-testid={`input-record-${id}`} placeholder={placeholder} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none placeholder:text-muted-foreground/45 focus:ring-4 focus:ring-accent/10" />
     }
   </label>;
 }

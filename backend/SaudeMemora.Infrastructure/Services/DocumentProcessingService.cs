@@ -118,7 +118,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
 {jsonFormat}
 ";
 
-        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={_geminiApiKey}";
+        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_geminiApiKey}";
         var payload = new
         {
             contents = new[] { new { parts = new[] { new { text = prompt } } } },
@@ -210,7 +210,7 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
 [Motor 2]:
 {text2}
 ";
-        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={_geminiApiKey}";
+        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={_geminiApiKey}";
         var payload = new
         {
             contents = new[] { new { parts = new[] { new { text = prompt } } } },
@@ -251,40 +251,55 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
     {
         var jsonFormat = @"
         {
-            ""tipoIdentificado"": ""analise o documento e classifique estritamente como 'receita', 'exame' ou 'clinico'. Pedido médico, receita ou prescrição é 'receita'. Laudo de exame ou resultado laboratorial é 'exame'. Atestados, relatórios ou outros são 'clinico'."",
-            ""titulo"": ""Título principal do documento (ex: Receita da Dra. Amanda, Ressonância Magnética do Joelho)"",
-            ""medico"": ""Nome do médico se houver"",
-            ""crm"": ""CRM do médico se houver (somente os números e UF)"",
-            ""clinica"": ""Laboratório ou clínica onde foi realizado o exame (ex: Fleury, a+ medicina) se houver"",
-            ""data"": ""Data legível no formato dd/MM/yyyy"",
-            ""resumo"": ""Resumo clínico do documento ou resumo do laudo."",
-            ""diagnostico"": ""Diagnóstico, CID ou conclusão médica/opinião se houver"",
+            ""tipoIdentificado"": ""classifique estritamente como 'receita', 'exame' ou 'clinico'."",
+            ""textoFormatado"": ""O texto cru original do OCR vem sem quebras de linha e muito confuso. Reescreva TODO o texto bruto fornecido de forma idêntica (sem resumir ou inventar), mas APLICANDO espaçamentos, indentação e quebras de linha lógicas para deixá-lo legível para um ser humano. Retorne com as quebras de linha devidamente escapadas para JSON (use \\n)."",
+            ""titulo"": ""Título do documento: use o nome do exame ou procedimento principal (ex: 'Radiografia do Cavum', 'Tomografia Computadorizada de Joelho', 'Receita de Amoxicilina'). NUNCA use 'Documento Digitalizado' se houver um exame identificável."",
+            ""medico"": ""APENAS o nome completo do médico/profissional que assina ou emite o documento (ex: 'Dr. Tadao Mori', 'Dra. Amanda Lima'). NÃO coloque CRM aqui. Se não houver, deixe vazio."",
+            ""crm"": ""Apenas o número do CRM com a UF (ex: '16356 SP'). Procure por 'CRM' seguido de números no texto. NÃO coloque nome aqui."",
+            ""clinica"": ""Nome do laboratório, clínica, hospital ou radiologia onde foi realizado (ex: 'Radioclínica Tadao Mori', 'Fleury', 'Delboni'). Se não houver, deixe vazio."",
+            ""data"": ""Data do exame/emissão no formato dd/MM/yyyy. Procure por 'Entrada', 'Data', ou data no cabeçalho."",
+            ""resumo"": ""Resumo clínico objetivo do laudo/resultado em 1-2 frases."",
+            ""diagnostico"": ""Diagnóstico, conclusão médica ou achados principais se houver."",
             ""medicamentos"": [
                 { ""nome"": ""nome do remédio"", ""dosagem"": ""dosagem"", ""horario"": ""forma de uso/horário"" }
             ],
             ""conteudoIndentado"": [
-                { ""tipo"": ""use 'header' (para seções/títulos), 'keyvalue' (para campos como Nome: João), 'bullet' (itens de lista) ou 'text' (texto corrido)"", ""texto"": ""texto completo da linha estruturada"", ""chave"": ""se for keyvalue, qual a chave"", ""valor"": ""se for keyvalue, qual o valor"" }
+                { ""tipo"": ""use 'header', 'keyvalue', 'bullet' ou 'text'"", ""texto"": ""texto da linha"", ""chave"": ""se keyvalue, a chave"", ""valor"": ""se keyvalue, o valor"" }
             ]
         }";
 
         var prompt = $@"
-ATENÇÃO: VOCÊ É UM EXTRATOR DE DADOS DE TEXTO ESTRUTURADOS.
-Extraia as informações do texto unificado abaixo. O usuário sugeriu que é um '{documentType}', mas você deve inferir o 'tipoIdentificado' correto.
-Identifique blocos de texto e converta em um 'conteudoIndentado' lógico para ser lido no frontend.
-Se não achar algum campo, retorne string vazia """".
+ATENÇÃO: VOCÊ É UM EXTRATOR DE DADOS DE DOCUMENTOS MÉDICOS BRASILEIROS.
+Extraia com MÁXIMA PRECISÃO as informações do texto abaixo.
 
-Texto unificado:
+REGRAS CRÍTICAS:
+- 'medico': APENAS o nome do profissional (ex: 'Tadao Mori'). NUNCA inclua 'CRM', números ou siglas.
+- 'crm': APENAS os dígitos do CRM (ex: '16356'). Procure explicitamente por 'CRM' no texto.
+- 'titulo': use o nome do EXAME/PROCEDIMENTO (ex: 'RADIOGRAFIA DO CAVUM'). Nunca use 'Documento Digitalizado'.
+- 'clinica': nome da clínica, hospital ou laboratório (ex: 'Radioclínica Tadao Mori').
+- 'data': procure por 'Entrada:' ou 'Data:' no cabeçalho.
+- 'conteudoIndentado': CUIDADO COM OCR EM COLUNAS! Muitas vezes o OCR lê primeiro um bloco de chaves (ex: 'Sr(a).', 'Dr(a).', 'Convênio') e DEPOIS um bloco de valores (ex: ': MIGUEL', ': MARCELO', ': AMIL'). Você DEVE ALINHAR CORRETAMENTE: a 1ª chave com o 1º valor (Sr(a) -> MIGUEL), a 2ª chave com o 2º valor, etc. Nunca repita a mesma chave (ex: Convênio) para múltiplos valores distintos!
+- Se um campo não existir, retorne string vazia """".
+
+O usuário sugeriu que é um '{documentType}', mas você deve inferir o 'tipoIdentificado' correto.
+
+Texto do documento:
 {unifiedText}
 
-Retorne ESTRITAMENTE um JSON no seguinte formato:
+Retorne ESTRITAMENTE um JSON no seguinte formato (sem markdown, sem explicações):
 {jsonFormat}
 ";
 
-        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key={_geminiApiKey}";
+        var geminiUrl = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={_geminiApiKey}";
         var payload = new
         {
             contents = new[] { new { parts = new[] { new { text = prompt } } } },
-            generationConfig = new { temperature = 0.0 }
+            generationConfig = new
+            {
+                temperature = 0.0,
+                maxOutputTokens = 4096,
+                responseMimeType = "application/json"
+            }
         };
 
         var request = new HttpRequestMessage(HttpMethod.Post, geminiUrl);
@@ -304,7 +319,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
                 try
                 {
                     var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                    dto.TextoExtraido = unifiedText;
+                    dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
                     return dto;
                 }
                 catch (Exception ex)
@@ -349,6 +364,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
                 model = "llama3-70b-8192",
                 messages = new[] { new { role = "user", content = prompt } },
                 temperature = 0.0,
+                max_tokens = 4096,
                 response_format = new { type = "json_object" }
             };
             
@@ -362,11 +378,21 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
                 var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
                 var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
                 
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                dto.TextoExtraido = unifiedText;
-                _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq (Llama 3.3).");
-                return dto;
+                jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
+                
+                try 
+                {
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+                    dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
+                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq (Llama 3 70B).");
+                    return dto;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Erro ao deserializar extração no Groq. JSON: {JsonResult}", jsonResult);
+                    return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro de conversão (JSON): {ex.Message}" };
+                }
             }
             else
             {

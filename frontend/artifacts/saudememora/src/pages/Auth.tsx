@@ -12,7 +12,7 @@ export default function Auth() {
 
   const [mode, setMode]                 = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm]                 = useState({ name: '', cpf: '', birthDate: '', sex: 'F', email: '', password: '' });
+  const [form, setForm]                 = useState({ name: '', cpf: '', birthDate: '', sex: 'Outro', email: '', password: '' });
   const [message, setMessage]           = useState('');
   const [error, setError]               = useState('');
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -56,8 +56,8 @@ export default function Auth() {
         const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
         if (result?.token) {
           localStorage.setItem('auth_token', result.token);
-          setMessage('Sua conta foi criada. Vamos começar sua anamnese.');
-          setTimeout(() => { window.location.href = '/anamnese'; }, 800);
+          setMessage('Sua conta foi criada. Entrando no painel...');
+          setTimeout(() => { window.location.href = '/painel'; }, 800);
         } else {
           setMessage('Sua conta foi criada. Faça login para acessar.');
           setMode('login');

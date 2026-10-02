@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { Link } from 'wouter';
 import {
-  ChevronRight, FileCheck2, FilePlus2,
-  ShieldCheck, UploadCloud, FileText,
-  BookOpen, User, Droplets, AlertTriangle, Sparkles, BrainCircuit, Table, Plus,
-  FlaskConical, Pill, Stethoscope, HeartPulse, CheckCircle2, Filter, Eye
+  ChevronRight, FilePlus2, FileText,
+  Droplets, AlertTriangle, FlaskConical, Pill,
+  Stethoscope, Plus, User, BookOpen, Activity, BarChart3, PieChart, TrendingUp,
+  Heart, Cigarette, Wine, Shield, Phone, CalendarDays,
 } from 'lucide-react';
 import { useGetApiPacientesMe, useGetApiDocuments, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
@@ -12,442 +11,437 @@ import { triggerUploadModal } from '@/components/UploadModal';
 export default function Dashboard() {
   const { data: profile, isLoading: profileLoading } = useGetApiPacientesMe();
   const { data: documentsRaw, isLoading: docsLoading } = useGetApiDocuments();
-  const { data: fichaRaw } = useGetApiFichaMedicaMe();
+  const { data: fichaRaw, isLoading: fichaLoading } = useGetApiFichaMedicaMe();
 
-  const [activeTab, setActiveTab] = useState<'todos' | 'exames' | 'receitas' | 'laudos' | 'outros'>('todos');
+  const user    = (profile as any) || {};
+  const docs    = (documentsRaw as unknown as any[]) || [];
+  const ficha   = (fichaRaw as any) || {};
 
-  const user = (profile as unknown as any) || {};
-  const documents = (documentsRaw as unknown as any[]) || [];
-  const ficha = (fichaRaw as unknown as any) || {};
-
-  const bloodType = ficha.tipoSanguineo;
-  const allergies = (ficha.alergias as string[]) || [];
-  const chronicDiseases = (ficha.doencasCronicas as string[]) || [];
-  const organDonor = ficha.doadorOrgaos;
-  const smoker = ficha.fuma;
-  const alcohol = ficha.bebe;
-  const conditions = (ficha.condicoes as any[]) || [];
-  const positiveConditions = conditions.filter((c: any) => c.tem);
-
-  // Category counts
-  const examesCount = documents.filter((d: any) => (d.tipo || '').toLowerCase().includes('exame')).length;
-  const receitasCount = documents.filter((d: any) => (d.tipo || '').toLowerCase().includes('receita')).length;
-  const laudosCount = documents.filter((d: any) => (d.tipo || '').toLowerCase().includes('laudo')).length;
-  const outrosCount = documents.length - (examesCount + receitasCount + laudosCount);
-
-  // Filtered documents for table
-  const filteredDocuments = documents.filter((d: any) => {
-    const t = (d.tipo || '').toLowerCase();
-    if (activeTab === 'exames') return t.includes('exame');
-    if (activeTab === 'receitas') return t.includes('receita');
-    if (activeTab === 'laudos') return t.includes('laudo');
-    if (activeTab === 'outros') return !t.includes('exame') && !t.includes('receita') && !t.includes('laudo');
-    return true;
-  });
-
-  // Calculate completeness score for anamnese
-  let anamneseScore = 0;
-  if (bloodType) anamneseScore += 20;
-  if (allergies.length > 0) anamneseScore += 20;
-  if (chronicDiseases.length > 0 || positiveConditions.length > 0) anamneseScore += 20;
-  if (ficha.historicoFamiliar) anamneseScore += 20;
-  if (ficha.habitosGerais || smoker !== undefined) anamneseScore += 20;
-
-  const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const todayCap = today.charAt(0).toUpperCase() + today.slice(1);
-
-  if (profileLoading || docsLoading) {
-    return (
-      <div className="page-enter flex min-h-[400px] flex-col items-center justify-center p-12 text-center text-muted-foreground">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        <p className="mt-4 text-xs font-bold">Carregando painel de saúde...</p>
-      </div>
-    );
-  }
-  if (!user.nome) {
-    return (
-      <div className="page-enter p-12 text-center text-red-500 font-bold">
-        Falha ao carregar perfil. Por favor, recarregue a página ou faça login novamente.
-      </div>
-    );
-  }
-
-  const firstName = user.nome?.split(' ')[0] || 'Você';
+  // — Profile —
   const age = user.dataNascimento
-    ? Math.floor((new Date().getTime() - new Date(user.dataNascimento).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    ? Math.floor((Date.now() - new Date(user.dataNascimento).getTime()) / (365.25 * 86400000))
     : null;
 
-  const getDocumentTypeBadge = (typeStr: string) => {
+  // — Anamnese —
+  const bloodType          = ficha.tipoSanguineo as string | undefined;
+  const allergies          = (ficha.alergias as string[]) || [];
+  const chronicDiseases    = (ficha.doencasCronicas as string[]) || [];
+  const conditions         = (ficha.condicoes as any[]) || [];
+  const positiveConditions = conditions.filter((c: any) => c.tem);
+  const allConditions      = [
+    ...chronicDiseases,
+    ...positiveConditions.map((c: any) => c.nome),
+  ];
+  const familyHistory      = ficha.historicoFamiliar as string | undefined;
+  const smoker             = ficha.fuma as boolean | undefined;
+  const alcohol            = ficha.bebe as boolean | undefined;
+  const donor              = ficha.doadorOrgaos as boolean | undefined;
+  const habits             = ficha.habitosGerais as string | undefined;
+
+  // — Anamnese score —
+  let anamneseScore = 0;
+  if (bloodType)                                                     anamneseScore += 20;
+  if (allergies.length > 0)                                         anamneseScore += 20;
+  if (chronicDiseases.length > 0 || positiveConditions.length > 0)  anamneseScore += 20;
+  if (familyHistory)                                                 anamneseScore += 20;
+  if (smoker !== undefined || habits)                                anamneseScore += 20;
+
+  // — Documents —
+  const recentDocs    = docs.slice(0, 4);
+
+  // — Relatórios para o médico —
+  const medicacoesCount: Record<string, number> = {};
+  const examesCountMap: Record<string, number> = {};
+  
+  docs.forEach((doc: any) => {
+    if (doc.medicamentos && Array.isArray(doc.medicamentos)) {
+      doc.medicamentos.forEach((m: any) => {
+        if (m.nome) {
+          const key = m.nome.trim().toLowerCase();
+          medicacoesCount[key] = (medicacoesCount[key] || 0) + 1;
+        }
+      });
+    }
+    
+    const tipo = (doc.tipoIdentificado || doc.tipo || '').toLowerCase();
+    if (tipo.includes('exame') || tipo.includes('laudo')) {
+      const titulo = doc.titulo || doc.nomeExame;
+      if (titulo) {
+        const key = titulo.trim().toLowerCase();
+        examesCountMap[key] = (examesCountMap[key] || 0) + 1;
+      }
+    }
+  });
+
+  const topMedicacoes = Object.entries(medicacoesCount)
+    .sort((a, b) => b[1] - a[1]).slice(0, 4)
+    .map(([key, count]) => {
+      let originalName = key;
+      for (const d of docs) {
+        if (d.medicamentos) {
+          const match = d.medicamentos.find((m: any) => m.nome?.trim().toLowerCase() === key);
+          if (match) { originalName = match.nome; break; }
+        }
+      }
+      return { nome: originalName, count };
+    });
+
+  const topExames = Object.entries(examesCountMap)
+    .sort((a, b) => b[1] - a[1]).slice(0, 4)
+    .map(([key, count]) => {
+      let originalName = key;
+      for (const d of docs) {
+        const tipo = (d.tipoIdentificado || d.tipo || '').toLowerCase();
+        if (tipo.includes('exame') || tipo.includes('laudo')) {
+          const t = d.titulo || d.nomeExame;
+          if (t?.trim().toLowerCase() === key) { originalName = t; break; }
+        }
+      }
+      return { nome: originalName, count };
+    });
+
+  const firstName = user.nome?.split(' ')[0] || 'Você';
+
+  const typeBadge = (typeStr: string) => {
     const t = (typeStr || '').toLowerCase();
-    if (t.includes('exame')) {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-600 dark:text-blue-400">
-          <FlaskConical size={11} /> Exame
-        </span>
-      );
-    }
-    if (t.includes('receita')) {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
-          <Pill size={11} /> Receita
-        </span>
-      );
-    }
-    if (t.includes('laudo')) {
-      return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 text-[10px] font-extrabold text-purple-600 dark:text-purple-400">
-          <Stethoscope size={11} /> Laudo
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold text-accent">
-        <BrainCircuit size={11} /> {typeStr || 'Documento'}
-      </span>
-    );
+    if (t.includes('exame'))
+      return <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-semibold text-blue-700"><FlaskConical size={9} /> Exame</span>;
+    if (t.includes('receita'))
+      return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"><Pill size={9} /> Receita</span>;
+    if (t.includes('laudo'))
+      return <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-2 py-0.5 text-[10px] font-semibold text-purple-700"><Stethoscope size={9} /> Laudo</span>;
+    return <span className="inline-flex items-center gap-1 rounded-full bg-primary/8 border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary"><FileText size={9} /> Clínico</span>;
   };
 
+  if (profileLoading || docsLoading || fichaLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
-    <div className="page-enter space-y-8 pb-10">
+    <div className="page-enter space-y-5 pb-8">
 
-      {/* Hero Welcome Banner */}
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary/90 to-accent p-8 md:p-12 shadow-2xl shadow-primary/20 border border-primary/20 transition-all duration-500 hover:shadow-primary/30 group">
-        {/* Animated Background Blobs */}
-        <div className="absolute -right-32 -top-32 h-[30rem] w-[30rem] rounded-full bg-gradient-to-br from-white/20 to-transparent blur-[80px] pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-        <div className="absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-gradient-to-tr from-accent/40 to-transparent blur-[60px] pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-        
-        <div className="relative z-10 flex flex-col justify-between gap-8 md:flex-row md:items-center">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] backdrop-blur-md">
-              <Stethoscope size={14} className="text-yellow-300 animate-pulse" /> Visão Geral Clínica · {todayCap}
-            </span>
-            <h1 className="mt-5 text-4xl font-black tracking-[-.05em] text-white md:text-[44px] leading-tight drop-shadow-sm">
-              Prontuário de <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{user.nome || 'Paciente'}</span>
-            </h1>
-            <p className="mt-4 text-base text-white/80 leading-relaxed max-w-xl font-medium">
-              Histórico médico unificado. Inteligência artificial analisa e organiza exames, receitas, laudos e o contexto de saúde do paciente em tempo real.
-            </p>
-
-            {/* User Quick Info Badges */}
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              {age !== null && (
-                <span className="inline-flex items-center rounded-xl bg-white/10 px-3 py-1.5 text-sm font-bold text-white shadow-inner backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors">
-                  {age} anos
-                </span>
-              )}
-              {bloodType && (
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-red-500/30 border border-red-400/30 px-3 py-1.5 text-sm font-black text-white backdrop-blur-md shadow-[0_0_15px_rgba(239,68,68,0.2)] hover:bg-red-500/40 transition-colors">
-                  <Droplets size={15} className="text-red-300" /> {bloodType}
-                </span>
-              )}
-              {organDonor && (
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/30 border border-emerald-400/30 px-3 py-1.5 text-sm font-bold text-white backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-500/40 transition-colors">
-                  <ShieldCheck size={15} className="text-emerald-300" /> Doador
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/10 px-3 py-1.5 text-sm font-bold text-white backdrop-blur-md hover:bg-white/20 transition-colors">
-                <CheckCircle2 size={15} className="text-emerald-400" /> IA Ativa
+      {/* ── Header bar ── */}
+      <section className="rounded-2xl bg-primary px-6 py-4 flex items-center justify-between gap-4 shadow-md">
+        <div>
+          <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">Visão geral de saúde</p>
+          <h1 className="text-lg font-bold text-white mt-0.5">Olá, {firstName}</h1>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {bloodType && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 border border-white/15 px-2.5 py-1 text-xs font-semibold text-white">
+                <Droplets size={11} className="text-red-300" /> {bloodType}
               </span>
-            </div>
-          </div>
-
-          <div className="flex shrink-0">
-            <button
-              onClick={() => triggerUploadModal()}
-              className="group relative flex items-center justify-center gap-3 rounded-2xl bg-white px-7 py-4 text-sm font-black text-primary shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(255,255,255,0.5)] hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-primary/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              <UploadCloud size={20} className="text-accent group-hover:scale-110 transition-transform" />
-              <span>Adicionar Documento</span>
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
-                <Plus size={14} className="text-primary" />
-              </div>
-            </button>
+            )}
+            {age !== null && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 border border-white/15 px-2.5 py-1 text-xs font-semibold text-white">
+                <CalendarDays size={11} className="text-blue-200" /> {age} anos
+              </span>
+            )}
+            {allergies.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-400/20 border border-amber-300/30 px-2.5 py-1 text-xs font-semibold text-white">
+                <AlertTriangle size={11} className="text-amber-300" /> {allergies.length} alergia{allergies.length > 1 ? 's' : ''}
+              </span>
+            )}
+            {donor && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-400/20 border border-emerald-300/30 px-2.5 py-1 text-xs font-semibold text-white">
+                <Shield size={11} className="text-emerald-300" /> Doador de órgãos
+              </span>
+            )}
           </div>
         </div>
+
       </section>
 
-      {/* Patient Health Context (Alerts & Profile) */}
-      <section className="grid gap-6 lg:grid-cols-2">
-        {/* Alerts */}
-        <div className="group rounded-3xl border border-border/50 bg-card/60 p-6 md:p-8 backdrop-blur-xl shadow-lg transition-all hover:shadow-xl hover:border-border">
-          <div className="flex items-center justify-between border-b border-border/50 pb-5">
-            <div className="flex items-center gap-4">
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 text-amber-600 dark:text-amber-400">
-                <AlertTriangle size={22} />
-                <div className="absolute inset-0 rounded-2xl border border-amber-500/20" />
-              </div>
-              <div>
-                <h2 className="text-lg font-black tracking-tight">Alergias & Condições</h2>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Alertas de segurança</p>
-              </div>
+      {/* ── 3-col grid: Perfil | Anamnese | Documentos ── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+
+        {/* ── 1. Perfil ── */}
+        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
+            <div className="flex items-center gap-2 text-foreground">
+              <User size={14} className="text-primary" />
+              <span className="text-sm font-bold">Perfil</span>
             </div>
-            <Link href="/anamnese" className="rounded-xl border border-border bg-muted/30 px-4 py-2 text-xs font-bold text-foreground hover:bg-accent hover:text-white hover:border-accent transition-colors">
-              Editar Anamnese
-            </Link>
+            <Link href="/perfil" className="text-[11px] font-semibold text-primary hover:underline">Editar</Link>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 mt-6">
-            <div className="flex flex-col gap-3 rounded-2xl bg-gradient-to-b from-amber-500/10 to-transparent border border-amber-500/20 p-5 relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-amber-500/10 blur-xl pointer-events-none" />
-              <span className="text-[11px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
-                <Filter size={12} /> Alergias Conocidas
-              </span>
-              {allergies.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {allergies.map((a: string) => (
-                    <span key={a} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-100/80 dark:bg-amber-900/50 text-amber-900 dark:text-amber-100 px-3 py-1.5 text-xs font-bold shadow-sm">
-                      ⚠️ {a}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm font-medium text-muted-foreground italic">Nenhuma alergia cadastrada.</p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-3 rounded-2xl bg-gradient-to-b from-orange-500/10 to-transparent border border-orange-500/20 p-5 relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-orange-500/10 blur-xl pointer-events-none" />
-              <span className="text-[11px] font-black text-orange-700 dark:text-orange-400 uppercase tracking-widest flex items-center gap-1.5">
-                <HeartPulse size={12} /> Doenças Crônicas
-              </span>
-              {chronicDiseases.length > 0 || positiveConditions.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {chronicDiseases.map((d: string) => (
-                    <span key={d} className="inline-flex items-center gap-1.5 rounded-xl border border-orange-400/40 bg-orange-100/80 dark:bg-orange-900/50 text-orange-900 dark:text-orange-100 px-3 py-1.5 text-xs font-bold shadow-sm">
-                      🔴 {d}
-                    </span>
-                  ))}
-                  {positiveConditions.map((c: any) => (
-                    <span key={c.nome} className="inline-flex items-center gap-1.5 rounded-xl border border-orange-400/40 bg-orange-100/80 dark:bg-orange-900/50 text-orange-900 dark:text-orange-100 px-3 py-1.5 text-xs font-bold shadow-sm">
-                      🔴 {c.nome}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm font-medium text-muted-foreground italic">Nenhuma doença declarada.</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Profile Details */}
-        <div className="group rounded-3xl border border-border/50 bg-card/60 p-6 md:p-8 backdrop-blur-xl shadow-lg transition-all hover:shadow-xl hover:border-border">
-          <div className="flex items-center justify-between border-b border-border/50 pb-5">
-            <div className="flex items-center gap-4">
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary">
-                <User size={22} />
-                <div className="absolute inset-0 rounded-2xl border border-primary/20" />
-              </div>
-              <div>
-                <h2 className="text-lg font-black tracking-tight">Ficha do Paciente</h2>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Informações e estilo de vida</p>
-              </div>
-            </div>
-            <Link href="/perfil" className="rounded-xl border border-border bg-muted/30 px-4 py-2 text-xs font-bold text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors">
-              Editar Perfil
-            </Link>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3 mt-6">
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-muted/50 to-muted/20 p-5 border border-border/40 hover:border-border transition-colors text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-red-500/5 opacity-0 hover:opacity-100 transition-opacity" />
-              <Droplets size={20} className="text-red-400 mb-2 opacity-80" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Sanguíneo</span>
-              <span className="text-2xl font-black text-red-600 dark:text-red-400 mt-1">{bloodType || '—'}</span>
-            </div>
-            
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-muted/50 to-muted/20 p-5 border border-border/40 hover:border-border transition-colors text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-emerald-500/5 opacity-0 hover:opacity-100 transition-opacity" />
-              <ShieldCheck size={20} className="text-emerald-400 mb-2 opacity-80" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Doador</span>
-              <span className="text-lg font-black text-foreground mt-1">{organDonor ? 'Sim' : 'Não'}</span>
-            </div>
-
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-muted/50 to-muted/20 p-5 border border-border/40 hover:border-border transition-colors text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-accent/5 opacity-0 hover:opacity-100 transition-opacity" />
-              <Sparkles size={20} className="text-accent/80 mb-2 opacity-80" />
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Hábitos</span>
-              <span className="text-sm font-bold text-foreground mt-1 leading-tight">{smoker ? 'Fuma' : 'Sem fumo'}<br/>{alcohol ? 'Álcool' : 'Sem álcool'}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Unified Metrics Banner */}
-      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="group relative flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/60 p-6 backdrop-blur-xl shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-border overflow-hidden">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-secondary/20 blur-2xl group-hover:bg-secondary/40 transition-colors" />
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary/80 text-accent font-black text-2xl shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform">
-            <FileCheck2 size={28} />
-          </span>
-          <div>
-            <p className="font-mono text-4xl font-black tracking-tighter text-foreground">{documents.length}</p>
-            <p className="mt-1 text-sm font-bold text-foreground">Total de Documentos</p>
-            <p className="text-xs font-medium text-muted-foreground">Tabela única de saúde</p>
-          </div>
-        </div>
-
-        <div className="group relative flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/60 p-6 backdrop-blur-xl shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-border overflow-hidden">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-accent/10 blur-2xl group-hover:bg-accent/20 transition-colors" />
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent font-black text-2xl shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform">
-            <BrainCircuit size={28} />
-          </span>
-          <div>
-            <p className="font-mono text-4xl font-black tracking-tighter text-accent">{documents.length}</p>
-            <p className="mt-1 text-sm font-bold text-foreground">Classificados por IA</p>
-            <p className="text-xs font-medium text-muted-foreground">Identificação automática</p>
-          </div>
-        </div>
-
-        <div className="group relative flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/60 p-6 backdrop-blur-xl shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-border overflow-hidden">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition-colors" />
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-black text-2xl shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform">
-            <FlaskConical size={28} />
-          </span>
-          <div>
-            <div className="flex items-baseline gap-3">
-              <span className="font-mono text-2xl font-black text-blue-600 dark:text-blue-400">{examesCount} <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Exames</span></span>
-              <span className="font-mono text-2xl font-black text-emerald-600 dark:text-emerald-400">{receitasCount} <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Rec.</span></span>
-            </div>
-            <p className="mt-1 text-sm font-bold text-foreground">Distribuição Detectada</p>
-            <p className="text-xs font-medium text-muted-foreground">{laudosCount} laudos · {outrosCount} outros</p>
-          </div>
-        </div>
-
-        <div className="group relative flex flex-col gap-4 rounded-3xl border border-border/50 bg-card/60 p-6 backdrop-blur-xl shadow-lg transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-border overflow-hidden">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-2xl shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform">
-            <HeartPulse size={28} />
-          </span>
-          <div>
-            <p className="font-mono text-4xl font-black tracking-tighter text-emerald-600 dark:text-emerald-400">{anamneseScore}%</p>
-            <p className="mt-1 text-sm font-bold text-foreground">Anamnese do Paciente</p>
-            <p className="text-xs font-medium text-muted-foreground">Histórico médico ativo</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Single Unified Documents Table */}
-      <section className="rounded-3xl border border-border/60 bg-card/40 backdrop-blur-2xl p-6 md:p-8 shadow-2xl shadow-black/5">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 border-b border-border/50 pb-6">
-          <div className="flex items-center gap-4">
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 text-accent shadow-inner">
-              <Table size={24} />
-              <div className="absolute inset-0 rounded-2xl border border-accent/20" />
-            </div>
+          <div className="px-5 py-4 space-y-3">
+            {/* Name */}
             <div>
-              <p className="font-mono text-[11px] font-black uppercase tracking-[0.25em] text-accent">tabela única de documentos</p>
-              <h2 className="text-2xl font-black tracking-tight mt-1 text-foreground">Documentos Classificados por IA</h2>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Nome completo</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">{user.nome || '—'}</p>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Nascimento</p>
+                <p className="text-xs font-medium text-foreground mt-0.5">
+                  {user.dataNascimento
+                    ? new Date(user.dataNascimento).toLocaleDateString('pt-BR')
+                    : '—'}
+                  {age !== null && <span className="text-muted-foreground ml-1">({age} anos)</span>}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Sexo</p>
+                <p className="text-xs font-medium text-foreground mt-0.5">{user.sexo || '—'}</p>
+              </div>
+            </div>
+            {user.telefone && (
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Telefone</p>
+                <p className="text-xs font-medium text-foreground mt-0.5 flex items-center gap-1">
+                  <Phone size={11} className="text-muted-foreground" /> {user.telefone}
+                </p>
+              </div>
+            )}
+            {/* Health ID badges */}
+            <div className="pt-1 flex flex-wrap gap-2">
+              {bloodType && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                  <Droplets size={11} /> Tipo {bloodType}
+                </span>
+              )}
+              <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${donor ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-border/60 bg-muted/40 text-muted-foreground'}`}>
+                <Shield size={11} /> {donor ? 'Doador' : 'Não doador'}
+              </span>
+            </div>
+            {/* Plan */}
+            {user.planoSaude && (
+              <div className="pt-1 border-t border-border/40">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Plano de saúde</p>
+                <p className="text-xs font-medium text-foreground mt-0.5">{user.planoSaude}</p>
+                {user.numeroCarteirinha && (
+                  <p className="text-[10px] text-muted-foreground font-mono">{user.numeroCarteirinha}</p>
+                )}
+              </div>
+            )}
           </div>
+        </section>
 
-          {/* Table Filters & Link */}
-          <div className="flex flex-wrap items-center justify-between xl:justify-end gap-4">
-            <div className="flex items-center gap-1.5 rounded-2xl bg-muted/50 p-1.5 shadow-inner border border-border/40 text-xs font-black">
-              <button
-                onClick={() => setActiveTab('todos')}
-                className={`rounded-xl px-4 py-2 transition-all duration-300 cursor-pointer ${activeTab === 'todos' ? 'bg-card text-foreground shadow-md scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'}`}
-              >
-                Todos <span className="ml-1 opacity-60">({documents.length})</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('exames')}
-                className={`rounded-xl px-4 py-2 transition-all duration-300 cursor-pointer ${activeTab === 'exames' ? 'bg-card text-blue-600 dark:text-blue-400 shadow-md scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'}`}
-              >
-                Exames <span className="ml-1 opacity-60">({examesCount})</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('receitas')}
-                className={`rounded-xl px-4 py-2 transition-all duration-300 cursor-pointer ${activeTab === 'receitas' ? 'bg-card text-emerald-600 dark:text-emerald-400 shadow-md scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'}`}
-              >
-                Receitas <span className="ml-1 opacity-60">({receitasCount})</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('laudos')}
-                className={`rounded-xl px-4 py-2 transition-all duration-300 cursor-pointer ${activeTab === 'laudos' ? 'bg-card text-purple-600 dark:text-purple-400 shadow-md scale-105' : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'}`}
-              >
-                Laudos <span className="ml-1 opacity-60">({laudosCount})</span>
-              </button>
+        {/* ── 2. Anamnese ── */}
+        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
+            <div className="flex items-center gap-2 text-foreground">
+              <BookOpen size={14} className="text-primary" />
+              <span className="text-sm font-bold">Anamnese</span>
             </div>
-
-            <Link href="/documentos" className="group flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-bold text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 ml-auto xl:ml-0">
-              <span>Ver todos</span>
-              <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <Link href="/anamnese" className="text-[11px] font-semibold text-primary hover:underline">Preencher</Link>
           </div>
-        </div>
+          <div className="px-5 py-4 space-y-4">
 
-        {filteredDocuments.length === 0 ? (
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-border/60 bg-muted/10 py-16 text-center transition-colors hover:bg-muted/20">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/40">
-              <FilePlus2 size={40} className="text-muted-foreground/50" />
+
+            {/* Alergias */}
+            <div>
+              <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1.5">Alergias</p>
+              {allergies.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {allergies.map((a: string) => (
+                    <span key={a} className="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-2 py-0.5 text-xs font-medium">{a}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">Não informado</p>
+              )}
             </div>
-            <div className="max-w-md">
-              <p className="text-lg font-black text-foreground">Nenhum documento nesta categoria</p>
-              <p className="mt-2 text-sm font-medium text-muted-foreground leading-relaxed">
-                Envie seus exames, receitas, laudos ou notas médicas. A Inteligência Artificial lerá o documento e classificará automaticamente nesta tabela.
-              </p>
+
+            {/* Condições */}
+            <div>
+              <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wider mb-1.5">Condições & Doenças</p>
+              {allConditions.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {allConditions.map((d: string) => (
+                    <span key={d} className="rounded-md border border-orange-200 bg-orange-50 text-orange-800 px-2 py-0.5 text-xs font-medium">{d}</span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">Não informado</p>
+              )}
             </div>
-            <button
-              onClick={() => triggerUploadModal()}
-              className="mt-4 group flex items-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
-            >
-              <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> Adicionar Documento
-            </button>
+
+            {/* Hábitos */}
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Hábitos</p>
+              <div className="flex gap-2 flex-wrap">
+                <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${smoker ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-border/50 bg-muted/40 text-muted-foreground'}`}>
+                  <Cigarette size={10} /> {smoker === undefined ? 'Fumo n/i' : smoker ? 'Fuma' : 'Não fuma'}
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${alcohol ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-border/50 bg-muted/40 text-muted-foreground'}`}>
+                  <Wine size={10} /> {alcohol === undefined ? 'Álcool n/i' : alcohol ? 'Bebe' : 'Não bebe'}
+                </span>
+              </div>
+            </div>
+
+            {/* Histórico familiar */}
+            {familyHistory && (
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Histórico familiar</p>
+                <p className="text-xs text-foreground leading-relaxed line-clamp-3">{familyHistory}</p>
+              </div>
+            )}
+
+
           </div>
-        ) : (
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-border/50 bg-card/30">
-            <table className="w-full text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/30 text-[11px] font-black text-muted-foreground uppercase tracking-widest backdrop-blur-md">
-                  <th className="py-4 px-5">Documento</th>
-                  <th className="py-4 px-5">Tipo de Documento</th>
-                  <th className="py-4 px-5">Emissor / Local</th>
-                  <th className="py-4 px-5">Data</th>
-                  <th className="py-4 px-5">Resumo Inteligente</th>
-                  <th className="py-4 px-5 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40 text-sm">
-                {filteredDocuments.map((doc: any) => (
-                  <tr key={doc.id} className="group hover:bg-muted/40 transition-colors">
-                    <td className="py-4 px-5 font-bold text-foreground">
-                      <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10 text-accent group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all">
-                          <FileText size={16} />
-                        </div>
-                        <span className="truncate max-w-[220px] font-extrabold">{doc.titulo || 'Documento sem título'}</span>
-                      </Link>
-                    </td>
-                    <td className="py-4 px-5">
-                      {getDocumentTypeBadge(doc.tipo)}
-                    </td>
-                    <td className="py-4 px-5 text-muted-foreground font-medium">
-                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-xs">
-                        {doc.medico || doc.clinica || 'Desconhecido'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-muted-foreground font-mono font-medium">
-                      {doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="py-4 px-5 text-muted-foreground max-w-[320px]">
-                      <p className="truncate text-xs leading-relaxed">{doc.resumo || 'Resumo extraído pela inteligência artificial.'}</p>
-                    </td>
-                    <td className="py-4 px-5 text-right">
-                      <Link href={`/documentos/${doc.id}`} className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 font-bold text-primary hover:bg-primary hover:text-white transition-colors text-xs">
-                        <Eye size={14} /> Ver <ChevronRight size={14} />
-                      </Link>
-                    </td>
-                  </tr>
+        </section>
+
+        {/* ── 3. Documentos ── */}
+        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
+            <div className="flex items-center gap-2 text-foreground">
+              <Activity size={14} className="text-primary" />
+              <span className="text-sm font-bold">Documentos</span>
+            </div>
+            <Link href="/documentos" className="text-[11px] font-semibold text-primary hover:underline">Ver todos</Link>
+          </div>
+          <div className="px-5 py-4">
+            {/* Recent docs */}
+            {docs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                  <FilePlus2 size={20} />
+                </div>
+                <p className="text-xs text-muted-foreground">Nenhum documento ainda</p>
+                <button
+                  onClick={() => triggerUploadModal()}
+                  className="mt-1 flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  <Plus size={11} /> Adicionar
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {recentDocs.map((doc: any) => (
+                  <Link
+                    key={doc.id}
+                    href={`/documentos/${doc.id}`}
+                    className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/20 hover:bg-muted/50 px-3 py-2.5 transition-colors group"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
+                      <FileText size={12} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                        {doc.titulo || 'Documento'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {typeBadge(doc.tipo)}
+                        {doc.data && (
+                          <span className="text-[10px] text-muted-foreground font-mono">{doc.data}</span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight size={13} className="text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                  </Link>
                 ))}
-              </tbody>
-            </table>
+                {docs.length > 4 && (
+                  <Link
+                    href="/documentos"
+                    className="flex items-center justify-center gap-1 rounded-lg border border-border/50 bg-muted/20 hover:bg-primary hover:text-white hover:border-primary px-3 py-2 text-[11px] font-semibold text-muted-foreground transition-colors"
+                  >
+                    Ver mais {docs.length - 4} documentos <ChevronRight size={12} />
+                  </Link>
+                )}
+                <button
+                  onClick={() => triggerUploadModal()}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/30 bg-primary/4 hover:bg-primary hover:text-white hover:border-primary px-3 py-2 text-[11px] font-semibold text-primary transition-colors cursor-pointer mt-1"
+                >
+                  <Plus size={11} /> Adicionar documento
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </section>
+        </section>
+      </div>
 
-</div>
+      {/* ── 4. Relatórios e Estatísticas (Para o Médico) ── */}
+      {(topMedicacoes.length > 0 || topExames.length > 0) && (
+        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50 bg-muted/10">
+            <div className="flex items-center gap-2 text-foreground">
+              <BarChart3 size={15} className="text-primary" />
+              <span className="text-sm font-bold">Relatórios e Estatísticas</span>
+            </div>
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Apoio Médico</span>
+          </div>
+          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/50">
+            {/* Top Medicamentos */}
+            <div className="p-5">
+              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-4">
+                <Pill size={12} className="text-emerald-500" /> Remédios Mais Frequentes
+              </h3>
+              {topMedicacoes.length > 0 ? (
+                <div className="space-y-3">
+                  {topMedicacoes.map((med, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-foreground truncate pr-4">{med.nome}</span>
+                      <span className="inline-flex items-center justify-center rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-0.5 text-xs font-bold border border-emerald-200">
+                        {med.count}x
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nenhum medicamento registrado.</p>
+              )}
+            </div>
+
+            {/* Top Exames */}
+            <div className="p-5">
+              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-4">
+                <FlaskConical size={12} className="text-blue-500" /> Exames Mais Realizados
+              </h3>
+              {topExames.length > 0 ? (
+                <div className="space-y-3">
+                  {topExames.map((exame, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-foreground truncate pr-4">{exame.nome}</span>
+                      <span className="inline-flex items-center justify-center rounded-full bg-blue-50 text-blue-700 px-2.5 py-0.5 text-xs font-bold border border-blue-200">
+                        {exame.count}x
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nenhum exame registrado.</p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Saúde em destaque: alertas críticos ── */}
+      {(allergies.length > 0 || allConditions.length > 0) && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50/50 px-5 py-4 shadow-xs">
+          <div className="flex items-center gap-2 mb-3">
+            <Heart size={14} className="text-amber-600" />
+            <p className="text-sm font-bold text-amber-800">Informações de Segurança</p>
+            <span className="ml-auto text-[10px] text-amber-600 font-semibold">Para médicos e emergências</span>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            {allergies.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider mb-1.5">Alergias</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {allergies.map((a: string) => (
+                    <span key={a} className="rounded-md border border-amber-300 bg-white text-amber-800 px-2.5 py-0.5 text-xs font-semibold shadow-xs">⚠ {a}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {allConditions.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold text-orange-700 uppercase tracking-wider mb-1.5">Condições</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {allConditions.map((d: string) => (
+                    <span key={d} className="rounded-md border border-orange-300 bg-white text-orange-800 px-2.5 py-0.5 text-xs font-semibold shadow-xs">{d}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+    </div>
   );
 }
-

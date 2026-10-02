@@ -223,14 +223,6 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               )}
             </button>
 
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
-              <span className="flex items-center gap-1.5">
-                <Lock size={13} className="text-accent" /> Criptografado & Privado
-              </span>
-              <span className="flex items-center gap-1.5">
-                <ImagePlus size={13} className="text-accent" /> Leitura OCR via IA
-              </span>
-            </div>
 
             {error && <p className="text-center text-xs font-bold text-red-500">{error}</p>}
 
