@@ -158,7 +158,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
     private async Task<string> CallOcrSpaceAsync(string imageUrl, int engine, CancellationToken cancellationToken)
     {
         var encodedUrl = Uri.EscapeDataString(imageUrl);
-        var url = $"https://api.ocr.space/parse/imageurl?apikey={_ocrSpaceApiKey}&url={encodedUrl}&ocrengine={engine}&language=por";
+        var url = $"https://api.ocr.space/parse/imageurl?apikey={_ocrSpaceApiKey}&url={encodedUrl}&ocrengine={engine}&language=por&scale=true&isTable=true";
         
         try
         {
@@ -324,8 +324,9 @@ Retorne ESTRITAMENTE um JSON no seguinte formato (sem markdown, sem explicaçõe
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Erro ao deserializar extração. JSON: {JsonResult}", jsonResult);
-                    return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro de conversão (JSON): {ex.Message}" };
+                    _logger.LogError(ex, "Erro ao deserializar extração via Gemini. JSON: {JsonResult}", jsonResult);
+                    _logger.LogWarning("Acionando fallback Groq devido a JSON malformado do Gemini.");
+                    return await FallbackToGroqAsync(unifiedText, prompt, cancellationToken);
                 }
             }
             else
@@ -361,7 +362,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato (sem markdown, sem explicaçõe
             var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
             var payload = new
             {
-                model = "llama3-70b-8192",
+                model = "llama-3.1-8b-instant",
                 messages = new[] { new { role = "user", content = prompt } },
                 temperature = 0.0,
                 max_tokens = 4096,
@@ -385,7 +386,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato (sem markdown, sem explicaçõe
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                     var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
                     dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq (Llama 3 70B).");
+                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq (Llama 3.1 8B).");
                     return dto;
                 }
                 catch (Exception ex)
