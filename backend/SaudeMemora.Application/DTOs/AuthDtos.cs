@@ -15,3 +15,14 @@ public class LoginPacienteDto
     public string Email { get; set; } = string.Empty;
     public string Senha { get; set; } = string.Empty;
 }
+
+public class ForgotPasswordDto
+{
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ResetPasswordDto
+{
+    public string Token { get; set; } = string.Empty;
+    public string Senha { get; set; } = string.Empty;
+}

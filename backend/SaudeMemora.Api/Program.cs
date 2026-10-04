@@ -234,6 +234,99 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     });
 });
 
+app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger) =>
+{
+    if (string.IsNullOrWhiteSpace(dto.Email))
+        return Results.BadRequest(new[] { "O e-mail é obrigatório." });
+
+    var paciente = await repo.GetByEmailAsync(dto.Email);
+    if (paciente == null)
+    {
+        // Retorna Ok para não expor quais emails existem na base
+        return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
+    }
+
+    var token = Guid.NewGuid().ToString("N");
+    paciente.ResetPasswordToken = token;
+    paciente.ResetPasswordExpiry = DateTime.UtcNow.AddHours(1);
+
+    await repo.UpdateAsync(paciente);
+
+    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
+    var resetLink = $"{frontendUrl}/reset-password?token={token}";
+
+    var brevoApiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY");
+    var brevoFromEmail = Environment.GetEnvironmentVariable("BREVO_FROM_EMAIL") ?? "rafaelmatheus061@gmail.com";
+
+    if (string.IsNullOrEmpty(brevoApiKey))
+    {
+        logger.LogWarning("BREVO_API_KEY não configurada. Link gerado: {ResetLink}", resetLink);
+        return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
+    }
+
+    try
+    {
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("api-key", brevoApiKey);
+        client.DefaultRequestHeaders.Add("accept", "application/json");
+
+        var payload = new
+        {
+            sender = new { name = "SaúdeMemora", email = brevoFromEmail },
+            to = new[] { new { email = paciente.Email, name = paciente.Nome } },
+            subject = "Recuperação de Senha - SaúdeMemora",
+            htmlContent = $@"
+                <div style='font-family: sans-serif; padding: 20px;'>
+                    <h2>Recuperação de Senha</h2>
+                    <p>Você solicitou a recuperação da sua senha no SaúdeMemora.</p>
+                    <p>Clique no link abaixo para criar uma nova senha. O link é válido por 1 hora.</p>
+                    <a href='{resetLink}' style='display: inline-block; padding: 10px 20px; background-color: #0f172a; color: #fff; text-decoration: none; border-radius: 8px; margin-top: 20px;'>Redefinir minha senha</a>
+                </div>
+            "
+        };
+
+        var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            logger.LogInformation("Email de recuperação enviado via Brevo para {Email}", paciente.Email);
+        }
+        else
+        {
+            var errorBody = await response.Content.ReadAsStringAsync();
+            logger.LogError("Erro ao enviar email via Brevo para {Email}. Status: {Status}. Detalhes: {Error}", paciente.Email, response.StatusCode, errorBody);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erro ao enviar e-mail de recuperação via Brevo para {Email}", paciente.Email);
+    }
+
+    return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
+});
+
+app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRepository repo) =>
+{
+    if (string.IsNullOrWhiteSpace(dto.Token) || string.IsNullOrWhiteSpace(dto.Senha))
+        return Results.BadRequest(new[] { "Dados inválidos." });
+
+    var paciente = await repo.GetByResetTokenAsync(dto.Token);
+    
+    if (paciente == null || paciente.ResetPasswordExpiry == null || paciente.ResetPasswordExpiry < DateTime.UtcNow)
+    {
+        return Results.BadRequest(new[] { "O link de recuperação é inválido ou expirou." });
+    }
+
+    paciente.Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
+    paciente.ResetPasswordToken = null;
+    paciente.ResetPasswordExpiry = null;
+
+    await repo.UpdateAsync(paciente);
+
+    return Results.Ok(new { Message = "Sua senha foi redefinida com sucesso." });
+});
+
 // â”€â”€â”€ Paciente Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Retorna o perfil mÃ©dico completo do paciente autenticado

@@ -23,6 +23,11 @@ public class PacienteRepository : IPacienteRepository
         return await _pacientes.Find(p => p.Email == email).FirstOrDefaultAsync();
     }
 
+    public async Task<Paciente?> GetByResetTokenAsync(string token)
+    {
+        return await _pacientes.Find(p => p.ResetPasswordToken == token).FirstOrDefaultAsync();
+    }
+
 
     public async Task<Paciente?> GetByIdAsync(string id)
     {

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
-import { usePostApiAuthLogin, usePostApiAuthRegister } from '@workspace/api-client-react';
+import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch } from '@workspace/api-client-react';
 
 export default function Auth() {
   const [, setLocation] = useLocation();
@@ -57,10 +57,22 @@ export default function Auth() {
     }
   };
 
-  const handleForgotSubmit = (e: FormEvent) => {
+  const handleForgotSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return;
-    setForgotMessage('Se o e-mail estiver cadastrado, você receberá um link de recuperação em instantes.');
+    
+    try {
+      await customFetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      setForgotMessage('Se o e-mail estiver cadastrado, você receberá um link de recuperação em instantes.');
+    } catch (err) {
+      // Even on error, we can show a generic message for security, or the actual error
+      setForgotMessage('Erro ao enviar solicitação. Tente novamente mais tarde.');
+    }
+    
     setTimeout(() => { setShowForgotModal(false); setForgotMessage(''); setForgotEmail(''); }, 4000);
   };
 

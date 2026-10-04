@@ -67,8 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             {/* Divider */}
             <div className="h-5 w-px bg-border/50 hidden md:block" />
 
-            {/* Nav items */}
-            <nav className="flex items-center justify-center gap-1 flex-1">
+            {/* Nav items (Desktop only) */}
+            <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
               {!isAnamnesePending && navItems.map(({ href, label, icon: Icon }) => {
                 const isActive = active === href;
                 return (
@@ -172,21 +172,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           <p className="text-[11px] text-muted-foreground truncate mt-0.5">{profile.email}</p>
                         </button>
                       </div>
-                      {/* Nav links in dropdown for mobile */}
-                      {!isAnamnesePending && (
-                      <div className="sm:hidden py-1.5 border-b border-border">
-                        {navItems.map(({ href, label, icon: Icon }) => (
-                          <button
-                            key={href}
-                            onClick={() => navigate(href)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground hover:bg-muted transition-colors"
-                          >
-                            <Icon size={14} />
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      )}
+
                       {/* Options */}
                       <div className="py-1.5">
                         {!isAnamnesePending && (
@@ -217,9 +203,32 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* ── Main content ───────────────────────────────────────────────── */}
-      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-10">
+      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-10">
         {children}
       </main>
+
+      {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}
+      {!isAnamnesePending && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-border bg-card/90 backdrop-blur-md px-2 pb-safe">
+          {navItems.map(({ href, label, icon: Icon }) => {
+            const isActive = active === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`
+                  flex flex-col items-center justify-center gap-1 w-full h-full
+                  transition-colors duration-200
+                  ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
+                `}
+              >
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'scale-110 transition-transform' : ''} />
+                <span className="text-[10px] font-semibold">{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
 
       <UploadModal />
     </div>

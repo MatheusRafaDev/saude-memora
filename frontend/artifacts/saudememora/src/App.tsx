@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import Auth from '@/pages/Auth';
+import ResetPassword from '@/pages/ResetPassword';
 import Home from '@/pages/Home';
 import Dashboard from '@/pages/Dashboard';
 import Documents from '@/pages/Documents';
@@ -33,6 +34,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/entrar" component={Auth} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/visao-geral">{() => <AppPage><Dashboard /></AppPage>}</Route>
         <Route path="/documentos">{() => <AppPage><Documents /></AppPage>}</Route>
         <Route path="/documentos/:id">{(params) => <AppPage><DocumentDetail id={params.id} /></AppPage>}</Route>

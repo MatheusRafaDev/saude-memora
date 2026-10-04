@@ -57,6 +57,12 @@ public class Paciente
     [BsonElement("idPublicoCarteirinha")]
     public string? IdPublicoCarteirinha { get; set; }
 
+    [BsonElement("resetPasswordToken")]
+    public string? ResetPasswordToken { get; set; }
+
+    [BsonElement("resetPasswordExpiry")]
+    public DateTime? ResetPasswordExpiry { get; set; }
+
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
