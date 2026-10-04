@@ -10,6 +10,10 @@ import {
   Sparkles,
   UploadCloud,
   Activity,
+  Stethoscope,
+  Bell,
+  ShieldAlert,
+  FileBadge2,
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
@@ -24,6 +28,15 @@ const features = [
   { icon: UploadCloud,    number: '01', title: 'Você envia',      description: 'Adicione uma foto ou arquivo do seu exame, receita ou relatório médico.' },
   { icon: Sparkles,       number: '02', title: 'Nós organizamos', description: 'A IA reconhece as informações e categoriza tudo automaticamente.' },
   { icon: HeartHandshake, number: '03', title: 'Você entende',    description: 'Tenha seu histórico ao alcance para cuidar melhor das suas decisões de saúde.' },
+];
+
+const benefits = [
+  { icon: Activity, title: 'Prontuário Inteligente', description: 'Gere um resumo completo e atualizado com todos os seus diagnósticos e medicamentos, pronto para entregar ao médico.' },
+  { icon: Stethoscope, title: 'Ficha Médica Base', description: 'Registre seu histórico familiar, alergias, tipo sanguíneo, cirurgias e condições crônicas em um só lugar.' },
+  { icon: Bell, title: 'Organização de Remédios', description: 'A Inteligência Artificial extrai a posologia de receitas médicas automaticamente, deixando seu tratamento documentado.' },
+  { icon: ShieldAlert, title: 'Atestados e Vacinas', description: 'Tenha todos os seus comprovantes arquivados e de fácil acesso para o trabalho, escola ou viagens.' },
+  { icon: FileBadge2, title: 'Cartões do Convênio', description: 'Salve as carteirinhas físicas do plano de saúde em formato digital e nunca mais esqueça em casa.' },
+  { icon: LockKeyhole, title: 'Acesso Seguro', description: 'Seus dados são criptografados. Somente você pode visualizar os detalhes mais íntimos da sua saúde.' },
 ];
 
 const values = [
@@ -55,6 +68,7 @@ export default function Home() {
 
         <nav className="hidden items-center gap-6 text-[12px] font-medium text-muted-foreground md:flex">
           <a href="#como-funciona" className="transition-colors hover:text-foreground">Como funciona</a>
+          <a href="#beneficios"    className="transition-colors hover:text-foreground">Funcionalidades</a>
           <a href="#cuidado"       className="transition-colors hover:text-foreground">Privacidade</a>
           <Link
             href="/entrar"
@@ -252,6 +266,30 @@ export default function Home() {
                   <h3 className="text-[15px] font-bold text-foreground">{title}</h3>
                   <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{description}</p>
                 </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Benefícios Detalhados ───────────────────────────────────────── */}
+        <section id="beneficios" className="border-b border-border/60 bg-background">
+          <div className="mx-auto max-w-[1200px] px-5 py-16 md:px-8 md:py-20">
+            <div className="mb-12 text-center md:mb-16">
+              <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent mb-3">Tudo o que você precisa</p>
+              <h2 className="text-3xl font-black tracking-[-0.05em] text-foreground md:text-4xl">
+                Mais do que uma pasta médica. <br />Um assistente para a sua saúde.
+              </h2>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {benefits.map(({ icon: Icon, title, description }) => (
+                <div key={title} className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm transition-all hover:border-border hover:shadow-soft">
+                  <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+                    <Icon size={18} />
+                  </span>
+                  <h3 className="text-[15px] font-bold text-foreground">{title}</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">{description}</p>
+                </div>
               ))}
             </div>
           </div>

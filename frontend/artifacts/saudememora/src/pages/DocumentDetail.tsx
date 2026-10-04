@@ -27,6 +27,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('edit') === 'true') {
+      setIsEditing(true);
+    }
+  }, []);
+
+  useEffect(() => {
     if (docRaw) {
       const doc = docRaw as any;
       setFormData({

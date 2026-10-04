@@ -178,12 +178,12 @@ export default function Dashboard() {
 
         {/* ── 1. Perfil ── */}
         <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
-            <div className="flex items-center gap-2 text-foreground">
-              <User size={14} className="text-primary" />
+          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+            <div className="flex items-center gap-2">
+              <User size={14} className="text-blue-400" />
               <span className="text-sm font-bold">Perfil</span>
             </div>
-            <Link href="/perfil" className="text-[11px] font-semibold text-primary hover:underline">Editar</Link>
+            <Link href="/perfil" className="text-[11px] font-semibold text-blue-200 hover:text-white hover:underline">Editar</Link>
           </div>
           <div className="px-5 py-4 space-y-3">
             {/* Name */}
@@ -245,23 +245,25 @@ export default function Dashboard() {
 
         {/* ── 2. Anamnese ── */}
         <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
-            <div className="flex items-center gap-2 text-foreground">
-              <BookOpen size={14} className="text-primary" />
+          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+            <div className="flex items-center gap-2">
+              <BookOpen size={14} className="text-blue-400" />
               <span className="text-sm font-bold">Anamnese</span>
             </div>
-            <Link href="/anamnese" className="text-[11px] font-semibold text-primary hover:underline">Preencher</Link>
+            <Link href="/anamnese" className="text-[11px] font-semibold text-blue-200 hover:text-white hover:underline">Preencher</Link>
           </div>
           <div className="px-5 py-4 space-y-4">
 
 
             {/* Alergias */}
             <div>
-              <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1.5">Alergias</p>
+              <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <AlertTriangle size={12} className="text-blue-500" /> Alergias
+              </p>
               {allergies.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {allergies.map((a: string) => (
-                    <span key={a} className="rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-2 py-0.5 text-xs font-medium">{a}</span>
+                    <span key={a} className="rounded-md border border-blue-200 bg-blue-50 text-blue-800 px-2 py-0.5 text-xs font-medium">{a}</span>
                   ))}
                 </div>
               ) : (
@@ -271,11 +273,13 @@ export default function Dashboard() {
 
             {/* Condições */}
             <div>
-              <p className="text-[10px] font-semibold text-orange-600 uppercase tracking-wider mb-1.5">Condições & Doenças</p>
+              <p className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <Activity size={12} className="text-indigo-500" /> Condições & Doenças
+              </p>
               {allConditions.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {allConditions.map((d: string) => (
-                    <span key={d} className="rounded-md border border-orange-200 bg-orange-50 text-orange-800 px-2 py-0.5 text-xs font-medium">{d}</span>
+                    <span key={d} className="rounded-md border border-indigo-200 bg-indigo-50 text-indigo-800 px-2 py-0.5 text-xs font-medium">{d}</span>
                   ))}
                 </div>
               ) : (
@@ -310,12 +314,12 @@ export default function Dashboard() {
 
         {/* ── 3. Documentos ── */}
         <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
-            <div className="flex items-center gap-2 text-foreground">
-              <Activity size={14} className="text-primary" />
+          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+            <div className="flex items-center gap-2">
+              <Activity size={14} className="text-blue-400" />
               <span className="text-sm font-bold">Documentos</span>
             </div>
-            <Link href="/documentos" className="text-[11px] font-semibold text-primary hover:underline">Ver todos</Link>
+            <Link href="/documentos" className="text-[11px] font-semibold text-blue-200 hover:text-white hover:underline">Ver todos</Link>
           </div>
           <div className="px-5 py-4">
             {/* Recent docs */}
@@ -380,12 +384,12 @@ export default function Dashboard() {
       {/* ── 4. Relatórios e Estatísticas (Para o Médico) ── */}
       {(topMedicacoes.length > 0 || topExames.length > 0) && (
         <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50 bg-muted/10">
-            <div className="flex items-center gap-2 text-foreground">
-              <BarChart3 size={15} className="text-primary" />
+          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={15} className="text-blue-400" />
               <span className="text-sm font-bold">Relatórios e Estatísticas</span>
             </div>
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Apoio Médico</span>
+            <span className="text-[10px] font-semibold text-blue-200 uppercase tracking-wider">Apoio Médico</span>
           </div>
           <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/50">
             {/* Top Medicamentos */}
@@ -433,38 +437,7 @@ export default function Dashboard() {
         </section>
       )}
 
-      {/* ── Saúde em destaque: alertas críticos ── */}
-      {(allergies.length > 0 || allConditions.length > 0) && (
-        <section className="rounded-xl border border-amber-200 bg-amber-50/50 px-5 py-4 shadow-xs">
-          <div className="flex items-center gap-2 mb-3">
-            <Heart size={14} className="text-amber-600" />
-            <p className="text-sm font-bold text-amber-800">Informações de Segurança</p>
-            <span className="ml-auto text-[10px] text-amber-600 font-semibold">Para médicos e emergências</span>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            {allergies.length > 0 && (
-              <div>
-                <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider mb-1.5">Alergias</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {allergies.map((a: string) => (
-                    <span key={a} className="rounded-md border border-amber-300 bg-white text-amber-800 px-2.5 py-0.5 text-xs font-semibold shadow-xs">⚠ {a}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {allConditions.length > 0 && (
-              <div>
-                <p className="text-[10px] font-semibold text-orange-700 uppercase tracking-wider mb-1.5">Condições</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {allConditions.map((d: string) => (
-                    <span key={d} className="rounded-md border border-orange-300 bg-white text-orange-800 px-2.5 py-0.5 text-xs font-semibold shadow-xs">{d}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+
 
       {/* ── Modal da Carteirinha ── */}
       {isCarteirinhaOpen && (

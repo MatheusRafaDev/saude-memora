@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check } from 'lucide-react';
 import { useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -25,6 +25,7 @@ const PERIOD_OPTIONS = [
 ];
 
 export default function Documents() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { data: documentsRaw, isLoading, refetch } = useGetApiDocuments();
   const deleteMutation = useDeleteApiDocumentsId();
@@ -318,7 +319,7 @@ export default function Documents() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => toast({ description: 'Edição estará disponível em breve.' })}>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
                               <Pencil size={14} className="mr-2" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
