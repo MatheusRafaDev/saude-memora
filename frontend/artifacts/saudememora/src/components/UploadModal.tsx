@@ -121,37 +121,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
         setResultId(currentId);
       }
 
-      // 2. Polling para acompanhar o processamento no backend
-      const poll = setInterval(async () => {
-        try {
-          const doc = (await customFetch(`/api/documents/${currentId}`)) as any;
-          
-          if (doc.status === 'failed') {
-            clearInterval(poll);
-            setError(doc.errorMessage || 'Falha ao processar o documento pela IA.');
-            setStep('file');
-          } else if (doc.status === 'pronto') {
-            clearInterval(poll);
-            setBackendProgress(100);
-            setProcessingStep(PROCESSING_STEPS.length - 1);
-            setTimeout(() => setStep('done'), 600);
-            if (onSuccess && currentId) onSuccess(currentId as string);
-          } else {
-            // pendente ou processando
-            const currentProgress = doc.progress || 0;
-            setBackendProgress(currentProgress);
-            
-            // Mapeia o progresso (0-100) para o índice dos steps visuais
-            const pStep = Math.min(
-              Math.floor((currentProgress / 100) * (PROCESSING_STEPS.length - 1)),
-              PROCESSING_STEPS.length - 1
-            );
-            setProcessingStep(pStep);
-          }
-        } catch (err) {
-          console.error('Erro no polling do documento:', err);
-        }
-      }, 2000);
+      // 2. Redireciona imediatamente para a tela de documentos
+      handleClose();
+      window.location.href = '/documentos';
 
     } catch (err) {
       console.error('Erro no upload:', err);

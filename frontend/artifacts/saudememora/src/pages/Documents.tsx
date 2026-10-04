@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert } from 'lucide-react';
 import { useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
@@ -33,6 +33,18 @@ export default function Documents() {
   // Local state for optimistic deletes
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const documents = rawDocuments.filter((doc: any) => !deletedIds.has(doc.id));
+
+  const hasProcessing = documents.some((d: any) => d.status === 'pending' || d.status === 'processing');
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (hasProcessing) {
+      timer = setInterval(() => refetch(), 2000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [hasProcessing, refetch]);
 
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');

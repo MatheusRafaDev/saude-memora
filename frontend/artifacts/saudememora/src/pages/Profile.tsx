@@ -212,13 +212,7 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-                {cardExtracted && (cardExtracted.plano || cardExtracted.numero) && (
-                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/8 px-3 py-2 max-w-[250px]">
-                    <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 mb-1">✦ Lido pela IA</p>
-                    {cardExtracted.plano && <p className="text-[11px] text-emerald-800 dark:text-emerald-200 truncate">{cardExtracted.plano}</p>}
-                    {cardExtracted.numero && <p className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300">{cardExtracted.numero}</p>}
-                  </div>
-                )}
+
               </div>
             ) : (
               <button type="button" onClick={() => cardInputRef.current?.click()} className="group flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">

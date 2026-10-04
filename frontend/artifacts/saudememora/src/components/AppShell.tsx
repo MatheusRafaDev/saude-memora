@@ -26,14 +26,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   // Force anamnese completion if it doesn't exist yet
+  const isAnamnesePending = !isFichaLoading && fichaRaw !== undefined && Object.keys(fichaRaw as any).length === 0;
+
   useEffect(() => {
-    if (!isFichaLoading && fichaRaw !== undefined) {
-      const ficha = fichaRaw as any;
-      if (Object.keys(ficha).length === 0 && location !== '/anamnese') {
-        setLocation('/anamnese');
-      }
+    if (isAnamnesePending && location !== '/anamnese') {
+      setLocation('/anamnese');
     }
-  }, [fichaRaw, isFichaLoading, location, setLocation]);
+  }, [isAnamnesePending, location, setLocation]);
 
   const active = navItems.find((item) => location.startsWith(item.href))?.href;
   const navigate = (href: string) => { setUserMenuOpen(false); setLocation(href); };
@@ -51,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex h-[64px] items-center gap-6">
 
             {/* Logo */}
-            <Link href="/visao-geral" className="flex items-center gap-2.5 shrink-0" data-testid="link-brand">
+            <Link href={isAnamnesePending ? "/anamnese" : "/visao-geral"} className="flex items-center gap-2.5 shrink-0" data-testid="link-brand">
               <span className="flex items-center justify-center">
                 <LourdesHeartMark className="h-7 w-7" />
               </span>
@@ -70,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             {/* Nav items */}
             <nav className="flex items-center justify-center gap-1 flex-1">
-              {navItems.map(({ href, label, icon: Icon }) => {
+              {!isAnamnesePending && navItems.map(({ href, label, icon: Icon }) => {
                 const isActive = active === href;
                 return (
                   <Link
@@ -114,6 +113,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 
               {/* Add button */}
+              {!isAnamnesePending && (
               <button
                 onClick={triggerUploadModal}
                 className="
@@ -131,6 +131,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Plus size={13} strokeWidth={2.5} />
                 <span className="hidden sm:block">Adicionar</span>
               </button>
+              )}
 
               {/* User menu */}
               <div className="relative">
@@ -164,14 +165,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {/* User info */}
                       <div className="border-b border-border p-1.5">
                         <button
-                          onClick={() => navigate('/perfil')}
-                          className="w-full text-left rounded-xl px-3 py-2 hover:bg-muted transition-colors"
+                          onClick={() => { if (!isAnamnesePending) navigate('/perfil'); }}
+                          className={`w-full text-left rounded-xl px-3 py-2 ${isAnamnesePending ? 'cursor-default' : 'hover:bg-muted transition-colors'}`}
                         >
                           <p className="text-[13px] font-semibold text-foreground truncate">{profile.nome}</p>
                           <p className="text-[11px] text-muted-foreground truncate mt-0.5">{profile.email}</p>
                         </button>
                       </div>
                       {/* Nav links in dropdown for mobile */}
+                      {!isAnamnesePending && (
                       <div className="sm:hidden py-1.5 border-b border-border">
                         {navItems.map(({ href, label, icon: Icon }) => (
                           <button
@@ -184,8 +186,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                           </button>
                         ))}
                       </div>
+                      )}
                       {/* Options */}
                       <div className="py-1.5">
+                        {!isAnamnesePending && (
                         <button
                           onClick={() => navigate('/perfil')}
                           className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground hover:bg-muted transition-colors"
@@ -193,6 +197,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           <UserRound size={14} />
                           Meu perfil
                         </button>
+                        )}
                         <button
                           onClick={() => { signOut(); navigate('/entrar'); }}
                           data-testid="button-signout"
