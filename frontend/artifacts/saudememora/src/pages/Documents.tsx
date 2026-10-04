@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert } from 'lucide-react';
+import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check } from 'lucide-react';
 import { useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -261,6 +261,7 @@ export default function Documents() {
                 <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   <th className="py-3 px-3">Título do Documento</th>
                   <th className="py-3 px-3">Tipo</th>
+                  <th className="py-3 px-3">Status</th>
                   <th className="py-3 px-3">Médico / Clínica</th>
                   <th className="py-3 px-3">Data do Registro</th>
                   <th className="py-3 px-3">Resumo / Diagnóstico</th>
@@ -277,17 +278,22 @@ export default function Documents() {
                       </Link>
                     </td>
                     <td className="py-3.5 px-3">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
+                        {doc.tipo || 'Documento'}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3">
                       {doc.status === 'pending' || doc.status === 'processing' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-500">
-                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress}%` : 'Na Fila'}
+                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Processando'}
                         </span>
                       ) : doc.status === 'failed' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
-                           <ShieldAlert size={10} /> Falha
+                           <ShieldAlert size={10} /> Erro
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
-                          {doc.tipo || 'Documento'}
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-500">
+                           <Check size={10} /> Pronto
                         </span>
                       )}
                     </td>

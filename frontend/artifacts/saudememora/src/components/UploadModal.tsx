@@ -110,10 +110,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     files.forEach(f => formData.append('file', f));
     if (docType && docType !== 'outro') formData.append('documentType', docType);
     
-    // Mostra feedback imediato, fecha e navega
-    toast({ description: 'Iniciando upload e processamento...' });
-    handleClose();
-    setLocation('/documentos');
+    setStep('processing');
+    setProcessingStep(0);
+    setBackendProgress(10);
 
     try {
       let currentId = resultId;
@@ -125,11 +124,15 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
         if (!res || !res.id) throw new Error('ID não retornado.');
       }
 
-      // Notifica a tela de documentos para atualizar a lista
       window.dispatchEvent(new CustomEvent('document-uploaded'));
+      toast({ description: 'Upload concluído. Processando documento...' });
+      
+      handleClose();
+      setLocation('/documentos');
     } catch (err) {
       console.error('Erro no upload:', err);
       toast({ description: 'Falha ao enviar documento.', variant: 'destructive' });
+      setStep('file');
     }
   };
 
