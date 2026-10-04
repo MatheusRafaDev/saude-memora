@@ -13,7 +13,7 @@ export default function NotFound() {
         <p className="mt-3 text-sm text-muted-foreground">
           A página que você está procurando não existe ou foi movida.
         </p>
-        <Link href="/painel" className="mt-6 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all">
+        <Link href="/visao-geral" className="mt-6 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all">
           <ArrowLeft size={16} /> Voltar ao Painel
         </Link>
       </div>

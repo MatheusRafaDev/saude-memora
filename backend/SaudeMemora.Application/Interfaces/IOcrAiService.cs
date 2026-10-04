@@ -25,6 +25,7 @@ public class LinhaIndentadaDto
 
 public class DocumentoExtraidoDto
 {
+    public bool DocumentoValido { get; set; } = true;
     public string Tipo { get; set; } = string.Empty;
     public string TipoIdentificado { get; set; } = string.Empty;
     public string Titulo { get; set; } = string.Empty;

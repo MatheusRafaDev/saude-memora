@@ -25,8 +25,7 @@ public class Paciente
     [BsonElement("nome")]
     public string Nome { get; set; } = string.Empty;
 
-    [BsonElement("cpf")]
-    public string Cpf { get; set; } = string.Empty;
+
 
     [BsonElement("dataNascimento")]
     public string DataNascimento { get; set; } = string.Empty;

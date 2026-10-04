@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Sparkles, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft } from 'lucide-react';
+import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Sparkles, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 
 interface UploadModalProps {
@@ -10,24 +10,21 @@ interface UploadModalProps {
 }
 
 const DOC_TYPES = [
-  { value: 'exame',          label: 'Exame de Sangue',    icon: FlaskConical, color: 'text-blue-500',   bg: 'bg-blue-500/10 border-blue-500/30'    },
-  { value: 'imagem',         label: 'Exame de Imagem',    icon: FileText,     color: 'text-indigo-500', bg: 'bg-indigo-500/10 border-indigo-500/30' },
+  { value: 'exame',          label: 'Exame',              icon: FlaskConical, color: 'text-blue-500',   bg: 'bg-blue-500/10 border-blue-500/30'    },
   { value: 'receita',        label: 'Receita Médica',     icon: Pill,         color: 'text-emerald-500',bg: 'bg-emerald-500/10 border-emerald-500/30'},
   { value: 'laudo',          label: 'Laudo / Relatório',  icon: Stethoscope,  color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/30' },
-  { value: 'atestado',       label: 'Atestado Médico',    icon: ShieldAlert,  color: 'text-amber-500',  bg: 'bg-amber-500/10 border-amber-500/30'   },
-  { value: 'vacina',         label: 'Vacinação',          icon: Syringe,      color: 'text-teal-500',   bg: 'bg-teal-500/10 border-teal-500/30'     },
+  { value: 'atestado',       label: 'Atestado / Vacina',  icon: ShieldAlert,  color: 'text-amber-500',  bg: 'bg-amber-500/10 border-amber-500/30'   },
   { value: 'encaminhamento', label: 'Encaminhamento',     icon: ArrowRight,   color: 'text-orange-500', bg: 'bg-orange-500/10 border-orange-500/30' },
-  { value: 'outro',          label: 'Outro Documento',    icon: FileText,     color: 'text-muted-foreground', bg: 'bg-muted/60 border-border'       },
+  { value: 'outro',          label: 'Auto-Detectar',      icon: BrainCircuit, color: 'text-primary',    bg: 'bg-primary/10 border-primary/30'       },
 ];
 
 const PROCESSING_STEPS = [
-  'Enviando arquivo para o servidor...',
-  'Extraindo texto via OCR (Motor 1)...',
-  'Extraindo texto via OCR (Motor 2)...',
-  'Unificando resultados dos motores...',
-  'Analisando com inteligência artificial...',
-  'Estruturando informações clínicas...',
-  'Salvando no banco de dados...',
+  'Enviando para o seu espaço...',
+  'Preparando arquivo...',
+  'Lendo informações...',
+  'Analisando com Inteligência Artificial...',
+  'Organizando dados médicos...',
+  'Salvando na sua ficha...',
 ];
 
 export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSuccess }: UploadModalProps) {
@@ -41,6 +38,8 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   const [resultId, setResultId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [processingStep, setProcessingStep] = useState(0);
+  const [backendProgress, setBackendProgress] = useState(0);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -95,35 +94,68 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   if (!isOpen || !mounted) return null;
 
   const resetModal = () => {
-    setFiles([]); setStep('type'); setDocType(''); setResultId(null); setError(''); setProcessingStep(0);
+    setFiles([]); setStep('type'); setDocType(''); setResultId(null); setError(''); setProcessingStep(0); setBackendProgress(0); setCurrentFileIndex(0);
   };
   const handleClose = () => { resetModal(); setInternalOpen(false); if (externalOnClose) externalOnClose(); };
 
   const startUpload = async () => {
     if (!files.length) return;
-    setStep('processing'); setError('');
-
-    let s = 0;
-    const interval = setInterval(() => {
-      s++;
-      if (s < PROCESSING_STEPS.length - 1) setProcessingStep(s);
-      else clearInterval(interval);
-    }, 1500);
+    setStep('processing'); setError(''); setBackendProgress(0); setProcessingStep(0);
 
     try {
-      const formData = new FormData();
-      files.forEach(f => formData.append('file', f));
-      if (docType && docType !== 'outro') formData.append('documentType', docType);
+      let currentId = resultId;
 
-      const res = (await customFetch('/api/documents/upload', { method: 'POST', body: formData as any })) as any;
-      clearInterval(interval);
-      setProcessingStep(PROCESSING_STEPS.length - 1);
-      setResultId(res.id);
-      setTimeout(() => setStep('done'), 600);
-      if (onSuccess && res.id) onSuccess(res.id);
+      if (currentId) {
+        // Se já temos um resultId, significa que o usuário está tentando novamente após uma falha
+        await customFetch(`/api/documents/${currentId}/retry`, { method: 'POST' });
+      } else {
+        const formData = new FormData();
+        files.forEach(f => formData.append('file', f));
+        if (docType && docType !== 'outro') formData.append('documentType', docType);
+
+        // 1. Inicia o upload
+        const res = (await customFetch('/api/documents/upload', { method: 'POST', body: formData as any })) as any;
+        if (!res || !res.id) throw new Error('ID não retornado.');
+        
+        currentId = res.id;
+        setResultId(currentId);
+      }
+
+      // 2. Polling para acompanhar o processamento no backend
+      const poll = setInterval(async () => {
+        try {
+          const doc = (await customFetch(`/api/documents/${currentId}`)) as any;
+          
+          if (doc.status === 'failed') {
+            clearInterval(poll);
+            setError(doc.errorMessage || 'Falha ao processar o documento pela IA.');
+            setStep('file');
+          } else if (doc.status === 'pronto') {
+            clearInterval(poll);
+            setBackendProgress(100);
+            setProcessingStep(PROCESSING_STEPS.length - 1);
+            setTimeout(() => setStep('done'), 600);
+            if (onSuccess) onSuccess(currentId);
+          } else {
+            // pendente ou processando
+            const currentProgress = doc.progress || 0;
+            setBackendProgress(currentProgress);
+            
+            // Mapeia o progresso (0-100) para o índice dos steps visuais
+            const pStep = Math.min(
+              Math.floor((currentProgress / 100) * (PROCESSING_STEPS.length - 1)),
+              PROCESSING_STEPS.length - 1
+            );
+            setProcessingStep(pStep);
+          }
+        } catch (err) {
+          console.error('Erro no polling do documento:', err);
+        }
+      }, 2000);
+
     } catch (err) {
-      clearInterval(interval);
-      setError('Falha ao processar o documento. Verifique sua conexão e tente novamente.');
+      console.error('Erro no upload:', err);
+      setError('Falha ao iniciar o upload. Verifique sua conexão e tente novamente.');
       setStep('file');
     }
   };
@@ -134,7 +166,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   };
 
   const selectedType = DOC_TYPES.find(t => t.value === docType);
-  const progress = step === 'processing' ? Math.round((processingStep / (PROCESSING_STEPS.length - 1)) * 100) : 0;
+  const progress = step === 'processing' ? backendProgress : 0;
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center glass-modal p-4 page-enter" onClick={handleClose}>
@@ -152,7 +184,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <h2 className="mt-1.5 text-xl font-extrabold tracking-tight text-foreground">Qual é o tipo de documento?</h2>
               <p className="mt-1 text-xs text-muted-foreground">Isso ajuda a IA a extrair as informações com muito mais precisão.</p>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {DOC_TYPES.map(t => {
                 const Icon = t.icon;
                 const sel = docType === t.value;
@@ -203,23 +235,53 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 onChange={e => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
 
               {files.length > 0 ? (
-                <div className="flex flex-col items-center gap-2 p-4">
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {files.map((file, i) => (
-                      <div key={i} className="relative flex flex-col items-center">
-                        {file.type.startsWith('image/') ? (
-                          <img src={previewUrls[i]} alt="Preview" className="h-16 w-auto rounded-lg object-contain shadow border border-border" />
-                        ) : (
-                          <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-white"><FileText size={22} /></span>
-                        )}
-                        <button type="button" onClick={e => { e.stopPropagation(); setFiles(prev => prev.filter((_, idx) => idx !== i)); }}
-                          className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-white shadow">
-                          <X size={9} />
-                        </button>
-                      </div>
-                    ))}
+                <div className="flex flex-col items-center justify-center w-full p-4">
+                  <div className="relative flex items-center justify-center w-full max-w-[200px] min-h-[120px]">
+                    {files.length > 1 && (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentFileIndex(prev => Math.max(0, prev - 1)); }} disabled={currentFileIndex === 0}
+                        className="absolute -left-10 sm:-left-12 z-10 p-2 rounded-full bg-background border border-border shadow-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted text-foreground cursor-pointer">
+                        <ChevronLeft size={18} />
+                      </button>
+                    )}
+
+                    <div className="relative flex flex-col items-center">
+                      {files[currentFileIndex].type.startsWith('image/') ? (
+                        <img src={previewUrls[currentFileIndex]} alt="Preview" className="h-32 w-auto max-w-[180px] rounded-xl object-contain shadow-md border border-border bg-white" />
+                      ) : (
+                        <div className="flex h-32 w-28 items-center justify-center rounded-xl bg-primary text-white shadow-md border border-primary/20"><FileText size={36} /></div>
+                      )}
+                      
+                      <button type="button" onClick={e => {
+                        e.stopPropagation();
+                        setFiles(prev => {
+                          const next = prev.filter((_, idx) => idx !== currentFileIndex);
+                          if (currentFileIndex >= next.length && next.length > 0) setCurrentFileIndex(next.length - 1);
+                          return next;
+                        });
+                      }}
+                        className="absolute -top-3 -right-3 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/90 transition-colors cursor-pointer">
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    {files.length > 1 && (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentFileIndex(prev => Math.min(files.length - 1, prev + 1)); }} disabled={currentFileIndex === files.length - 1}
+                        className="absolute -right-10 sm:-right-12 z-10 p-2 rounded-full bg-background border border-border shadow-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted text-foreground cursor-pointer">
+                        <ChevronRight size={18} />
+                      </button>
+                    )}
                   </div>
-                  <span className="text-xs font-bold text-primary">{files.length} arquivo(s) · {(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB</span>
+                  
+                  {files.length > 1 && (
+                    <div className="mt-5 flex gap-1.5 flex-wrap justify-center max-w-[80%]">
+                      {files.map((_, i) => (
+                        <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentFileIndex ? 'w-5 bg-primary' : 'w-1.5 bg-muted-foreground/30'}`} />
+                      ))}
+                    </div>
+                  )}
+
+                  <span className="mt-4 text-xs font-bold text-primary">{files.length} arquivo(s) selecionado(s)</span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">{(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB total</span>
                 </div>
               ) : (
                 <>
@@ -293,9 +355,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <p className="mt-1 text-xs text-muted-foreground">{files.length} arquivo(s) extraído(s) e classificado(s) pela IA.</p>
             </div>
             <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-4 space-y-1.5">
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Texto extraído via OCR de alta precisão</p>
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Informações clínicas estruturadas pela IA</p>
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Salvo no seu histórico de saúde</p>
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Leitura concluída com sucesso</p>
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Tudo organizado no seu histórico</p>
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Pronto para ser visualizado</p>
             </div>
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={resetModal} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Enviar Outro</button>

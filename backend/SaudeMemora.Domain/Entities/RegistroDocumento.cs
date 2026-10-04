@@ -47,7 +47,7 @@ public class RegistroDocumento
     public string Tipo { get; set; } = string.Empty; // exame | receita | laudo
 
     [BsonElement("status")]
-    public string Status { get; set; } = "processando"; // processando | pronto | arquivado
+    public string Status { get; set; } = "pending"; // pending | processing | failed | pronto
 
     // Receita specific
     [BsonElement("medico")]
@@ -113,4 +113,28 @@ public class RegistroDocumento
 
     [BsonElement("criadoEm")]
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+
+    // --- Campos de Background Processing & Filas ---
+
+    [BsonElement("fileHash")]
+    [BsonIgnoreIfNull]
+    public string? FileHash { get; set; }
+
+    [BsonElement("progress")]
+    public int Progress { get; set; } = 0; // 0 a 100
+
+    [BsonElement("errorMessage")]
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    [BsonElement("attempts")]
+    public int Attempts { get; set; } = 0;
+
+    [BsonElement("lockedUntil")]
+    public DateTime? LockedUntil { get; set; }
+
+    [BsonElement("lockedBy")]
+    public string LockedBy { get; set; } = string.Empty;
+
+    [BsonElement("version")]
+    public int Version { get; set; } = 0;
 }

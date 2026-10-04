@@ -33,7 +33,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/entrar" component={Auth} />
-        <Route path="/painel">{() => <AppPage><Dashboard /></AppPage>}</Route>
+        <Route path="/visao-geral">{() => <AppPage><Dashboard /></AppPage>}</Route>
         <Route path="/documentos">{() => <AppPage><Documents /></AppPage>}</Route>
         <Route path="/documentos/:id">{(params) => <AppPage><DocumentDetail id={params.id} /></AppPage>}</Route>
         <Route path="/enviar">{() => <AppPage><Upload /></AppPage>}</Route>

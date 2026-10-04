@@ -4,7 +4,8 @@ import {
   ChevronRight, FilePlus2, FileText,
   Droplets, AlertTriangle, FlaskConical, Pill,
   Stethoscope, Plus, User, BookOpen, Activity, BarChart3, PieChart, TrendingUp,
-  Heart, Cigarette, Wine, Shield, Phone, CalendarDays, CreditCard, X
+  Heart, Cigarette, Wine, Shield, Phone, CalendarDays, CreditCard, X,
+  LoaderCircle, ShieldAlert
 } from 'lucide-react';
 import { useGetApiPacientesMe, useGetApiDocuments, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
@@ -105,8 +106,22 @@ export default function Dashboard() {
 
   const firstName = user.nome?.split(' ')[0] || 'Você';
 
-  const typeBadge = (typeStr: string) => {
-    const t = (typeStr || '').toLowerCase();
+  const statusBadge = (doc: any) => {
+    if (doc.status === 'pending' || doc.status === 'processing') {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+          <LoaderCircle size={9} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress}%` : 'Na Fila'}
+        </span>
+      );
+    }
+    if (doc.status === 'failed') {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+          <ShieldAlert size={9} /> Falha
+        </span>
+      );
+    }
+    const t = (doc.tipo || '').toLowerCase();
     if (t.includes('exame'))
       return <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-semibold text-blue-700"><FlaskConical size={9} /> Exame</span>;
     if (t.includes('receita'))
@@ -330,10 +345,10 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                        {doc.titulo || 'Documento'}
+                        {doc.titulo || ((doc.status === 'pending' || doc.status === 'processing') ? 'Analisando documento...' : 'Documento sem título')}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        {typeBadge(doc.tipo)}
+                        {statusBadge(doc)}
                         {doc.data && (
                           <span className="text-[10px] text-muted-foreground font-mono">{doc.data}</span>
                         )}

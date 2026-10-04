@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useRoute, useLocation } from 'wouter';
 import { 
-  ArrowLeft, CalendarDays, ChevronRight, FileCheck2, Info, Pill, 
+  ArrowLeft, CalendarDays, ChevronRight, ChevronLeft, FileCheck2, Info, Pill, 
   Stethoscope, MoreVertical, Trash2, Pencil, Code, Save, X, 
   ClipboardList, IdCard, User, Building2, FlaskConical, Activity, 
   Building, FileText, ChevronDown, ChevronUp, Copy
@@ -24,6 +24,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isRawTextOpen, setIsRawTextOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     if (docRaw) {
@@ -220,19 +221,41 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <span className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground font-bold flex items-center gap-2">
                 <FileText size={14} /> Documento Original
               </span>
-              {(doc.urlImagens?.length > 0 ? doc.urlImagens[0] : doc.urlImagem) && (
-                <a href={doc.urlImagens?.length > 0 ? doc.urlImagens[0] : doc.urlImagem} target="_blank" rel="noreferrer" className="rounded-xl bg-card border border-border/50 px-4 py-2 text-[10px] font-bold text-primary hover:bg-primary hover:text-white transition-colors">
+              {(doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem) && (
+                <a href={doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem} target="_blank" rel="noreferrer" className="rounded-xl bg-card border border-border/50 px-4 py-2 text-[10px] font-bold text-primary hover:bg-primary hover:text-white transition-colors">
                   Tela Cheia
                 </a>
               )}
             </div>
             
-          <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white p-3 border border-border/30 max-h-[600px]">
+            <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white p-3 border border-border/30 h-[600px] max-h-[70vh]">
               {doc.urlImagens?.length > 0 ? (
-                <div className="flex flex-col gap-3 w-full">
-                  {doc.urlImagens.map((url: string, i: number) => (
-                    <img key={i} src={url} alt={`Documento ${i + 1}`} className="w-full h-auto object-contain max-h-[600px] rounded-lg border border-border/20" />
-                  ))}
+                <div className="relative w-full h-full flex items-center justify-center group">
+                  <img src={doc.urlImagens[currentImageIndex]} alt={`Documento ${currentImageIndex + 1}`} className="max-w-full max-h-full object-contain rounded-lg border border-border/20 shadow-sm" />
+                  
+                  {doc.urlImagens.length > 1 && (
+                    <>
+                      <button 
+                        type="button" 
+                        onClick={() => setCurrentImageIndex(prev => prev === 0 ? doc.urlImagens.length - 1 : prev - 1)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-primary shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-110 opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronLeft size={24} />
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setCurrentImageIndex(prev => prev === doc.urlImagens.length - 1 ? 0 : prev + 1)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-primary shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-110 opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronRight size={24} />
+                      </button>
+                      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+                        {doc.urlImagens.map((_: any, i: number) => (
+                          <button key={i} type="button" onClick={() => setCurrentImageIndex(i)} className={`h-2 rounded-full transition-all ${i === currentImageIndex ? 'w-4 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`} />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground py-8">Imagem não disponível.</p>

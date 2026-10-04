@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
-import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle, CreditCard, ImagePlus, LoaderCircle, Trash2, Camera } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle, CreditCard, ImagePlus, LoaderCircle, Trash2, Camera, ZoomIn, X } from 'lucide-react';
 import { useGetApiPacientesMe, usePatchApiPacientesMePerfil, useDeleteApiPacientesMe, customFetch } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/lib/store';
@@ -9,11 +10,11 @@ export default function Profile() {
   const patchPerfil = usePatchApiPacientesMePerfil();
   const deleteAccount = useDeleteApiPacientesMe();
   const { signOut } = useStore();
+  const [zoomCarteirinha, setZoomCarteirinha] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
     email: '',
-    cpf: '',
     birthDate: '',
     bloodType: '',
     organDonor: false,
@@ -34,14 +35,6 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const formatCpf = (cpf: string) => {
-    if (!cpf) return '';
-    const digits = cpf.replace(/\D/g, '');
-    if (digits.length === 11) {
-      return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    }
-    return cpf;
-  };
 
   useEffect(() => {
     if (profileRaw) {
@@ -49,7 +42,6 @@ export default function Profile() {
       setForm({
         name: p.nome || '',
         email: p.email || '',
-        cpf: formatCpf(p.cpf || ''),
         birthDate: p.dataNascimento || '',
         bloodType: p.tipoSanguineo || '',
         organDonor: p.doadorOrgaos || false,
@@ -73,7 +65,6 @@ export default function Profile() {
       await patchPerfil.mutateAsync({
         data: {
           nome: form.name,
-          cpf: form.cpf,
           dataNascimento: form.birthDate,
           email: form.email,
           planoSaude: form.planoSaude,
@@ -182,10 +173,9 @@ export default function Profile() {
           <CircleUserRound size={20} className="ml-auto text-muted-foreground/60" />
         </div>
         <div className="grid gap-5 pt-6 md:grid-cols-2">
-          <Field label="Nome completo" value={form.name} onChange={(v) => set('name', v)} id="name" />
-          <Field label="E-mail" value={form.email} onChange={(v) => set('email', v)} id="email" type="email" />
-          <Field label="CPF" value={form.cpf} onChange={(v) => set('cpf', v)} id="cpf" />
-          <Field label="Data de nascimento" value={form.birthDate} onChange={(v) => set('birthDate', v)} id="birth-date" type="date" />
+          <Field label="Nome completo" value={form.name} onChange={(v) => setForm({...form, name: v})} id="name" />
+          <Field label="E-mail" value={form.email} onChange={(v) => setForm({...form, email: v})} id="email" type="email" />
+          <Field label="Data de nascimento" value={form.birthDate} onChange={(v) => setForm({...form, birthDate: v})} id="birth-date" type="date" />
         </div>
       </section>
 
@@ -209,12 +199,17 @@ export default function Profile() {
                 <div className="relative overflow-hidden rounded-xl border border-border group w-full max-w-[250px] aspect-[1.6/1]">
                   <img src={form.urlCarteirinha} alt="Carteirinha do Convênio" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" onClick={() => cardInputRef.current?.click()} className="flex items-center gap-2 rounded-lg bg-white/20 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-white/30">
-                      <ImagePlus size={13} /> Trocar foto
-                    </button>
-                    <button type="button" onClick={handleRemoveCarteirinha} className="flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-red-700">
-                      <Trash2 size={13} /> Remover
-                    </button>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setZoomCarteirinha(true)} className="flex items-center justify-center rounded-lg bg-white/20 p-2 text-white shadow-sm hover:bg-white/30 transition-colors" title="Ver em tela cheia">
+                        <ZoomIn size={18} />
+                      </button>
+                      <button type="button" onClick={() => cardInputRef.current?.click()} className="flex items-center justify-center rounded-lg bg-white/20 p-2 text-white shadow-sm hover:bg-white/30 transition-colors" title="Trocar foto">
+                        <ImagePlus size={18} />
+                      </button>
+                      <button type="button" onClick={handleRemoveCarteirinha} className="flex items-center justify-center rounded-lg bg-red-600/80 p-2 text-white shadow-sm hover:bg-red-700 transition-colors" title="Remover">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {cardExtracted && (cardExtracted.plano || cardExtracted.numero) && (
@@ -226,28 +221,24 @@ export default function Profile() {
                 )}
               </div>
             ) : (
-              <div className="flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-muted/30 text-muted-foreground">
+              <button type="button" onClick={() => cardInputRef.current?.click()} className="group flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
                 {uploadingCard ? (
                   <>
-                    <LoaderCircle size={24} className="animate-spin text-accent" />
-                    <span className="text-xs font-bold mt-1 text-center px-4">Lendo com IA...</span>
+                    <LoaderCircle size={28} className="animate-spin text-primary" />
+                    <span className="text-xs font-bold mt-1 text-center px-4 text-foreground">Lendo com IA...</span>
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center justify-center gap-5 w-full">
-                       <button type="button" onClick={() => cardInputRef.current?.click()} className="flex flex-col items-center justify-center gap-1.5 hover:text-accent transition-colors flex-1 py-2">
-                         <ImagePlus size={22} />
-                         <span className="text-[10px] font-bold">Arquivo</span>
-                       </button>
-                       <div className="w-[2px] bg-border/60 h-8 rounded-full"></div>
-                       <button type="button" onClick={() => cameraCardRef.current?.click()} className="flex flex-col items-center justify-center gap-1.5 hover:text-accent transition-colors flex-1 py-2">
-                         <Camera size={22} />
-                         <span className="text-[10px] font-bold">Câmera</span>
-                       </button>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-primary group-hover:scale-110 transition-transform">
+                      <Camera size={24} />
+                    </div>
+                    <div className="text-center">
+                      <span className="block text-xs font-extrabold text-foreground">Adicionar Carteirinha</span>
+                      <span className="block text-[10px] text-muted-foreground mt-0.5">Clique para tirar foto ou enviar arquivo</span>
                     </div>
                   </>
                 )}
-              </div>
+              </button>
             )}
             <input type="file" ref={cardInputRef} className="hidden" accept="image/*" onChange={handleUploadCarteirinha} />
             <input type="file" ref={cameraCardRef} className="hidden" accept="image/*" capture="environment" onChange={handleUploadCarteirinha} />
@@ -299,6 +290,16 @@ export default function Profile() {
         )}
       </div>
     </section>
+
+    {zoomCarteirinha && form.urlCarteirinha && createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" onClick={() => setZoomCarteirinha(false)}>
+        <button type="button" onClick={() => setZoomCarteirinha(false)} className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer">
+          <X size={24} />
+        </button>
+        <img src={form.urlCarteirinha} alt="Zoom Carteirinha" className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+      </div>,
+      document.body
+    )}
   </div>;
 }
 

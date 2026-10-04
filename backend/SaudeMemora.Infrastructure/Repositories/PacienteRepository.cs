@@ -23,10 +23,6 @@ public class PacienteRepository : IPacienteRepository
         return await _pacientes.Find(p => p.Email == email).FirstOrDefaultAsync();
     }
 
-    public async Task<Paciente?> GetByCpfAsync(string cpf)
-    {
-        return await _pacientes.Find(p => p.Cpf == cpf).FirstOrDefaultAsync();
-    }
 
     public async Task<Paciente?> GetByIdAsync(string id)
     {

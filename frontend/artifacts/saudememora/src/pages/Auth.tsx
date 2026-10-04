@@ -12,27 +12,13 @@ export default function Auth() {
 
   const [mode, setMode]                 = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm]                 = useState({ name: '', cpf: '', birthDate: '', sex: 'Outro', email: '', password: '' });
+  const [form, setForm]                 = useState({ name: '', birthDate: '', sex: 'Outro', email: '', password: '' });
   const [message, setMessage]           = useState('');
   const [error, setError]               = useState('');
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail]         = useState('');
   const [forgotMessage, setForgotMessage]     = useState('');
 
-  const formatCpf = (cpf: string) => {
-    const digits = cpf.replace(/\D/g, '');
-    if (digits.length <= 11) {
-      return digits
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    }
-    return cpf.slice(0, 14);
-  };
-
-  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, cpf: formatCpf(e.target.value) });
-  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -45,19 +31,19 @@ export default function Auth() {
         if (result?.token) {
           localStorage.setItem('auth_token', result.token);
           setMessage('Acesso confirmado. Bem-vinda de volta.');
-          setTimeout(() => { window.location.href = '/painel'; }, 450);
+          setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
         } else {
           setError('Erro inesperado ao realizar login.');
         }
       } else {
         await registerMutation.mutateAsync({
-          data: { nome: form.name, cpf: form.cpf, dataNascimento: form.birthDate, sexo: form.sex, email: form.email, senha: form.password }
+          data: { nome: form.name, dataNascimento: form.birthDate, sexo: form.sex, email: form.email, senha: form.password }
         });
         const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
         if (result?.token) {
           localStorage.setItem('auth_token', result.token);
           setMessage('Sua conta foi criada. Entrando no painel...');
-          setTimeout(() => { window.location.href = '/painel'; }, 800);
+          setTimeout(() => { window.location.href = '/visao-geral'; }, 800);
         } else {
           setMessage('Sua conta foi criada. Faça login para acessar.');
           setMode('login');
@@ -179,15 +165,8 @@ export default function Auth() {
                   />
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">CPF</span>
-                    <input
-                      required value={form.cpf} onChange={handleCpfChange}
-                      placeholder="000.000.000-00"
-                      className={inputCls}
-                    />
-                  </label>
-                  <label className="block">
+
+                  <label className="block col-span-2">
                     <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">Nascimento</span>
                     <input
                       type="date" required value={form.birthDate}

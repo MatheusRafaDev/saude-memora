@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert } from 'lucide-react';
 import { useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -10,13 +10,11 @@ import { triggerUploadModal } from '@/components/UploadModal';
 const CATEGORY_OPTIONS = [
   { value: 'all', label: 'Todos os tipos' },
   { value: 'exame', label: 'Exames' },
-  { value: 'sangue', label: 'Exame de Sangue' },
-  { value: 'imagem', label: 'Exame de Imagem' },
-  { value: 'receita', label: 'Receita Médica' },
-  { value: 'laudo', label: 'Laudo Médico' },
-  { value: 'atestado', label: 'Atestado' },
-  { value: 'vacina', label: 'Vacinação' },
-  { value: 'encaminhamento', label: 'Encaminhamento' },
+  { value: 'receita', label: 'Receitas' },
+  { value: 'laudo', label: 'Laudos/Relatórios' },
+  { value: 'atestado', label: 'Atestados/Vacinas' },
+  { value: 'encaminhamento', label: 'Encaminhamentos' },
+  { value: 'outro', label: 'Outros' },
 ];
 
 const PERIOD_OPTIONS = [
@@ -30,7 +28,11 @@ export default function Documents() {
   const { toast } = useToast();
   const { data: documentsRaw, isLoading, refetch } = useGetApiDocuments();
   const deleteMutation = useDeleteApiDocumentsId();
-  const documents = (documentsRaw as unknown as any[]) || [];
+  const rawDocuments = (documentsRaw as unknown as any[]) || [];
+  
+  // Local state for optimistic deletes
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const documents = rawDocuments.filter((doc: any) => !deletedIds.has(doc.id));
 
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -39,13 +41,26 @@ export default function Documents() {
   
   const handleConfirmDelete = () => {
     if (!documentToDelete) return;
-    deleteMutation.mutate({ id: documentToDelete }, {
+    const idToDelete = documentToDelete;
+    
+    // Optimistic delete
+    setDeletedIds(prev => new Set(prev).add(idToDelete));
+    setDocumentToDelete(null);
+
+    deleteMutation.mutate({ id: idToDelete }, {
       onSuccess: () => {
         toast({ description: 'Documento apagado com sucesso.' });
-        setDocumentToDelete(null);
         refetch();
       },
-      onError: () => setDocumentToDelete(null)
+      onError: () => {
+        toast({ description: 'Erro ao apagar. Recarregando...' });
+        setDeletedIds(prev => {
+          const next = new Set(prev);
+          next.delete(idToDelete);
+          return next;
+        });
+        refetch();
+      }
     });
   };
   
@@ -103,13 +118,22 @@ export default function Documents() {
           <h1 className="mt-2 text-3xl font-extrabold tracking-[-.06em] md:text-[40px]">Meus Documentos</h1>
           <p className="mt-2 text-sm text-muted-foreground">Tabela unificada com todos os seus exames, receitas e relatórios classificados por IA.</p>
         </div>
-        <button
-          onClick={() => triggerUploadModal()}
-          data-testid="button-documents-upload"
-          className="flex w-fit items-center gap-2 rounded-xl bg-primary px-4 py-3 text-xs font-bold text-primary-foreground hover:-translate-y-0.5 hover:shadow-lg transition-all cursor-pointer"
-        >
-          <Plus size={16} /> Adicionar Documento
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => refetch()}
+            className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer border border-border"
+            title="Recarregar documentos"
+          >
+            <RefreshCcw size={16} />
+          </button>
+          <button
+            onClick={() => triggerUploadModal()}
+            data-testid="button-documents-upload"
+            className="flex w-fit items-center gap-2 rounded-xl bg-primary px-4 py-3 text-xs font-bold text-primary-foreground hover:-translate-y-0.5 hover:shadow-lg transition-all cursor-pointer"
+          >
+            <Plus size={16} /> Adicionar Documento
+          </button>
+        </div>
       </section>
 
       {/* Advanced Filter Section */}
@@ -231,14 +255,23 @@ export default function Documents() {
                     <td className="py-3.5 px-3 font-bold text-foreground">
                       <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
                         <FileText size={16} className="text-accent shrink-0" />
-                        <span className="truncate max-w-[200px]">{doc.titulo || 'Documento sem título'}</span>
+                        <span className="truncate max-w-[200px]">{doc.titulo || ((doc.status === 'pending' || doc.status === 'processing') ? 'Analisando documento...' : 'Documento sem título')}</span>
                       </Link>
                     </td>
                     <td className="py-3.5 px-3">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
-                        
-                        {doc.tipo || 'Documento'}
-                      </span>
+                      {doc.status === 'pending' || doc.status === 'processing' ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-500">
+                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress}%` : 'Na Fila'}
+                        </span>
+                      ) : doc.status === 'failed' ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
+                           <ShieldAlert size={10} /> Falha
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
+                          {doc.tipo || 'Documento'}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground font-medium">
                       {doc.medico || doc.clinica || 'Não informado'}

@@ -7,7 +7,7 @@ import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { useGetApiPacientesMe, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 
 const navItems = [
-  { href: '/painel',     label: 'Visão geral',   icon: Activity  },
+  { href: '/visao-geral',     label: 'Visão geral',   icon: Activity  },
   { href: '/documentos', label: 'Documentos',     icon: FileText  },
   { href: '/anamnese',   label: 'Anamnese',       icon: BookOpen  },
 ];
@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex h-[64px] items-center gap-6">
 
             {/* Logo */}
-            <Link href="/painel" className="flex items-center gap-2.5 shrink-0" data-testid="link-brand">
+            <Link href="/visao-geral" className="flex items-center gap-2.5 shrink-0" data-testid="link-brand">
               <span className="flex items-center justify-center">
                 <LourdesHeartMark className="h-7 w-7" />
               </span>

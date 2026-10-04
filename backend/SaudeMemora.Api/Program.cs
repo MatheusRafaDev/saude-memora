@@ -9,6 +9,7 @@ using SaudeMemora.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Infrastructure.Repositories;
 using SaudeMemora.Infrastructure.Services;
+using SaudeMemora.Api.Workers;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -35,11 +36,13 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
 builder.Services.AddScoped<IFichaMedicaRepository, FichaMedicaRepository>();
+builder.Services.AddScoped<ISistemaLogRepository, SistemaLogRepository>();
 builder.Services.AddScoped<IImageStorageService, CloudinaryStorageService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 
 builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>();
+builder.Services.AddHostedService<DocumentProcessingWorker>();
 
 // CORS
 var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') ?? new[] { "http://localhost:3000", "http://localhost:5173" };
@@ -94,6 +97,22 @@ else
 
 var app = builder.Build();
 
+// Cria índices do MongoDB uma única vez no startup (fila + idempotência).
+// Roda em background para não atrasar o startup se o Mongo estiver inacessível.
+_ = Task.Run(async () =>
+{
+    try
+    {
+        await DocumentRepository.EnsureIndexesAsync(app.Services.GetRequiredService<MongoDbContext>(), app.Lifetime.ApplicationStopping);
+        app.Logger.LogInformation("[Mongo] Índices da coleção Documentos verificados/criados.");
+    }
+    catch (Exception ex)
+    {
+        // Não derruba a API, mas deixa o problema visível nos logs
+        app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Documentos");
+    }
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -121,17 +140,11 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
         return Results.BadRequest(new[] { "Email jÃ¡ cadastrado." });
     }
 
-    // Verifica se CPF jÃ¡ existe
-    var existingCpf = await repo.GetByCpfAsync(dto.Cpf);
-    if (existingCpf != null)
-    {
-        return Results.BadRequest(new[] { "CPF jÃ¡ cadastrado." });
-    }
+
 
     var paciente = new Paciente
     {
         Nome = dto.Nome,
-        Cpf = dto.Cpf,
         DataNascimento = dto.DataNascimento,
         Sexo = dto.Sexo,
         Email = dto.Email,
@@ -234,7 +247,6 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
         paciente.Id,
         paciente.Nome,
         paciente.Email,
-        paciente.Cpf,
         paciente.DataNascimento,
         Idade = idade,
         paciente.Sexo,
@@ -249,7 +261,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
     return Results.Ok(result);
 }).RequireAuthorization();
 
-// Atualiza informações do paciente autenticado (Nome, Cpf, DataNascimento, Email)
+// Atualiza informações do paciente autenticado (Nome, DataNascimento, Email)
 app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -259,7 +271,6 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     if (paciente == null) return Results.NotFound();
 
     if (!string.IsNullOrWhiteSpace(dto.Nome)) paciente.Nome = dto.Nome;
-    if (!string.IsNullOrWhiteSpace(dto.Cpf)) paciente.Cpf = dto.Cpf;
     if (!string.IsNullOrWhiteSpace(dto.DataNascimento)) paciente.DataNascimento = dto.DataNascimento;
     if (!string.IsNullOrWhiteSpace(dto.Email)) paciente.Email = dto.Email;
     if (dto.PlanoSaude != null) paciente.PlanoSaude = dto.PlanoSaude;
@@ -382,7 +393,14 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
     return Results.Ok(new { Message = "Conta excluÃ­da com sucesso." });
 }).RequireAuthorization();
 
-// â”€â”€â”€ Ficha MÃ©dica Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Logs Endpoints ──────────────────────────────────────────
+app.MapGet("/api/logs", async (ISistemaLogRepository logRepo) =>
+{
+    var logs = await logRepo.ObterLogsAsync(50);
+    return Results.Ok(logs);
+});
+
+// ─── Ficha Médica Endpoints ──────────────────────────────────────
 
 app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
@@ -437,76 +455,118 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
 
 // â”€â”€â”€ Document Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Processa upload de novo documento com OCR
-app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal user, IDocumentRepository docRepo, IImageStorageService storage, IOcrAiService ocr, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+// Recebe upload de novo documento e o coloca na fila de processamento (OCR + IA rodam no worker)
+app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal user, IDocumentRepository docRepo, IImageStorageService storage, IDistributedCache cache, ILogger<Program> logger) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
     if (!context.Request.HasFormContentType)
-        return Results.BadRequest("Formato invÃ¡lido. Esperado multipart/form-data.");
+        return Results.BadRequest("Formato inválido. Esperado multipart/form-data.");
 
-    var form = await context.Request.ReadFormAsync();
-    var files = form.Files;
+    var ct = context.RequestAborted;
+    var form = await context.Request.ReadFormAsync(ct);
+    var files = form.Files.Where(f => f.Length > 0).ToList();
     var docTipo = form["documentType"].ToString();
     if (string.IsNullOrWhiteSpace(docTipo)) docTipo = form["type"].ToString();
     if (string.IsNullOrWhiteSpace(docTipo)) docTipo = "exame"; // fallback padrão
 
-    var urlImagens = new List<string>();
-    var idPublicos = new List<string>();
+    if (files.Count == 0) return Results.BadRequest("Nenhum arquivo válido.");
+    if (files.Count > UploadHelpers.MaxFilesPerUpload)
+        return Results.BadRequest($"Máximo de {UploadHelpers.MaxFilesPerUpload} arquivos por documento.");
+    if (files.Any(f => f.Length > UploadHelpers.MaxFileSizeBytes))
+        return Results.BadRequest("Cada arquivo deve ter no máximo 20 MB.");
 
-    // 1. Upload pro Cloudinary
-    foreach (var file in files)
+    // 1. Hash SHA-256 do conteúdo (idempotência: mesmo arquivo = mesmo documento)
+    var fileHash = await UploadHelpers.ComputeUploadHashAsync(files, ct);
+
+    // 2. Atalho de idempotência: já existe? Não gasta Cloudinary/OCR/IA de novo.
+    var existingDoc = await docRepo.GetByHashAsync(userId, fileHash);
+    if (existingDoc != null)
     {
-        if (file.Length == 0) continue;
-        using var stream = file.OpenReadStream();
-        var (UrlImagem, IdPublico) = await storage.UploadImageAsync(stream, file.FileName);
-        urlImagens.Add(UrlImagem);
-        idPublicos.Add(IdPublico);
+        // Se o processamento anterior falhou, reenviar o mesmo arquivo funciona como "tentar novamente"
+        if (existingDoc.Status == "failed" && await docRepo.RequeueFailedAsync(existingDoc.Id!, userId))
+        {
+            await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
+            return Results.Accepted($"/api/documents/{existingDoc.Id}",
+                new { id = existingDoc.Id, status = "pending", progress = 25, duplicate = true, message = "Documento recolocado na fila de processamento." });
+        }
+
+        return Results.Ok(new { id = existingDoc.Id, status = existingDoc.Status, progress = existingDoc.Progress, duplicate = true, message = "Documento já existente." });
     }
 
-    if (urlImagens.Count == 0) return Results.BadRequest("Nenhum arquivo vÃ¡lido.");
+    // 3. Upload pro Cloudinary (com limpeza se qualquer página falhar, para não deixar órfãos)
+    var uploaded = new List<(string imageUrl, string publicId)>();
+    try
+    {
+        foreach (var file in files)
+        {
+            await using var stream = file.OpenReadStream();
+            uploaded.Add(await storage.UploadImageAsync(stream, file.FileName));
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "[Upload] Falha no Cloudinary para o usuário {UserId}. Limpando {Count} arquivo(s) já enviados.", userId, uploaded.Count);
+        await UploadHelpers.DeleteUploadedAsync(storage, uploaded.Select(u => u.publicId), logger);
+        return Results.Problem("Falha ao armazenar os arquivos. Tente novamente.", statusCode: StatusCodes.Status502BadGateway);
+    }
 
-    // 2. ExtraÃ§Ã£o de Dados via OCR e IA (suportando mÃºltiplas pÃ¡ginas)
-    var extractedData = await ocr.ExtractMultipleDocumentsDataAsync(urlImagens, docTipo, context.RequestAborted);
-
-    // 3. Salvar no MongoDB
+    // 4. Salvar no MongoDB como Pending (insert atômico protegido pelo índice único)
     var docRecord = new RegistroDocumento
     {
         PacienteId = userId,
-        UrlImagens = urlImagens,
-        IdPublicos = idPublicos,
-        Titulo = !string.IsNullOrWhiteSpace(extractedData.Titulo) ? extractedData.Titulo : "Documento Digitalizado",
-        Tipo = !string.IsNullOrWhiteSpace(extractedData.TipoIdentificado) ? extractedData.TipoIdentificado.ToLower() : (!string.IsNullOrWhiteSpace(extractedData.Tipo) ? extractedData.Tipo.ToLower() : docTipo),
-        Status = "pronto",
-        Medico = extractedData.Medico,
-        Crm = extractedData.Crm,
-        Clinica = extractedData.Clinica,
-        Data = extractedData.Data,
-        Resumo = extractedData.Resumo,
-        Diagnostico = extractedData.Diagnostico,
-        TextoExtraido = extractedData.TextoExtraido,
-        CriadoEm = DateTime.UtcNow,
-        Medicamentos = extractedData.Medicamentos.Select(m => new MedicamentoDocumento 
-        { 
-            Nome = m.Nome, 
-            Dosagem = m.Dosagem,
-            Horario = m.Horario
-        }).ToList(),
-        ConteudoIndentado = extractedData.ConteudoIndentado.Select(l => new LinhaIndentadaDocumento
-        {
-            Tipo = l.Tipo,
-            Texto = l.Texto,
-            Chave = l.Chave,
-            Valor = l.Valor
-        }).ToList()
+        FileHash = fileHash,
+        UrlImagens = uploaded.Select(u => u.imageUrl).ToList(),
+        IdPublicos = uploaded.Select(u => u.publicId).ToList(),
+        Titulo = "Documento em Processamento",
+        Tipo = docTipo,
+        Status = "pending",
+        Progress = 25, // 25% = Arquivo recebido e no Cloudinary
+        CriadoEm = DateTime.UtcNow
     };
 
-    var createdDoc = await docRepo.CreateAsync(docRecord);
-    await cache.RemoveAsync($"documents_v3_{userId}");
-    await cache.RemoveAsync($"documents_count_v3_{userId}");
+    RegistroDocumento savedDoc;
+    bool created;
+    try
+    {
+        (savedDoc, created) = await docRepo.CreateOrGetByHashAsync(docRecord);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "[Upload] Falha ao salvar documento no Mongo. Limpando arquivos do Cloudinary.");
+        await UploadHelpers.DeleteUploadedAsync(storage, docRecord.IdPublicos, logger);
+        return Results.Problem("Falha ao registrar o documento. Tente novamente.", statusCode: StatusCodes.Status500InternalServerError);
+    }
 
-    return Results.Ok(new { id = createdDoc.Id, message = "Documento processado com sucesso!" });
+    if (!created)
+    {
+        // Request concorrente (ex: duplo clique) inseriu primeiro: descarta nossas imagens duplicadas
+        await UploadHelpers.DeleteUploadedAsync(storage, docRecord.IdPublicos, logger);
+        return Results.Ok(new { id = savedDoc.Id, status = savedDoc.Status, progress = savedDoc.Progress, duplicate = true, message = "Documento já existente." });
+    }
+
+    await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
+
+    return Results.Accepted($"/api/documents/{savedDoc.Id}",
+        new { id = savedDoc.Id, status = savedDoc.Status, progress = savedDoc.Progress, duplicate = false, message = "Documento recebido na fila de processamento!" });
+}).RequireAuthorization();
+
+// Recoloca na fila um documento cujo processamento falhou (botão "Tentar novamente")
+app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDistributedCache cache) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Results.Unauthorized();
+
+    if (!await repo.RequeueFailedAsync(id, userId))
+    {
+        var doc = await repo.GetByIdAsync(id);
+        if (doc == null || doc.PacienteId != userId) return Results.NotFound();
+        return Results.Conflict(new { id, status = doc.Status, message = "Apenas documentos com falha podem ser reprocessados." });
+    }
+
+    await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
+    return Results.Accepted($"/api/documents/{id}", new { id, status = "pending", progress = 25 });
 }).RequireAuthorization();
 
 
@@ -536,6 +596,8 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         diagnostico = d.Diagnostico,
         medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
         urlImagens = d.UrlImagens,
+        progress = d.Progress,
+        errorMessage = d.ErrorMessage,
         criadoEm = d.CriadoEm
     }).OrderByDescending(d => d.criadoEm).ToList();
 
@@ -591,7 +653,8 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
     if (userId == null) return Results.Unauthorized();
 
     var doc = await repo.GetByIdAsync(id);
-    if (doc == null || doc.PacienteId != userId) return Results.NotFound();
+    if (doc == null) return Results.NotFound(new { error = "Doc is null", idRequested = id });
+    if (doc.PacienteId != userId) return Results.NotFound(new { error = "User mismatch", docUser = doc.PacienteId, reqUser = userId });
 
     return Results.Ok(new
     {
@@ -609,6 +672,8 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         urlImagens = doc.UrlImagens,
         textoExtraido = doc.TextoExtraido,
         conteudoIndentado = doc.ConteudoIndentado,
+        progress = doc.Progress,
+        errorMessage = doc.ErrorMessage,
         criadoEm = doc.CriadoEm
     });
 }).RequireAuthorization();
@@ -631,7 +696,7 @@ app.MapPut("/api/documents/{id}", async (string id, [Microsoft.AspNetCore.Mvc.Fr
     doc.Crm = updateDto.Crm ?? doc.Crm;
 
     await repo.UpdateAsync(doc);
-    await cache.RemoveAsync($"documents_{userId}");
+    await cache.RemoveAsync($"documents_v3_{userId}");
     return Results.Ok(new { message = "Documento atualizado com sucesso." });
 }).RequireAuthorization();
 
@@ -660,8 +725,8 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     }
 
     await repo.DeleteAsync(id);
-    await cache.RemoveAsync($"documents_v2_{userId}");
-    await cache.RemoveAsync($"documents_count_v2_{userId}");
+    await cache.RemoveAsync($"documents_v3_{userId}");
+    await cache.RemoveAsync($"documents_count_v3_{userId}");
     return Results.Ok(new { message = "Documento deletado com sucesso." });
 }).RequireAuthorization();
 
@@ -751,7 +816,7 @@ public record PerfilMedicoDto(
 
 public record ContatoDto(string? Telefone, string? Endereco);
 
-public record PerfilUpdateDto(string? Nome, string? Cpf, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha);
+public record PerfilUpdateDto(string? Nome, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha);
 
 public class DocumentUpdateDto
 {
@@ -762,5 +827,45 @@ public class DocumentUpdateDto
     public string? Resumo { get; set; }
     public string? Diagnostico { get; set; }
     public string? Crm { get; set; }
+}
+
+// ─── Helpers de Upload ──────────────────────────────────────────────────────
+
+static class UploadHelpers
+{
+    public const int MaxFilesPerUpload = 10;
+    public const long MaxFileSizeBytes = 20L * 1024 * 1024; // 20 MB (mesmo limite exibido no frontend)
+
+    /// <summary>
+    /// SHA-256 de cada arquivo, combinados em ordem num SHA-256 final.
+    /// Hash por arquivo evita ambiguidade de concatenação; a ordem importa (são páginas).
+    /// </summary>
+    public static async Task<string> ComputeUploadHashAsync(IReadOnlyList<IFormFile> files, CancellationToken ct)
+    {
+        using var combined = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        foreach (var file in files)
+        {
+            await using var stream = file.OpenReadStream();
+            var fileDigest = await System.Security.Cryptography.SHA256.HashDataAsync(stream, ct);
+            combined.AppendData(fileDigest);
+        }
+        return Convert.ToHexString(combined.GetHashAndReset()).ToLowerInvariant();
+    }
+
+    /// <summary>Remove imagens do Cloudinary sem propagar exceções (best-effort).</summary>
+    public static async Task DeleteUploadedAsync(IImageStorageService storage, IEnumerable<string> publicIds, ILogger logger)
+    {
+        foreach (var publicId in publicIds.Where(p => !string.IsNullOrWhiteSpace(p)))
+        {
+            try { await storage.DeleteImageAsync(publicId); }
+            catch (Exception ex) { logger.LogWarning(ex, "[Cloudinary] Não foi possível remover {PublicId}", publicId); }
+        }
+    }
+
+    public static async Task InvalidateDocumentListCachesAsync(IDistributedCache cache, string userId)
+    {
+        await cache.RemoveAsync($"documents_v3_{userId}");
+        await cache.RemoveAsync($"documents_count_v3_{userId}");
+    }
 }
 

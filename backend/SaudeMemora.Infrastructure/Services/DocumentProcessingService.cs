@@ -261,6 +261,7 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
 
         // ── Shared JSON schema description ────────────────────────────────
         var jsonSchema = @"{
+  ""documentoValido"": ""boolean (true se a imagem/texto for um exame, atestado, receita ou documento médico real. false se for lixo, foto aleatória sem sentido, paisagem, etc)"",
   ""tipoIdentificado"": ""string"",
   ""titulo"": ""string"",
   ""medico"": ""string"",
@@ -308,6 +309,9 @@ Sua tarefa é extrair com PRECISÃO MÁXIMA todos os dados de uma receita médic
 ## Texto do documento:
 {unifiedText}
 
+## REGRAS GERAIS DE FORMATAÇÃO
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
+
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
         }
@@ -337,6 +341,10 @@ Sua tarefa é extrair com PRECISÃO as informações do atestado abaixo.
 
 ## Texto do documento:
 {unifiedText}
+
+## REGRAS GERAIS DE FORMATAÇÃO E VALIDAÇÃO
+- ""documentoValido"": Se a imagem for claramente lixo (foto de paisagem, meme, texto sem nenhuma relação com saúde, etc), retorne false. Se for um documento médico ou de saúde legítimo, retorne true.
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
 
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
@@ -372,6 +380,10 @@ Sua tarefa é extrair com PRECISÃO CLÍNICA as informações do laudo/relatóri
 ## Texto do documento:
 {unifiedText}
 
+## REGRAS GERAIS DE FORMATAÇÃO E VALIDAÇÃO
+- ""documentoValido"": Se a imagem for claramente lixo (foto de paisagem, meme, texto sem nenhuma relação com saúde, etc), retorne false. Se for um documento médico ou de saúde legítimo, retorne true.
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
+
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
         }
@@ -406,6 +418,10 @@ Sua tarefa é extrair com PRECISÃO os dados do exame laboratorial abaixo.
 ## Texto do documento:
 {unifiedText}
 
+## REGRAS GERAIS DE FORMATAÇÃO E VALIDAÇÃO
+- ""documentoValido"": Se a imagem for claramente lixo (foto de paisagem, meme, texto sem nenhuma relação com saúde, etc), retorne false. Se for um documento médico ou de saúde legítimo, retorne true.
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
+
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
         }
@@ -436,6 +452,10 @@ Sua tarefa é extrair com PRECISÃO os dados do exame de imagem abaixo.
 ## Texto do documento:
 {unifiedText}
 
+## REGRAS GERAIS DE FORMATAÇÃO E VALIDAÇÃO
+- ""documentoValido"": Se a imagem for claramente lixo (foto de paisagem, meme, texto sem nenhuma relação com saúde, etc), retorne false. Se for um documento médico ou de saúde legítimo, retorne true.
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
+
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
         }
@@ -461,6 +481,10 @@ Sua tarefa é extrair com PRECISÃO os dados do encaminhamento abaixo.
 
 ## Texto do documento:
 {unifiedText}
+
+## REGRAS GERAIS DE FORMATAÇÃO E VALIDAÇÃO
+- ""documentoValido"": Se a imagem for claramente lixo (foto de paisagem, meme, texto sem nenhuma relação com saúde, etc), retorne false. Se for um documento médico ou de saúde legítimo, retorne true.
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
 
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
@@ -490,6 +514,9 @@ Sua tarefa é extrair com PRECISÃO os dados do documento de vacinação abaixo.
 
 ## Texto do documento:
 {unifiedText}
+
+## REGRAS GERAIS DE FORMATAÇÃO
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
 
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
@@ -522,6 +549,9 @@ O usuário classificou como: ""{documentType}"".
 
 ## Texto do documento:
 {unifiedText}
+
+## REGRAS GERAIS DE FORMATAÇÃO
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
 
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
