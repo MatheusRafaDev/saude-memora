@@ -45,15 +45,25 @@ builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>();
 builder.Services.AddHostedService<DocumentProcessingWorker>();
 
 // CORS
-var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') ?? new[] { "http://localhost:3000", "http://localhost:5173" };
+var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
     {
-        policy.WithOrigins(corsOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        if (!string.IsNullOrEmpty(corsOriginsStr))
+        {
+            policy.WithOrigins(corsOriginsStr.Split(','))
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            // Fallback para desenvolvimento e Vercel sem configuração
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 

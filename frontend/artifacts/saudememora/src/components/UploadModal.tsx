@@ -135,7 +135,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             setBackendProgress(100);
             setProcessingStep(PROCESSING_STEPS.length - 1);
             setTimeout(() => setStep('done'), 600);
-            if (onSuccess) onSuccess(currentId);
+            if (onSuccess && currentId) onSuccess(currentId as string);
           } else {
             // pendente ou processando
             const currentProgress = doc.progress || 0;
@@ -225,9 +225,10 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               )}
             </div>
 
-            <button type="button" onClick={() => fileRef.current?.click()}
+            <div 
+              onClick={() => fileRef.current?.click()}
               onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-              className={`group relative flex min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all cursor-pointer ${isDragging ? 'border-primary bg-primary/10 scale-[1.02]' : 'border-accent/40 bg-secondary/30 hover:border-accent hover:bg-secondary/60'}`}
+              className={`group relative flex min-h-[220px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-all cursor-pointer overflow-hidden ${isDragging ? 'border-primary bg-primary/10 scale-[1.02]' : 'border-primary/20 bg-slate-50/50 dark:bg-slate-900/30 hover:border-primary/40 hover:bg-primary/5'}`}
             >
               <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg" className="hidden"
                 onChange={e => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
@@ -236,19 +237,19 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
               {files.length > 0 ? (
                 <div className="flex flex-col items-center justify-center w-full p-4">
-                  <div className="relative flex items-center justify-center w-full max-w-[200px] min-h-[120px]">
+                  <div className="relative flex items-center justify-center w-full max-w-[220px] min-h-[140px]">
                     {files.length > 1 && (
                       <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentFileIndex(prev => Math.max(0, prev - 1)); }} disabled={currentFileIndex === 0}
-                        className="absolute -left-10 sm:-left-12 z-10 p-2 rounded-full bg-background border border-border shadow-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted text-foreground cursor-pointer">
-                        <ChevronLeft size={18} />
+                        className="absolute -left-10 sm:-left-12 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted text-foreground cursor-pointer transition-transform hover:scale-105">
+                        <ChevronLeft size={16} />
                       </button>
                     )}
 
-                    <div className="relative flex flex-col items-center">
+                    <div className="relative flex flex-col items-center group/img">
                       {files[currentFileIndex].type.startsWith('image/') ? (
-                        <img src={previewUrls[currentFileIndex]} alt="Preview" className="h-32 w-auto max-w-[180px] rounded-xl object-contain shadow-md border border-border bg-white" />
+                        <img src={previewUrls[currentFileIndex]} alt="Preview" className="h-36 w-auto max-w-[200px] rounded-2xl object-cover shadow-md border border-border/50 bg-white" />
                       ) : (
-                        <div className="flex h-32 w-28 items-center justify-center rounded-xl bg-primary text-white shadow-md border border-primary/20"><FileText size={36} /></div>
+                        <div className="flex h-36 w-28 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/80 to-primary text-white shadow-md border border-primary/20"><FileText size={40} /></div>
                       )}
                       
                       <button type="button" onClick={e => {
@@ -259,15 +260,15 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                           return next;
                         });
                       }}
-                        className="absolute -top-3 -right-3 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/90 transition-colors cursor-pointer">
+                        className="absolute -top-3 -right-3 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/90 transition-all hover:scale-110 cursor-pointer opacity-0 group-hover/img:opacity-100">
                         <X size={14} />
                       </button>
                     </div>
 
                     {files.length > 1 && (
                       <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentFileIndex(prev => Math.min(files.length - 1, prev + 1)); }} disabled={currentFileIndex === files.length - 1}
-                        className="absolute -right-10 sm:-right-12 z-10 p-2 rounded-full bg-background border border-border shadow-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted text-foreground cursor-pointer">
-                        <ChevronRight size={18} />
+                        className="absolute -right-10 sm:-right-12 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-border shadow-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted text-foreground cursor-pointer transition-transform hover:scale-105">
+                        <ChevronRight size={16} />
                       </button>
                     )}
                   </div>
@@ -275,40 +276,45 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   {files.length > 1 && (
                     <div className="mt-5 flex gap-1.5 flex-wrap justify-center max-w-[80%]">
                       {files.map((_, i) => (
-                        <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentFileIndex ? 'w-5 bg-primary' : 'w-1.5 bg-muted-foreground/30'}`} />
+                        <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentFileIndex ? 'w-5 bg-primary' : 'w-1.5 bg-primary/20'}`} />
                       ))}
                     </div>
                   )}
 
-                  <span className="mt-4 text-xs font-bold text-primary">{files.length} arquivo(s) selecionado(s)</span>
-                  <span className="text-[10px] text-muted-foreground mt-0.5">{(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB total</span>
+                  <div className="mt-5 text-center">
+                    <span className="block text-sm font-bold text-foreground">{files.length} arquivo(s) selecionado(s)</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">{(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB no total</span>
+                  </div>
                 </div>
               ) : (
-                <>
-                  <span className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-xs transition-transform ${isDragging ? 'bg-primary text-white scale-110' : 'bg-card text-accent group-hover:-translate-y-1'}`}>
-                    <UploadCloud size={24} />
+                <div className="flex flex-col items-center p-6 w-full pointer-events-none">
+                  <span className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-border/50 text-primary transition-transform duration-300 ${isDragging ? 'scale-110 shadow-md' : 'group-hover:-translate-y-1 group-hover:shadow-md'}`}>
+                    <UploadCloud size={26} strokeWidth={2.5} />
                   </span>
-                  <h3 className="mt-2 text-sm font-extrabold text-foreground">{isDragging ? 'Solte aqui!' : 'Arraste ou clique para selecionar'}</h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">PDF, JPG ou PNG · até 20 MB</p>
-                  <p className="mt-1 text-[10px] text-muted-foreground/60">Ou cole com Ctrl+V</p>
-                  <div className="mt-4 flex gap-3">
-                    <span className="rounded-lg border border-border bg-card px-3 py-2 text-[11px] font-bold text-primary shadow-sm hover:bg-muted">Procurar arquivos</span>
-                    <span onClick={e => { e.stopPropagation(); cameraRef.current?.click(); }}
-                      className="rounded-lg border border-border bg-accent text-accent-foreground px-3 py-2 text-[11px] font-bold flex items-center gap-1.5 hover:bg-accent/90 shadow-sm cursor-pointer">
-                      <ImagePlus size={13} /> Usar Câmera
-                    </span>
+                  <h3 className="mt-4 text-base font-extrabold text-foreground tracking-tight">{isDragging ? 'Pode soltar aqui!' : 'Arraste ou clique para selecionar'}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground font-medium">PDF, JPG ou PNG (até 20 MB)</p>
+                  
+                  <div className="mt-6 flex flex-wrap justify-center gap-3 w-full pointer-events-auto">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+                      className="rounded-xl border border-border bg-white dark:bg-slate-800 px-4 py-2.5 text-xs font-bold text-foreground shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all flex items-center gap-2">
+                      <FileText size={14} className="text-primary" /> Procurar
+                    </button>
+                    <button type="button" onClick={e => { e.stopPropagation(); cameraRef.current?.click(); }}
+                      className="rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-xs font-bold flex items-center gap-2 hover:bg-primary/90 shadow-sm transition-all">
+                      <ImagePlus size={14} /> Câmera
+                    </button>
                   </div>
-                </>
+                </div>
               )}
-            </button>
+            </div>
 
             {error && <p className="rounded-xl bg-destructive/10 border border-destructive/30 px-3 py-2 text-center text-xs font-bold text-destructive">{error}</p>}
 
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={handleClose} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Cancelar</button>
+            <div className="flex items-center gap-3 pt-2">
+              <button type="button" onClick={handleClose} className="flex-1 h-12 rounded-2xl border border-border bg-white dark:bg-slate-800 text-sm font-bold text-foreground hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all shadow-sm cursor-pointer">Cancelar</button>
               <button type="button" onClick={startUpload} disabled={files.length === 0}
-                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-all shadow-sm cursor-pointer">
-                Processar com IA <Sparkles size={14} />
+                className="flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 hover:shadow-md transition-all shadow-sm cursor-pointer">
+                Processar com IA <Sparkles size={16} />
               </button>
             </div>
           </div>
