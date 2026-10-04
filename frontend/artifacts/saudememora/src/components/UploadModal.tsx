@@ -27,7 +27,12 @@ const PROCESSING_STEPS = [
   'Salvando na sua ficha...',
 ];
 
+import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
+
 export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSuccess }: UploadModalProps) {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -100,41 +105,37 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   const startUpload = async () => {
     if (!files.length) return;
-    setStep('processing'); setError(''); setBackendProgress(0); setProcessingStep(0);
+    
+    const formData = new FormData();
+    files.forEach(f => formData.append('file', f));
+    if (docType && docType !== 'outro') formData.append('documentType', docType);
+    
+    // Mostra feedback imediato, fecha e navega
+    toast({ description: 'Iniciando upload e processamento...' });
+    handleClose();
+    setLocation('/documentos');
 
     try {
       let currentId = resultId;
 
       if (currentId) {
-        // Se já temos um resultId, significa que o usuário está tentando novamente após uma falha
         await customFetch(`/api/documents/${currentId}/retry`, { method: 'POST' });
       } else {
-        const formData = new FormData();
-        files.forEach(f => formData.append('file', f));
-        if (docType && docType !== 'outro') formData.append('documentType', docType);
-
-        // 1. Inicia o upload
         const res = (await customFetch('/api/documents/upload', { method: 'POST', body: formData as any })) as any;
         if (!res || !res.id) throw new Error('ID não retornado.');
-        
-        currentId = res.id;
-        setResultId(currentId);
       }
 
-      // 2. Redireciona imediatamente para a tela de documentos
-      handleClose();
-      window.location.href = '/documentos';
-
+      // Notifica a tela de documentos para atualizar a lista
+      window.dispatchEvent(new CustomEvent('document-uploaded'));
     } catch (err) {
       console.error('Erro no upload:', err);
-      setError('Falha ao iniciar o upload. Verifique sua conexão e tente novamente.');
-      setStep('file');
+      toast({ description: 'Falha ao enviar documento.', variant: 'destructive' });
     }
   };
 
   const finishAndNavigate = () => {
     handleClose();
-    window.location.href = resultId ? `/documentos/${resultId}` : '/documentos';
+    setLocation(resultId ? `/documentos/${resultId}` : '/documentos');
   };
 
   const selectedType = DOC_TYPES.find(t => t.value === docType);

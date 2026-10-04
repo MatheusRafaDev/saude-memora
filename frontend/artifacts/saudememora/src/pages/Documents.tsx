@@ -46,6 +46,12 @@ export default function Documents() {
     };
   }, [hasProcessing, refetch]);
 
+  useEffect(() => {
+    const handler = () => refetch();
+    window.addEventListener('document-uploaded', handler);
+    return () => window.removeEventListener('document-uploaded', handler);
+  }, [refetch]);
+
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
