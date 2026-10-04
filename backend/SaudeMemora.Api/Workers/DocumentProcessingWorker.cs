@@ -5,6 +5,7 @@ using SaudeMemora.Domain.Interfaces;
 using SaudeMemora.Application.Interfaces;
 using SaudeMemora.Domain.Entities;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace SaudeMemora.Api.Workers;
 
@@ -58,6 +59,7 @@ public class DocumentProcessingWorker : BackgroundService
         var repo = scope.ServiceProvider.GetRequiredService<IDocumentRepository>();
         var logRepo = scope.ServiceProvider.GetRequiredService<ISistemaLogRepository>();
         var ocrAiService = scope.ServiceProvider.GetRequiredService<IOcrAiService>();
+        var cache = scope.ServiceProvider.GetRequiredService<IDistributedCache>();
 
         // Busca o próximo documento e coloca um lock de 10 minutos (tempo generoso para IA/OCR processar)
         var lockDuration = TimeSpan.FromMinutes(10);
@@ -89,12 +91,14 @@ public class DocumentProcessingWorker : BackgroundService
             // Atualiza o progresso inicial (já em 'processing' pelo lock)
             doc.Progress = 40; // Exemplo: Iniciando OCR
             await repo.UpdateAsync(doc);
+            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
 
             // Chamada para o Serviço de OCR e IA (que faz OCR.space + Gemini/Groq)
             var extractedData = await ocrAiService.ExtractMultipleDocumentsDataAsync(doc.UrlImagens, doc.Tipo, stoppingToken);
 
             doc.Progress = 90; // Exemplo: OCR e IA finalizados
             await repo.UpdateAsync(doc);
+            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
 
             if (!extractedData.DocumentoValido)
             {
@@ -150,6 +154,8 @@ public class DocumentProcessingWorker : BackgroundService
             doc.LockedUntil = null;
             
             await repo.UpdateAsync(doc);
+            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
 
             _logger.LogInformation("Documento {DocId} processado com SUCESSO.", doc.Id);
             
@@ -195,6 +201,8 @@ public class DocumentProcessingWorker : BackgroundService
             doc.LockedUntil = null; // Libera o lock
             
             await repo.UpdateAsync(doc);
+            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
 
             return true; // Retorna true porque ele de fato pegou um item da fila (mesmo que com erro)
         }
