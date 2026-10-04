@@ -53,14 +53,19 @@ builder.Services.AddCors(options =>
     {
         if (!string.IsNullOrEmpty(corsOriginsStr))
         {
-            policy.WithOrigins(corsOriginsStr.Split(','))
+            var origins = corsOriginsStr
+                .Split(',')
+                .Select(o => o.Trim().TrimEnd('/'))
+                .ToArray();
+
+            policy.WithOrigins(origins)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         }
         else
         {
             // Fallback para desenvolvimento e Vercel sem configuração
-            policy.AllowAnyOrigin()
+            policy.SetIsOriginAllowed(_ => true)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         }
