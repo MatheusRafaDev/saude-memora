@@ -273,10 +273,17 @@ export default function Documents() {
                 {filtered.map((doc: any) => (
                   <tr key={doc.id} className="hover:bg-muted/40 transition-colors group">
                     <td className="py-3.5 px-3 font-bold text-foreground">
-                      <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
-                        <FileText size={16} className="text-accent shrink-0" />
-                        <span className="truncate max-w-[200px]">{doc.titulo || ((doc.status === 'pending' || doc.status === 'processing') ? 'Analisando documento...' : 'Documento sem título')}</span>
-                      </Link>
+                      {doc.status === 'pending' || doc.status === 'processing' ? (
+                        <div className="flex items-center gap-2 text-muted-foreground cursor-not-allowed opacity-80" title="Aguarde o processamento concluir">
+                          <FileText size={16} className="shrink-0" />
+                          <span className="truncate max-w-[200px]">Analisando documento...</span>
+                        </div>
+                      ) : (
+                        <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
+                          <FileText size={16} className="text-accent shrink-0" />
+                          <span className="truncate max-w-[200px]">{doc.titulo || 'Documento sem título'}</span>
+                        </Link>
+                      )}
                     </td>
                     <td className="py-3.5 px-3">
                       <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
@@ -309,9 +316,15 @@ export default function Documents() {
                     </td>
                     <td className="py-3.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Link href={`/documentos/${doc.id}`} className="inline-flex items-center gap-1 font-bold text-primary hover:text-accent text-xs mr-1">
-                          Ver <ChevronRight size={14} />
-                        </Link>
+                        {doc.status === 'pending' || doc.status === 'processing' ? (
+                          <span className="inline-flex items-center gap-1 font-bold text-muted-foreground opacity-50 cursor-not-allowed text-xs mr-1" title="Aguarde concluir">
+                            Ver <ChevronRight size={14} />
+                          </span>
+                        ) : (
+                          <Link href={`/documentos/${doc.id}`} className="inline-flex items-center gap-1 font-bold text-primary hover:text-accent text-xs mr-1">
+                            Ver <ChevronRight size={14} />
+                          </Link>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground">

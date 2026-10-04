@@ -339,27 +339,50 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-1.5">
                 {recentDocs.map((doc: any) => (
-                  <Link
-                    key={doc.id}
-                    href={`/documentos/${doc.id}`}
-                    className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/20 hover:bg-muted/50 px-3 py-2.5 transition-colors group"
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
-                      <FileText size={12} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                        {doc.titulo || ((doc.status === 'pending' || doc.status === 'processing') ? 'Analisando documento...' : 'Documento sem título')}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {statusBadge(doc)}
-                        {doc.data && (
-                          <span className="text-[10px] text-muted-foreground font-mono">{doc.data}</span>
-                        )}
+                  doc.status === 'pending' || doc.status === 'processing' ? (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/10 opacity-70 cursor-not-allowed px-3 py-2.5"
+                      title="Aguarde o processamento concluir"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+                        <LoaderCircle size={12} className="animate-spin" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-muted-foreground truncate">
+                          Analisando documento...
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {statusBadge(doc)}
+                          {doc.data && (
+                            <span className="text-[10px] text-muted-foreground font-mono">{doc.data}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <ChevronRight size={13} className="text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
-                  </Link>
+                  ) : (
+                    <Link
+                      key={doc.id}
+                      href={`/documentos/${doc.id}`}
+                      className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/20 hover:bg-muted/50 px-3 py-2.5 transition-colors group"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
+                        <FileText size={12} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                          {doc.titulo || 'Documento sem título'}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {statusBadge(doc)}
+                          {doc.data && (
+                            <span className="text-[10px] text-muted-foreground font-mono">{doc.data}</span>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight size={13} className="text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                    </Link>
+                  )
                 ))}
                 {docs.length > 4 && (
                   <Link
