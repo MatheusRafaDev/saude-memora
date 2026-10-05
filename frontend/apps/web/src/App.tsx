@@ -39,8 +39,7 @@ const queryClient = new QueryClient({
 });
 
 
-import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/axios';
+import { useGetApiPacientesMe } from '@workspace/api-client-react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const token = localStorage.getItem('auth_token');
@@ -51,11 +50,11 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   // Validate user constantly
-  const { isLoading, isError } = useQuery({
-    queryKey: ['validateUser'],
-    queryFn: () => api.get('/api/pacientes/perfil').then(res => res.data),
-    retry: false, // Don't retry if 401
-    staleTime: 5 * 60 * 1000 // Re-validate every 5 minutes
+  const { isLoading, isError } = useGetApiPacientesMe({
+    query: {
+      retry: false,
+      staleTime: 5 * 60 * 1000
+    }
   });
 
   if (isLoading) {
