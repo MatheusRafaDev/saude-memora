@@ -52,6 +52,9 @@ public class FichaMedicaRepository : IFichaMedicaRepository
         await _fichas.ReplaceOneAsync(f => f.Id == ficha.Id, ficha);
         await _cache.RemoveAsync($"ficha_user_{ficha.PacienteId}");
     }
+
+    public async Task DeleteAsync(string id)
+    {
+        await _fichas.DeleteOneAsync(f => f.Id == id);
+    }
 }
-
-

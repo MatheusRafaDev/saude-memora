@@ -167,7 +167,7 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
     var existing = await repo.GetByEmailAsync(dto.Email);
     if (existing != null)
     {
-        return Results.BadRequest(new[] { "Email já cadastrado." }).RequireRateLimiting("auth");
+        return Results.BadRequest(new[] { "Email já cadastrado." });
     }
 
 
@@ -196,7 +196,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
     {
-        return Results.BadRequest(new[] { "Email ou senha inválidos." }).RequireRateLimiting("auth");
+        return Results.BadRequest(new[] { "Email ou senha inválidos." });
     }
 
     try
@@ -245,7 +245,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Email))
-        return Results.BadRequest(new[] { "O e-mail é obrigatório." }).RequireRateLimiting("auth");
+        return Results.BadRequest(new[] { "O e-mail é obrigatório." });
 
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
@@ -317,7 +317,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRepository repo) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Token) || string.IsNullOrWhiteSpace(dto.Senha))
-        return Results.BadRequest(new[] { "Dados inválidos." }).RequireRateLimiting("auth");
+        return Results.BadRequest(new[] { "Dados inválidos." });
 
     var paciente = await repo.GetByResetTokenAsync(dto.Token);
     
@@ -338,7 +338,7 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRe
 // â”€â”€â”€ Paciente Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Retorna o perfil mÃ©dico completo do paciente autenticado
-app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, IImageStorageService storage) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -370,7 +370,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
         paciente.Endereco,
         paciente.PlanoSaude,
         paciente.NumeroCarteirinha,
-        paciente.UrlCarteirinha
+        UrlCarteirinha = !string.IsNullOrEmpty(paciente.IdPublicoCarteirinha) ? storage.GetSignedUrl(paciente.IdPublicoCarteirinha) : paciente.UrlCarteirinha
     };
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
@@ -494,16 +494,21 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
         await docRepo.DeleteAsync(doc.Id!);
     }
 
-    // 2. Apaga a ficha mÃ©dica
+    // 2. Apaga a ficha médica
     var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
     if (ficha != null)
     {
-        // Precisamos adicionar Delete no repo se quisermos apagar
-        // Vamos apenas ignorar, ou adicionar a exclusÃ£o (vou deixar pra lÃ¡ e adicionar o mÃ©todo no repo dps ou sÃ³ nÃ£o apagar)
-        // Oops, o FichaMedicaRepository nÃ£o tem DeleteAsync. Vou deixar Ã³rfÃ£o por enquanto ou eu nÃ£o apago a ficha. 
+        await fichaRepo.DeleteAsync(ficha.Id);
     }
 
-    // 3. Apaga o paciente
+    // 3. Apaga a imagem da carteirinha
+    var paciente = await repo.GetByIdAsync(userId);
+    if (paciente != null && !string.IsNullOrWhiteSpace(paciente.IdPublicoCarteirinha))
+    {
+        try { await storage.DeleteImageAsync(paciente.IdPublicoCarteirinha); } catch { }
+    }
+
+    // 4. Apaga o paciente
     await repo.DeleteAsync(userId);
 
     return Results.Ok(new { Message = "Conta excluÃ­da com sucesso." });
@@ -525,7 +530,22 @@ app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepo
     var ficha = await repo.GetByPacienteIdAsync(userId);
     if (ficha == null) return Results.Ok(new { });
 
-    var result = ficha;
+    var result = new {
+        ficha.Id,
+        ficha.PacienteId,
+        ficha.HistoricoFamiliar,
+        ficha.Cirurgias,
+        ficha.Fuma,
+        ficha.Bebe,
+        ficha.HabitosGerais,
+        ficha.Observacoes,
+        ficha.Condicoes,
+        ficha.OutrasDoencas,
+        ficha.TipoSanguineo,
+        ficha.DoadorOrgaos,
+        ficha.Alergias,
+        ficha.DoencasCronicas
+    };
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
     return Results.Ok(result);
@@ -600,7 +620,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         {
             await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
             return Results.Accepted($"/api/documents/{existingDoc.Id}",
-                new { id = existingDoc.Id, status = "pending", progress = 25, duplicate = true, message = "Documento recolocado na fila de processamento." }).RequireRateLimiting("auth");
+                new { id = existingDoc.Id, status = "pending", progress = 25, duplicate = true, message = "Documento recolocado na fila de processamento." });
         }
 
         return Results.Ok(new { id = existingDoc.Id, status = existingDoc.Status, progress = existingDoc.Progress, duplicate = true, message = "Documento já existente." });
@@ -661,7 +681,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
 
     return Results.Accepted($"/api/documents/{savedDoc.Id}",
         new { id = savedDoc.Id, status = savedDoc.Status, progress = savedDoc.Progress, duplicate = false, message = "Documento recebido na fila de processamento!" });
-}).RequireAuthorization();
+}).RequireAuthorization().RequireRateLimiting("upload");
 
 // Recoloca na fila um documento cujo processamento falhou (botão "Tentar novamente")
 app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDistributedCache cache) =>
@@ -682,7 +702,7 @@ app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user,
 
 
 // Lista todos os documentos do paciente autenticado
-app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, IImageStorageService storage) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -746,7 +766,7 @@ app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentReposit
 }).RequireAuthorization();
 
 // Busca documento por ID
-app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo) =>
+app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -896,7 +916,7 @@ Obs: {ficha?.Observacoes}
     var json = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
     var report = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
-    return Results.Ok(new { Report = report }).RequireRateLimiting("auth");
+    return Results.Ok(new { Report = report });
 }).RequireAuthorization();
 
 app.Run();

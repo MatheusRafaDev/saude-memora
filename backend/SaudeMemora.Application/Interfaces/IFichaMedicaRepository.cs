@@ -7,5 +7,6 @@ public interface IFichaMedicaRepository
     Task<FichaMedica> CreateAsync(FichaMedica ficha);
     Task<FichaMedica?> GetByPacienteIdAsync(string patientId);
     Task UpdateAsync(FichaMedica ficha);
+    Task DeleteAsync(string id);
 }
 

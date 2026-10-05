@@ -24,7 +24,8 @@ public class CloudinaryStorageService : IImageStorageService
         var uploadParams = new ImageUploadParams
         {
             File = new FileDescription(fileName, stream),
-            Folder = "saude-memora"
+            Folder = "saude-memora",
+            Type = "authenticated"
         };
 
         var uploadResult = await _cloudinary.UploadAsync(uploadParams);
@@ -35,6 +36,18 @@ public class CloudinaryStorageService : IImageStorageService
         }
 
         return (uploadResult.SecureUrl.ToString(), uploadResult.PublicId);
+    }
+
+    public string GetSignedUrl(string publicId)
+    {
+        if (string.IsNullOrEmpty(publicId)) return null;
+        var transformation = new Transformation();
+        return _cloudinary.Api.UrlImgUp.Transform(transformation)
+                             .Signed(true)
+                             .Action("image")
+                             .ResourceType("image")
+                             .Type("authenticated")
+                             .BuildUrl(publicId);
     }
 
     public async Task DeleteImageAsync(string publicId)
