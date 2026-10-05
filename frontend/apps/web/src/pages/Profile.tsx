@@ -198,7 +198,7 @@ export default function Profile() {
               <div className="space-y-2">
                 <div className="relative overflow-hidden rounded-xl border border-border group w-full max-w-[250px] aspect-[1.6/1]">
                   <img src={form.urlCarteirinha} alt="Carteirinha do Convênio" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 bg-black/60 hidden md:flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="flex gap-2">
                       <button type="button" onClick={() => setZoomCarteirinha(true)} className="flex items-center justify-center rounded-lg bg-white/20 p-2 text-white shadow-sm hover:bg-white/30 transition-colors" title="Ver em tela cheia">
                         <ZoomIn size={18} />
@@ -212,10 +212,16 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-
+                {/* Mobile: não existe hover, então as ações ficam sempre visíveis */}
+                <div className="flex max-w-[250px] gap-2 md:hidden">
+                  <button type="button" onClick={() => setZoomCarteirinha(true)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card py-2 text-[11px] font-bold text-foreground active:scale-[.98]"><ZoomIn size={14} /> Ver</button>
+                  <button type="button" onClick={() => cameraCardRef.current?.click()} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card py-2 text-[11px] font-bold text-foreground active:scale-[.98]"><Camera size={14} /> Trocar</button>
+                  <button type="button" onClick={handleRemoveCarteirinha} className="flex items-center justify-center rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-600 active:scale-[.98]" aria-label="Remover carteirinha"><Trash2 size={14} /></button>
+                </div>
               </div>
             ) : (
-              <button type="button" onClick={() => cardInputRef.current?.click()} className="group flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
+              <div className="space-y-2">
+              <button type="button" onClick={() => cameraCardRef.current?.click()} disabled={uploadingCard} className="group flex w-full max-w-[250px] aspect-[1.6/1] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
                 {uploadingCard ? (
                   <>
                     <LoaderCircle size={28} className="animate-spin text-primary" />
@@ -228,11 +234,15 @@ export default function Profile() {
                     </div>
                     <div className="text-center">
                       <span className="block text-xs font-extrabold text-foreground">Adicionar Carteirinha</span>
-                      <span className="block text-[10px] text-muted-foreground mt-0.5">Clique para tirar foto ou enviar arquivo</span>
+                      <span className="block text-[10px] text-muted-foreground mt-0.5">Toque para tirar uma foto</span>
                     </div>
                   </>
                 )}
               </button>
+              <button type="button" onClick={() => cardInputRef.current?.click()} disabled={uploadingCard} className="flex w-full max-w-[250px] items-center justify-center gap-1.5 rounded-lg border border-border bg-card py-2 text-[11px] font-bold text-muted-foreground hover:text-foreground active:scale-[.98] disabled:opacity-50">
+                <ImagePlus size={14} /> Escolher da galeria
+              </button>
+              </div>
             )}
             <input type="file" ref={cardInputRef} className="hidden" accept="image/*" onChange={handleUploadCarteirinha} />
             <input type="file" ref={cameraCardRef} className="hidden" accept="image/*" capture="environment" onChange={handleUploadCarteirinha} />

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using SaudeMemora.Domain.Interfaces;
 using SaudeMemora.Application.Interfaces;
+using SaudeMemora.Application.Exceptions;
 using SaudeMemora.Domain.Entities;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
@@ -35,7 +36,7 @@ public class DocumentProcessingWorker : BackgroundService
                 // Se não encontrou nenhum documento ou se houve erro rápido, dorme um pouco para não fritar a CPU e o BD
                 if (!processedAny)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                 }
             }
             catch (OperationCanceledException)
@@ -60,6 +61,7 @@ public class DocumentProcessingWorker : BackgroundService
         var logRepo = scope.ServiceProvider.GetRequiredService<ISistemaLogRepository>();
         var ocrAiService = scope.ServiceProvider.GetRequiredService<IOcrAiService>();
         var cache = scope.ServiceProvider.GetRequiredService<IDistributedCache>();
+        var storage = scope.ServiceProvider.GetRequiredService<IImageStorageService>();
 
         // Busca o próximo documento e coloca um lock de 10 minutos (tempo generoso para IA/OCR processar)
         var lockDuration = TimeSpan.FromMinutes(10);
@@ -102,7 +104,7 @@ public class DocumentProcessingWorker : BackgroundService
 
             if (!extractedData.DocumentoValido)
             {
-                throw new Exception("O arquivo enviado não é um documento médico válido (parece ser uma foto aleatória, em branco, ou de assunto não relacionado à saúde).");
+                throw new InvalidDocumentException();
             }
 
             // Popula o RegistroDocumento com os dados extraídos
@@ -170,6 +172,14 @@ public class DocumentProcessingWorker : BackgroundService
 
             return true;
         }
+        catch (InvalidDocumentException ex)
+        {
+            // Documento inválido (não é médico / ilegível): NÃO guardamos nada. Remove imagens e registro
+            // e deixa um marcador temporário para o front avisar o usuário a tirar outra foto.
+            _logger.LogWarning("Documento {DocId} recusado: não é um documento médico válido.", doc.Id);
+            await RejectInvalidDocumentAsync(doc, ex.Message, repo, storage, cache, logRepo);
+            return true;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao processar o documento {DocId}.", doc.Id);
@@ -206,5 +216,44 @@ public class DocumentProcessingWorker : BackgroundService
 
             return true; // Retorna true porque ele de fato pegou um item da fila (mesmo que com erro)
         }
+    }
+
+    // Chaves de cache compartilhadas com a API (GET /api/documents/{id} e upload)
+    public static string RejectedDocKey(string docId) => $"doc_rejected_{docId}";
+    public static string RejectedHashKey(string userId, string fileHash) => $"doc_rejected_hash_{userId}_{fileHash}";
+
+    private async Task RejectInvalidDocumentAsync(RegistroDocumento doc, string message, IDocumentRepository repo,
+        IImageStorageService storage, IDistributedCache cache, ISistemaLogRepository logRepo)
+    {
+        // 1. Remove as imagens do Cloudinary (dado sensível não deve ficar armazenado sem uso - LGPD)
+        foreach (var publicId in doc.IdPublicos.Where(p => !string.IsNullOrWhiteSpace(p)))
+        {
+            try { await storage.DeleteImageAsync(publicId); }
+            catch (Exception ex) { _logger.LogWarning(ex, "[Rejeição] Falha ao remover imagem {PublicId} do Cloudinary.", publicId); }
+        }
+
+        // 2. Remove o registro (o documento nunca é adicionado ao histórico)
+        if (!string.IsNullOrEmpty(doc.Id)) await repo.DeleteAsync(doc.Id);
+
+        // 3. Marcadores temporários: o front (polling) descobre que foi recusado; reenviar o mesmo arquivo é recusado na hora
+        var marker = JsonSerializer.Serialize(new { userId = doc.PacienteId, message });
+        if (!string.IsNullOrEmpty(doc.Id))
+            await cache.SetStringAsync(RejectedDocKey(doc.Id), marker,
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) });
+        if (!string.IsNullOrEmpty(doc.FileHash))
+            await cache.SetStringAsync(RejectedHashKey(doc.PacienteId, doc.FileHash), message,
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24) });
+
+        await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
+        await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+
+        await logRepo.CriarLogAsync(new SistemaLog
+        {
+            Nivel = "Warning",
+            Acao = "DocumentoRecusado",
+            Detalhes = "Arquivo recusado: não é um documento médico legível. Imagens e registro removidos.",
+            DocumentoId = doc.Id,
+            PacienteId = doc.PacienteId
+        });
     }
 }

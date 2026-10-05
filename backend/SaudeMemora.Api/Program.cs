@@ -614,6 +614,11 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
     // 1. Hash SHA-256 do conteúdo (idempotência: mesmo arquivo = mesmo documento)
     var fileHash = await UploadHelpers.ComputeUploadHashAsync(files, ct);
 
+    // 1.1 Esse mesmo arquivo já foi recusado como inválido? Recusa na hora, sem gastar Cloudinary/OCR/IA.
+    var rejectedMsg = await cache.GetStringAsync(SaudeMemora.Api.Workers.DocumentProcessingWorker.RejectedHashKey(userId, fileHash), ct);
+    if (rejectedMsg != null)
+        return Results.UnprocessableEntity(new { status = "rejeitado", invalidDocument = true, message = rejectedMsg });
+
     // 2. Atalho de idempotência: já existe? Não gasta Cloudinary/OCR/IA de novo.
     var existingDoc = await docRepo.GetByHashAsync(userId, fileHash);
     if (existingDoc != null)
@@ -769,14 +774,25 @@ app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentReposit
 }).RequireAuthorization();
 
 // Busca documento por ID
-app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage) =>
+app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
     var doc = await repo.GetByIdAsync(id);
-    if (doc == null) return Results.NotFound(new { error = "Doc is null", idRequested = id });
-    if (doc.PacienteId != userId) return Results.NotFound(new { error = "User mismatch", docUser = doc.PacienteId, reqUser = userId });
+    if (doc == null)
+    {
+        // Documento recusado pelo worker (não é médico/ilegível): foi removido, mas informamos o motivo ao dono
+        var marker = await cache.GetStringAsync(SaudeMemora.Api.Workers.DocumentProcessingWorker.RejectedDocKey(id));
+        if (marker != null)
+        {
+            using var json = System.Text.Json.JsonDocument.Parse(marker);
+            if (json.RootElement.GetProperty("userId").GetString() == userId)
+                return Results.Ok(new { id, status = "rejeitado", invalidDocument = true, errorMessage = json.RootElement.GetProperty("message").GetString() });
+        }
+        return Results.NotFound();
+    }
+    if (doc.PacienteId != userId) return Results.NotFound();
 
     return Results.Ok(new
     {

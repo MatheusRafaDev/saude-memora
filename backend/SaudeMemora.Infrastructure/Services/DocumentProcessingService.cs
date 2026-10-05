@@ -3,9 +3,13 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SaudeMemora.Application.DTOs;
+using SaudeMemora.Application.Exceptions;
 using SaudeMemora.Application.Interfaces;
 
 namespace SaudeMemora.Infrastructure.Services;
+
+/// <summary>Resultado de uma chamada ao OCR.space. Succeeded=false indica falha da API (não do documento).</summary>
+internal readonly record struct OcrCallResult(string Text, bool Succeeded);
 
 public class DocumentProcessingService : IOcrAiService
 {
@@ -37,11 +41,13 @@ public class DocumentProcessingService : IOcrAiService
 
         await Task.WhenAll(engine1Task, engine2Task);
 
-        string textEngine1 = engine1Task.Result;
-        string textEngine2 = engine2Task.Result;
+        string textEngine1 = engine1Task.Result.Text;
+        string textEngine2 = engine2Task.Result.Text;
 
         if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
         {
+            if (engine1Task.Result.Succeeded || engine2Task.Result.Succeeded)
+                throw new InvalidDocumentException(); // OCR funcionou, mas a imagem não tem texto legível
             throw new Exception("Nenhum texto encontrado pela OCR.space em nenhum dos motores.");
         }
 
@@ -58,6 +64,7 @@ public class DocumentProcessingService : IOcrAiService
             throw new Exception("Faltam chaves de API (OCR_SPACE_API_KEY ou GEMINI_API_KEY). Configure no .env.");
 
         var allTexts = new List<string>();
+        var anyOcrApiFailure = false;
 
         foreach (var url in imageUrls)
         {
@@ -65,18 +72,26 @@ public class DocumentProcessingService : IOcrAiService
             var engine2Task = CallOcrSpaceAsync(url, 2, cancellationToken);
             await Task.WhenAll(engine1Task, engine2Task);
             
-            string textEngine1 = engine1Task.Result;
-            string textEngine2 = engine2Task.Result;
+            string textEngine1 = engine1Task.Result.Text;
+            string textEngine2 = engine2Task.Result.Text;
             
             if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
+            {
+                if (!engine1Task.Result.Succeeded && !engine2Task.Result.Succeeded) anyOcrApiFailure = true;
                 continue;
+            }
                 
             string unifiedText = await UnifyTextsWithGeminiAsync(textEngine1, textEngine2, cancellationToken);
             allTexts.Add(unifiedText);
         }
 
         if (allTexts.Count == 0)
-            throw new Exception("Nenhum texto encontrado em nenhuma das imagens enviadas.");
+        {
+            // Se a API do OCR falhou, é transitório (retry). Se rodou e não achou texto, a imagem é inválida.
+            if (anyOcrApiFailure)
+                throw new Exception("Nenhum texto encontrado em nenhuma das imagens enviadas (falha na API de OCR).");
+            throw new InvalidDocumentException();
+        }
 
         string finalUnifiedText = string.Join("\n\n--- PRÓXIMA PÁGINA/IMAGEM ---\n\n", allTexts);
 
@@ -92,8 +107,8 @@ public class DocumentProcessingService : IOcrAiService
         var engine2Task = CallOcrSpaceAsync(imageUrl, 2, cancellationToken);
         await Task.WhenAll(engine1Task, engine2Task);
         
-        string textEngine1 = engine1Task.Result;
-        string textEngine2 = engine2Task.Result;
+        string textEngine1 = engine1Task.Result.Text;
+        string textEngine2 = engine2Task.Result.Text;
 
         if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
             return new CarteirinhaExtraidaDto();
@@ -159,7 +174,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         return new CarteirinhaExtraidaDto();
     }
 
-    private async Task<string> CallOcrSpaceAsync(string imageUrl, int engine, CancellationToken cancellationToken)
+    private async Task<OcrCallResult> CallOcrSpaceAsync(string imageUrl, int engine, CancellationToken cancellationToken)
     {
         var encodedUrl = Uri.EscapeDataString(imageUrl);
         var url = $"https://api.ocr.space/parse/imageurl?apikey={_ocrSpaceApiKey}&url={encodedUrl}&ocrengine={engine}&language=por&scale=true&isTable=true";
@@ -171,7 +186,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError("Erro OCR API HTTP {StatusCode}: {RawJson}", response.StatusCode, rawJson);
-                return "";
+                return new OcrCallResult("", false);
             }
             
             using var doc = JsonDocument.Parse(rawJson);
@@ -181,14 +196,17 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
             {
                 var errMessage = result.TryGetProperty("ErrorMessage", out var msg) ? msg.ToString() : "Erro desconhecido";
                 _logger.LogWarning("Erro do Motor OCR {Engine}: {ErrMessage}", engine, errMessage);
-                return "";
+                return new OcrCallResult("", false);
             }
 
             if (result.TryGetProperty("ParsedResults", out var parsedResults) && parsedResults.GetArrayLength() > 0)
             {
                 var parsedText = parsedResults[0].GetProperty("ParsedText").GetString();
-                return parsedText ?? "";
+                return new OcrCallResult(parsedText ?? "", true);
             }
+
+            // Resposta válida da API, porém sem resultados = imagem sem texto legível
+            return new OcrCallResult("", true);
         }
         catch (OperationCanceledException)
         {
@@ -198,7 +216,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         {
             _logger.LogError(ex, "Erro OCR Engine {Engine}", engine);
         }
-        return "";
+        return new OcrCallResult("", false);
     }
 
     private async Task<string> UnifyTextsWithGeminiAsync(string text1, string text2, CancellationToken cancellationToken)

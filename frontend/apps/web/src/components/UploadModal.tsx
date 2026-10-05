@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Sparkles, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
+import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Sparkles, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Camera, ScanLine } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
+import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
 
 interface UploadModalProps {
   open?: boolean;
@@ -48,7 +49,19 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+  const pollAbortedRef = useRef(false);
+  const [rejectedMessage, setRejectedMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+
+  // Adiciona arquivos e limpa o input (senão o iOS não dispara onChange ao tirar outra foto com o mesmo nome "image.jpg")
+  const handlePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!picked.length) return;
+    setRejectedMessage('');
+    setError('');
+    setFiles(prev => [...prev, ...picked]);
+  };
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
@@ -99,9 +112,22 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   if (!isOpen || !mounted) return null;
 
   const resetModal = () => {
-    setFiles([]); setStep('type'); setDocType(''); setResultId(null); setError(''); setProcessingStep(0); setBackendProgress(0); setCurrentFileIndex(0);
+    setFiles([]); setStep('type'); setDocType(''); setResultId(null); setError(''); setRejectedMessage(''); setProcessingStep(0); setBackendProgress(0); setCurrentFileIndex(0);
   };
-  const handleClose = () => { resetModal(); setInternalOpen(false); if (externalOnClose) externalOnClose(); };
+  const handleClose = () => { pollAbortedRef.current = true; resetModal(); setInternalOpen(false); if (externalOnClose) externalOnClose(); };
+
+  // Documento recusado: volta para a etapa de arquivo, descarta as imagens e pede outra foto
+  const showRejected = (message: string) => {
+    setFiles([]);
+    setCurrentFileIndex(0);
+    setRejectedMessage(message);
+    setStep('file');
+  };
+
+  const updateProgress = (p: number) => {
+    setBackendProgress(prev => Math.max(prev, p));
+    setProcessingStep(prev => Math.max(prev, p >= 90 ? 5 : p >= 40 ? 3 : p >= 25 ? 1 : 0));
+  };
 
   const startUpload = async () => {
     if (!files.length) return;
@@ -110,29 +136,49 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     files.forEach(f => formData.append('file', f));
     if (docType && docType !== 'outro') formData.append('documentType', docType);
     
+    pollAbortedRef.current = false;
+    setError('');
+    setRejectedMessage('');
     setStep('processing');
     setProcessingStep(0);
     setBackendProgress(10);
 
+    let docId: string;
     try {
-      let currentId = resultId;
-
-      if (currentId) {
-        await customFetch(`/api/documents/${currentId}/retry`, { method: 'POST' });
-      } else {
-        const res = (await customFetch('/api/documents/upload', { method: 'POST', body: formData as any })) as any;
-        if (!res || !res.id) throw new Error('ID não retornado.');
-      }
-
+      const res = (await customFetch('/api/documents/upload', { method: 'POST', body: formData as any })) as any;
+      if (!res || !res.id) throw new Error('ID não retornado.');
+      docId = res.id;
       window.dispatchEvent(new CustomEvent('document-uploaded'));
-      toast({ description: 'Upload concluído. Processando documento...' });
-      
+      if (res.status === 'pronto') { setResultId(docId); setBackendProgress(100); setStep('done'); return; }
+      updateProgress(res.progress ?? 25);
+    } catch (err) {
+      const invalidMsg = getInvalidDocumentMessage(err);
+      if (invalidMsg) { showRejected(invalidMsg); return; }
+      console.error('Erro no upload:', err);
+      setError('Falha ao enviar documento. Verifique sua conexão e tente novamente.');
+      setStep('file');
+      return;
+    }
+
+    // Aguarda o worker (OCR + IA) para saber se o documento é válido
+    const outcome = await waitForDocumentProcessing(docId, { onProgress: updateProgress, isAborted: () => pollAbortedRef.current });
+    if (outcome.status === 'aborted') return;
+    window.dispatchEvent(new CustomEvent('document-uploaded'));
+
+    if (outcome.status === 'pronto') {
+      setResultId(docId);
+      setBackendProgress(100);
+      setProcessingStep(PROCESSING_STEPS.length);
+      setStep('done');
+    } else if (outcome.status === 'rejeitado') {
+      showRejected(outcome.message);
+    } else if (outcome.status === 'failed') {
+      setError(outcome.message);
+      setStep('file');
+    } else {
+      toast({ description: 'Seu documento ainda está sendo processado. Ele aparecerá na lista em instantes.' });
       handleClose();
       setLocation('/documentos');
-    } catch (err) {
-      console.error('Erro no upload:', err);
-      toast({ description: 'Falha ao enviar documento.', variant: 'destructive' });
-      setStep('file');
     }
   };
 
@@ -201,16 +247,32 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               )}
             </div>
 
+            {/* Inputs FORA da área clicável: se ficarem dentro, o click() da câmera borbulha e abre também o seletor de arquivos */}
+            <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={handlePicked} />
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePicked} />
+
+            {rejectedMessage && (
+              <div role="alert" className="page-enter flex gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                  <ScanLine size={20} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-extrabold text-amber-800 dark:text-amber-200">Documento não reconhecido</p>
+                  <p className="mt-0.5 text-xs leading-5 text-amber-900/80 dark:text-amber-100/80">{rejectedMessage}</p>
+                  <p className="mt-1 text-[11px] text-amber-900/60 dark:text-amber-100/60">Nada foi salvo no seu histórico.</p>
+                  <button type="button" onClick={() => cameraRef.current?.click()}
+                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl bg-amber-500 px-4 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-600 active:scale-[.98]">
+                    <Camera size={14} /> Tirar outra foto
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div 
               onClick={() => fileRef.current?.click()}
               onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
               className={`group relative flex min-h-[220px] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-all cursor-pointer overflow-hidden ${isDragging ? 'border-primary bg-primary/10 scale-[1.02]' : 'border-primary/20 bg-slate-50/50 dark:bg-slate-900/30 hover:border-primary/40 hover:bg-primary/5'}`}
             >
-              <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg" className="hidden"
-                onChange={e => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
-              <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={e => setFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
-
               {files.length > 0 ? (
                 <div className="flex flex-col items-center justify-center w-full p-4">
                   <div className="relative flex items-center justify-center w-full max-w-[220px] min-h-[140px]">
@@ -236,7 +298,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                           return next;
                         });
                       }}
-                        className="absolute -top-3 -right-3 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/90 transition-all hover:scale-110 cursor-pointer opacity-0 group-hover/img:opacity-100">
+                        className="absolute -top-3 -right-3 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive/90 transition-all hover:scale-110 cursor-pointer opacity-100 md:opacity-0 md:group-hover/img:opacity-100">
                         <X size={14} />
                       </button>
                     </div>
@@ -304,7 +366,8 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             </div>
             <div>
               <h3 className="text-base font-extrabold">Processando com IA...</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{PROCESSING_STEPS[processingStep]}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{PROCESSING_STEPS[Math.min(processingStep, PROCESSING_STEPS.length - 1)]}</p>
+              <p className="mt-2 text-[10px] text-muted-foreground/70">Verificando se a imagem é um documento médico legível · pode levar até 30s</p>
             </div>
             <div className="mx-auto max-w-[380px] space-y-2">
               <div className="flex justify-between text-[10px] font-bold">
