@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Sparkles, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Camera, ScanLine } from 'lucide-react';
+import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Camera, ScanLine } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
 
@@ -352,7 +352,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <button type="button" onClick={handleClose} className="flex-1 h-12 rounded-2xl border border-border bg-white dark:bg-slate-800 text-sm font-bold text-foreground hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all shadow-sm cursor-pointer">Cancelar</button>
               <button type="button" onClick={startUpload} disabled={files.length === 0}
                 className="flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 hover:shadow-md transition-all shadow-sm cursor-pointer">
-                Processar com IA <Sparkles size={16} />
+                Processar com IA
               </button>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch } from '@workspace/api-client-react';
 
@@ -30,7 +30,7 @@ export default function Auth() {
         const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
         if (result?.token) {
           localStorage.setItem('auth_token', result.token);
-          setMessage('Acesso confirmado. Bem-vinda de volta.');
+          setMessage('Acesso confirmado. Bem-vindo de volta.');
           setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
         } else {
           setError('Erro inesperado ao realizar login.');
@@ -133,10 +133,7 @@ export default function Auth() {
 
           {/* Heading */}
           <div className="mb-7">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent">
-              <Sparkles size={17} />
-            </div>
-            <p className="font-mono text-[9px] uppercase tracking-[.2em] text-accent mb-2">bem-vinda</p>
+            <p className="font-mono text-[9px] uppercase tracking-[.2em] text-accent mb-2">bem-vind0</p>
             <h2 className="text-2xl font-black tracking-[-0.05em] text-foreground">
               {mode === 'login' ? 'Que bom ter você aqui.' : 'Comece a cuidar da sua história.'}
             </h2>

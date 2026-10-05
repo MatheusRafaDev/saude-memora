@@ -7,13 +7,13 @@ import {
   HeartHandshake,
   LockKeyhole,
   ShieldCheck,
-  Sparkles,
   UploadCloud,
   Activity,
   Stethoscope,
   Bell,
   ShieldAlert,
   FileBadge2,
+  BrainCircuit,
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
@@ -26,7 +26,7 @@ const documentRows = [
 
 const features = [
   { icon: UploadCloud,    number: '01', title: 'Você envia',      description: 'Adicione uma foto ou arquivo do seu exame, receita ou relatório médico.' },
-  { icon: Sparkles,       number: '02', title: 'Nós organizamos', description: 'A IA reconhece as informações e categoriza tudo automaticamente.' },
+  { icon: BrainCircuit,   number: '02', title: 'Nós organizamos', description: 'A IA reconhece as informações e categoriza tudo automaticamente.' },
   { icon: HeartHandshake, number: '03', title: 'Você entende',    description: 'Tenha seu histórico ao alcance para cuidar melhor das suas decisões de saúde.' },
 ];
 
@@ -96,7 +96,7 @@ export default function Home() {
           {/* Left: copy */}
           <div className="relative page-enter">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border/80 bg-card px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.15em] text-accent shadow-xs">
-              <Sparkles size={11} />
+              <BrainCircuit size={11} />
               Uma nova relação com sua saúde
             </div>
 
