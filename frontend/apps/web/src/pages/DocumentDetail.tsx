@@ -195,7 +195,6 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             {isConfirmingRevisao ? 'Confirmando...' : 'Confirmar Revisão'}
           </button>
         </div>
-        </div>
       )}
 
       {/* Alertas FASE 4 */}
