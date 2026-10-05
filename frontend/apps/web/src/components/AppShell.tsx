@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
+import { EmergenciaModal } from '@/components/EmergenciaModal';
 import { useGetApiPacientesMe, useGetApiFichaMedicaMe, useGetApiDocuments } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Bell } from 'lucide-react';
@@ -20,6 +21,7 @@ const navItems = [
 export function AppShell({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showEmergenciaModal, setShowEmergenciaModal] = useState(false);
   const { signOut } = useStore();
   const { data: profileRaw } = useGetApiPacientesMe();
   const { data: fichaRaw, isLoading: isFichaLoading } = useGetApiFichaMedicaMe();
@@ -239,7 +241,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             Meu perfil
                           </button>
                           <button
-                            onClick={() => navigate('/emergencia')}
+                            onClick={() => { setShowEmergenciaModal(true); setUserMenuOpen(false); }}
                             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-600 dark:text-red-500 hover:bg-muted transition-colors"
                           >
                             <ShieldCheck size={14} />
@@ -297,6 +299,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <UploadModal />
       <ConsentModal />
+      <EmergenciaModal open={showEmergenciaModal} onClose={() => setShowEmergenciaModal(false)} />
     </div>
   );
 }

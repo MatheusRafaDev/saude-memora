@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { QRCodeSVG } from 'qrcode.react';
 import { customFetch } from '@workspace/api-client-react';
 import { ShieldAlert, Droplets, AlertTriangle, Pill, Activity, Smartphone, FileText } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
@@ -23,14 +22,7 @@ export default function Emergencia() {
           const res = await customFetch<any>(`/api/emergencia/${urlToken}`);
           setPublicData(res);
         } else {
-          // Acesso logado (gerar/ver próprio QR)
-          const localToken = localStorage.getItem('auth_token');
-          if (!localToken) {
-            setLocation('/entrar');
-            return;
-          }
-          const res = await customFetch<{ token: string }>('/api/pacientes/me/emergencia');
-          setToken(res.token);
+          setError('Link de emergência inválido ou expirado.');
         }
       } catch (err) {
         setError('Erro ao carregar dados de emergência.');
@@ -54,49 +46,6 @@ export default function Emergencia() {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="text-red-500 font-semibold">{error}</div>
-      </div>
-    );
-  }
-
-  // Visualização Privada (Gerar QR)
-  if (!publicData && token) {
-    const url = `${window.location.origin}/emergencia?token=${token}`;
-    return (
-      <div className="page-enter max-w-xl mx-auto py-10 px-4">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <ShieldAlert className="text-red-500" />
-              Cartão de Emergência
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">Compartilhe este QR Code para rápido acesso médico.</p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-card border rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
-          <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl mb-6 inline-block">
-            <QRCodeSVG value={url} size={200} />
-          </div>
-          <h2 className="text-lg font-bold text-foreground">Escaneie para acessar</h2>
-          <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-            Em caso de emergência, socorristas podem acessar seus dados vitais (tipo sanguíneo, alergias e medicamentos contínuos).
-          </p>
-          <div className="mt-6 flex flex-col items-center gap-3 w-full">
-            <button 
-              onClick={() => { navigator.clipboard.writeText(url); alert('Link copiado!'); }}
-              className="px-6 py-2 bg-muted hover:bg-muted/80 text-foreground font-bold rounded-lg transition-colors w-full md:w-auto"
-            >
-              Copiar Link
-            </button>
-            <a 
-              href={url} 
-              target="_blank" 
-              className="text-xs font-semibold text-primary hover:underline"
-            >
-              Visualizar Cartão Público
-            </a>
-          </div>
-        </div>
       </div>
     );
   }
