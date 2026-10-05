@@ -4,10 +4,18 @@
  * Api
  * OpenAPI spec version: 1.0.0
  */
+export interface ChatRequest {
+  message?: string;
+}
+
 export interface CondicaoMedica {
   nome?: string;
   tem?: boolean;
   detalhes?: string;
+}
+
+export interface ConsentimentoDto {
+  aceito?: boolean;
 }
 
 export interface ContatoDto {
@@ -17,10 +25,51 @@ export interface ContatoDto {
   endereco: string | null;
 }
 
+export interface ResultadoExameUpdateDto {
+  /** @nullable */
+  nome?: string | null;
+  /** @nullable */
+  nomeNormalizado?: string | null;
+  /** @nullable */
+  valor?: number | null;
+  /** @nullable */
+  valorTexto?: string | null;
+  /** @nullable */
+  unidade?: string | null;
+  /** @nullable */
+  refMin?: number | null;
+  /** @nullable */
+  refMax?: number | null;
+  /** @nullable */
+  referenciaTexto?: string | null;
+  /** @nullable */
+  status?: string | null;
+  confianca?: number;
+}
+
+export interface DocumentUpdateDto {
+  /** @nullable */
+  titulo?: string | null;
+  /** @nullable */
+  medico?: string | null;
+  /** @nullable */
+  clinica?: string | null;
+  /** @nullable */
+  data?: string | null;
+  /** @nullable */
+  resumo?: string | null;
+  /** @nullable */
+  diagnostico?: string | null;
+  /** @nullable */
+  crm?: string | null;
+  /** @nullable */
+  resultadosExame?: ResultadoExameUpdateDto[] | null;
+}
+
 export interface FichaMedica {
   /** @nullable */
   id?: string | null;
-  patientId: string;
+  pacienteId: string;
   historicoFamiliar?: string;
   cirurgias?: string;
   fuma?: boolean;
@@ -30,6 +79,16 @@ export interface FichaMedica {
   updatedAt?: string;
   condicoes?: CondicaoMedica[];
   outrasDoencas?: string;
+  /** @nullable */
+  tipoSanguineo?: string | null;
+  doadorOrgaos?: boolean;
+  alergias?: string[];
+  doencasCronicas?: string[];
+  medicamentosContinuos?: string[];
+}
+
+export interface ForgotPasswordDto {
+  email?: string;
 }
 
 export interface LoginPacienteDto {
@@ -37,35 +96,38 @@ export interface LoginPacienteDto {
   senha?: string;
 }
 
-export interface MedicamentoContinuoDto {
-  nome: string;
-  dosagem: string;
-  horario: string;
-}
-
-export interface PerfilMedicoDto {
+export interface PerfilUpdateDto {
   /** @nullable */
-  tipoSanguineo: string | null;
+  nome: string | null;
   /** @nullable */
-  doadorOrgaos: boolean | null;
+  dataNascimento: string | null;
   /** @nullable */
-  alergias: string[] | null;
+  email: string | null;
   /** @nullable */
-  doencasCronicas: string[] | null;
+  planoSaude: string | null;
   /** @nullable */
-  medicamentosContinuos: MedicamentoContinuoDto[] | null;
+  numeroCarteirinha: string | null;
 }
 
 export interface RegisterPacienteDto {
   nome?: string;
-  cpf?: string;
   dataNascimento?: string;
   sexo?: string;
   email?: string;
   senha?: string;
 }
 
+export interface ResetPasswordDto {
+  token?: string;
+  senha?: string;
+}
+
 export type GetApiReportsGenerateParams = {
 months: number;
+};
+
+export type GetApiExamesSerieParams = {
+analito: string;
+meses: number;
 };
 

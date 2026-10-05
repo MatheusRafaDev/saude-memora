@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check, FlaskConical, Pill, Stethoscope, ArrowRight, FileStack } from 'lucide-react';
+import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check, FlaskConical, Pill, Stethoscope, ArrowRight, FileStack, AlertTriangle } from 'lucide-react';
 import { useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -316,6 +316,10 @@ export default function Documents() {
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
                            <ShieldAlert size={10} /> Erro
                         </span>
+                      ) : doc.revisaoPendente ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                           <AlertTriangle size={10} /> Revisar
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-500">
                            <Check size={10} /> Pronto
@@ -393,6 +397,10 @@ export default function Documents() {
                       ) : doc.status === 'failed' ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-destructive">
                            <ShieldAlert size={10} /> Erro
+                        </span>
+                      ) : doc.revisaoPendente ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                           <AlertTriangle size={10} /> Revisar
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-emerald-500">

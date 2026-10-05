@@ -156,6 +156,64 @@ public class DocumentProcessingWorker : BackgroundService
                 }).ToList();
             }
 
+            if (extractedData.ResultadosExame != null && extractedData.ResultadosExame.Any())
+            {
+                doc.ResultadosExame = extractedData.ResultadosExame.Select(r => new SaudeMemora.Domain.Entities.ResultadoExameItem
+                {
+                    Nome = r.Nome,
+                    NomeNormalizado = r.NomeNormalizado,
+                    Valor = r.Valor,
+                    ValorTexto = r.ValorTexto,
+                    Unidade = r.Unidade,
+                    RefMin = r.RefMin,
+                    RefMax = r.RefMax,
+                    ReferenciaTexto = r.ReferenciaTexto,
+                    Status = r.Status,
+                    Confianca = r.Confianca
+                }).ToList();
+            }
+
+            // Processamento de Confianças e Revisão
+            var camposBaixos = new List<string>();
+            if (extractedData.Confiancas != null)
+            {
+                camposBaixos.AddRange(extractedData.Confiancas.Where(c => c.Valor < 0.80).Select(c => c.Campo));
+            }
+            
+            // Regra extra: dosagem ilegível ou vazia em medicamento sempre marca revisão
+            if (doc.Medicamentos != null)
+            {
+                for (int i = 0; i < doc.Medicamentos.Count; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(doc.Medicamentos[i].Dosagem))
+                    {
+                        camposBaixos.Add($"medicamentos[{i}].dosagem");
+                    }
+                }
+            }
+
+            if (camposBaixos.Any())
+            {
+                doc.RevisaoPendente = true;
+                doc.CamposBaixaConfianca = camposBaixos.Distinct().ToList();
+            }
+            else
+            {
+                doc.RevisaoPendente = false;
+                doc.CamposBaixaConfianca = new List<string>();
+            }
+
+            // FASE 4: Alerta de interação e alergia
+            if (!doc.RevisaoPendente && paciente.ConsentimentoIa?.Aceito == true)
+            {
+                var alertaService = scope.ServiceProvider.GetRequiredService<IAlertaMedicamentoService>();
+                var fichaRepo = scope.ServiceProvider.GetRequiredService<IFichaMedicaRepository>();
+                var ficha = await fichaRepo.GetByPacienteIdAsync(doc.PacienteId);
+                var fichaMedica = ficha ?? new FichaMedica();
+                
+                doc.Alertas = await alertaService.GerarAlertasAsync(doc, fichaMedica);
+            }
+
             // Finaliza o processamento com sucesso
             doc.Status = "pronto";
             doc.Progress = 100;

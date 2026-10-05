@@ -1,0 +1,899 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "SaudeMemora.Api | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000"
+    }
+  ],
+  "paths": {
+    "/api/ping": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/reprocessar": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/revisao/confirmar": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/alertas/{alertaId}/dispensar": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "alertaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pacientes/me/emergencia": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/emergencia/{token}": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterPacienteDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginPacienteDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pacientes/me": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pacientes/me/perfil": {
+      "patch": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pacientes/me/contato": {
+      "patch": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContatoDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pacientes/me/carteirinha": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/ficha-medica/me": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FichaMedica"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/upload": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/{id}/retry": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/count": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/documents/{id}": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/reports/generate": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pacientes/me/consentimento": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentimentoDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/exames/analitos": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/exames/serie": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "analito",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "meses",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChatRequest": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CondicaoMedica": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "tem": {
+            "type": "boolean"
+          },
+          "detalhes": {
+            "type": "string"
+          }
+        }
+      },
+      "ConsentimentoDto": {
+        "type": "object",
+        "properties": {
+          "aceito": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ContatoDto": {
+        "required": [
+          "telefone",
+          "endereco"
+        ],
+        "type": "object",
+        "properties": {
+          "telefone": {
+            "type": "string",
+            "nullable": true
+          },
+          "endereco": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "DocumentUpdateDto": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "nullable": true
+          },
+          "medico": {
+            "type": "string",
+            "nullable": true
+          },
+          "clinica": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "string",
+            "nullable": true
+          },
+          "resumo": {
+            "type": "string",
+            "nullable": true
+          },
+          "diagnostico": {
+            "type": "string",
+            "nullable": true
+          },
+          "crm": {
+            "type": "string",
+            "nullable": true
+          },
+          "resultadosExame": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultadoExameUpdateDto"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "FichaMedica": {
+        "required": [
+          "pacienteId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "historicoFamiliar": {
+            "type": "string"
+          },
+          "cirurgias": {
+            "type": "string"
+          },
+          "fuma": {
+            "type": "boolean"
+          },
+          "bebe": {
+            "type": "boolean"
+          },
+          "habitosGerais": {
+            "type": "string"
+          },
+          "observacoes": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "condicoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CondicaoMedica"
+            }
+          },
+          "outrasDoencas": {
+            "type": "string"
+          },
+          "tipoSanguineo": {
+            "type": "string",
+            "nullable": true
+          },
+          "doadorOrgaos": {
+            "type": "boolean"
+          },
+          "alergias": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "doencasCronicas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "medicamentosContinuos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginPacienteDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "senha": {
+            "type": "string"
+          }
+        }
+      },
+      "PerfilUpdateDto": {
+        "required": [
+          "nome",
+          "dataNascimento",
+          "email",
+          "planoSaude",
+          "numeroCarteirinha"
+        ],
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "nullable": true
+          },
+          "dataNascimento": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "planoSaude": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroCarteirinha": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RegisterPacienteDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "dataNascimento": {
+            "type": "string"
+          },
+          "sexo": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "senha": {
+            "type": "string"
+          }
+        }
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "senha": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultadoExameUpdateDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "nullable": true
+          },
+          "nomeNormalizado": {
+            "type": "string",
+            "nullable": true
+          },
+          "valor": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "valorTexto": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidade": {
+            "type": "string",
+            "nullable": true
+          },
+          "refMin": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "refMax": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "referenciaTexto": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "confianca": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "SaudeMemora.Api"
+    }
+  ]
+}

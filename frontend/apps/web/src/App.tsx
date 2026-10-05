@@ -13,6 +13,10 @@ import Upload from '@/pages/Upload';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Record from '@/pages/Record';
 import Profile from '@/pages/Profile';
+import Evolucao from '@/pages/Evolucao';
+import Timeline from '@/pages/Timeline';
+import Emergencia from '@/pages/Emergencia';
+import Chat from '@/pages/Chat';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
 import { StoreProvider } from '@/lib/store';
@@ -121,6 +125,10 @@ function Router() {
         <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
         <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
         <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
+        <Route path="/evolucao">{() => <ProtectedRoute><Evolucao /></ProtectedRoute>}</Route>
+        <Route path="/timeline">{() => <ProtectedRoute><Timeline /></ProtectedRoute>}</Route>
+        <Route path="/emergencia" component={Emergencia} />
+        <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
         <Route path="/termos" component={Termos} />
         <Route path="/privacidade" component={Privacidade} />
         <Route component={NotFound} />

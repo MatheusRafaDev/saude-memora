@@ -39,6 +39,7 @@ builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
 builder.Services.AddScoped<IFichaMedicaRepository, FichaMedicaRepository>();
 builder.Services.AddScoped<ISistemaLogRepository, SistemaLogRepository>();
 builder.Services.AddScoped<IImageStorageService, CloudinaryStorageService>();
+builder.Services.AddScoped<IAlertaMedicamentoService, AlertaMedicamentoService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 
@@ -149,6 +150,12 @@ app.UseAuthorization();
 app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).AllowAnonymous();
 
 app.MapConsentimentoEndpoints();
+app.MapReprocessamentoEndpoints();
+app.MapRevisaoEndpoints();
+app.MapAlertaEndpoints();
+app.MapExamesEndpoints();
+app.MapEmergenciaEndpoints();
+app.MapChatEndpoints();
 
 // ─── Auth Endpoints ──────────────────────────────────────────────────────────────────────────
 
@@ -741,7 +748,8 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         urlImagens = d.UrlImagens,
         progress = d.Progress,
         errorMessage = d.ErrorMessage,
-        criadoEm = d.CriadoEm
+        criadoEm = d.CriadoEm,
+        revisaoPendente = d.RevisaoPendente
     }).OrderByDescending(d => d.criadoEm).ToList();
 
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
@@ -814,6 +822,9 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         urlImagens = doc.UrlImagens,
         textoExtraido = doc.TextoExtraido,
         conteudoIndentado = doc.ConteudoIndentado,
+        resultadosExame = doc.ResultadosExame,
+        revisaoPendente = doc.RevisaoPendente,
+        camposBaixaConfianca = doc.CamposBaixaConfianca,
         progress = doc.Progress,
         errorMessage = doc.ErrorMessage,
         criadoEm = doc.CriadoEm
@@ -836,6 +847,34 @@ app.MapPut("/api/documents/{id}", async (string id, [Microsoft.AspNetCore.Mvc.Fr
     doc.Resumo = updateDto.Resumo ?? doc.Resumo;
     doc.Diagnostico = updateDto.Diagnostico ?? doc.Diagnostico;
     doc.Crm = updateDto.Crm ?? doc.Crm;
+
+    if (updateDto.ResultadosExame != null)
+    {
+        doc.ResultadosExame = updateDto.ResultadosExame.Select(r =>
+        {
+            var status = r.Status;
+            // Se o usuário passar um valor numérico e referências, recalculamos o status (caso ele esteja indefinido ou não, para garantir consistência)
+            if (r.Valor.HasValue && r.RefMin.HasValue && r.RefMax.HasValue)
+            {
+                if (r.Valor < r.RefMin) status = "baixo";
+                else if (r.Valor > r.RefMax) status = "alto";
+                else status = "normal";
+            }
+            return new SaudeMemora.Domain.Entities.ResultadoExameItem
+            {
+                Nome = r.Nome ?? "",
+                NomeNormalizado = r.NomeNormalizado ?? "",
+                Valor = r.Valor,
+                ValorTexto = r.ValorTexto ?? "",
+                Unidade = r.Unidade ?? "",
+                RefMin = r.RefMin,
+                RefMax = r.RefMax,
+                ReferenciaTexto = r.ReferenciaTexto ?? "",
+                Status = status ?? "indefinido",
+                Confianca = r.Confianca
+            };
+        }).ToList();
+    }
 
     await repo.UpdateAsync(doc);
     await cache.RemoveAsync($"documents_v3_{userId}");
@@ -972,6 +1011,21 @@ public class DocumentUpdateDto
     public string? Resumo { get; set; }
     public string? Diagnostico { get; set; }
     public string? Crm { get; set; }
+    public List<ResultadoExameUpdateDto>? ResultadosExame { get; set; }
+}
+
+public class ResultadoExameUpdateDto
+{
+    public string? Nome { get; set; }
+    public string? NomeNormalizado { get; set; }
+    public double? Valor { get; set; }
+    public string? ValorTexto { get; set; }
+    public string? Unidade { get; set; }
+    public double? RefMin { get; set; }
+    public double? RefMax { get; set; }
+    public string? ReferenciaTexto { get; set; }
+    public string? Status { get; set; }
+    public double Confianca { get; set; } = 1.0;
 }
 
 // ─── Helpers de Upload ──────────────────────────────────────────────────────

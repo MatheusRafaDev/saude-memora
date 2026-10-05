@@ -4,7 +4,7 @@ export const initialProfile: UserProfile = {
   nome: 'Marina Costa',
   email: 'marina.costa@email.com',
   cpf: '•••.•••.•••-42',
-  birthDate: '1992-08-17',
+  birthdata: '1992-08-17',
   phone: '(11) 98842-1760',
   bloodType: 'O+',
   allergies: 'Dipirona, poeira',

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link, useRoute, useLocation } from 'wouter';
 import { 
   ArrowLeft, CalendarDays, ChevronRight, ChevronLeft, FileCheck2, Info, Pill, 
-  Stethoscope, MoreVertical, Trash2, Pencil, Code, Save, X, 
+  Stethoscope, MoreVertical, Trash2, Pencil, Code, Save, X, Plus,
   ClipboardList, IdCard, User, Building2, FlaskConical, Activity, 
-  Building, FileText, ChevronDown, ChevronUp, Copy
+  Building, FileText, ChevronDown, ChevronUp, Copy, ActivitySquare, AlertTriangle
 } from 'lucide-react';
 import { useGetApiDocumentsId, useDeleteApiDocumentsId, customFetch } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -46,6 +46,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         resumo: doc.resumo || '',
         diagnostico: doc.diagnostico || '',
         crm: doc.crm || '',
+        resultadosExame: doc.resultadosExame ? JSON.parse(JSON.stringify(doc.resultadosExame)) : [],
       });
     }
   }, [docRaw]);
@@ -57,6 +58,16 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         setLocation('/documentos');
       }
     });
+  };
+
+  const handleDispensarAlerta = async (alertaId: string) => {
+    try {
+      await customFetch(`/api/documents/${id}/alertas/${alertaId}/dispensar`, { method: 'POST' });
+      refetch();
+      toast({ description: 'Alerta dispensado.' });
+    } catch(e) {
+      toast({ description: 'Erro ao dispensar alerta.', variant: 'destructive' });
+    }
   };
 
   const handleSave = async () => {
@@ -75,6 +86,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           resumo:      formData.resumo,
           diagnostico: formData.diagnostico,
           crm:         formData.crm,
+          resultadosExame: formData.resultadosExame,
         })
       });
       toast({ description: 'Documento atualizado com sucesso!' });
@@ -84,6 +96,20 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       toast({ description: 'Erro ao atualizar o documento.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const [isConfirmingRevisao, setIsConfirmingRevisao] = useState(false);
+  const handleConfirmRevisao = async () => {
+    try {
+      setIsConfirmingRevisao(true);
+      await customFetch(`/api/documents/${id}/revisao/confirmar`, { method: 'POST' });
+      toast({ description: 'Revisão confirmada com sucesso!' });
+      refetch();
+    } catch (err) {
+      toast({ description: 'Erro ao confirmar revisão.', variant: 'destructive' });
+    } finally {
+      setIsConfirmingRevisao(false);
     }
   };
 
@@ -145,6 +171,81 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           )}
         </div>
       </div>
+
+      {doc.revisaoPendente && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-500">
+              <AlertTriangle size={20} />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-amber-900 dark:text-amber-500">
+                Confira estes campos antes de confiar neste documento
+              </p>
+              <p className="text-xs font-semibold text-amber-700/70 dark:text-amber-500/70 mt-0.5">
+                A IA relatou baixa confiança em: {(doc.camposBaixaConfianca || []).join(', ')}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleConfirmRevisao}
+            disabled={isConfirmingRevisao}
+            className="shrink-0 h-9 px-4 bg-amber-500 text-white font-bold text-xs rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            {isConfirmingRevisao ? 'Confirmando...' : 'Confirmar Revisão'}
+          </button>
+        </div>
+        </div>
+      )}
+
+      {/* Alertas FASE 4 */}
+      {doc.alertas && doc.alertas.filter((a: any) => !a.dispensado).length > 0 && (
+        <div className="flex flex-col gap-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">
+            <AlertTriangle size={12} className="inline mr-1" /> Avisos Médicos Importantes
+          </p>
+          {doc.alertas.filter((a: any) => !a.dispensado).map((alerta: any) => (
+            <div key={alerta.id} className={`border rounded-xl p-4 flex flex-col gap-2 relative shadow-sm
+              ${alerta.severidade === 'alta' ? 'bg-red-500/10 border-red-500/20' : 
+                alerta.severidade === 'moderada' ? 'bg-amber-500/10 border-amber-500/20' : 
+                'bg-blue-500/10 border-blue-500/20'}
+            `}>
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full 
+                    ${alerta.severidade === 'alta' ? 'bg-red-500 text-white' : 
+                      alerta.severidade === 'moderada' ? 'bg-amber-500 text-white' : 
+                      'bg-blue-500 text-white'}
+                  `}>
+                    Risco {alerta.severidade}
+                  </span>
+                  <span className="text-sm font-bold text-foreground">
+                    {alerta.tipo === 'alergia' ? 'Alergia Detectada' : alerta.tipo === 'duplicidade' ? 'Possível Duplicidade' : 'Interação Medicamentosa'}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => handleDispensarAlerta(alerta.id)}
+                  className="text-muted-foreground hover:bg-black/10 dark:hover:bg-white/10 p-1.5 rounded-full transition-colors shrink-0"
+                  title="Dispensar aviso"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <p className={`text-sm font-semibold 
+                ${alerta.severidade === 'alta' ? 'text-red-900 dark:text-red-400' : 
+                  alerta.severidade === 'moderada' ? 'text-amber-900 dark:text-amber-500' : 
+                  'text-blue-900 dark:text-blue-400'}
+              `}>
+                {alerta.mensagem}
+              </p>
+              <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground font-semibold">
+                <Info size={12} />
+                <span>Isto não substitui orientação médica. Converse com seu médico ou farmacêutico.</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Header Section */}
       <section className="relative overflow-hidden flex flex-col gap-3 rounded-2xl border border-border/40 bg-gradient-to-br from-white to-[hsl(205_40%_97%)] dark:from-card dark:to-[hsl(205_20%_8%)] p-4 md:p-5 shadow-sm">
@@ -443,6 +544,193 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
         </div>
       </div>
+
+      {/* Extracted Exam Results */}
+      {(doc.resultadosExame?.length > 0 || isEditing) && doc.tipo === 'exame' && (
+        <section className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm transition-all hover:shadow-md mt-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                <ActivitySquare size={20} />
+              </span>
+              <h2 className="text-base font-bold text-foreground">Resultados do Exame</h2>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border/50 text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                  <th className="pb-3 px-2">Exame / Analito</th>
+                  <th className="pb-3 px-2">Valor</th>
+                  <th className="pb-3 px-2">Unidade</th>
+                  <th className="pb-3 px-2">Ref. Mínima</th>
+                  <th className="pb-3 px-2">Ref. Máxima</th>
+                  <th className="pb-3 px-2">Status</th>
+                  {isEditing && <th className="pb-3 px-2 text-right">Ação</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {(isEditing ? formData.resultadosExame : doc.resultadosExame).map((res: any, idx: number) => (
+                  <tr key={idx} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="py-3 px-2">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={res.nome}
+                          onChange={(e) => {
+                            const novo = [...formData.resultadosExame];
+                            novo[idx].nome = e.target.value;
+                            setFormData({ ...formData, resultadosExame: novo });
+                          }}
+                          className="w-full bg-transparent border-b border-border outline-none focus:border-primary text-sm font-medium"
+                          placeholder="Ex: Glicose"
+                        />
+                      ) : (
+                        <span className="text-sm font-semibold text-foreground">{res.nome}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-2">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={res.valor !== null && res.valor !== undefined ? res.valor : res.valorTexto || ''}
+                          onChange={(e) => {
+                            const novo = [...formData.resultadosExame];
+                            const num = parseFloat(e.target.value.replace(',','.'));
+                            if (!isNaN(num)) {
+                              novo[idx].valor = num;
+                              novo[idx].valorTexto = '';
+                            } else {
+                              novo[idx].valor = null;
+                              novo[idx].valorTexto = e.target.value;
+                            }
+                            setFormData({ ...formData, resultadosExame: novo });
+                          }}
+                          className="w-full bg-transparent border-b border-border outline-none focus:border-primary text-sm font-bold"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-foreground">
+                          {res.valor !== null && res.valor !== undefined ? res.valor : res.valorTexto || '-'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-2">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={res.unidade || ''}
+                          onChange={(e) => {
+                            const novo = [...formData.resultadosExame];
+                            novo[idx].unidade = e.target.value;
+                            setFormData({ ...formData, resultadosExame: novo });
+                          }}
+                          className="w-20 bg-transparent border-b border-border outline-none focus:border-primary text-xs"
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground font-mono">{res.unidade}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-2">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={res.refMin ?? ''}
+                          onChange={(e) => {
+                            const novo = [...formData.resultadosExame];
+                            novo[idx].refMin = e.target.value ? parseFloat(e.target.value) : null;
+                            setFormData({ ...formData, resultadosExame: novo });
+                          }}
+                          className="w-20 bg-transparent border-b border-border outline-none focus:border-primary text-sm"
+                        />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">{res.refMin ?? '-'}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-2">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={res.refMax ?? ''}
+                          onChange={(e) => {
+                            const novo = [...formData.resultadosExame];
+                            novo[idx].refMax = e.target.value ? parseFloat(e.target.value) : null;
+                            setFormData({ ...formData, resultadosExame: novo });
+                          }}
+                          className="w-20 bg-transparent border-b border-border outline-none focus:border-primary text-sm"
+                        />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">{res.refMax ?? '-'}</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-2">
+                      {isEditing ? (
+                        <select
+                          value={res.status}
+                          onChange={(e) => {
+                            const novo = [...formData.resultadosExame];
+                            novo[idx].status = e.target.value;
+                            setFormData({ ...formData, resultadosExame: novo });
+                          }}
+                          className="bg-transparent border-b border-border outline-none focus:border-primary text-xs p-1"
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="alto">Alto</option>
+                          <option value="baixo">Baixo</option>
+                          <option value="indefinido">Indefinido</option>
+                        </select>
+                      ) : (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          res.status === 'alto' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                          res.status === 'baixo' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                          res.status === 'normal' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                          'bg-slate-500/10 text-slate-600 dark:text-slate-400'
+                        }`}>
+                          {res.status}
+                        </span>
+                      )}
+                    </td>
+                    {isEditing && (
+                      <td className="py-3 px-2 text-right">
+                        <button
+                          onClick={() => {
+                            const novo = [...formData.resultadosExame];
+                            novo.splice(idx, 1);
+                            setFormData({ ...formData, resultadosExame: novo });
+                          }}
+                          className="text-destructive hover:bg-destructive/10 p-1.5 rounded-md transition-colors"
+                          title="Remover linha"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {isEditing && (
+              <button
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    resultadosExame: [
+                      ...formData.resultadosExame,
+                      { nome: '', valor: null, valorTexto: '', unidade: '', refMin: null, refMax: null, status: 'indefinido' }
+                    ]
+                  });
+                }}
+                className="mt-4 flex items-center gap-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+              >
+                <Plus size={14} /> Adicionar Resultado
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-3xl border-border bg-card">

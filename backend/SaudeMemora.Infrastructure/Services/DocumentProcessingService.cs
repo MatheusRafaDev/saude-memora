@@ -292,7 +292,20 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
   ""diagnostico"": ""string"",
   ""textoFormatado"": ""string"",
   ""medicamentos"": [{ ""nome"": ""string"", ""dosagem"": ""string"", ""horario"": ""string"" }],
-  ""conteudoIndentado"": [{ ""tipo"": ""string (header|keyvalue|bullet|text)"", ""texto"": ""string"", ""chave"": ""string"", ""valor"": ""string"" }]
+  ""conteudoIndentado"": [{ ""tipo"": ""string (header|keyvalue|bullet|text)"", ""texto"": ""string"", ""chave"": ""string"", ""valor"": ""string"" }],
+  ""resultadosExame"": [{
+    ""nome"": ""string"",
+    ""nomeNormalizado"": ""string (chave estável em minúsculas sem acentos, ex: glicose, colesterol_total, tsh)"",
+    ""valor"": ""number (double, opcional, usar ponto como separador decimal. null se texto)"",
+    ""valorTexto"": ""string (ex: 'Não reagente', vazio se for valor numérico)"",
+    ""unidade"": ""string (copiar exatamente como no doc)"",
+    ""refMin"": ""number (double, opcional)"",
+    ""refMax"": ""number (double, opcional)"",
+    ""referenciaTexto"": ""string"",
+    ""status"": ""string (normal | baixo | alto | indefinido)"",
+    ""confianca"": ""number (0.0 a 1.0, honestidade sobre legibilidade)""
+  }],
+  ""confiancas"": [{ ""campo"": ""string (caminho JSON do campo. Ex: medicamentos[1].dosagem, resultadosExame[0].valor, data)"", ""valor"": ""number (0.0 a 1.0)"" }]
 }";
 
         // ── RECEITA MÉDICA / PRESCRIÇÃO ────────────────────────────────────
@@ -315,6 +328,7 @@ Sua tarefa é extrair com PRECISÃO MÁXIMA todos os dados de uma receita médic
     - ""nome"": Nome comercial ou genérico completo
     - ""dosagem"": Concentração (mg, ml, cp) e quantidade (ex: ""500mg - 2 comprimidos"")
     - ""horario"": Posologia completa exatamente como está escrita (ex: ""1 comprimido a cada 8 horas por 7 dias"")
+- ""confiancas"": MUITO IMPORTANTE. Para CADA campo crítico que você extrair (ex: medicamentos[i].dosagem, medicamentos[i].horario, medicamentos[i].nome, data), atribua uma nota de confiança (0.0 a 1.0) de acordo com a legibilidade da imagem/OCR. Se estiver ilegível, não chute, coloque nota baixa (<0.8).
 - ""conteudoIndentado"": Represente a estrutura da receita:
     - tipo ""header"": nome do médico/clínica no topo
     - tipo ""keyvalue"": Paciente, Data, etc.
@@ -429,11 +443,18 @@ Sua tarefa é extrair com PRECISÃO os dados do exame laboratorial abaixo.
     - ""chave"": nome do exame (ex: ""Hemoglobina"")
     - ""valor"": resultado + unidade + referência (ex: ""14,5 g/dL (ref: 12,0-16,0)"")
     - Se valor estiver fora da referência, use tipo ""bullet"" com indicação [ALTO] ou [BAIXO].
+- ""resultadosExame"": PREENCHIMENTO OBRIGATÓRIO PARA EXAMES. Extraia os dados numéricos de forma estruturada.
+    - ""nomeNormalizado"": DEVE ser normalizado. Lista fechada de sugestões: hemograma, glicemia, colesterol_total, colesterol_hdl, colesterol_ldl, triglicerideos, tsh, t4_livre, creatinina, ureia, tgo, tgp, vitamina_d, vitamina_b12, ferritina, psa, acido_urico, calcio, potassio, sodio, ferro_serico, insulina, hemoglobina_glicada. (Fallback: original em minúsculas sem acento e com underscores).
+    - ""status"": Calcule normal | baixo | alto | indefinido comparando o valor extraído com refMin e refMax, ou interprete o texto do laudo.
+    - Não invente valores ausentes.
+    - Use PONTO DECIMAL (.) para números. Nunca vírgula.
+    - Preencha ""confianca"" (0.0 a 1.0) baseado na clareza da imagem ou OCR.
+- ""confiancas"": Avalie a legibilidade geral e de campos críticos.
 
-## ATENÇÃO ESPECIAL - TABELAS DE OCR
+## ATENÇÃO ESPECIAL - TABELAS DE OCR E VALORES NUMÉRICOS
 - OCR em tabelas de exames frequentemente mistura as colunas. Alinhe: 1º exame com 1º resultado, 2º exame com 2º resultado.
 - Nunca repita o mesmo exame. Nunca atribua resultado de um exame a outro.
-- Preserve os valores decimais exatamente como estão.
+- Preserve os valores decimais exatamente como estão (apenas converta vírgula para ponto se for ""valor"").
 
 ## Texto do documento:
 {unifiedText}

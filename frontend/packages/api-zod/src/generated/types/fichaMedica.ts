@@ -9,7 +9,7 @@ import type { CondicaoMedica } from './condicaoMedica';
 export interface FichaMedica {
   /** @nullable */
   id?: string | null;
-  patientId: string;
+  pacienteId: string;
   historicoFamiliar?: string;
   cirurgias?: string;
   fuma?: boolean;
@@ -19,4 +19,10 @@ export interface FichaMedica {
   updatedAt?: Date;
   condicoes?: CondicaoMedica[];
   outrasDoencas?: string;
+  /** @nullable */
+  tipoSanguineo?: string | null;
+  doadorOrgaos?: boolean;
+  alergias?: string[];
+  doencasCronicas?: string[];
+  medicamentosContinuos?: string[];
 }

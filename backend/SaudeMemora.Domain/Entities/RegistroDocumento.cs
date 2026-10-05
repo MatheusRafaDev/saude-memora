@@ -3,6 +3,30 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace SaudeMemora.Domain.Entities;
 
+public class AlertaDocumento
+{
+    [BsonElement("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+
+    [BsonElement("tipo")]
+    public string Tipo { get; set; } = string.Empty; // alergia | interacao | duplicidade
+
+    [BsonElement("severidade")]
+    public string Severidade { get; set; } = string.Empty; // baixa | moderada | alta
+
+    [BsonElement("mensagem")]
+    public string Mensagem { get; set; } = string.Empty;
+
+    [BsonElement("medicamentos")]
+    public List<string> Medicamentos { get; set; } = new();
+
+    [BsonElement("geradoEm")]
+    public DateTime GeradoEm { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("dispensado")]
+    public bool Dispensado { get; set; } = false;
+}
+
 public class MedicamentoDocumento
 {
     [BsonElement("nome")]
@@ -13,6 +37,39 @@ public class MedicamentoDocumento
 
     [BsonElement("horario")]
     public string Horario { get; set; } = string.Empty;
+}
+
+public class ResultadoExameItem
+{
+    [BsonElement("nome")]
+    public string Nome { get; set; } = string.Empty;
+
+    [BsonElement("nomeNormalizado")]
+    public string NomeNormalizado { get; set; } = string.Empty;
+
+    [BsonElement("valor")]
+    public double? Valor { get; set; }
+
+    [BsonElement("valorTexto")]
+    public string ValorTexto { get; set; } = string.Empty;
+
+    [BsonElement("unidade")]
+    public string Unidade { get; set; } = string.Empty;
+
+    [BsonElement("refMin")]
+    public double? RefMin { get; set; }
+
+    [BsonElement("refMax")]
+    public double? RefMax { get; set; }
+
+    [BsonElement("referenciaTexto")]
+    public string ReferenciaTexto { get; set; } = string.Empty;
+
+    [BsonElement("status")]
+    public string Status { get; set; } = "indefinido"; // normal | baixo | alto | indefinido
+
+    [BsonElement("confianca")]
+    public double Confianca { get; set; } = 1.0;
 }
 
 public class LinhaIndentadaDocumento
@@ -111,6 +168,9 @@ public class RegistroDocumento
     [BsonElement("conteudoIndentado")]
     public List<LinhaIndentadaDocumento> ConteudoIndentado { get; set; } = new();
 
+    [BsonElement("resultadosExame")]
+    public List<ResultadoExameItem> ResultadosExame { get; set; } = new();
+
     [BsonElement("criadoEm")]
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 
@@ -137,4 +197,17 @@ public class RegistroDocumento
 
     [BsonElement("version")]
     public int Version { get; set; } = 0;
+
+    [BsonElement("revisaoPendente")]
+    public bool RevisaoPendente { get; set; } = false;
+
+    [BsonElement("revisadoEm")]
+    [BsonIgnoreIfNull]
+    public DateTime? RevisadoEm { get; set; }
+
+    [BsonElement("camposBaixaConfianca")]
+    public List<string> CamposBaixaConfianca { get; set; } = new();
+
+    [BsonElement("alertas")]
+    public List<AlertaDocumento> Alertas { get; set; } = new();
 }

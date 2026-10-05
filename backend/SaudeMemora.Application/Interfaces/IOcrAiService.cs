@@ -23,6 +23,26 @@ public class LinhaIndentadaDto
     public string Valor { get; set; } = string.Empty;
 }
 
+public class ResultadoExameExtraidoDto
+{
+    public string Nome { get; set; } = string.Empty;
+    public string NomeNormalizado { get; set; } = string.Empty;
+    public double? Valor { get; set; }
+    public string ValorTexto { get; set; } = string.Empty;
+    public string Unidade { get; set; } = string.Empty;
+    public double? RefMin { get; set; }
+    public double? RefMax { get; set; }
+    public string ReferenciaTexto { get; set; } = string.Empty;
+    public string Status { get; set; } = "indefinido";
+    public double Confianca { get; set; } = 1.0;
+}
+
+public class ConfiancaCampoDto
+{
+    public string Campo { get; set; } = string.Empty;
+    public double Valor { get; set; } = 1.0;
+}
+
 public class DocumentoExtraidoDto
 {
     public bool DocumentoValido { get; set; } = true;
@@ -45,6 +65,8 @@ public class DocumentoExtraidoDto
     public string Observacoes { get; set; } = string.Empty;
     public List<MedicamentoExtraidoDto> Medicamentos { get; set; } = new();
     public List<LinhaIndentadaDto> ConteudoIndentado { get; set; } = new();
+    public List<ResultadoExameExtraidoDto> ResultadosExame { get; set; } = new();
+    public List<ConfiancaCampoDto> Confiancas { get; set; } = new();
     public string TextoExtraido { get; set; } = string.Empty;
     public string TextoFormatado { get; set; } = string.Empty;
 }

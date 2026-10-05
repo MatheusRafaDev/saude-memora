@@ -104,6 +104,15 @@ export default function Dashboard() {
       return { nome: originalName, count };
     });
 
+  // — Alertas FASE 4 —
+  const alertasAtivos = docs
+    .flatMap((doc: any) => (doc.alertas || []).map((a: any) => ({ ...a, docId: doc.id })))
+    .filter((a: any) => !a.dispensado)
+    .sort((a, b) => {
+      const p = { alta: 3, moderada: 2, baixa: 1 };
+      return (p[b.severidade as keyof typeof p] || 0) - (p[a.severidade as keyof typeof p] || 0);
+    });
+
   const firstName = user.nome?.split(' ')[0] || 'Você';
 
   const statusBadge = (doc: any) => {
@@ -118,6 +127,13 @@ export default function Dashboard() {
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[10px] font-semibold text-red-700">
           <ShieldAlert size={9} /> Falha
+        </span>
+      );
+    }
+    if (doc.revisaoPendente) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-500">
+          <AlertTriangle size={9} /> Revisar
         </span>
       );
     }
@@ -171,6 +187,11 @@ export default function Dashboard() {
             {donor && (
               <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-400/20 border border-emerald-300/30 px-2.5 py-1 text-xs font-semibold text-white">
                 <Shield size={11} className="text-emerald-300" /> Doador de órgãos
+              </span>
+            )}
+            {alertasAtivos.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-red-500/20 border border-red-400/30 px-2.5 py-1 text-xs font-semibold text-white">
+                <ShieldAlert size={11} className="text-red-300" /> {alertasAtivos.length} aviso{alertasAtivos.length > 1 ? 's' : ''} médico{alertasAtivos.length > 1 ? 's' : ''}
               </span>
             )}
           </div>

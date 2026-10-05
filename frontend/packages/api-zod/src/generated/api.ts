@@ -7,9 +7,50 @@
 import * as zod from 'zod';
 
 
+export const GetApiPingResponse = zod.unknown()
+
+
+export const PostApiDocumentsIdReprocessarParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const PostApiDocumentsIdReprocessarResponse = zod.unknown()
+
+
+export const PostApiDocumentsIdRevisaoConfirmarParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const PostApiDocumentsIdRevisaoConfirmarResponse = zod.unknown()
+
+
+export const PostApiDocumentsIdAlertasAlertaIdDispensarParams = zod.object({
+  "id": zod.coerce.string(),
+  "alertaId": zod.coerce.string()
+})
+
+export const PostApiDocumentsIdAlertasAlertaIdDispensarResponse = zod.unknown()
+
+
+export const GetApiPacientesMeEmergenciaResponse = zod.unknown()
+
+
+export const GetApiEmergenciaTokenParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetApiEmergenciaTokenResponse = zod.unknown()
+
+
+export const PostApiChatBody = zod.object({
+  "message": zod.string().optional()
+})
+
+export const PostApiChatResponse = zod.unknown()
+
+
 export const PostApiAuthRegisterBody = zod.object({
   "nome": zod.string().optional(),
-  "cpf": zod.string().optional(),
   "dataNascimento": zod.string().optional(),
   "sexo": zod.string().optional(),
   "email": zod.string().optional(),
@@ -27,6 +68,21 @@ export const PostApiAuthLoginBody = zod.object({
 export const PostApiAuthLoginResponse = zod.unknown()
 
 
+export const PostApiAuthForgotPasswordBody = zod.object({
+  "email": zod.string().optional()
+})
+
+export const PostApiAuthForgotPasswordResponse = zod.unknown()
+
+
+export const PostApiAuthResetPasswordBody = zod.object({
+  "token": zod.string().optional(),
+  "senha": zod.string().optional()
+})
+
+export const PostApiAuthResetPasswordResponse = zod.unknown()
+
+
 export const GetApiPacientesMeResponse = zod.unknown()
 
 
@@ -34,15 +90,11 @@ export const DeleteApiPacientesMeResponse = zod.unknown()
 
 
 export const PatchApiPacientesMePerfilBody = zod.object({
-  "tipoSanguineo": zod.string().nullable(),
-  "doadorOrgaos": zod.boolean().nullable(),
-  "alergias": zod.array(zod.string()).nullable(),
-  "doencasCronicas": zod.array(zod.string()).nullable(),
-  "medicamentosContinuos": zod.array(zod.object({
-  "nome": zod.string(),
-  "dosagem": zod.string(),
-  "horario": zod.string()
-})).nullable()
+  "nome": zod.string().nullable(),
+  "dataNascimento": zod.string().nullable(),
+  "email": zod.string().nullable(),
+  "planoSaude": zod.string().nullable(),
+  "numeroCarteirinha": zod.string().nullable()
 })
 
 export const PatchApiPacientesMePerfilResponse = zod.unknown()
@@ -56,12 +108,18 @@ export const PatchApiPacientesMeContatoBody = zod.object({
 export const PatchApiPacientesMeContatoResponse = zod.unknown()
 
 
+export const PostApiPacientesMeCarteirinhaResponse = zod.unknown()
+
+
+export const DeleteApiPacientesMeCarteirinhaResponse = zod.unknown()
+
+
 export const GetApiFichaMedicaMeResponse = zod.unknown()
 
 
 export const PatchApiFichaMedicaMeBody = zod.object({
   "id": zod.string().nullish(),
-  "patientId": zod.string(),
+  "pacienteId": zod.string(),
   "historicoFamiliar": zod.string().optional(),
   "cirurgias": zod.string().optional(),
   "fuma": zod.boolean().optional(),
@@ -74,13 +132,25 @@ export const PatchApiFichaMedicaMeBody = zod.object({
   "tem": zod.boolean().optional(),
   "detalhes": zod.string().optional()
 })).optional(),
-  "outrasDoencas": zod.string().optional()
+  "outrasDoencas": zod.string().optional(),
+  "tipoSanguineo": zod.string().nullish(),
+  "doadorOrgaos": zod.boolean().optional(),
+  "alergias": zod.array(zod.string()).optional(),
+  "doencasCronicas": zod.array(zod.string()).optional(),
+  "medicamentosContinuos": zod.array(zod.string()).optional()
 })
 
 export const PatchApiFichaMedicaMeResponse = zod.unknown()
 
 
 export const PostApiDocumentsUploadResponse = zod.unknown()
+
+
+export const PostApiDocumentsIdRetryParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const PostApiDocumentsIdRetryResponse = zod.unknown()
 
 
 export const GetApiDocumentsResponse = zod.unknown()
@@ -96,6 +166,35 @@ export const GetApiDocumentsIdParams = zod.object({
 export const GetApiDocumentsIdResponse = zod.unknown()
 
 
+export const PutApiDocumentsIdParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const PutApiDocumentsIdBody = zod.object({
+  "titulo": zod.string().nullish(),
+  "medico": zod.string().nullish(),
+  "clinica": zod.string().nullish(),
+  "data": zod.string().nullish(),
+  "resumo": zod.string().nullish(),
+  "diagnostico": zod.string().nullish(),
+  "crm": zod.string().nullish(),
+  "resultadosExame": zod.array(zod.object({
+  "nome": zod.string().nullish(),
+  "nomeNormalizado": zod.string().nullish(),
+  "valor": zod.number().nullish(),
+  "valorTexto": zod.string().nullish(),
+  "unidade": zod.string().nullish(),
+  "refMin": zod.number().nullish(),
+  "refMax": zod.number().nullish(),
+  "referenciaTexto": zod.string().nullish(),
+  "status": zod.string().nullish(),
+  "confianca": zod.number().optional()
+})).nullish()
+})
+
+export const PutApiDocumentsIdResponse = zod.unknown()
+
+
 export const DeleteApiDocumentsIdParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -108,5 +207,29 @@ export const GetApiReportsGenerateQueryParams = zod.object({
 })
 
 export const GetApiReportsGenerateResponse = zod.unknown()
+
+
+export const GetApiPacientesMeConsentimentoResponse = zod.unknown()
+
+
+export const PostApiPacientesMeConsentimentoBody = zod.object({
+  "aceito": zod.boolean().optional()
+})
+
+export const PostApiPacientesMeConsentimentoResponse = zod.unknown()
+
+
+export const DeleteApiPacientesMeConsentimentoResponse = zod.unknown()
+
+
+export const GetApiExamesAnalitosResponse = zod.unknown()
+
+
+export const GetApiExamesSerieQueryParams = zod.object({
+  "analito": zod.coerce.string(),
+  "meses": zod.coerce.number().int()
+})
+
+export const GetApiExamesSerieResponse = zod.unknown()
 
 

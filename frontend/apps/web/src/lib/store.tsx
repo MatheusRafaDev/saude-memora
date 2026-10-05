@@ -33,15 +33,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     signOut: () => { setAuthenticated(false); localStorage.removeItem('auth_token'); window.location.href = '/entrar'; },
     updateProfile: (next) => {
       setProfile(next);
-      setActivities((old) => [{ id: `act-${Date.now()}`, label: 'Perfil de saúde atualizado', timestamp: 'Agora', type: 'profile' }, ...old]);
+      setActivities((old) => [{ id: `act-${Date.now()}`, label: 'Perfil de saúde atualizado', timestamp: 'Agora', tipo: 'profile' }, ...old]);
     },
     updateRecord: (next) => {
       setRecord(next);
-      setActivities((old) => [{ id: `act-${Date.now()}`, label: 'Anamnese revisada', timestamp: 'Agora', type: 'edit' }, ...old]);
+      setActivities((old) => [{ id: `act-${Date.now()}`, label: 'Anamnese revisada', timestamp: 'Agora', tipo: 'edit' }, ...old]);
     },
     addDocument: (document) => {
       setDocuments((old) => [document, ...old]);
-      setActivities((old) => [{ id: `act-${Date.now()}`, label: `${document.titulo} adicionado`, timestamp: 'Agora', type: 'upload' }, ...old]);
+      setActivities((old) => [{ id: `act-${Date.now()}`, label: `${document.titulo} adicionado`, timestamp: 'Agora', tipo: 'upload' }, ...old]);
     },
   }), [isAuthenticated, profile, record, documents, activities]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

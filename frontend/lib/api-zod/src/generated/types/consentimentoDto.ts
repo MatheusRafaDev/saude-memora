@@ -5,8 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface MedicamentoContinuoDto {
-  nome: string;
-  dosagem: string;
-  horario: string;
+export interface ConsentimentoDto {
+  aceito?: boolean;
 }

@@ -57,6 +57,9 @@ public class Paciente
     [BsonElement("idPublicoCarteirinha")]
     public string? IdPublicoCarteirinha { get; set; }
 
+    [BsonElement("tokenEmergencia")]
+    public string? TokenEmergencia { get; set; }
+
     [BsonElement("resetPasswordToken")]
     public string? ResetPasswordToken { get; set; }
 

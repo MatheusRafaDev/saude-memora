@@ -52,6 +52,9 @@ public class FichaMedica
 
     [BsonElement("doencasCronicas")]
     public List<string> DoencasCronicas { get; set; } = new();
+
+    [BsonElement("medicamentosContinuos")]
+    public List<string> MedicamentosContinuos { get; set; } = new();
 }
 
 public class CondicaoMedica

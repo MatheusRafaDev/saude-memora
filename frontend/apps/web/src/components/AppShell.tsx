@@ -1,16 +1,21 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Activity, BookOpen, FileText, LogOut, ShieldCheck, UserRound, Plus, ChevronDown } from 'lucide-react';
+import { Activity, BookOpen, FileText, LogOut, ShieldCheck, UserRound, Plus, ChevronDown, History, MessageSquare } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
-import { useGetApiPacientesMe, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
+import { useGetApiPacientesMe, useGetApiFichaMedicaMe, useGetApiDocuments } from '@workspace/api-client-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Bell } from 'lucide-react';
 
 const navItems = [
   { href: '/visao-geral',     label: 'Visão geral',   icon: Activity  },
   { href: '/documentos', label: 'Documentos',     icon: FileText  },
   { href: '/anamnese',   label: 'Anamnese',       icon: BookOpen  },
+  { href: '/evolucao',   label: 'Evolução',       icon: Activity  },
+  { href: '/timeline',   label: 'Timeline',       icon: History  },
+  { href: '/chat',       label: 'Chat IA',        icon: MessageSquare },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -19,7 +24,30 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { signOut } = useStore();
   const { data: profileRaw } = useGetApiPacientesMe();
   const { data: fichaRaw, isLoading: isFichaLoading } = useGetApiFichaMedicaMe();
+  const { data: docsRaw } = useGetApiDocuments();
   const profile = (profileRaw as unknown as any) || { nome: 'Usuário', email: '' };
+
+  const notifications = (() => {
+    if (!docsRaw) return [];
+    const docs = docsRaw as any[];
+    const notifs: { id: string, msg: string, link: string }[] = [];
+    docs.forEach(d => {
+      // Alertas ativos
+      if (d.alertas && Array.isArray(d.alertas)) {
+        d.alertas.filter((a: any) => !a.dispensado).forEach((a: any) => {
+          notifs.push({ id: a.id, msg: `Alerta: ${a.tipo} detectado`, link: `/documentos/${d.id}` });
+        });
+      }
+      // Exames fora
+      if (d.resultadosExame && Array.isArray(d.resultadosExame)) {
+        const fora = d.resultadosExame.filter((r: any) => r.status === 'fora_da_referencia').length;
+        if (fora > 0) {
+          notifs.push({ id: `exame-${d.id}`, msg: `${fora} resultado(s) fora do padrão`, link: `/documentos/${d.id}` });
+        }
+      }
+    });
+    return notifs;
+  })();
 
   const [currentDate, setCurrentDate] = useState('');
   useEffect(() => {
@@ -111,7 +139,33 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               )}
 
-
+              {/* Notifications */}
+              {!isAnamnesePending && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="relative p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
+                      <Bell size={18} />
+                      {notifications.length > 0 && (
+                        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background animate-pulse" />
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-3 text-center text-sm text-muted-foreground">Nenhuma notificação</div>
+                    ) : (
+                      notifications.map(n => (
+                        <DropdownMenuItem key={n.id} asChild>
+                          <Link href={n.link} className="cursor-pointer flex flex-col py-2 px-3 border-b last:border-0 hover:bg-muted">
+                            <span className="text-sm font-medium">{n.msg}</span>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">Clique para ver</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
               {/* Add button */}
               {!isAnamnesePending && (
@@ -177,13 +231,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {/* Options */}
                       <div className="py-1.5">
                         {!isAnamnesePending && (
-                        <button
-                          onClick={() => navigate('/perfil')}
-                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground hover:bg-muted transition-colors"
-                        >
-                          <UserRound size={14} />
-                          Meu perfil
-                        </button>
+                        <>
+                          <button
+                            onClick={() => navigate('/perfil')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground hover:bg-muted transition-colors"
+                          >
+                            <UserRound size={14} />
+                            Meu perfil
+                          </button>
+                          <button
+                            onClick={() => navigate('/emergencia')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-600 dark:text-red-500 hover:bg-muted transition-colors"
+                          >
+                            <ShieldCheck size={14} />
+                            Emergência
+                          </button>
+                        </>
                         )}
                         <button
                           onClick={() => { signOut(); window.location.href = '/'; }}

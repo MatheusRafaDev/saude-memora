@@ -5,11 +5,17 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './chatRequest';
 export * from './condicaoMedica';
+export * from './consentimentoDto';
 export * from './contatoDto';
+export * from './documentUpdateDto';
 export * from './fichaMedica';
+export * from './forgotPasswordDto';
+export * from './getApiExamesSerieParams';
 export * from './getApiReportsGenerateParams';
 export * from './loginPacienteDto';
-export * from './medicamentoContinuoDto';
-export * from './perfilMedicoDto';
+export * from './perfilUpdateDto';
 export * from './registerPacienteDto';
+export * from './resetPasswordDto';
+export * from './resultadoExameUpdateDto';
