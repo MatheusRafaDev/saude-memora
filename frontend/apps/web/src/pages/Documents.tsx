@@ -256,7 +256,8 @@ export default function Documents() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="overflow-x-auto hidden md:block">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -347,6 +348,75 @@ export default function Documents() {
               </tbody>
             </table>
           </div>
+
+          <div className="flex flex-col gap-3 md:hidden">
+            {filtered.map((doc: any) => (
+              <div key={`mobile-${doc.id}`} className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-3 relative">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    {doc.status === 'pending' || doc.status === 'processing' ? (
+                        <div className="flex items-center gap-2 text-muted-foreground opacity-80 mb-1">
+                          <FileText size={16} className="shrink-0" />
+                          <span className="truncate text-sm font-bold">Analisando documento...</span>
+                        </div>
+                      ) : (
+                        <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-2 mb-1">
+                          <FileText size={16} className="text-accent shrink-0" />
+                          <span className="truncate text-sm font-bold">{doc.titulo || 'Documento sem título'}</span>
+                        </Link>
+                      )}
+                      
+                    <div className="flex flex-wrap gap-2 mt-1.5 items-center">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-accent">
+                        {doc.tipo || 'Documento'}
+                      </span>
+                      {doc.status === 'pending' || doc.status === 'processing' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-blue-500">
+                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `${doc.progress || 0}%` : 'Processando'}
+                        </span>
+                      ) : doc.status === 'failed' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-destructive">
+                           <ShieldAlert size={10} /> Erro
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-emerald-500">
+                           <Check size={10} /> Pronto
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="-mt-1 -mr-1 rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+                        <MoreVertical size={16} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem className="text-xs font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
+                        <Pencil size={14} className="mr-2" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
+                        <Trash2 size={14} className="mr-2" /> Apagar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/50">
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-muted-foreground/70 mb-0.5">Médico/Clínica</span>
+                    <span className="font-medium truncate block">{doc.medico || doc.clinica || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-muted-foreground/70 mb-0.5">Data</span>
+                    <span className="font-mono truncate block">{doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          </>
         )}
       </section>
       
