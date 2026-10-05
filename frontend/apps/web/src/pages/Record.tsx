@@ -183,7 +183,10 @@ function AutocompleteMultiSelect({
   );
 }
 
+import { useLocation } from 'wouter';
+
 export default function Record() {
+  const [, setLocation] = useLocation();
   const { data: recordRaw, isLoading, refetch } = useGetApiFichaMedicaMe();
   const patchFicha = usePatchApiFichaMedicaMe();
 
@@ -268,6 +271,11 @@ export default function Record() {
       setSaved(true); 
       // Do not await refetch() on auto-save to prevent focus loss issues
       window.setTimeout(() => setSaved(false), 2400); 
+
+      // Se for um clique manual no botão Salvar (tem event), redireciona
+      if (event) {
+        setLocation('/visao-geral');
+      }
     } catch (err) {
       setError('Erro ao salvar ficha.');
     }

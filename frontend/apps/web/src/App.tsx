@@ -27,7 +27,10 @@ import { QueryCache } from '@tanstack/react-query';
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: any) => {
-      if (error?.status === 401 || error?.response?.status === 401) {
+      if (
+        error?.status === 401 || error?.response?.status === 401 ||
+        error?.status === 404 || error?.response?.status === 404
+      ) {
         localStorage.removeItem('auth_token');
         window.location.href = '/entrar';
       }
@@ -36,12 +39,35 @@ const queryClient = new QueryClient({
 });
 
 
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/axios';
+
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  if (!localStorage.getItem('auth_token')) {
-    window.location.href = '/entrar';
+  const token = localStorage.getItem('auth_token');
+  
+  if (!token) {
+    window.location.href = '/';
     return null;
   }
-  return <ProtectedRoute>{children}</ProtectedRoute>;
+
+  // Validate user constantly
+  const { isLoading, isError } = useQuery({
+    queryKey: ['validateUser'],
+    queryFn: () => api.get('/api/pacientes/perfil').then(res => res.data),
+    retry: false, // Don't retry if 401
+    staleTime: 5 * 60 * 1000 // Re-validate every 5 minutes
+  });
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">Validando acesso...</div>;
+  }
+
+  if (isError) {
+    // queryCache onError vai redirecionar para /entrar e limpar o token
+    return null;
+  }
+  
+  return <AppPage>{children}</AppPage>;
 }
 
 function AppPage({ children }: { children: ReactNode }) { return <AppShell>{children}</AppShell>; }
