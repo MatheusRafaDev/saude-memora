@@ -109,13 +109,6 @@ export default function Auth() {
             Organize seus documentos de saúde com clareza, contexto e o cuidado que a sua história merece.
           </p>
 
-          {/* Trust badge */}
-          <div className="mt-10 flex items-center gap-2.5 text-[11px] text-white/45">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/7">
-              <ShieldCheck size={13} className="text-[hsl(var(--sidebar-primary))]" />
-            </span>
-            Privacidade pensada para pessoas, não para processos.
-          </div>
         </div>
       </section>
 

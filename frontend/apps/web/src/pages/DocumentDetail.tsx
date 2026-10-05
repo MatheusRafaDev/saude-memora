@@ -24,6 +24,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isRawTextOpen, setIsRawTextOpen] = useState(false);
+  const [showTranscriptionModal, setShowTranscriptionModal] = useState(false);
+  const [showFullScreenModal, setShowFullScreenModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -129,6 +131,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
+                  {doc.textoExtraido && (
+                    <DropdownMenuItem className="text-xs font-bold hover:bg-muted focus:bg-muted cursor-pointer" onClick={() => setShowTranscriptionModal(true)}>
+                      <Code size={14} className="mr-2" /> Ver Transcrição
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setShowDeleteConfirm(true)}>
                     <Trash2 size={14} className="mr-2" /> Apagar
                   </DropdownMenuItem>
@@ -229,9 +236,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 <FileText size={14} /> Documento Original
               </span>
               {(doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem) && (
-                <a href={doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem} target="_blank" rel="noreferrer" className="rounded-xl bg-card border border-border/50 px-4 py-2 text-[10px] font-bold text-primary hover:bg-primary hover:text-white transition-colors">
+                <button onClick={() => setShowFullScreenModal(true)} className="rounded-xl bg-card border border-border/50 px-4 py-2 text-[10px] font-bold text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer">
                   Tela Cheia
-                </a>
+                </button>
               )}
             </div>
             
@@ -270,52 +277,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             </div>
           </section>
 
-          {/* Raw Text Section (Collapsible) */}
-          {doc.textoExtraido && !isEditing && (
-            <section className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm transition-all">
-              <div className="flex w-full items-center justify-between">
-                <button 
-                  onClick={() => setIsRawTextOpen(!isRawTextOpen)}
-                  className="flex flex-1 items-center gap-3 outline-none text-left"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent shrink-0">
-                    <Code size={20} />
-                  </span>
-                  <div>
-                    <h2 className="text-base font-extrabold text-foreground">Transcrição Original</h2>
-                    <p className="text-xs font-medium text-muted-foreground mt-0.5">Texto lido por OCR</p>
-                  </div>
-                </button>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.clipboard.writeText(doc.textoExtraido);
-                      toast({ description: 'Copiado para a área de transferência!' });
-                    }}
-                    className="flex h-8 items-center gap-1.5 px-3 rounded-lg bg-muted/30 border border-border/50 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-accent/10 transition-colors"
-                    title="Copiar texto"
-                  >
-                    <Copy size={13} /> <span className="hidden sm:inline">Copiar</span>
-                  </button>
-                  <button 
-                    onClick={() => setIsRawTextOpen(!isRawTextOpen)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-muted transition-colors"
-                  >
-                    {isRawTextOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
-                </div>
-              </div>
 
-              {isRawTextOpen && (
-                <div className="mt-5 rounded-2xl bg-muted/20 border border-border/40 p-5">
-                  <pre className="font-mono whitespace-pre-wrap text-[11px] md:text-xs leading-[1.8] text-muted-foreground overflow-auto max-h-[350px] scrollbar-thin">
-                    {doc.textoExtraido}
-                  </pre>
-                </div>
-              )}
-            </section>
-          )}
         </div>
 
         {/* Right Column: Information, Diagnosis, Medicines (Sticky) */}
@@ -496,6 +458,53 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               Apagar Definitivamente
             </AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={showTranscriptionModal} onOpenChange={setShowTranscriptionModal}>
+        <AlertDialogContent className="rounded-3xl border-border bg-card max-w-2xl max-h-[80vh] flex flex-col p-6">
+          <AlertDialogHeader className="shrink-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="text-left">
+                <AlertDialogTitle className="font-extrabold text-xl flex items-center gap-2">
+                  <Code size={20} className="text-primary" /> Transcrição por IA
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-muted-foreground font-medium mt-1">
+                  Texto bruto extraído do documento.
+                </AlertDialogDescription>
+              </div>
+              <button onClick={() => {
+                navigator.clipboard.writeText(doc.textoExtraido);
+                toast({ description: 'Copiado para a área de transferência!' });
+              }} className="flex h-8 items-center gap-1.5 px-3 rounded-lg bg-muted/30 border border-border/50 text-xs font-bold text-muted-foreground hover:text-primary hover:bg-accent/10 transition-colors shrink-0 cursor-pointer">
+                <Copy size={13} /> <span className="hidden sm:inline">Copiar</span>
+              </button>
+            </div>
+          </AlertDialogHeader>
+          <div className="flex-1 overflow-auto mt-4 rounded-2xl bg-muted/20 border border-border/40 p-5 scrollbar-thin min-h-[200px]">
+            <pre className="font-mono whitespace-pre-wrap text-[11px] md:text-xs leading-[1.8] text-muted-foreground">
+              {doc.textoExtraido}
+            </pre>
+          </div>
+          <AlertDialogFooter className="mt-4 shrink-0">
+            <AlertDialogCancel className="rounded-xl border-border font-bold w-full sm:w-auto cursor-pointer">Fechar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showFullScreenModal} onOpenChange={setShowFullScreenModal}>
+        <AlertDialogContent className="max-w-[95vw] h-[95vh] rounded-3xl border-border bg-black/95 p-0 flex flex-col overflow-hidden">
+          <div className="flex justify-end p-4 absolute top-0 right-0 z-50">
+            <button onClick={() => setShowFullScreenModal(false)} className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors cursor-pointer">
+              <X size={24} />
+            </button>
+          </div>
+          <div className="flex-1 relative w-full h-full flex items-center justify-center p-4">
+            <img 
+              src={doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem} 
+              alt="Documento em tela cheia" 
+              className="max-w-full max-h-full object-contain" 
+            />
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>

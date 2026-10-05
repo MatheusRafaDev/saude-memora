@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Camera, ScanLine } from 'lucide-react';
+import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Camera, ScanLine, Layers } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
 
@@ -23,7 +23,6 @@ const PROCESSING_STEPS = [
   'Enviando para o seu espaço...',
   'Preparando arquivo...',
   'Lendo informações...',
-  'Analisando com Inteligência Artificial...',
   'Organizando dados médicos...',
   'Salvando na sua ficha...',
 ];
@@ -39,6 +38,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   const [step, setStep] = useState<'type' | 'file' | 'processing' | 'done'>('type');
   const [docType, setDocType] = useState('');
+  const [isBatchMode, setIsBatchMode] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [resultId, setResultId] = useState<string | null>(null);
@@ -132,6 +132,40 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   const startUpload = async () => {
     if (!files.length) return;
     
+    if (isBatchMode) {
+      pollAbortedRef.current = false;
+      setError('');
+      setRejectedMessage('');
+      setStep('processing');
+      setProcessingStep(0);
+      setBackendProgress(10);
+      
+      try {
+        const promises = files.map(f => {
+          const formData = new FormData();
+          formData.append('file', f);
+          formData.append('documentType', 'outro');
+          return customFetch('/api/documents/upload', { method: 'POST', body: formData as any });
+        });
+        
+        await Promise.all(promises);
+        window.dispatchEvent(new CustomEvent('document-uploaded'));
+        
+        toast({ 
+          title: "Em processamento", 
+          description: `${files.length} documentos foram enviados para a fila! Acompanhe o status na tabela.`,
+        });
+        
+        handleClose();
+        setLocation('/documentos');
+      } catch (err) {
+        console.error('Erro no upload em lote:', err);
+        setError('Falha ao enviar documentos em lote. Verifique sua conexão e tente novamente.');
+        setStep('file');
+      }
+      return;
+    }
+    
     const formData = new FormData();
     files.forEach(f => formData.append('file', f));
     if (docType && docType !== 'outro') formData.append('documentType', docType);
@@ -209,9 +243,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {DOC_TYPES.map(t => {
                 const Icon = t.icon;
-                const sel = docType === t.value;
+                const sel = docType === t.value && !isBatchMode;
                 return (
-                  <button key={t.value} onClick={() => setDocType(t.value)}
+                  <button key={t.value} onClick={() => { setDocType(t.value); setIsBatchMode(false); }}
                     className={`flex flex-col items-center gap-2 rounded-2xl border p-3 text-center transition-all cursor-pointer ${sel ? `${t.bg} ring-2 ring-offset-1 ${t.color}` : 'border-border bg-background hover:bg-muted'}`}
                   >
                     <span className={`flex h-9 w-9 items-center justify-center rounded-xl border ${t.bg}`}>
@@ -222,7 +256,20 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 );
               })}
             </div>
-            <button onClick={() => { if (docType) setStep('file'); }} disabled={!docType}
+            
+            <button onClick={() => { setIsBatchMode(true); setDocType('outro'); setStep('file'); }}
+              className="w-full flex items-center justify-between p-3 rounded-2xl border border-primary/30 bg-primary/10 text-primary mt-1 hover:bg-primary/20 transition-all cursor-pointer">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-background text-primary shadow-sm"><Layers size={18} /></span>
+                <div className="text-left">
+                   <p className="text-[11px] font-bold">Modo em Lote (Auto-Detectar)</p>
+                   <p className="text-[10px] text-primary/70">Múltiplas imagens, cada uma vira 1 documento separado.</p>
+                </div>
+              </div>
+              <ChevronRight size={16} />
+            </button>
+            
+            <button onClick={() => { if (docType && !isBatchMode) setStep('file'); }} disabled={!docType || isBatchMode}
               className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-all cursor-pointer">
               Continuar <Check size={14} />
             </button>
@@ -399,11 +446,19 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <h2 className="text-xl font-extrabold tracking-tight text-foreground">Documento Processado!</h2>
               <p className="mt-1 text-xs text-muted-foreground">{files.length} arquivo(s) extraído(s) e classificado(s) pela IA.</p>
             </div>
-            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-4 space-y-1.5">
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Leitura concluída com sucesso</p>
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Tudo organizado no seu histórico</p>
-              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2"><Check size={12} /> Pronto para ser visualizado</p>
-            </div>
+            {previewUrls.length > 0 && (
+              <div className="mx-auto mt-2 overflow-hidden rounded-2xl border border-border/50 shadow-sm h-[140px] w-full max-w-[220px] flex items-center justify-center bg-muted/30 relative group">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10" />
+                <span className="absolute bottom-3 left-3 z-20 text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText size={12} /> Pronto para abrir
+                </span>
+                {files[0]?.type.startsWith('image/') ? (
+                  <img src={previewUrls[0]} alt="Preview" className="w-full h-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105" />
+                ) : (
+                  <FileText size={40} className="text-primary/40" />
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={resetModal} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Enviar Outro</button>
               <button type="button" onClick={finishAndNavigate} className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer">

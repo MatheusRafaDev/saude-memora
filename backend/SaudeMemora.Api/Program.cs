@@ -43,6 +43,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 
 builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>();
 builder.Services.AddHostedService<DocumentProcessingWorker>();
+builder.Services.AddHostedService<KeepAliveWorker>();
 
 // CORS
 var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
@@ -143,7 +144,10 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// â”€â”€â”€ Auth Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Health / Ping ───
+app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).AllowAnonymous();
+
+// ─── Auth Endpoints ──────────────────────────────────────────────────────────────────────────
 
 app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<RegisterPacienteDto> validator, IPacienteRepository repo) =>
 {

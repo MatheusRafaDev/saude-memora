@@ -133,8 +133,13 @@ export default function Dashboard() {
 
   if (profileLoading || docsLoading || fichaLoading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <div className="page-enter space-y-5 pb-8">
+        <div className="h-[104px] w-full rounded-2xl bg-muted animate-pulse" />
+        <div className="grid gap-5 lg:grid-cols-3">
+          <div className="h-[300px] rounded-xl bg-muted animate-pulse" />
+          <div className="h-[300px] rounded-xl bg-muted animate-pulse" />
+          <div className="h-[300px] rounded-xl bg-muted animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -466,57 +471,58 @@ export default function Dashboard() {
       {isCarteirinhaOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsCarteirinhaOpen(false)} />
-          <div className="relative w-full max-w-md rounded-2xl bg-card shadow-2xl overflow-hidden flex flex-col max-h-full">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <CreditCard size={18} className="text-primary" />
-                Sua Carteirinha
-              </h2>
+          <div className="relative w-full max-w-md rounded-2xl bg-card shadow-2xl overflow-hidden flex flex-col max-h-full border border-border/50">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 bg-primary text-white shadow-md">
+              <div>
+                <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wider mb-0.5">Visão Geral de Saúde</p>
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <CreditCard size={18} className="text-white" />
+                  Sua Carteirinha
+                </h2>
+              </div>
               <button
                 onClick={() => setIsCarteirinhaOpen(false)}
-                className="rounded-full p-1.5 hover:bg-muted text-muted-foreground transition-colors"
+                className="rounded-full p-2 hover:bg-white/10 text-white/80 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
             
-            <div className="p-5 overflow-y-auto space-y-5">
+            <div className="p-5 overflow-y-auto space-y-5 bg-muted/10">
               {/* Imagem da carteirinha */}
-              {user.urlCarteirinha && (
-                <div className="rounded-xl overflow-hidden border border-border/50 bg-black/5 flex items-center justify-center">
+              {user.urlCarteirinha ? (
+                <div className="rounded-xl overflow-hidden border-2 border-primary/20 bg-black/5 flex items-center justify-center shadow-inner relative group">
                   <img 
                     src={user.urlCarteirinha} 
                     alt="Carteirinha" 
-                    className="max-h-[300px] w-full object-contain"
+                    className="max-h-[250px] w-full object-contain p-2"
                   />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border/80 bg-background flex flex-col items-center justify-center py-8 text-center px-4">
+                  <CreditCard size={32} className="text-muted-foreground/50 mb-2" />
+                  <p className="text-sm font-semibold text-muted-foreground">Nenhuma imagem adicionada</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">Vá em Perfil para adicionar a foto da sua carteirinha.</p>
                 </div>
               )}
               
-              {/* Inputs informativos (ReadOnly no Dashboard) */}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Convênio / Plano de Saúde</label>
-                  <input 
-                    type="text" 
-                    readOnly 
-                    value={user.planoSaude || 'Não informado'} 
-                    className="mt-1 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-semibold text-foreground outline-none"
-                  />
+              {/* Infos em formato de cards */}
+              <div className="grid grid-cols-1 gap-3">
+                <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex flex-col shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 mb-1">Convênio / Plano de Saúde</span>
+                  <span className="text-sm font-bold text-foreground">{user.planoSaude || 'Não informado'}</span>
                 </div>
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Número da Carteirinha</label>
-                  <input 
-                    type="text" 
-                    readOnly 
-                    value={user.numeroCarteirinha || 'Não informado'} 
-                    className="mt-1 w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-mono font-semibold text-foreground outline-none"
-                  />
+                <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex flex-col shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 mb-1">Número da Carteirinha</span>
+                  <span className="text-sm font-mono font-bold text-foreground">{user.numeroCarteirinha || 'Não informado'}</span>
                 </div>
               </div>
             </div>
             
-            <div className="p-4 border-t border-border bg-muted/20">
-              <Link href="/perfil" className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors">
+            <div className="p-4 border-t border-border bg-card">
+              <Link href="/perfil" className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-all active:scale-[.98]">
                 Editar no Perfil
               </Link>
             </div>

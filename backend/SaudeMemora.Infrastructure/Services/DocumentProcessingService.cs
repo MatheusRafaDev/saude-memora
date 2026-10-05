@@ -156,6 +156,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
             jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            options.Converters.Add(new FlexibleBooleanConverter());
             try
             {
                 return JsonSerializer.Deserialize<CarteirinhaExtraidaDto>(jsonResult, options) ?? new CarteirinhaExtraidaDto();
@@ -616,6 +617,7 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
                 try 
                 {
                     var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    options.Converters.Add(new FlexibleBooleanConverter());
                     var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
                     dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
                     _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq (Llama 3.1 8B).");
@@ -737,5 +739,33 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
             case "Amostra": infos.Add($"Amostra: {value}"); break;
             case "Prontuario": infos.Add($"Prontuário: {value}"); break;
         }
+    }
+}
+
+public class FlexibleBooleanConverter : JsonConverter<bool>
+{
+    public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var str = reader.GetString()?.ToLowerInvariant();
+            if (str == "true" || str == "1" || str == "yes") return true;
+            return false;
+        }
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            return reader.GetInt32() != 0;
+        }
+        if (reader.TokenType == JsonTokenType.True)
+        {
+            return true;
+        }
+        
+        return false;
+    }
+
+    public override void Write(Utf8JsonWriter writer, bool value, JsonSerializerOptions options)
+    {
+        writer.WriteBooleanValue(value);
     }
 }

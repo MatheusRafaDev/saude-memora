@@ -264,7 +264,7 @@ export default function Profile() {
           <h2 className="text-base font-extrabold flex items-center gap-2">Segurança</h2>
           <p className="mt-1 text-xs text-muted-foreground">Precisa de ajuda com o acesso? Enviaremos um link de recuperação.</p>
         </div>
-        <button type="button" onClick={() => { alert('Enviamos um link de redefinição de senha para o seu e-mail.'); }} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">Esqueci minha senha</button>
+        <button type="button" onClick={() => { toast({ description: 'Enviamos um link de redefinição de senha para o seu e-mail.' }); }} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors cursor-pointer">Esqueci minha senha</button>
       </div>
     </section>
 
@@ -274,7 +274,7 @@ export default function Profile() {
           <h2 className="text-base font-extrabold flex items-center gap-2">Sessão</h2>
           <p className="mt-1 text-xs text-muted-foreground">Sair com segurança do seu espaço no Saúde Memora.</p>
         </div>
-        <button type="button" onClick={() => { signOut(); window.location.href = '/entrar'; }} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors">Sair da conta</button>
+        <button type="button" onClick={() => { signOut(); window.location.href = '/'; }} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors cursor-pointer">Sair da conta</button>
       </div>
     </section>
 

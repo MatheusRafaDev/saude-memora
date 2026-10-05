@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check } from 'lucide-react';
+import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check, FlaskConical, Pill, Stethoscope, ArrowRight, FileStack } from 'lucide-react';
 import { useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -8,13 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { triggerUploadModal } from '@/components/UploadModal';
 
 const CATEGORY_OPTIONS = [
-  { value: 'all', label: 'Todos os tipos' },
-  { value: 'exame', label: 'Exames' },
-  { value: 'receita', label: 'Receitas' },
-  { value: 'laudo', label: 'Laudos/Relatórios' },
-  { value: 'atestado', label: 'Atestados/Vacinas' },
-  { value: 'encaminhamento', label: 'Encaminhamentos' },
-  { value: 'outro', label: 'Outros' },
+  { value: 'all', label: 'Todos os tipos', icon: FileStack },
+  { value: 'exame', label: 'Exames', icon: FlaskConical },
+  { value: 'receita', label: 'Receitas', icon: Pill },
+  { value: 'laudo', label: 'Laudos/Relatórios', icon: Stethoscope },
+  { value: 'atestado', label: 'Atestados/Vacinas', icon: ShieldAlert },
+  { value: 'encaminhamento', label: 'Encaminhamentos', icon: ArrowRight },
+  { value: 'outro', label: 'Outros', icon: FileText },
 ];
 
 const PERIOD_OPTIONS = [
@@ -125,7 +125,20 @@ export default function Documents() {
   const hasActiveFilters = query || selectedCategory !== 'all' || selectedPeriod !== 'all';
 
   if (isLoading) {
-    return <div className="page-enter p-12 text-center text-muted-foreground">Carregando tabela de documentos...</div>;
+    return (
+      <div className="page-enter space-y-7">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div className="space-y-2">
+            <div className="h-4 w-32 rounded bg-muted animate-pulse" />
+            <div className="h-10 w-64 rounded-xl bg-muted animate-pulse" />
+            <div className="h-4 w-96 rounded bg-muted animate-pulse" />
+          </div>
+          <div className="h-11 w-48 rounded-xl bg-muted animate-pulse" />
+        </div>
+        <div className="h-[140px] w-full rounded-2xl bg-muted animate-pulse" />
+        <div className="h-[400px] w-full rounded-2xl bg-muted animate-pulse" />
+      </div>
+    );
   }
 
   return (
@@ -211,19 +224,22 @@ export default function Documents() {
           <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground shrink-0 pr-1">
             <Filter size={14} className="text-accent" /> Categoria:
           </span>
-          {CATEGORY_OPTIONS.map((cat) => (
-            <button
-              key={cat.value}
-              onClick={() => setSelectedCategory(cat.value)}
-              className={`whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                selectedCategory === cat.value
-                  ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+          {CATEGORY_OPTIONS.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedCategory(cat.value)}
+                className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  selectedCategory === cat.value
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                {Icon && <Icon size={14} />} {cat.label}
+              </button>
+            );
+          })}
         </div>
       </section>
 

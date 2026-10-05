@@ -185,7 +185,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </button>
                         )}
                         <button
-                          onClick={() => { signOut(); navigate('/entrar'); }}
+                          onClick={() => { signOut(); window.location.href = '/'; }}
                           data-testid="button-signout"
                           className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-destructive hover:bg-destructive/8 transition-colors"
                         >

@@ -59,7 +59,39 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   });
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">Validando acesso...</div>;
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        {/* Skeleton Header */}
+        <header className="sticky top-0 z-40 w-full glass-header border-b border-white/5">
+          <div className="mx-auto max-w-[1440px] px-4 md:px-8">
+            <div className="flex h-[64px] items-center gap-6">
+              <div className="h-8 w-32 rounded-lg bg-muted animate-pulse" />
+              <div className="h-5 w-px bg-border/50 hidden md:block" />
+              <div className="hidden md:flex items-center gap-2 flex-1">
+                <div className="h-9 w-24 rounded-xl bg-muted animate-pulse" />
+                <div className="h-9 w-24 rounded-xl bg-muted animate-pulse" />
+                <div className="h-9 w-24 rounded-xl bg-muted animate-pulse" />
+              </div>
+              <div className="ml-auto flex items-center gap-3">
+                <div className="h-9 w-24 rounded-xl bg-muted animate-pulse hidden md:block" />
+                <div className="h-9 w-12 rounded-xl bg-muted animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </header>
+        {/* Skeleton Content */}
+        <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
+          <div className="space-y-6">
+            <div className="h-24 w-full rounded-2xl bg-muted animate-pulse" />
+            <div className="grid gap-5 lg:grid-cols-3">
+              <div className="h-64 rounded-xl bg-muted animate-pulse" />
+              <div className="h-64 rounded-xl bg-muted animate-pulse" />
+              <div className="h-64 rounded-xl bg-muted animate-pulse" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (isError) {
