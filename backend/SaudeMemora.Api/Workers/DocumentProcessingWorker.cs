@@ -118,7 +118,10 @@ public class DocumentProcessingWorker : BackgroundService
             // Popula o RegistroDocumento com os dados extraídos
             doc.TextoExtraido = extractedData.TextoExtraido;
             // doc.TextoFormatado = extractedData.TextoFormatado; // Se tivermos no Entity
-            // doc.TipoIdentificado = extractedData.TipoIdentificado; // Não existe no RegistroDocumento
+            if (!string.IsNullOrEmpty(extractedData.TipoIdentificado))
+            {
+                doc.Tipo = extractedData.TipoIdentificado.ToLowerInvariant();
+            }
             doc.Titulo = extractedData.Titulo;
             doc.Medico = extractedData.Medico;
             doc.Clinica = extractedData.Clinica;
