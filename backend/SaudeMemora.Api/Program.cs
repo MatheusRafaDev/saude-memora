@@ -966,7 +966,7 @@ Obs: {ficha?.Observacoes}
     using var http = new HttpClient();
     var payload = new
     {
-        model = "openai/gpt-oss-120b",
+        model = "llama-3.1-70b-versatile",
         messages = new[] { new { role = "user", content = prompt } },
         temperature = 0.3
     };

@@ -137,7 +137,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            model = "openai/gpt-oss-120b",
+            model = "llama-3.1-70b-versatile",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             response_format = new { type = "json_object" }
@@ -237,7 +237,7 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
         var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         var payload = new
         {
-            model = "openai/gpt-oss-120b",
+            model = "llama-3.1-70b-versatile",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0
         };
@@ -617,7 +617,7 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
             var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
             var payload = new
             {
-                model = "openai/gpt-oss-120b",
+                model = "llama-3.1-70b-versatile",
                 messages = new[] { new { role = "user", content = prompt } },
                 temperature = 0.0,
                 max_tokens = 4096,
@@ -764,7 +764,7 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
     }
 }
 
-public class FlexibleBooleanConverter : JsonConverter<bool>
+public class FlexibleBooleanConverter : System.Text.Json.Serialization.JsonConverter<bool>
 {
     public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
