@@ -35,8 +35,8 @@ minimumReleaseAgeExclude:
   - stripe-replit-sync
 
 packages:
-  - artifacts/*
-  - lib/*
+  - apps/*
+  - packages/*
   - lib/integrations/*
   - scripts
 
@@ -67,6 +67,7 @@ catalog:
   zod: ^3.25.76
 
 autoInstallPeers: false
+
 
 
 
