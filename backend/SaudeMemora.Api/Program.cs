@@ -51,24 +51,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
     {
-        if (!string.IsNullOrEmpty(corsOriginsStr))
-        {
-            var origins = corsOriginsStr
-                .Split(',')
-                .Select(o => o.Trim().TrimEnd('/'))
-                .ToArray();
-
-            policy.WithOrigins(origins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else if (builder.Environment.IsDevelopment())
-        {
-            // Fallback apenas para desenvolvimento
-            policy.SetIsOriginAllowed(_ => true)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
