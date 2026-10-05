@@ -446,19 +446,6 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <h2 className="text-xl font-extrabold tracking-tight text-foreground">Documento Processado!</h2>
               <p className="mt-1 text-xs text-muted-foreground">{files.length} arquivo(s) extraído(s) e classificado(s) pela IA.</p>
             </div>
-            {previewUrls.length > 0 && (
-              <div className="mx-auto mt-2 overflow-hidden rounded-2xl border border-border/50 shadow-sm h-[140px] w-full max-w-[220px] flex items-center justify-center bg-muted/30 relative group">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10" />
-                <span className="absolute bottom-3 left-3 z-20 text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText size={12} /> Pronto para abrir
-                </span>
-                {files[0]?.type.startsWith('image/') ? (
-                  <img src={previewUrls[0]} alt="Preview" className="w-full h-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105" />
-                ) : (
-                  <FileText size={40} className="text-primary/40" />
-                )}
-              </div>
-            )}
             <div className="flex items-center gap-3 pt-1">
               <button type="button" onClick={resetModal} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Enviar Outro</button>
               <button type="button" onClick={finishAndNavigate} className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer">

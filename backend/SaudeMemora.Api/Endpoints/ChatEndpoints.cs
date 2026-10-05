@@ -78,12 +78,12 @@ Lembrete obrigatório: Adicione no final da sua resposta 'Aviso: Esta resposta �
 CONTEXTO DO PACIENTE:
 {contextText}";
 
-            var apiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"] ?? string.Empty;
-            if (string.IsNullOrEmpty(apiKey)) return Results.Problem("API Key do Groq não configurada.");
+            var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"] ?? string.Empty;
+            if (string.IsNullOrEmpty(apiKey)) return Results.Problem("API Key do Gemini não configurada.");
 
             var requestBody = new
             {
-                model = "llama3-8b-8192",
+                model = "gemini-3.8-flash",
                 messages = new[]
                 {
                     new { role = "system", content = promptSystem },
@@ -92,7 +92,7 @@ CONTEXTO DO PACIENTE:
                 temperature = 0.2
             };
 
-            using var httpClient = new HttpClient { BaseAddress = new Uri("https://api.groq.com/openai/v1/") };
+            using var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/") };
             var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions")
             {
                 Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json")
