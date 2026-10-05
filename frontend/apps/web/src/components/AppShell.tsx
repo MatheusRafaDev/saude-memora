@@ -209,25 +209,27 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}
       {!isAnamnesePending && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-card/90 backdrop-blur-md px-2 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const isActive = active === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`
-                  flex flex-col items-center justify-center gap-1 w-full
-                  transition-colors duration-200
-                  ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
-                `}
-              >
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'scale-110 transition-transform' : ''} />
-                <span className="text-[10px] font-semibold">{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/90 backdrop-blur-md border-t border-border pb-[env(safe-area-inset-bottom)]">
+          <nav className="flex h-16 items-center justify-around px-2">
+            {navItems.map(({ href, label, icon: Icon }) => {
+              const isActive = active === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`
+                    flex flex-col items-center justify-center gap-1 w-full h-full
+                    transition-colors duration-200
+                    ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
+                  `}
+                >
+                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'scale-110 transition-transform' : ''} />
+                  <span className="text-[10px] font-semibold">{label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
       )}
 
       <UploadModal />
