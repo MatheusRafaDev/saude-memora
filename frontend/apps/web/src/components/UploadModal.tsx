@@ -204,7 +204,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             <div className="text-center">
               <span className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">passo 1 de 2</span>
               <h2 className="mt-1.5 text-xl font-extrabold tracking-tight text-foreground">Qual é o tipo de documento?</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Isso ajuda a IA a extrair as informações com muito mais precisão.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Isso ajuda na extração das informações com muito mais precisão.</p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {DOC_TYPES.map(t => {
@@ -352,7 +352,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <button type="button" onClick={handleClose} className="flex-1 h-12 rounded-2xl border border-border bg-white dark:bg-slate-800 text-sm font-bold text-foreground hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all shadow-sm cursor-pointer">Cancelar</button>
               <button type="button" onClick={startUpload} disabled={files.length === 0}
                 className="flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 hover:shadow-md transition-all shadow-sm cursor-pointer">
-                Processar com IA
+                Processar documento
               </button>
             </div>
           </div>

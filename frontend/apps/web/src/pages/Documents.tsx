@@ -313,7 +313,7 @@ export default function Documents() {
                       {doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground max-w-[280px]">
-                      <p className="truncate font-normal">{doc.resumo || 'Resumo extraído pela inteligência artificial.'}</p>
+                      <p className="truncate font-normal">{doc.resumo || 'Resumo extraído automaticamente.'}</p>
                     </td>
                     <td className="py-3.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>

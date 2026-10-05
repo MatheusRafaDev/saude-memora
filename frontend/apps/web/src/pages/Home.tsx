@@ -26,7 +26,7 @@ const documentRows = [
 
 const features = [
   { icon: UploadCloud,    number: '01', title: 'Você envia',      description: 'Adicione uma foto ou arquivo do seu exame, receita ou relatório médico.' },
-  { icon: BrainCircuit,   number: '02', title: 'Nós organizamos', description: 'A IA reconhece as informações e categoriza tudo automaticamente.' },
+  { icon: BrainCircuit,   number: '02', title: 'Nós organizamos', description: 'O sistema reconhece as informações e categoriza tudo automaticamente.' },
   { icon: HeartHandshake, number: '03', title: 'Você entende',    description: 'Tenha seu histórico ao alcance para cuidar melhor das suas decisões de saúde.' },
 ];
 
