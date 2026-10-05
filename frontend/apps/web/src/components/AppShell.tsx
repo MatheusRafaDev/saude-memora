@@ -203,13 +203,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* ── Main content ───────────────────────────────────────────────── */}
-      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-24 md:pb-10">
+      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">
         {children}
       </main>
 
       {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}
       {!isAnamnesePending && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-border bg-card/90 backdrop-blur-md px-2 pb-safe">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-card/90 backdrop-blur-md px-2 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive = active === href;
             return (
@@ -217,7 +217,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={href}
                 href={href}
                 className={`
-                  flex flex-col items-center justify-center gap-1 w-full h-full
+                  flex flex-col items-center justify-center gap-1 w-full
                   transition-colors duration-200
                   ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
                 `}
