@@ -39,7 +39,7 @@ const queryClient = new QueryClient({
 });
 
 
-import { useGetApiPacientesMe } from '@workspace/api-client-react';
+import { useGetApiPacientesMe, getGetApiPacientesMeQueryKey } from '@workspace/api-client-react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const token = localStorage.getItem('auth_token');
@@ -52,6 +52,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   // Validate user constantly
   const { isLoading, isError } = useGetApiPacientesMe({
     query: {
+      queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
       staleTime: 5 * 60 * 1000
     }
