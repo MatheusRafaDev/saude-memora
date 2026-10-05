@@ -242,7 +242,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     });
 });
 
-app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger) =>
+app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger, HttpContext context) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Email))
         return Results.BadRequest(new[] { "O e-mail é obrigatório." });
@@ -260,7 +260,10 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 
     await repo.UpdateAsync(paciente);
 
-    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
+    var origin = context.Request.Headers["Origin"].FirstOrDefault() ?? context.Request.Headers["Referer"].FirstOrDefault();
+    if (!string.IsNullOrEmpty(origin) && origin.EndsWith("/")) origin = origin.TrimEnd('/');
+    
+    var frontendUrl = origin ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
     var resetLink = $"{frontendUrl}/reset-password?token={token}";
 
     var brevoApiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY");
