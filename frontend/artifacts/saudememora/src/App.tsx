@@ -22,7 +22,27 @@ import {
   Router as WouterRouter,
 } from 'wouter';
 
-const queryClient = new QueryClient();
+import { QueryCache } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error: any) => {
+      if (error?.status === 401 || error?.response?.status === 401) {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/entrar';
+      }
+    }
+  })
+});
+
+
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  if (!localStorage.getItem('auth_token')) {
+    window.location.href = '/entrar';
+    return null;
+  }
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}
 
 function AppPage({ children }: { children: ReactNode }) { return <AppShell>{children}</AppShell>; }
 
@@ -35,12 +55,12 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/entrar" component={Auth} />
         <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/visao-geral">{() => <AppPage><Dashboard /></AppPage>}</Route>
-        <Route path="/documentos">{() => <AppPage><Documents /></AppPage>}</Route>
-        <Route path="/documentos/:id">{(params) => <AppPage><DocumentDetail id={params.id} /></AppPage>}</Route>
-        <Route path="/enviar">{() => <AppPage><Upload /></AppPage>}</Route>
-        <Route path="/anamnese">{() => <AppPage><Record /></AppPage>}</Route>
-        <Route path="/perfil">{() => <AppPage><Profile /></AppPage>}</Route>
+        <Route path="/visao-geral">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>
+        <Route path="/documentos">{() => <ProtectedRoute><Documents /></ProtectedRoute>}</Route>
+        <Route path="/documentos/:id">{(params) => <ProtectedRoute><DocumentDetail id={params.id} /></ProtectedRoute>}</Route>
+        <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
+        <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
+        <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>

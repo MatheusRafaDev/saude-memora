@@ -18,7 +18,7 @@ type Store = {
 const StoreContext = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setAuthenticated] = useState(false);
+  const [isAuthenticated, setAuthenticated] = useState(!!localStorage.getItem('auth_token'));
   const [profile, setProfile] = useState(initialProfile);
   const [record, setRecord] = useState(initialRecord);
   const [documents, setDocuments] = useState(initialDocuments);
@@ -30,7 +30,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     documents,
     activities,
     signIn: (name) => { if (name) setProfile((old) => ({ ...old, name })); setAuthenticated(true); },
-    signOut: () => setAuthenticated(false),
+    signOut: () => { setAuthenticated(false); localStorage.removeItem('auth_token'); window.location.href = '/entrar'; },
     updateProfile: (next) => {
       setProfile(next);
       setActivities((old) => [{ id: `act-${Date.now()}`, label: 'Perfil de saúde atualizado', timestamp: 'Agora', type: 'profile' }, ...old]);

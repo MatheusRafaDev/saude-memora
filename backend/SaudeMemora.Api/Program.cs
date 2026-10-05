@@ -73,7 +73,21 @@ builder.Services.AddCors(options =>
 });
 
 // JWT Authentication
-var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["JwtSettings:Secret"] ?? "defaultSecret12345678901234567890";
+
+// JWT: falhar no startup se não houver secret
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["JwtSettings:Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
+    throw new InvalidOperationException("JWT_SECRET_KEY ausente ou curta (mín. 32 chars).");
+
+// Rate limit
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = 429;
+    o.AddPolicy("auth", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "anon",
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
+});
+
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JwtSettings:Issuer"];
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JwtSettings:Audience"];
 var key = Encoding.ASCII.GetBytes(jwtSecret);
@@ -136,6 +150,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowNextJs");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -152,7 +167,7 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
     var existing = await repo.GetByEmailAsync(dto.Email);
     if (existing != null)
     {
-        return Results.BadRequest(new[] { "Email jÃ¡ cadastrado." });
+        return Results.BadRequest(new[] { "Email já cadastrado." }).RequireRateLimiting("auth");
     }
 
 
@@ -181,7 +196,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
     {
-        return Results.BadRequest(new[] { "Email ou senha inválidos." });
+        return Results.BadRequest(new[] { "Email ou senha inválidos." }).RequireRateLimiting("auth");
     }
 
     try
@@ -191,14 +206,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
             return Results.BadRequest(new[] { "Email ou senha inválidos." });
         }
     }
-    catch
-    {
-        // Fallback for mock data without BCrypt hash
-        if (paciente.Senha != dto.Senha)
-        {
-            return Results.BadRequest(new[] { "Email ou senha inválidos." });
-        }
-    }
+    catch { return Results.BadRequest(new[] { "Email ou senha inválidos." }); }
 
     // Generate Token
     var tokenHandler = new JwtSecurityTokenHandler();
@@ -237,7 +245,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Email))
-        return Results.BadRequest(new[] { "O e-mail é obrigatório." });
+        return Results.BadRequest(new[] { "O e-mail é obrigatório." }).RequireRateLimiting("auth");
 
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
@@ -309,7 +317,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRepository repo) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Token) || string.IsNullOrWhiteSpace(dto.Senha))
-        return Results.BadRequest(new[] { "Dados inválidos." });
+        return Results.BadRequest(new[] { "Dados inválidos." }).RequireRateLimiting("auth");
 
     var paciente = await repo.GetByResetTokenAsync(dto.Token);
     
@@ -502,11 +510,6 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
 }).RequireAuthorization();
 
 // ─── Logs Endpoints ──────────────────────────────────────────
-app.MapGet("/api/logs", async (ISistemaLogRepository logRepo) =>
-{
-    var logs = await logRepo.ObterLogsAsync(50);
-    return Results.Ok(logs);
-});
 
 // ─── Ficha Médica Endpoints ──────────────────────────────────────
 
@@ -597,7 +600,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         {
             await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
             return Results.Accepted($"/api/documents/{existingDoc.Id}",
-                new { id = existingDoc.Id, status = "pending", progress = 25, duplicate = true, message = "Documento recolocado na fila de processamento." });
+                new { id = existingDoc.Id, status = "pending", progress = 25, duplicate = true, message = "Documento recolocado na fila de processamento." }).RequireRateLimiting("auth");
         }
 
         return Results.Ok(new { id = existingDoc.Id, status = existingDoc.Status, progress = existingDoc.Progress, duplicate = true, message = "Documento já existente." });
@@ -714,18 +717,6 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
     return Results.Ok(result);
 }).RequireAuthorization();
 
-app.MapGet("/api/debug-docs", async (IDocumentRepository repo) =>
-{
-    var docs = await repo.GetAllByPacienteIdAsync("67756f70dc0df8ab884562ad");
-    var result = docs.Select(d => new
-    {
-        id = d.Id,
-        titulo = d.Titulo,
-        tipo = d.Tipo,
-        criadoEm = d.CriadoEm
-    }).OrderByDescending(d => d.criadoEm).ToList();
-    return Results.Ok(result);
-});
 
 // Contagens de documentos por tipo (para métricas do dashboard)
 app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
@@ -905,7 +896,7 @@ Obs: {ficha?.Observacoes}
     var json = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
     var report = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
-    return Results.Ok(new { Report = report });
+    return Results.Ok(new { Report = report }).RequireRateLimiting("auth");
 }).RequireAuthorization();
 
 app.Run();
