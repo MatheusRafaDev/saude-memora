@@ -12,10 +12,10 @@ export function useConsentimento() {
   return useQuery<ConsentimentoIa>({
     queryKey: ['consentimento'],
     queryFn: async () => {
-      const response = await customFetch('/api/pacientes/me/consentimento', {
+      const response = await customFetch<ConsentimentoIa>('/api/pacientes/me/consentimento', {
         method: 'GET',
       });
-      return response.json();
+      return response;
     },
     retry: false,
   });
@@ -26,12 +26,12 @@ export function useSaveConsentimento() {
 
   return useMutation({
     mutationFn: async (aceito: boolean) => {
-      const response = await customFetch('/api/pacientes/me/consentimento', {
+      const response = await customFetch<ConsentimentoIa>('/api/pacientes/me/consentimento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ aceito }),
       });
-      return response.json();
+      return response;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['consentimento'], data);

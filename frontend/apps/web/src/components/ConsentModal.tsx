@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useConsentimento, useSaveConsentimento } from '../hooks/useConsentimento';
-import { useAuth } from '../hooks/useAuth';
+import { useGetApiPacientesMe } from '@workspace/api-client-react';
 import { Button } from './ui/button';
 import { Shield } from 'lucide-react';
 import {
@@ -15,7 +15,7 @@ import {
 const VERSAO_ATUAL = 'v1.0';
 
 export function ConsentModal() {
-  const { user } = useAuth();
+  const { data: user } = useGetApiPacientesMe();
   const { data, isLoading } = useConsentimento();
   const saveConsent = useSaveConsentimento();
   const [open, setOpen] = useState(false);
@@ -41,7 +41,7 @@ export function ConsentModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]" hideClose>
+      <DialogContent className="sm:max-w-[425px] [&>button]:hidden" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
             <Shield className="h-6 w-6 text-blue-600 dark:text-blue-300" />
