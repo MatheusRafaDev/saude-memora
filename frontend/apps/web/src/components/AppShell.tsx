@@ -14,7 +14,6 @@ const navItems = [
   { href: '/visao-geral',     label: 'Visão geral',   icon: Activity  },
   { href: '/documentos', label: 'Documentos',     icon: FileText  },
   { href: '/anamnese',   label: 'Anamnese',       icon: BookOpen  },
-  { href: '/evolucao',   label: 'Evolução',       icon: Activity  },
   { href: '/chat',       label: 'Chat IA',        icon: MessageSquare },
 ];
 

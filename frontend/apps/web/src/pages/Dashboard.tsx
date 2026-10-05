@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useGetApiPacientesMe, useGetApiDocuments, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
+import Evolucao from '@/components/Evolucao';
 
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
@@ -487,6 +488,11 @@ export default function Dashboard() {
       )}
 
 
+
+      {/* ── Evolução (Gráficos de Exames) ── */}
+      <div className="pt-8 mt-8 border-t border-border/50">
+        <Evolucao />
+      </div>
 
       {/* ── Modal da Carteirinha ── */}
       {isCarteirinhaOpen && (
