@@ -819,6 +819,14 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         resumo = doc.Resumo,
         diagnostico = doc.Diagnostico,
         medicamentos = doc.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
+        nomeExame = doc.NomeExame,
+        tipoExame = doc.TipoExame,
+        resultado = doc.Resultado,
+        especialidade = doc.Especialidade,
+        tipoClinico = doc.TipoClinico,
+        conteudo = doc.Conteudo,
+        conclusoes = doc.Conclusoes,
+        observacoes = doc.Observacoes,
         urlImagens = doc.UrlImagens,
         textoExtraido = doc.TextoExtraido,
         conteudoIndentado = doc.ConteudoIndentado,
@@ -832,7 +840,15 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
 }).RequireAuthorization();
 
 // Editar um documento
-app.MapPut("/api/documents/{id}", async (string id, [Microsoft.AspNetCore.Mvc.FromBody] DocumentUpdateDto updateDto, ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+app.MapPut("/api/documents/{id}", async (
+    string id,
+    [Microsoft.AspNetCore.Mvc.FromBody] DocumentUpdateDto updateDto,
+    ClaimsPrincipal user,
+    IDocumentRepository repo,
+    IPacienteRepository pacienteRepo,
+    IFichaMedicaRepository fichaRepo,
+    IAlertaMedicamentoService alertaService,
+    Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -847,6 +863,39 @@ app.MapPut("/api/documents/{id}", async (string id, [Microsoft.AspNetCore.Mvc.Fr
     doc.Resumo = updateDto.Resumo ?? doc.Resumo;
     doc.Diagnostico = updateDto.Diagnostico ?? doc.Diagnostico;
     doc.Crm = updateDto.Crm ?? doc.Crm;
+    doc.NomeExame = updateDto.NomeExame ?? doc.NomeExame;
+    doc.TipoExame = updateDto.TipoExame ?? doc.TipoExame;
+    doc.Resultado = updateDto.Resultado ?? doc.Resultado;
+    doc.Especialidade = updateDto.Especialidade ?? doc.Especialidade;
+    doc.TipoClinico = updateDto.TipoClinico ?? doc.TipoClinico;
+    doc.Conteudo = updateDto.Conteudo ?? doc.Conteudo;
+    doc.Conclusoes = updateDto.Conclusoes ?? doc.Conclusoes;
+    doc.Observacoes = updateDto.Observacoes ?? doc.Observacoes;
+    doc.TextoExtraido = updateDto.TextoExtraido ?? doc.TextoExtraido;
+
+    if (!string.IsNullOrWhiteSpace(updateDto.Tipo) && new[] { "exame", "receita", "laudo" }.Contains(updateDto.Tipo))
+        doc.Tipo = updateDto.Tipo;
+
+    if (updateDto.Medicamentos != null)
+    {
+        doc.Medicamentos = updateDto.Medicamentos.Select(m => new SaudeMemora.Domain.Entities.MedicamentoDocumento
+        {
+            Nome = m.Nome ?? string.Empty,
+            Dosagem = m.Dosagem ?? string.Empty,
+            Horario = m.Horario ?? string.Empty
+        }).ToList();
+    }
+
+    if (updateDto.ConteudoIndentado != null)
+    {
+        doc.ConteudoIndentado = updateDto.ConteudoIndentado.Select(item => new SaudeMemora.Domain.Entities.LinhaIndentadaDocumento
+        {
+            Tipo = item.Tipo ?? string.Empty,
+            Texto = item.Texto ?? string.Empty,
+            Chave = item.Chave ?? string.Empty,
+            Valor = item.Valor ?? string.Empty
+        }).ToList();
+    }
 
     if (updateDto.ResultadosExame != null)
     {
@@ -874,6 +923,22 @@ app.MapPut("/api/documents/{id}", async (string id, [Microsoft.AspNetCore.Mvc.Fr
                 Confianca = r.Confianca
             };
         }).ToList();
+    }
+
+    // Medicamentos e tipo podem mudar durante a edição. Recalculamos avisos para
+    // que nenhum alerta exibido fique associado aos dados anteriores.
+    if (!doc.RevisaoPendente)
+    {
+        var paciente = await pacienteRepo.GetByIdAsync(userId);
+        if (paciente?.ConsentimentoIa?.Aceito == true)
+        {
+            var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
+            doc.Alertas = await alertaService.GerarAlertasAsync(doc, ficha ?? new SaudeMemora.Domain.Entities.FichaMedica());
+        }
+        else
+        {
+            doc.Alertas = new List<SaudeMemora.Domain.Entities.AlertaDocumento>();
+        }
     }
 
     await repo.UpdateAsync(doc);
@@ -1005,13 +1070,40 @@ public record PerfilUpdateDto(string? Nome, string? DataNascimento, string? Emai
 public class DocumentUpdateDto
 {
     public string? Titulo { get; set; }
+    public string? Tipo { get; set; }
     public string? Medico { get; set; }
     public string? Clinica { get; set; }
     public string? Data { get; set; }
     public string? Resumo { get; set; }
     public string? Diagnostico { get; set; }
     public string? Crm { get; set; }
+    public string? NomeExame { get; set; }
+    public string? TipoExame { get; set; }
+    public string? Resultado { get; set; }
+    public string? Especialidade { get; set; }
+    public string? TipoClinico { get; set; }
+    public string? Conteudo { get; set; }
+    public string? Conclusoes { get; set; }
+    public string? Observacoes { get; set; }
+    public string? TextoExtraido { get; set; }
+    public List<MedicamentoDocumentoUpdateDto>? Medicamentos { get; set; }
+    public List<LinhaIndentadaDocumentoUpdateDto>? ConteudoIndentado { get; set; }
     public List<ResultadoExameUpdateDto>? ResultadosExame { get; set; }
+}
+
+public class MedicamentoDocumentoUpdateDto
+{
+    public string? Nome { get; set; }
+    public string? Dosagem { get; set; }
+    public string? Horario { get; set; }
+}
+
+public class LinhaIndentadaDocumentoUpdateDto
+{
+    public string? Tipo { get; set; }
+    public string? Texto { get; set; }
+    public string? Chave { get; set; }
+    public string? Valor { get; set; }
 }
 
 public class ResultadoExameUpdateDto
@@ -1067,4 +1159,3 @@ static class UploadHelpers
         await cache.RemoveAsync($"documents_count_v3_{userId}");
     }
 }
-
