@@ -14,7 +14,7 @@ export default function Chat() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Olá! Sou seu assistente de saúde pessoal. Posso responder perguntas sobre o seu histórico médico, alergias, medicações e exames.'
+      content: 'Olá! Consulte aqui apenas as informações registradas no seu histórico: exames, medicamentos, alergias, condições e documentos.'
     }
   ]);
   const [input, setInput] = useState('');
@@ -57,8 +57,8 @@ export default function Chat() {
           <Bot size={20} className="text-primary" />
         </div>
         <div>
-          <h1 className="font-bold">Assistente SaúdeMemora</h1>
-          <p className="text-xs text-muted-foreground/70">Tire dúvidas sobre seu histórico</p>
+          <h1 className="font-bold">Consulta do seu histórico</h1>
+          <p className="text-xs text-slate-300">Pesquise somente informações registradas no seu histórico</p>
         </div>
       </div>
 
@@ -68,18 +68,18 @@ export default function Chat() {
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
               
-              <div className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              <div className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-blue-600 text-white shadow-sm' : 'bg-muted text-muted-foreground'}`}>
                 {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
               </div>
 
-              <div className={`p-3 rounded-2xl ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-sm' : 'bg-muted text-foreground rounded-tl-sm'}`}>
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  {msg.role === 'assistant' ? (
+              <div className={`p-3 rounded-2xl border ${msg.role === 'user' ? 'border-blue-200 bg-blue-50 text-slate-900 rounded-tr-sm shadow-sm' : 'border-transparent bg-muted text-foreground rounded-tl-sm'}`}>
+                {msg.role === 'assistant' ? (
+                  <div className="prose prose-sm max-w-none text-foreground">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  ) : (
-                    <p className="whitespace-pre-wrap m-0">{msg.content}</p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <p className="m-0 whitespace-pre-wrap text-sm leading-6">{msg.content}</p>
+                )}
               </div>
 
             </div>
@@ -113,7 +113,7 @@ export default function Chat() {
                 handleSend();
               }
             }}
-            placeholder="Pergunte sobre seus exames, remédios..."
+            placeholder="Pesquise seus exames, medicamentos, alergias ou documentos..."
             className="w-full bg-muted resize-none rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[50px] max-h-[120px]"
             rows={1}
           />
