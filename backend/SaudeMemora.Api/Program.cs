@@ -62,9 +62,9 @@ builder.Services.AddCors(options =>
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         }
-        else
+        else if (builder.Environment.IsDevelopment())
         {
-            // Fallback para desenvolvimento e Vercel sem configuração
+            // Fallback apenas para desenvolvimento
             policy.SetIsOriginAllowed(_ => true)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
