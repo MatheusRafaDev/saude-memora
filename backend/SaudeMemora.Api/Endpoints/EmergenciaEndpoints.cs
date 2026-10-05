@@ -45,7 +45,6 @@ public static class EmergenciaEndpoints
             var ficha = await fichaRepo.GetByPacienteIdAsync(paciente.Id!);
             var docs = await docRepo.GetAllByPacienteIdAsync(paciente.Id!);
             
-            // Retorna dados públicos/emergenciais e histórico resumido
             var result = new
             {
                 nome = paciente.Nome,
@@ -53,19 +52,27 @@ public static class EmergenciaEndpoints
                 alergias = ficha?.Alergias ?? new List<string>(),
                 doencasCronicas = ficha?.DoencasCronicas ?? new List<string>(),
                 medicamentosContinuos = ficha?.MedicamentosContinuos ?? new List<string>(),
-                contatosEmergencia = paciente.Telefone ?? "Não informado",
-                documentos = docs.Select(d => new {
-                    id = d.Id,
-                    titulo = d.Titulo ?? d.NomeExame,
-                    tipo = d.Tipo,
-                    data = d.Data,
-                    resumo = d.Resumo,
-                    diagnostico = d.Diagnostico,
-                    resultadosExame = d.ResultadosExame
-                }).ToList()
+                contatosEmergencia = paciente.Telefone ?? "Não informado"
             };
 
             return Results.Ok(result);
         }).AllowAnonymous();
+
+        // 3. Endpoint para rotacionar/revogar o token de emergência
+        app.MapPost("/api/pacientes/me/emergencia/rotate", async (
+            ClaimsPrincipal user, 
+            IPacienteRepository repo) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Results.Unauthorized();
+
+            var paciente = await repo.GetByIdAsync(userId);
+            if (paciente == null) return Results.NotFound();
+
+            paciente.TokenEmergencia = Guid.NewGuid().ToString("N");
+            await repo.UpdateAsync(paciente);
+
+            return Results.Ok(new { token = paciente.TokenEmergencia });
+        }).RequireAuthorization();
     }
 }

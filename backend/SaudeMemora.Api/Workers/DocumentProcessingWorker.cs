@@ -218,11 +218,51 @@ public class DocumentProcessingWorker : BackgroundService
             }
 
             // Finaliza o processamento com sucesso
-            doc.Status = "pronto";
-            doc.Progress = 100;
-            doc.ErrorMessage = string.Empty;
-            doc.LockedBy = string.Empty;
-            doc.LockedUntil = null;
+            var dbDoc = await repo.GetByIdAsync(doc.Id!);
+            if (dbDoc != null)
+            {
+                // Preserva edições do usuário que ocorreram enquanto o worker estava processando
+                if (string.IsNullOrEmpty(dbDoc.Titulo) || dbDoc.Titulo == "Novo Documento" || dbDoc.Titulo == "Desconhecido" || dbDoc.Titulo == doc.Titulo) 
+                    dbDoc.Titulo = doc.Titulo;
+                if (string.IsNullOrEmpty(dbDoc.Tipo) || dbDoc.Tipo == "desconhecido" || dbDoc.Tipo == doc.Tipo) dbDoc.Tipo = doc.Tipo;
+                if (string.IsNullOrEmpty(dbDoc.Medico) || dbDoc.Medico == doc.Medico) dbDoc.Medico = doc.Medico;
+                if (string.IsNullOrEmpty(dbDoc.Clinica) || dbDoc.Clinica == doc.Clinica) dbDoc.Clinica = doc.Clinica;
+                if (string.IsNullOrEmpty(dbDoc.Data) || dbDoc.Data == doc.Data) dbDoc.Data = doc.Data;
+                if (string.IsNullOrEmpty(dbDoc.Resumo) || dbDoc.Resumo == doc.Resumo) dbDoc.Resumo = doc.Resumo;
+                if (string.IsNullOrEmpty(dbDoc.Diagnostico) || dbDoc.Diagnostico == doc.Diagnostico) dbDoc.Diagnostico = doc.Diagnostico;
+                if (string.IsNullOrEmpty(dbDoc.Crm) || dbDoc.Crm == doc.Crm) dbDoc.Crm = doc.Crm;
+                if (string.IsNullOrEmpty(dbDoc.NomeExame) || dbDoc.NomeExame == doc.NomeExame) dbDoc.NomeExame = doc.NomeExame;
+                if (string.IsNullOrEmpty(dbDoc.TipoExame) || dbDoc.TipoExame == doc.TipoExame) dbDoc.TipoExame = doc.TipoExame;
+                if (string.IsNullOrEmpty(dbDoc.Resultado) || dbDoc.Resultado == doc.Resultado) dbDoc.Resultado = doc.Resultado;
+                if (string.IsNullOrEmpty(dbDoc.Especialidade) || dbDoc.Especialidade == doc.Especialidade) dbDoc.Especialidade = doc.Especialidade;
+                if (string.IsNullOrEmpty(dbDoc.TipoClinico) || dbDoc.TipoClinico == doc.TipoClinico) dbDoc.TipoClinico = doc.TipoClinico;
+                if (string.IsNullOrEmpty(dbDoc.Conteudo) || dbDoc.Conteudo == doc.Conteudo) dbDoc.Conteudo = doc.Conteudo;
+                if (string.IsNullOrEmpty(dbDoc.Conclusoes) || dbDoc.Conclusoes == doc.Conclusoes) dbDoc.Conclusoes = doc.Conclusoes;
+                if (string.IsNullOrEmpty(dbDoc.Observacoes) || dbDoc.Observacoes == doc.Observacoes) dbDoc.Observacoes = doc.Observacoes;
+
+                dbDoc.TextoExtraido = doc.TextoExtraido;
+                dbDoc.Medicamentos = doc.Medicamentos;
+                dbDoc.ConteudoIndentado = doc.ConteudoIndentado;
+                dbDoc.ResultadosExame = doc.ResultadosExame;
+                dbDoc.CamposBaixaConfianca = doc.CamposBaixaConfianca;
+                dbDoc.RevisaoPendente = doc.RevisaoPendente;
+                dbDoc.Alertas = doc.Alertas;
+
+                dbDoc.Status = "pronto";
+                dbDoc.Progress = 100;
+                dbDoc.ErrorMessage = string.Empty;
+                dbDoc.LockedBy = string.Empty;
+                dbDoc.LockedUntil = null;
+                doc = dbDoc;
+            }
+            else
+            {
+                doc.Status = "pronto";
+                doc.Progress = 100;
+                doc.ErrorMessage = string.Empty;
+                doc.LockedBy = string.Empty;
+                doc.LockedUntil = null;
+            }
             
             await repo.UpdateAsync(doc);
             await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");

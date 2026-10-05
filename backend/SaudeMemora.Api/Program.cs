@@ -48,13 +48,14 @@ builder.Services.AddHostedService<DocumentProcessingWorker>();
 builder.Services.AddHostedService<KeepAliveWorker>();
 
 // CORS
-var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
+var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
+var allowedOrigins = corsOriginsStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs", policy =>
     {
-        policy.SetIsOriginAllowed(_ => true)
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -62,10 +63,10 @@ builder.Services.AddCors(options =>
 
 // JWT Authentication
 
-// JWT: falhar no startup se não houver secret
+// JWT: falhar no startup se n�o houver secret
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["JwtSettings:Secret"];
 if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
-    throw new InvalidOperationException("JWT_SECRET_KEY ausente ou curta (mín. 32 chars).");
+    throw new InvalidOperationException("JWT_SECRET_KEY ausente ou curta (m�n. 32 chars).");
 
 // Rate limit
 builder.Services.AddRateLimiter(o =>
@@ -118,19 +119,19 @@ else
 
 var app = builder.Build();
 
-// Cria índices do MongoDB uma única vez no startup (fila + idempotência).
-// Roda em background para não atrasar o startup se o Mongo estiver inacessível.
+// Cria �ndices do MongoDB uma �nica vez no startup (fila + idempot�ncia).
+// Roda em background para n�o atrasar o startup se o Mongo estiver inacess�vel.
 _ = Task.Run(async () =>
 {
     try
     {
         await DocumentRepository.EnsureIndexesAsync(app.Services.GetRequiredService<MongoDbContext>(), app.Lifetime.ApplicationStopping);
-        app.Logger.LogInformation("[Mongo] Índices da coleção Documentos verificados/criados.");
+        app.Logger.LogInformation("[Mongo] �ndices da cole��o Documentos verificados/criados.");
     }
     catch (Exception ex)
     {
-        // Não derruba a API, mas deixa o problema visível nos logs
-        app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Documentos");
+        // N�o derruba a API, mas deixa o problema vis�vel nos logs
+        app.Logger.LogError(ex, "[Mongo] Falha ao criar �ndices da cole��o Documentos");
     }
 });
 
@@ -142,11 +143,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowNextJs");
-app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
-// ─── Health / Ping ───
+// ??? Health / Ping ???
 app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).AllowAnonymous();
 
 app.MapConsentimentoEndpoints();
@@ -157,7 +158,7 @@ app.MapExamesEndpoints();
 app.MapEmergenciaEndpoints();
 app.MapChatEndpoints();
 
-// ─── Auth Endpoints ──────────────────────────────────────────────────────────────────────────
+// ??? Auth Endpoints ??????????????????????????????????????????????????????????????????????????
 
 app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<RegisterPacienteDto> validator, IPacienteRepository repo) =>
 {
@@ -170,7 +171,7 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
     var existing = await repo.GetByEmailAsync(dto.Email);
     if (existing != null)
     {
-        return Results.BadRequest(new[] { "Email já cadastrado." });
+        return Results.BadRequest(new[] { "Email j� cadastrado." });
     }
 
 
@@ -186,7 +187,7 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
 
     await repo.CreateAsync(paciente);
     return Results.Ok(new { Message = "Paciente registrado com sucesso!" });
-});
+}).RequireRateLimiting("auth");
 
 app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPacienteDto> validator, IPacienteRepository repo, IConfiguration config) =>
 {
@@ -199,17 +200,17 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
     {
-        return Results.BadRequest(new[] { "Email ou senha inválidos." });
+        return Results.BadRequest(new[] { "Email ou senha inv�lidos." });
     }
 
     try
     {
         if (!BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
         {
-            return Results.BadRequest(new[] { "Email ou senha inválidos." });
+            return Results.BadRequest(new[] { "Email ou senha inv�lidos." });
         }
     }
-    catch { return Results.BadRequest(new[] { "Email ou senha inválidos." }); }
+    catch { return Results.BadRequest(new[] { "Email ou senha inv�lidos." }); }
 
     // Generate Token
     var tokenHandler = new JwtSecurityTokenHandler();
@@ -243,18 +244,18 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
         Token = jwt,
         User = new { paciente.Id, paciente.Nome, paciente.Email }
     });
-});
+}).RequireRateLimiting("auth");
 
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger, HttpContext context) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Email))
-        return Results.BadRequest(new[] { "O e-mail é obrigatório." });
+        return Results.BadRequest(new[] { "O e-mail � obrigat�rio." });
 
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
     {
-        // Retorna Ok para não expor quais emails existem na base
-        return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
+        // Retorna Ok para n�o expor quais emails existem na base
+        return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, voc� receber� um link de recupera��o." });
     }
 
     var token = Guid.NewGuid().ToString("N");
@@ -263,10 +264,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 
     await repo.UpdateAsync(paciente);
 
-    var origin = context.Request.Headers["Origin"].FirstOrDefault() ?? context.Request.Headers["Referer"].FirstOrDefault();
-    if (!string.IsNullOrEmpty(origin) && origin.EndsWith("/")) origin = origin.TrimEnd('/');
-    
-    var frontendUrl = origin ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
+    var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
     var resetLink = $"{frontendUrl}/reset-password?token={token}";
 
     var brevoApiKey = Environment.GetEnvironmentVariable("BREVO_API_KEY");
@@ -274,8 +272,8 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 
     if (string.IsNullOrEmpty(brevoApiKey))
     {
-        logger.LogWarning("BREVO_API_KEY não configurada. Link gerado: {ResetLink}", resetLink);
-        return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
+        logger.LogWarning("BREVO_API_KEY n�o configurada. Link gerado: {ResetLink}", resetLink);
+        return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, voc� receber� um link de recupera��o." });
     }
 
     try
@@ -286,14 +284,14 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 
         var payload = new
         {
-            sender = new { name = "SaúdeMemora", email = brevoFromEmail },
+            sender = new { name = "Sa�deMemora", email = brevoFromEmail },
             to = new[] { new { email = paciente.Email, name = paciente.Nome } },
-            subject = "Recuperação de Senha - SaúdeMemora",
+            subject = "Recupera��o de Senha - Sa�deMemora",
             htmlContent = $@"
                 <div style='font-family: sans-serif; padding: 20px;'>
-                    <h2>Recuperação de Senha</h2>
-                    <p>Você solicitou a recuperação da sua senha no SaúdeMemora.</p>
-                    <p>Clique no link abaixo para criar uma nova senha. O link é válido por 1 hora.</p>
+                    <h2>Recupera��o de Senha</h2>
+                    <p>Voc� solicitou a recupera��o da sua senha no Sa�deMemora.</p>
+                    <p>Clique no link abaixo para criar uma nova senha. O link � v�lido por 1 hora.</p>
                     <a href='{resetLink}' style='display: inline-block; padding: 10px 20px; background-color: #0f172a; color: #fff; text-decoration: none; border-radius: 8px; margin-top: 20px;'>Redefinir minha senha</a>
                 </div>
             "
@@ -304,7 +302,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 
         if (response.IsSuccessStatusCode)
         {
-            logger.LogInformation("Email de recuperação enviado via Brevo para {Email}", paciente.Email);
+            logger.LogInformation("Email de recupera��o enviado via Brevo para {Email}", paciente.Email);
         }
         else
         {
@@ -314,22 +312,25 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Erro ao enviar e-mail de recuperação via Brevo para {Email}", paciente.Email);
+        logger.LogError(ex, "Erro ao enviar e-mail de recupera��o via Brevo para {Email}", paciente.Email);
     }
 
-    return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
-});
+    return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, voc� receber� um link de recupera��o." });
+}).RequireRateLimiting("auth");
 
 app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRepository repo) =>
 {
     if (string.IsNullOrWhiteSpace(dto.Token) || string.IsNullOrWhiteSpace(dto.Senha))
-        return Results.BadRequest(new[] { "Dados inválidos." });
+        return Results.BadRequest(new[] { "Dados inv�lidos." });
+
+    if (dto.Senha.Length < 6)
+        return Results.BadRequest(new[] { "A senha deve ter no m�nimo 6 caracteres." });
 
     var paciente = await repo.GetByResetTokenAsync(dto.Token);
     
     if (paciente == null || paciente.ResetPasswordExpiry == null || paciente.ResetPasswordExpiry < DateTime.UtcNow)
     {
-        return Results.BadRequest(new[] { "O link de recuperação é inválido ou expirou." });
+        return Results.BadRequest(new[] { "O link de recupera��o � inv�lido ou expirou." });
     }
 
     paciente.Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
@@ -339,11 +340,11 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRe
     await repo.UpdateAsync(paciente);
 
     return Results.Ok(new { Message = "Sua senha foi redefinida com sucesso." });
-});
+}).RequireRateLimiting("auth");
 
-// â”€â”€â”€ Paciente Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// �"?�"?�"? Paciente Endpoints �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?
 
-// Retorna o perfil mÃ©dico completo do paciente autenticado
+// Retorna o perfil médico completo do paciente autenticado
 app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, IImageStorageService storage) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -383,7 +384,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
     return Results.Ok(result);
 }).RequireAuthorization();
 
-// Atualiza informações do paciente autenticado (Nome, DataNascimento, Email)
+// Atualiza informa��es do paciente autenticado (Nome, DataNascimento, Email)
 app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -394,7 +395,21 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
 
     if (!string.IsNullOrWhiteSpace(dto.Nome)) paciente.Nome = dto.Nome;
     if (!string.IsNullOrWhiteSpace(dto.DataNascimento)) paciente.DataNascimento = dto.DataNascimento;
-    if (!string.IsNullOrWhiteSpace(dto.Email)) paciente.Email = dto.Email;
+    
+    if (!string.IsNullOrWhiteSpace(dto.Email))
+    {
+        var newEmail = dto.Email.Trim().ToLowerInvariant();
+        if (!new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(newEmail))
+        {
+            return Results.BadRequest(new[] { "O formato do e-mail � inv�lido." });
+        }
+        var existing = await repo.GetByEmailAsync(newEmail);
+        if (existing != null && existing.Id != userId)
+        {
+            return Results.BadRequest(new[] { "Este e-mail j� est� em uso por outra conta." });
+        }
+        paciente.Email = newEmail;
+    }
     if (dto.PlanoSaude != null) paciente.PlanoSaude = dto.PlanoSaude;
     if (dto.NumeroCarteirinha != null) paciente.NumeroCarteirinha = dto.NumeroCarteirinha;
 
@@ -403,7 +418,7 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
 }).RequireAuthorization();
 
-// Atualiza telefone e endereço do paciente autenticado
+// Atualiza telefone e endere�o do paciente autenticado
 app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -432,7 +447,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
         return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
     if (!context.Request.HasFormContentType)
-        return Results.BadRequest("Formato invÃ¡lido.");
+        return Results.BadRequest("Formato inválido.");
 
     var form = await context.Request.ReadFormAsync();
     var file = form.Files.GetFile("file");
@@ -444,7 +459,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     using var stream = file.OpenReadStream();
     var (url, id) = await storage.UploadImageAsync(stream, file.FileName);
     
-    // IA ExtraÃ§Ã£o da Carteirinha
+    // IA Extração da Carteirinha
     var extracted = await ocr.ExtractCarteirinhaDataAsync(url, context.RequestAborted);
 
     paciente.UrlCarteirinha = url;
@@ -503,7 +518,7 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
         await docRepo.DeleteAsync(doc.Id!);
     }
 
-    // 2. Apaga a ficha médica
+    // 2. Apaga a ficha m�dica
     var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
     if (ficha != null)
     {
@@ -520,12 +535,12 @@ app.MapDelete("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteReposit
     // 4. Apaga o paciente
     await repo.DeleteAsync(userId);
 
-    return Results.Ok(new { Message = "Conta excluÃ­da com sucesso." });
+    return Results.Ok(new { Message = "Conta excluída com sucesso." });
 }).RequireAuthorization();
 
-// ─── Logs Endpoints ──────────────────────────────────────────
+// ??? Logs Endpoints ??????????????????????????????????????????
 
-// ─── Ficha Médica Endpoints ──────────────────────────────────────
+// ??? Ficha M�dica Endpoints ??????????????????????????????????????
 
 app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
@@ -553,7 +568,8 @@ app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepo
         ficha.TipoSanguineo,
         ficha.DoadorOrgaos,
         ficha.Alergias,
-        ficha.DoencasCronicas
+        ficha.DoencasCronicas,
+        ficha.MedicamentosContinuos
     };
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     await cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
@@ -585,15 +601,18 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     ficha.OutrasDoencas = dto.OutrasDoencas;
     ficha.TipoSanguineo = dto.TipoSanguineo;
     ficha.DoadorOrgaos = dto.DoadorOrgaos;
-    ficha.Alergias = dto.Alergias;
-    ficha.DoencasCronicas = dto.DoencasCronicas;
+    ficha.Alergias = dto.Alergias ?? new List<string>();
+    ficha.DoencasCronicas = dto.DoencasCronicas ?? new List<string>();
+    ficha.MedicamentosContinuos = dto.MedicamentosContinuos ?? new List<string>();
+    ficha.Condicoes = dto.Condicoes ?? new List<CondicaoMedica>();
+    ficha.UpdatedAt = DateTime.UtcNow;
     
     await repo.UpdateAsync(ficha);
     await cache.RemoveAsync($"ficha_v2_{userId}");
     return Results.Ok(ficha);
 }).RequireAuthorization();
 
-// â”€â”€â”€ Document Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// �"?�"?�"? Document Endpoints �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?
 
 // Recebe upload de novo documento e o coloca na fila de processamento (OCR + IA rodam no worker)
 app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal user, IDocumentRepository docRepo, IImageStorageService storage, IDistributedCache cache, ILogger<Program> logger) =>
@@ -607,30 +626,48 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
     if (!context.Request.HasFormContentType)
-        return Results.BadRequest("Formato inválido. Esperado multipart/form-data.");
+        return Results.BadRequest("Formato inv�lido. Esperado multipart/form-data.");
 
     var ct = context.RequestAborted;
     var form = await context.Request.ReadFormAsync(ct);
     var files = form.Files.Where(f => f.Length > 0).ToList();
     var docTipo = form["documentType"].ToString();
     if (string.IsNullOrWhiteSpace(docTipo)) docTipo = form["type"].ToString();
-    if (string.IsNullOrWhiteSpace(docTipo)) docTipo = "exame"; // fallback padrão
+    if (string.IsNullOrWhiteSpace(docTipo)) docTipo = "exame"; // fallback padr�o
 
-    if (files.Count == 0) return Results.BadRequest("Nenhum arquivo válido.");
+    if (files.Count == 0) return Results.BadRequest("Nenhum arquivo v�lido.");
     if (files.Count > UploadHelpers.MaxFilesPerUpload)
-        return Results.BadRequest($"Máximo de {UploadHelpers.MaxFilesPerUpload} arquivos por documento.");
+        return Results.BadRequest($"M�ximo de {UploadHelpers.MaxFilesPerUpload} arquivos por documento.");
     if (files.Any(f => f.Length > UploadHelpers.MaxFileSizeBytes))
-        return Results.BadRequest("Cada arquivo deve ter no máximo 20 MB.");
+        return Results.BadRequest("Cada arquivo deve ter no m�ximo 20 MB.");
 
-    // 1. Hash SHA-256 do conteúdo (idempotência: mesmo arquivo = mesmo documento)
+    // 1. Hash SHA-256 do conte�do (idempot�ncia: mesmo arquivo = mesmo documento)
+    // Validação de segurança: Magic Numbers para garantir que é PDF, PNG ou JPEG
+    foreach (var file in files)
+    {
+        using var stream = file.OpenReadStream();
+        var buffer = new byte[4];
+        await stream.ReadAsync(buffer, 0, 4, ct);
+        var hex = BitConverter.ToString(buffer).Replace("-", "");
+        
+        bool isJpeg = hex.StartsWith("FFD8FF");
+        bool isPng = hex == "89504E47";
+        bool isPdf = hex == "25504446";
+        
+        if (!isJpeg && !isPng && !isPdf)
+        {
+            return Results.BadRequest("Formato de arquivo inválido. Apenas PDF, JPG e PNG são permitidos.");
+        }
+    }
+
     var fileHash = await UploadHelpers.ComputeUploadHashAsync(files, ct);
 
-    // 1.1 Esse mesmo arquivo já foi recusado como inválido? Recusa na hora, sem gastar Cloudinary/OCR/IA.
+    // 1.1 Esse mesmo arquivo j� foi recusado como inv�lido? Recusa na hora, sem gastar Cloudinary/OCR/IA.
     var rejectedMsg = await cache.GetStringAsync(SaudeMemora.Api.Workers.DocumentProcessingWorker.RejectedHashKey(userId, fileHash), ct);
     if (rejectedMsg != null)
         return Results.UnprocessableEntity(new { status = "rejeitado", invalidDocument = true, message = rejectedMsg });
 
-    // 2. Atalho de idempotência: já existe? Não gasta Cloudinary/OCR/IA de novo.
+    // 2. Atalho de idempot�ncia: j� existe? N�o gasta Cloudinary/OCR/IA de novo.
     var existingDoc = await docRepo.GetByHashAsync(userId, fileHash);
     if (existingDoc != null)
     {
@@ -642,10 +679,10 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
                 new { id = existingDoc.Id, status = "pending", progress = 25, duplicate = true, message = "Documento recolocado na fila de processamento." });
         }
 
-        return Results.Ok(new { id = existingDoc.Id, status = existingDoc.Status, progress = existingDoc.Progress, duplicate = true, message = "Documento já existente." });
+        return Results.Ok(new { id = existingDoc.Id, status = existingDoc.Status, progress = existingDoc.Progress, duplicate = true, message = "Documento j� existente." });
     }
 
-    // 3. Upload pro Cloudinary (com limpeza se qualquer página falhar, para não deixar órfãos)
+    // 3. Upload pro Cloudinary (com limpeza se qualquer p�gina falhar, para n�o deixar �rf�os)
     var uploaded = new List<(string imageUrl, string publicId)>();
     try
     {
@@ -657,12 +694,12 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "[Upload] Falha no Cloudinary para o usuário {UserId}. Limpando {Count} arquivo(s) já enviados.", userId, uploaded.Count);
+        logger.LogError(ex, "[Upload] Falha no Cloudinary para o usu�rio {UserId}. Limpando {Count} arquivo(s) j� enviados.", userId, uploaded.Count);
         await UploadHelpers.DeleteUploadedAsync(storage, uploaded.Select(u => u.publicId), logger);
         return Results.Problem("Falha ao armazenar os arquivos. Tente novamente.", statusCode: StatusCodes.Status502BadGateway);
     }
 
-    // 4. Salvar no MongoDB como Pending (insert atômico protegido pelo índice único)
+    // 4. Salvar no MongoDB como Pending (insert at�mico protegido pelo �ndice �nico)
     var docRecord = new RegistroDocumento
     {
         PacienteId = userId,
@@ -693,7 +730,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
     {
         // Request concorrente (ex: duplo clique) inseriu primeiro: descarta nossas imagens duplicadas
         await UploadHelpers.DeleteUploadedAsync(storage, docRecord.IdPublicos, logger);
-        return Results.Ok(new { id = savedDoc.Id, status = savedDoc.Status, progress = savedDoc.Progress, duplicate = true, message = "Documento já existente." });
+        return Results.Ok(new { id = savedDoc.Id, status = savedDoc.Status, progress = savedDoc.Progress, duplicate = true, message = "Documento j� existente." });
     }
 
     await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
@@ -702,7 +739,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
         new { id = savedDoc.Id, status = savedDoc.Status, progress = savedDoc.Progress, duplicate = false, message = "Documento recebido na fila de processamento!" });
 }).RequireAuthorization().RequireRateLimiting("upload");
 
-// Recoloca na fila um documento cujo processamento falhou (botão "Tentar novamente")
+// Recoloca na fila um documento cujo processamento falhou (bot�o "Tentar novamente")
 app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -758,7 +795,7 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
 }).RequireAuthorization();
 
 
-// Contagens de documentos por tipo (para métricas do dashboard)
+// Contagens de documentos por tipo (para m�tricas do dashboard)
 app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -794,7 +831,7 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
     var doc = await repo.GetByIdAsync(id);
     if (doc == null)
     {
-        // Documento recusado pelo worker (não é médico/ilegível): foi removido, mas informamos o motivo ao dono
+        // Documento recusado pelo worker (n�o � m�dico/ileg�vel): foi removido, mas informamos o motivo ao dono
         var marker = await cache.GetStringAsync(SaudeMemora.Api.Workers.DocumentProcessingWorker.RejectedDocKey(id));
         if (marker != null)
         {
@@ -902,7 +939,7 @@ app.MapPut("/api/documents/{id}", async (
         doc.ResultadosExame = updateDto.ResultadosExame.Select(r =>
         {
             var status = r.Status;
-            // Se o usuário passar um valor numérico e referências, recalculamos o status (caso ele esteja indefinido ou não, para garantir consistência)
+            // Se o usu�rio passar um valor num�rico e refer�ncias, recalculamos o status (caso ele esteja indefinido ou n�o, para garantir consist�ncia)
             if (r.Valor.HasValue && r.RefMin.HasValue && r.RefMax.HasValue)
             {
                 if (r.Valor < r.RefMin) status = "baixo";
@@ -925,7 +962,7 @@ app.MapPut("/api/documents/{id}", async (
         }).ToList();
     }
 
-    // Medicamentos e tipo podem mudar durante a edição. Recalculamos avisos para
+    // Medicamentos e tipo podem mudar durante a edi��o. Recalculamos avisos para
     // que nenhum alerta exibido fique associado aos dados anteriores.
     if (!doc.RevisaoPendente)
     {
@@ -976,9 +1013,9 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     return Results.Ok(new { message = "Documento deletado com sucesso." });
 }).RequireAuthorization();
 
-// â”€â”€â”€ RelatÃ³rio Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// �"?�"?�"? Relatório Endpoints �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?
 
-app.MapGet("/api/reports/generate", async (int months, ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IConfiguration config) =>
+app.MapGet("/api/reports/generate", async (int? months, ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IConfiguration config, IHttpClientFactory httpClientFactory, ILogger<Program> logger) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -990,58 +1027,68 @@ app.MapGet("/api/reports/generate", async (int months, ClaimsPrincipal user, IPa
     var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
     var allDocs = await docRepo.GetAllByPacienteIdAsync(userId);
 
-    var limitData = DateTime.UtcNow.AddMonths(-months);
+    int m = months ?? 6;
+    if (m <= 0) m = 6;
+    if (m > 120) m = 120; // limite de 10 anos
+    var limitData = DateTime.UtcNow.AddMonths(-m);
     var recentDocs = allDocs.Where(d => d.CriadoEm >= limitData).ToList();
 
+    var idadeStr = paciente?.DataNascimento ?? "Não informada";
+
     var prompt = $@"
-VocÃª Ã© um mÃ©dico especialista montando um dossiÃª clÃ­nico (prontuÃ¡rio resumido) para outro mÃ©dico ler antes da consulta.
-Aqui estÃ£o os dados do paciente:
+Você é um médico especialista montando um dossiê clínico (prontuário resumido) para outro médico ler antes da consulta.
+Aqui estão os dados do paciente:
 
 [Perfil]:
-Nome: {paciente?.Nome}, Idade/Sexo: {paciente?.Sexo}
+Idade/DataNascimento: {idadeStr}, Sexo: {paciente?.Sexo}
 
-[Ficha MÃ©dica]:
-Tipo SanguÃ­neo: {ficha?.TipoSanguineo}
+[Ficha Médica]:
+Tipo Sanguíneo: {ficha?.TipoSanguineo}
 Alergias: {string.Join(", ", ficha?.Alergias ?? new List<string>())}
-DoenÃ§as CrÃ´nicas: {string.Join(", ", ficha?.DoencasCronicas ?? new List<string>())}
+Doenças Crônicas: {string.Join(", ", ficha?.DoencasCronicas ?? new List<string>())}
 
-[Ficha MÃ©dica]:
-HistÃ³rico Familiar: {ficha?.HistoricoFamiliar}
+[Ficha Médica]:
+Histórico Familiar: {ficha?.HistoricoFamiliar}
 Cirurgias: {ficha?.Cirurgias}
 Fuma: {ficha?.Fuma}, Bebe: {ficha?.Bebe}
-HÃ¡bitos: {ficha?.HabitosGerais}
+Hábitos: {ficha?.HabitosGerais}
 Obs: {ficha?.Observacoes}
 
-[Documentos e Exames Recentes (Ãºltimos {months} meses)]:
+[Documentos e Exames Recentes (últimos {m} meses)]:
 ";
     foreach (var doc in recentDocs)
     {
-        prompt += $"\n- {doc.Data} | {doc.Tipo.ToUpper()} | {doc.Titulo}: {doc.Resumo} | DiagnÃ³stico: {doc.Diagnostico}";
-        if (doc.Medicamentos.Count > 0)
+        prompt += $"\n- {doc.Data} | {doc.Tipo.ToUpper()} | {doc.Titulo}: {doc.Resumo} | Diagnóstico: {doc.Diagnostico}";
+        if (doc.Medicamentos != null && doc.Medicamentos.Count > 0)
         {
-            prompt += $" | RemÃ©dios: {string.Join(", ", doc.Medicamentos.Select(m => m.Nome + " " + m.Dosagem))}";
+            prompt += $" | Remédios: {string.Join(", ", doc.Medicamentos.Select(med => med.Nome + " " + med.Dosagem))}";
         }
     }
 
-    prompt += "\n\nCrie um relatÃ³rio mÃ©dico coeso, profissional e bem formatado em Markdown destacando os pontos principais, evoluÃ§Ã£o e estado atual. Seja direto.";
+    prompt += "\n\nCrie um relatório médico coeso, profissional e bem formatado em Markdown destacando os pontos principais, evolução e estado atual. Seja direto.";
 
-    var groqKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
-    if (string.IsNullOrEmpty(groqKey)) return Results.BadRequest("GROQ_API_KEY nÃ£o configurada.");
+    var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
+    if (string.IsNullOrEmpty(geminiKey)) return Results.BadRequest("GEMINI_API_KEY não configurada.");
 
-    using var http = new HttpClient();
+    using var http = httpClientFactory.CreateClient();
     var payload = new
     {
-        model = "llama-3.1-70b-versatile",
+        model = "gemini-3.8-flash",
         messages = new[] { new { role = "user", content = prompt } },
         temperature = 0.3
     };
 
-    var req = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
-    req.Headers.Add("Authorization", $"Bearer {groqKey}");
+    var req = new HttpRequestMessage(HttpMethod.Post, "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+    req.Headers.Add("Authorization", $"Bearer {geminiKey}");
     req.Content = System.Net.Http.Json.JsonContent.Create(payload);
 
     var res = await http.SendAsync(req);
-    if (!res.IsSuccessStatusCode) return Results.StatusCode(500);
+    if (!res.IsSuccessStatusCode)
+    {
+        var error = await res.Content.ReadAsStringAsync();
+        logger.LogError("Erro da IA ao gerar relatório: {Error}", error);
+        return Results.Json(new { message = "Falha ao gerar relatório", detail = error }, statusCode: 502);
+    }
 
     var json = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
     var report = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
@@ -1051,7 +1098,7 @@ Obs: {ficha?.Observacoes}
 
 app.Run();
 
-// â”€â”€â”€ DTOs auxiliares â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// �"?�"?�"? DTOs auxiliares �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?
 
 public record MedicamentoContinuoDto(string Nome, string Dosagem, string Horario);
 
@@ -1120,7 +1167,7 @@ public class ResultadoExameUpdateDto
     public double Confianca { get; set; } = 1.0;
 }
 
-// ─── Helpers de Upload ──────────────────────────────────────────────────────
+// ??? Helpers de Upload ??????????????????????????????????????????????????????
 
 static class UploadHelpers
 {
@@ -1129,7 +1176,7 @@ static class UploadHelpers
 
     /// <summary>
     /// SHA-256 de cada arquivo, combinados em ordem num SHA-256 final.
-    /// Hash por arquivo evita ambiguidade de concatenação; a ordem importa (são páginas).
+    /// Hash por arquivo evita ambiguidade de concatena��o; a ordem importa (s�o p�ginas).
     /// </summary>
     public static async Task<string> ComputeUploadHashAsync(IReadOnlyList<IFormFile> files, CancellationToken ct)
     {
@@ -1143,13 +1190,13 @@ static class UploadHelpers
         return Convert.ToHexString(combined.GetHashAndReset()).ToLowerInvariant();
     }
 
-    /// <summary>Remove imagens do Cloudinary sem propagar exceções (best-effort).</summary>
+    /// <summary>Remove imagens do Cloudinary sem propagar exce��es (best-effort).</summary>
     public static async Task DeleteUploadedAsync(IImageStorageService storage, IEnumerable<string> publicIds, ILogger logger)
     {
         foreach (var publicId in publicIds.Where(p => !string.IsNullOrWhiteSpace(p)))
         {
             try { await storage.DeleteImageAsync(publicId); }
-            catch (Exception ex) { logger.LogWarning(ex, "[Cloudinary] Não foi possível remover {PublicId}", publicId); }
+            catch (Exception ex) { logger.LogWarning(ex, "[Cloudinary] N�o foi poss�vel remover {PublicId}", publicId); }
         }
     }
 

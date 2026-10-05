@@ -53,7 +53,7 @@ public static class ExamesEndpoints
 
         group.MapGet("/serie", async (
             [FromQuery] string analito,
-            [FromQuery] int meses,
+            [FromQuery] int? meses,
             ClaimsPrincipal user,
             IDocumentRepository repo) =>
         {
@@ -64,7 +64,10 @@ public static class ExamesEndpoints
 
             var docs = await repo.GetAllByPacienteIdAsync(userId);
             
-            var dataLimite = DateTime.UtcNow.AddMonths(-meses);
+            int m = meses ?? 12;
+            if (m <= 0) m = 12; // fallback para 12 meses se for 0 ou negativo
+
+            var dataLimite = DateTime.UtcNow.AddMonths(-m);
 
             var resultados = new List<ResultadoSerieDto>();
 

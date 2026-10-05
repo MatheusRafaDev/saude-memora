@@ -13,13 +13,13 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
 {
     private readonly ILogger<AlertaMedicamentoService> _logger;
     private readonly HttpClient _httpClient;
-    private readonly string _groqApiKey;
+    private readonly string _geminiApiKey;
 
     public AlertaMedicamentoService(ILogger<AlertaMedicamentoService> logger, IConfiguration configuration)
     {
         _logger = logger;
-        _httpClient = new HttpClient { BaseAddress = new Uri("https://api.groq.com/openai/v1/") };
-        _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? configuration["Groq:ApiKey"] ?? string.Empty;
+        _httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/") };
+        _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? configuration["Gemini:ApiKey"] ?? string.Empty;
     }
 
     public async Task<List<AlertaDocumento>> GerarAlertasAsync(RegistroDocumento documento, FichaMedica ficha)
@@ -32,7 +32,7 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
         }
 
         // 1. Deterministic
-        var medNovos = documento.Medicamentos.Select(m => Normalizar(m.Nome)).ToList();
+        var medNovos = documento.Medicamentos.Select(m => Normalizar(m.Nome)).Where(m => !string.IsNullOrEmpty(m)).ToList();
         var medContinuos = ficha.MedicamentosContinuos?.Select(m => Normalizar(m)).Where(m => !string.IsNullOrEmpty(m)).ToList() ?? new List<string>();
         var alergias = ficha.Alergias?.Select(a => Normalizar(a)).Where(a => !string.IsNullOrEmpty(a)).ToList() ?? new List<string>();
 
@@ -68,7 +68,7 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
         }
 
         // 2. IA - Interações
-        if (!string.IsNullOrEmpty(_groqApiKey) && medContinuos.Any())
+        if (!string.IsNullOrEmpty(_geminiApiKey) && medContinuos.Any())
         {
             try
             {
@@ -86,7 +86,14 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao buscar interações com Groq.");
+                _logger.LogError(ex, "Erro ao buscar interações com Gemini.");
+                alertas.Add(new AlertaDocumento
+                {
+                    Tipo = "erro_ia",
+                    Severidade = "baixa",
+                    Mensagem = "Não foi possível verificar interações medicamentosas via IA no momento.",
+                    Medicamentos = new List<string>()
+                });
             }
         }
 
@@ -157,13 +164,12 @@ Seja conservador: na dúvida, não alerte com severidade alta. Se não houver in
 
         var requestBody = new
         {
-            model = "llama3-8b-8192",
+            model = "gemini-3.8-flash",
             messages = new[]
             {
                 new { role = "system", content = "Você é um assistente de checagem de interações medicamentosas. Devolva apenas JSON válido, sem texto em volta." },
                 new { role = "user", content = prompt }
             },
-            response_format = new { type = "json_object" },
             temperature = 0.0
         };
 
@@ -171,7 +177,7 @@ Seja conservador: na dúvida, não alerte com severidade alta. Se não houver in
         {
             Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json")
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _groqApiKey);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _geminiApiKey);
 
         var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();

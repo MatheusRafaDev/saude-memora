@@ -35,7 +35,19 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
 
   if (!open) return null;
 
-  const url = token ? `${window.location.origin}/emergencia?token=${token}` : '';
+  const url = token ? `${window.location.origin}/emergencia/${token}` : '';
+
+  const handleRotate = async () => {
+    try {
+      setLoading(true);
+      const res = await customFetch<{ token: string }>('/api/pacientes/me/emergencia/rotate', { method: 'POST' });
+      setToken(res.token);
+    } catch (err) {
+      setError('Erro ao gerar novo link.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center glass-modal p-4 page-enter" onClick={onClose}>
@@ -79,14 +91,22 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
               >
                 Copiar Link
               </button>
-              <a 
-                href={url} 
-                target="_blank" 
-                rel="noreferrer"
-                className="text-xs font-semibold text-primary hover:underline"
-              >
-                Visualizar Cartão Público
-              </a>
+              <div className="flex items-center gap-4 mt-2">
+                <a 
+                  href={url} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Visualizar Cartão
+                </a>
+                <button 
+                  onClick={handleRotate} 
+                  className="text-xs font-semibold text-destructive hover:underline"
+                >
+                  Revogar e Gerar Novo
+                </button>
+              </div>
             </div>
           </div>
         )}

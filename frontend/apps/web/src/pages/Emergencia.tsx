@@ -4,22 +4,18 @@ import { customFetch } from '@workspace/api-client-react';
 import { ShieldAlert, Droplets, AlertTriangle, Pill, Activity, Smartphone, FileText } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 
-export default function Emergencia() {
+export default function Emergencia({ token }: { token?: string }) {
   const [, setLocation] = useLocation();
-  const [token, setToken] = useState<string | null>(null);
   const [publicData, setPublicData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('token');
-
     const fetchData = async () => {
       try {
-        if (urlToken) {
+        if (token) {
           // Acesso público
-          const res = await customFetch<any>(`/api/emergencia/${urlToken}`);
+          const res = await customFetch<any>(`/api/emergencia/${token}`);
           setPublicData(res);
         } else {
           setError('Link de emergência inválido ou expirado.');

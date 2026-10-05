@@ -15,15 +15,21 @@ public static class ReprocessamentoEndpoints
             string id,
             ClaimsPrincipal user,
             IDocumentRepository repo,
+            IPacienteRepository pacienteRepo,
             Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Results.Unauthorized();
 
+            var paciente = await pacienteRepo.GetByIdAsync(userId);
+            if (paciente?.ConsentimentoIa?.Aceito != true)
+                return Results.BadRequest(new { error = "É necessário consentir com o processamento por IA." });
+
             var doc = await repo.GetByIdAsync(id);
             if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
             if (doc.Status == "processing") return Results.BadRequest(new { message = "Documento já está em processamento." });
+            if (doc.Attempts >= 10) return Results.BadRequest(new { message = "Limite de reprocessamentos atingido para este documento." });
 
             doc.Status = "pending";
             doc.Progress = 0;

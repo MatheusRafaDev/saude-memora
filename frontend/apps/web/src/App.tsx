@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -32,8 +32,7 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: any) => {
       if (
-        error?.status === 401 || error?.response?.status === 401 ||
-        error?.status === 404 || error?.response?.status === 404
+        error?.status === 401 || error?.response?.status === 401
       ) {
         localStorage.removeItem('auth_token');
         window.location.href = '/entrar';
@@ -48,19 +47,27 @@ import { useGetApiPacientesMe, getGetApiPacientesMeQueryKey } from '@workspace/a
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const token = localStorage.getItem('auth_token');
   
-  if (!token) {
-    window.location.href = '/';
-    return null;
-  }
-
-  // Validate user constantly
+  // Validate user constantly (hook at top level)
   const { isLoading, isError } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
-      staleTime: 5 * 60 * 1000
+      staleTime: 5 * 60 * 1000,
+      enabled: !!token
     }
   });
+
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!token) {
+      setLocation('/entrar');
+    }
+  }, [token, setLocation]);
+
+  if (!token) {
+    return null;
+  }
 
   if (isLoading) {
     return (
@@ -123,7 +130,7 @@ function Router() {
         <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
         <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
         <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
-        <Route path="/emergencia" component={Emergencia} />
+        <Route path="/emergencia/:token">{(params) => <Emergencia token={params.token} />}</Route>
         <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
         <Route path="/termos" component={Termos} />
         <Route path="/privacidade" component={Privacidade} />

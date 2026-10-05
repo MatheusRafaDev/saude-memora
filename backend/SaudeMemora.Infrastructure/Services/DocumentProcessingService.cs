@@ -134,18 +134,18 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
 {jsonFormat}
 ";
 
-        var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+        var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "llama-3.1-70b-versatile",
+            model = "gemini-3.8-flash",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             response_format = new { type = "json_object" }
         };
 
         var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
-        if (!string.IsNullOrWhiteSpace(_groqApiKey))
-            request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
+        if (!string.IsNullOrWhiteSpace(_geminiApiKey))
+            request.Headers.Add("Authorization", $"Bearer {_geminiApiKey}");
         request.Content = JsonContent.Create(payload);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -234,17 +234,17 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
 [Motor 2]:
 {text2}
 ";
-        var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+        var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "llama-3.1-70b-versatile",
+            model = "gemini-3.8-flash",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0
         };
 
         var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
-        if (!string.IsNullOrWhiteSpace(_groqApiKey))
-            request.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
+        if (!string.IsNullOrWhiteSpace(_geminiApiKey))
+            request.Headers.Add("Authorization", $"Bearer {_geminiApiKey}");
         request.Content = JsonContent.Create(payload);
 
         try
@@ -605,7 +605,7 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 
     private async Task<DocumentoExtraidoDto> FallbackToGroqAsync(string unifiedText, string prompt, CancellationToken cancellationToken)
     {
-        var groqKey = _groqApiKey;
+        var groqKey = _geminiApiKey;
         if (string.IsNullOrWhiteSpace(groqKey))
         {
             _logger.LogWarning("Chave GROQ_API_KEY não encontrada. Usando modo de segurança string.");
@@ -614,10 +614,10 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 
         try
         {
-            var groqUrl = "https://api.groq.com/openai/v1/chat/completions";
+            var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
             var payload = new
             {
-                model = "llama-3.1-70b-versatile",
+                model = "gemini-3.8-flash",
                 messages = new[] { new { role = "user", content = prompt } },
                 temperature = 0.0,
                 max_tokens = 4096,

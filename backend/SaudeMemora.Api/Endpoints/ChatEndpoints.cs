@@ -20,6 +20,7 @@ public static class ChatEndpoints
             ClaimsPrincipal user,
             IDocumentRepository docRepo,
             IFichaMedicaRepository fichaRepo,
+            IPacienteRepository pacienteRepo,
             IConfiguration config) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -30,6 +31,10 @@ public static class ChatEndpoints
 
             if (req.Message.Length > 1000)
                 return Results.BadRequest(new { error = "A pergunta deve ter no máximo 1000 caracteres." });
+
+            var paciente = await pacienteRepo.GetByIdAsync(userId);
+            if (paciente?.ConsentimentoIa?.Aceito != true)
+                return Results.BadRequest(new { error = "É necessário consentir com o processamento por IA para utilizar o chat." });
 
             // Pega todo o histórico do paciente (docs extraídos e ficha médica)
             var docs = await docRepo.GetAllByPacienteIdAsync(userId);
