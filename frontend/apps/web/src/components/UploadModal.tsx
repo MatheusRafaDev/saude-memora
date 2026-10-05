@@ -232,7 +232,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
         {/* ── STEP FILE ────────────────── */}
         {step === 'file' && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pr-10">
               <button onClick={() => setStep('type')} className="rounded-full p-1.5 text-muted-foreground hover:bg-muted transition-colors">
                 <ChevronLeft size={18} />
               </button>
