@@ -364,6 +364,14 @@ export async function customFetch<T = unknown>(
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
+    
+    // Dispatch global event to show consent modal if needed
+    if (response.status === 403 && (errorData as any)?.message === 'consentimento_necessario') {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('consentimento-necessario'));
+      }
+    }
+
     throw new ApiError(response, errorData, requestInfo);
   }
 

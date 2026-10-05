@@ -65,4 +65,22 @@ public class Paciente
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("consentimentoIa")]
+    public ConsentimentoIa? ConsentimentoIa { get; set; }
+}
+
+public class ConsentimentoIa
+{
+    [BsonElement("aceito")]
+    public bool Aceito { get; set; }
+
+    [BsonElement("versaoTermo")]
+    public string VersaoTermo { get; set; } = string.Empty;
+
+    [BsonElement("aceitoEm")]
+    public DateTime? AceitoEm { get; set; }
+
+    [BsonElement("ipTruncado")]
+    public string? IpTruncado { get; set; }
 }

@@ -90,6 +90,14 @@ public class DocumentProcessingWorker : BackgroundService
                 throw new Exception("Documento não possui URL de imagens para processamento.");
             }
 
+            // Verifica o consentimento
+            var pacienteRepo = scope.ServiceProvider.GetRequiredService<IPacienteRepository>();
+            var paciente = await pacienteRepo.GetByIdAsync(doc.PacienteId);
+            if (paciente == null || paciente.ConsentimentoIa?.Aceito != true)
+            {
+                throw new ConsentimentoNecessarioException();
+            }
+
             // Atualiza o progresso inicial (já em 'processing' pelo lock)
             doc.Progress = 40; // Exemplo: Iniciando OCR
             await repo.UpdateAsync(doc);
@@ -178,6 +186,31 @@ public class DocumentProcessingWorker : BackgroundService
             // e deixa um marcador temporário para o front avisar o usuário a tirar outra foto.
             _logger.LogWarning("Documento {DocId} recusado: não é um documento médico válido.", doc.Id);
             await RejectInvalidDocumentAsync(doc, ex.Message, repo, storage, cache, logRepo);
+            return true;
+        }
+        catch (ConsentimentoNecessarioException ex)
+        {
+            _logger.LogWarning("Documento {DocId} falhou: consentimento de IA não foi aceito ou foi revogado.", doc.Id);
+            
+            await logRepo.CriarLogAsync(new SistemaLog 
+            { 
+                Nivel = "Warning", 
+                Acao = "ProcessamentoFalhouConsentimento", 
+                Detalhes = "Processamento abortado. Consentimento de IA necessário.", 
+                DocumentoId = doc.Id, 
+                PacienteId = doc.PacienteId 
+            });
+            
+            doc.Status = "failed";
+            doc.Progress = 0;
+            doc.ErrorMessage = ex.Message;
+            doc.LockedBy = string.Empty;
+            doc.LockedUntil = null;
+            
+            await repo.UpdateAsync(doc);
+            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+
             return true;
         }
         catch (Exception ex)

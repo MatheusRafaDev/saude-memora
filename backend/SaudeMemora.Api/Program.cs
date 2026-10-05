@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Infrastructure.Repositories;
 using SaudeMemora.Infrastructure.Services;
 using SaudeMemora.Api.Workers;
+using SaudeMemora.Api.Endpoints;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -147,6 +148,8 @@ app.UseAuthorization();
 // ─── Health / Ping ───
 app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).AllowAnonymous();
 
+app.MapConsentimentoEndpoints();
+
 // ─── Auth Endpoints ──────────────────────────────────────────────────────────────────────────
 
 app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<RegisterPacienteDto> validator, IPacienteRepository repo) =>
@@ -203,7 +206,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
 
     // Generate Token
     var tokenHandler = new JwtSecurityTokenHandler();
-    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? config["JwtSettings:Secret"] ?? "defaultSecret12345678901234567890";
+    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? config["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT_SECRET_KEY is missing.");
     var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? config["JwtSettings:Issuer"];
     var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? config["JwtSettings:Audience"];
     var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN");
@@ -418,6 +421,9 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     var paciente = await repo.GetByIdAsync(userId);
     if (paciente == null) return Results.NotFound();
 
+    if (paciente.ConsentimentoIa?.Aceito != true)
+        return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
+
     if (!context.Request.HasFormContentType)
         return Results.BadRequest("Formato invÃ¡lido.");
 
@@ -587,6 +593,11 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
+
+    var pacienteRepo = context.RequestServices.GetRequiredService<IPacienteRepository>();
+    var paciente = await pacienteRepo.GetByIdAsync(userId);
+    if (paciente == null || paciente.ConsentimentoIa?.Aceito != true)
+        return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
     if (!context.Request.HasFormContentType)
         return Results.BadRequest("Formato inválido. Esperado multipart/form-data.");
@@ -869,6 +880,9 @@ app.MapGet("/api/reports/generate", async (int months, ClaimsPrincipal user, IPa
     if (userId == null) return Results.Unauthorized();
 
     var paciente = await repo.GetByIdAsync(userId);
+    if (paciente == null || paciente.ConsentimentoIa?.Aceito != true)
+        return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
+
     var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
     var allDocs = await docRepo.GetAllByPacienteIdAsync(userId);
 

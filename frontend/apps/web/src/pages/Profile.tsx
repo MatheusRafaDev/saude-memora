@@ -4,11 +4,15 @@ import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangl
 import { useGetApiPacientesMe, usePatchApiPacientesMePerfil, useDeleteApiPacientesMe, customFetch } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/lib/store';
+import { useConsentimento, useSaveConsentimento, useRevokeConsentimento } from '../hooks/useConsentimento';
 
 export default function Profile() {
   const { data: profileRaw, isLoading, refetch } = useGetApiPacientesMe();
   const patchPerfil = usePatchApiPacientesMePerfil();
   const deleteAccount = useDeleteApiPacientesMe();
+  const { data: consentData } = useConsentimento();
+  const revokeConsent = useRevokeConsentimento();
+  const saveConsent = useSaveConsentimento();
   const { signOut } = useStore();
   const [zoomCarteirinha, setZoomCarteirinha] = useState(false);
 
@@ -275,6 +279,33 @@ export default function Profile() {
           <p className="mt-1 text-xs text-muted-foreground">Sair com segurança do seu espaço no Saúde Memora.</p>
         </div>
         <button type="button" onClick={() => { signOut(); window.location.href = '/'; }} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors cursor-pointer">Sair da conta</button>
+      </div>
+    </section>
+
+    <section className="rounded-2xl border border-border bg-card p-5 md:p-7">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-base font-extrabold flex items-center gap-2">Privacidade e Termos</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Gerencie seu consentimento para uso de Inteligência Artificial nos seus documentos.</p>
+          <div className="mt-2 text-xs text-muted-foreground">
+            Status: <span className={consentData?.aceito ? "text-green-600 font-bold" : "text-red-600 font-bold"}>{consentData?.aceito ? 'Aceito' : 'Não Aceito'}</span>
+          </div>
+        </div>
+        <div>
+          {consentData?.aceito ? (
+            <button type="button" onClick={() => revokeConsent.mutate()} disabled={revokeConsent.isPending} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors cursor-pointer">
+              Revogar Consentimento
+            </button>
+          ) : (
+            <button type="button" onClick={() => saveConsent.mutate(true)} disabled={saveConsent.isPending} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer">
+              Aceitar Termos
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="mt-4 pt-4 border-t border-border flex gap-4 text-xs">
+        <a href="/termos" target="_blank" className="text-blue-500 hover:underline font-medium">Ler Termos de Uso</a>
+        <a href="/privacidade" target="_blank" className="text-blue-500 hover:underline font-medium">Política de Privacidade</a>
       </div>
     </section>
 

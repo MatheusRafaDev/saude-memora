@@ -13,6 +13,8 @@ import Upload from '@/pages/Upload';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Record from '@/pages/Record';
 import Profile from '@/pages/Profile';
+import Termos from '@/pages/Termos';
+import Privacidade from '@/pages/Privacidade';
 import { StoreProvider } from '@/lib/store';
 import { AppShell } from '@/components/AppShell';
 import {
@@ -119,6 +121,8 @@ function Router() {
         <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
         <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
         <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
+        <Route path="/termos" component={Termos} />
+        <Route path="/privacidade" component={Privacidade} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>

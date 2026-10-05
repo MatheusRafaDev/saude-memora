@@ -4,6 +4,7 @@ import { Activity, BookOpen, FileText, LogOut, ShieldCheck, UserRound, Plus, Che
 import { useStore } from '@/lib/store';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
+import { ConsentModal } from '@/components/ConsentModal';
 import { useGetApiPacientesMe, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 
 const navItems = [
@@ -233,6 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <UploadModal />
+      <ConsentModal />
     </div>
   );
 }
