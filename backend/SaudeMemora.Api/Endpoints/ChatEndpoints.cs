@@ -49,7 +49,9 @@ public static class ChatEndpoints
             contextText.AppendLine($"Medicamentos Contínuos: {string.Join(", ", ficha.MedicamentosContinuos ?? new List<string>())}");
 
             contextText.AppendLine("\n[Histórico de Documentos Médicos]");
-            foreach (var d in docs)
+            // Limitar a 30 documentos mais recentes para não estourar o limite de tokens do LLM
+            var recentDocs = docs.OrderByDescending(d => d.CriadoEm).Take(30).ToList();
+            foreach (var d in recentDocs)
             {
                 contextText.AppendLine($"- Documento: {d.Titulo} ({d.Data}) | Tipo: {d.Tipo}");
                 if (!string.IsNullOrEmpty(d.Resumo)) contextText.AppendLine($"  Resumo: {d.Resumo}");
@@ -114,7 +116,7 @@ CONTEXTO DO PACIENTE:
             var reply = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
             return Results.Ok(new { response = reply });
-        }).RequireAuthorization();
+        }).RequireAuthorization().RequireRateLimiting("chat");
     }
 }
 

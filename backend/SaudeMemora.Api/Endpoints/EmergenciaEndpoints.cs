@@ -25,9 +25,14 @@ public static class EmergenciaEndpoints
 
             var rawToken = Guid.NewGuid().ToString("N");
             paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
+            
+            var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
+            int expirationDays = int.TryParse(expirationDaysString, out var days) ? days : 30;
+            paciente.TokenEmergenciaExpiraEm = DateTime.UtcNow.AddDays(expirationDays);
+
             await repo.UpdateAsync(paciente);
 
-            return Results.Ok(new { token = rawToken });
+            return Results.Ok(new { token = rawToken, expiraEm = paciente.TokenEmergenciaExpiraEm });
         }).RequireAuthorization();
 
         // 2. Endpoint público que retorna os dados a partir do token
@@ -40,6 +45,11 @@ public static class EmergenciaEndpoints
             var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token)));
             var paciente = await repo.GetByEmergenciaTokenAsync(tokenHash);
             if (paciente == null) return Results.NotFound();
+
+            if (paciente.TokenEmergenciaExpiraEm.HasValue && paciente.TokenEmergenciaExpiraEm.Value < DateTime.UtcNow)
+            {
+                return Results.NotFound(); // Retornar 404 para token expirado, conforme solicitado
+            }
 
             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("Acesso de emergência ao perfil do paciente {PacienteId}", paciente.Id);
@@ -72,9 +82,14 @@ public static class EmergenciaEndpoints
 
             var rawToken = Guid.NewGuid().ToString("N");
             paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
+            
+            var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
+            int expirationDays = int.TryParse(expirationDaysString, out var days) ? days : 30;
+            paciente.TokenEmergenciaExpiraEm = DateTime.UtcNow.AddDays(expirationDays);
+
             await repo.UpdateAsync(paciente);
 
-            return Results.Ok(new { token = rawToken });
+            return Results.Ok(new { token = rawToken, expiraEm = paciente.TokenEmergenciaExpiraEm });
         }).RequireAuthorization();
     }
 }

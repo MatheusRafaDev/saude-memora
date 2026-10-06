@@ -61,6 +61,9 @@ public class Paciente
     [BsonElement("tokenEmergencia")]
     public string? TokenEmergencia { get; set; }
 
+    [BsonElement("tokenEmergenciaExpiraEm")]
+    public DateTime? TokenEmergenciaExpiraEm { get; set; }
+
     [BsonElement("contatoEmergencia")]
     public string? ContatoEmergencia { get; set; }
 
