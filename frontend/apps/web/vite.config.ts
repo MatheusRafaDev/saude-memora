@@ -21,7 +21,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
+    ...(process.env.NODE_ENV !== 'production' ? [runtimeErrorOverlay()] : []),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
@@ -62,12 +62,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
-      '@assets': path.resolve(
-        import.meta.dirname,
-        '..',
-        '..',
-        'attached_assets',
-      ),
     },
     dedupe: ['react', 'react-dom'],
   },
