@@ -18,6 +18,28 @@ public class PacienteRepository : IPacienteRepository
         _cache = cache;
     }
 
+    public static async Task EnsureIndexesAsync(MongoDbContext context, CancellationToken ct = default)
+    {
+        var collection = context.Pacientes;
+
+        var emailIndex = new CreateIndexModel<Paciente>(
+            Builders<Paciente>.IndexKeys.Ascending(p => p.Email),
+            new CreateIndexOptions { Name = "ix_email", Unique = true }
+        );
+
+        var resetTokenIndex = new CreateIndexModel<Paciente>(
+            Builders<Paciente>.IndexKeys.Ascending(p => p.ResetPasswordToken),
+            new CreateIndexOptions { Name = "ix_reset_token", Sparse = true }
+        );
+
+        var emergenciaTokenIndex = new CreateIndexModel<Paciente>(
+            Builders<Paciente>.IndexKeys.Ascending(p => p.TokenEmergencia),
+            new CreateIndexOptions { Name = "ix_emergencia_token", Sparse = true }
+        );
+
+        await collection.Indexes.CreateManyAsync(new[] { emailIndex, resetTokenIndex, emergenciaTokenIndex }, ct);
+    }
+
     public async Task<Paciente?> GetByEmailAsync(string email)
     {
         return await _pacientes.Find(p => p.Email == email).FirstOrDefaultAsync();
@@ -37,19 +59,32 @@ public class PacienteRepository : IPacienteRepository
     public async Task<Paciente?> GetByIdAsync(string id)
     {
         var cacheKey = $"paciente_{id}";
-        var cached = await _cache.GetStringAsync(cacheKey);
-        if (!string.IsNullOrEmpty(cached))
+        try
         {
-            return JsonSerializer.Deserialize<Paciente>(cached);
+            var cached = await _cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cached))
+            {
+                return JsonSerializer.Deserialize<Paciente>(cached);
+            }
         }
+        catch { }
 
         var paciente = await _pacientes.Find(p => p.Id == id).FirstOrDefaultAsync();
         if (paciente != null)
         {
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(paciente), new DistributedCacheEntryOptions
+            var cacheable = (Paciente)paciente.MemberwiseClone();
+            cacheable.SenhaHash = "";
+            cacheable.ResetPasswordToken = null;
+            cacheable.TokenEmergencia = null;
+
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
-            });
+                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(cacheable), new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                });
+            }
+            catch { }
         }
         return paciente;
     }

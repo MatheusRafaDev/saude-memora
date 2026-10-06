@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
       if (
         error?.status === 401 || error?.response?.status === 401
       ) {
-        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_token');
         window.location.href = '/entrar';
       }
     }
@@ -45,7 +45,7 @@ const queryClient = new QueryClient({
 import { useGetApiPacientesMe, getGetApiPacientesMeQueryKey } from '@workspace/api-client-react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  const token = localStorage.getItem('auth_token');
+  const token = sessionStorage.getItem('auth_token');
   
   // Validate user constantly (hook at top level)
   const { isLoading, isError } = useGetApiPacientesMe({

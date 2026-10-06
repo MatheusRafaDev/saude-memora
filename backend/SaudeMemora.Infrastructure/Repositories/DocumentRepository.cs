@@ -68,44 +68,50 @@ public class DocumentRepository : IDocumentRepository
                 PartialFilterExpression = Builders<RegistroDocumento>.Filter.Type(d => d.FileHash, BsonType.String)
             });
 
-        await collection.Indexes.CreateManyAsync(new[] { queueModel, idempotencyModel }, ct);
+        var pacienteIdModel = new CreateIndexModel<RegistroDocumento>(
+            Builders<RegistroDocumento>.IndexKeys.Ascending(d => d.PacienteId),
+            new CreateIndexOptions { Name = "ix_pacienteId" }
+        );
+
+        await collection.Indexes.CreateManyAsync(new[] { queueModel, idempotencyModel, pacienteIdModel }, ct);
     }
 
     public async Task<IEnumerable<RegistroDocumento>> GetAllByPacienteIdAsync(string userId)
     {
         var cacheKey = $"docs_user_{userId}";
-        var cachedData = await _cache.GetStringAsync(cacheKey);
-        if (!string.IsNullOrEmpty(cachedData))
+        try
         {
-            return JsonSerializer.Deserialize<IEnumerable<RegistroDocumento>>(cachedData)!;
+            var cachedData = await _cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                return JsonSerializer.Deserialize<IEnumerable<RegistroDocumento>>(cachedData)!;
+            }
         }
+        catch { } // ignora erro se redis cair
 
-        var docs = await _documents.Find(d => d.PacienteId == userId).ToListAsync();
-        await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(docs), new DistributedCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-        });
+        var projection = Builders<RegistroDocumento>.Projection
+            .Exclude(d => d.TextoExtraido)
+            .Exclude(d => d.Conteudo);
+
+        var docs = await _documents.Find(d => d.PacienteId == userId)
+                                   .Project<RegistroDocumento>(projection)
+                                   .ToListAsync();
         
+        try
+        {
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(docs), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            });
+        }
+        catch { }
+
         return docs;
     }
 
     public async Task<RegistroDocumento?> GetByIdAsync(string id)
     {
-        var cacheKey = $"doc_{id}";
-        var cachedData = await _cache.GetStringAsync(cacheKey);
-        if (!string.IsNullOrEmpty(cachedData))
-        {
-            return JsonSerializer.Deserialize<RegistroDocumento>(cachedData);
-        }
-
         var doc = await _documents.Find(d => d.Id == id).FirstOrDefaultAsync();
-        if (doc != null)
-        {
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(doc), new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
-            });
-        }
         return doc;
     }
 
@@ -117,7 +123,10 @@ public class DocumentRepository : IDocumentRepository
     public async Task<RegistroDocumento> CreateAsync(RegistroDocumento docRecord)
     {
         await _documents.InsertOneAsync(docRecord);
-        await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
+        try {
+            await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
+            await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
+        } catch { }
         return docRecord;
     }
 
@@ -126,7 +135,10 @@ public class DocumentRepository : IDocumentRepository
         try
         {
             await _documents.InsertOneAsync(docRecord);
-            await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
+            try {
+                await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
+                await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
+            } catch { }
             return (docRecord, true);
         }
         catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey
@@ -154,8 +166,10 @@ public class DocumentRepository : IDocumentRepository
         var result = await _documents.UpdateOneAsync(filter, update);
         if (result.ModifiedCount == 0) return false;
 
-        await _cache.RemoveAsync($"doc_{id}");
-        await _cache.RemoveAsync($"docs_user_{userId}");
+        try {
+            await _cache.RemoveAsync($"docs_user_{userId}");
+            await _cache.RemoveAsync($"documents_count_v3_{userId}");
+        } catch { }
         return true;
     }
 
@@ -165,16 +179,20 @@ public class DocumentRepository : IDocumentRepository
         if (doc != null)
         {
             await _documents.DeleteOneAsync(d => d.Id == id);
-            await _cache.RemoveAsync($"doc_{id}");
-            await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
+            try {
+                await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
+                await _cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            } catch { }
         }
     }
 
     public async Task UpdateAsync(RegistroDocumento docRecord)
     {
         await _documents.ReplaceOneAsync(d => d.Id == docRecord.Id, docRecord);
-        await _cache.RemoveAsync($"doc_{docRecord.Id}");
-        await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
+        try {
+            await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
+            await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
+        } catch { }
     }
 
     public async Task<RegistroDocumento?> DequeuePendingAsync(string workerId, TimeSpan lockDuration)
@@ -203,8 +221,10 @@ public class DocumentRepository : IDocumentRepository
         var doc = await _documents.FindOneAndUpdateAsync(filter, update, options);
         if (doc != null)
         {
-            await _cache.RemoveAsync($"doc_{doc.Id}");
-            await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
+            try {
+                await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
+                await _cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            } catch { }
         }
 
         return doc;

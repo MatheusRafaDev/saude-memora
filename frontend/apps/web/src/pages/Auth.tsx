@@ -29,7 +29,7 @@ export default function Auth() {
       if (mode === 'login') {
         const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
         if (result?.token) {
-          localStorage.setItem('auth_token', result.token);
+          sessionStorage.setItem('auth_token', result.token);
           setMessage('Acesso confirmado. Bem-vindo de volta.');
           setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
         } else {
@@ -41,7 +41,7 @@ export default function Auth() {
         });
         const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
         if (result?.token) {
-          localStorage.setItem('auth_token', result.token);
+          sessionStorage.setItem('auth_token', result.token);
           setMessage('Sua conta foi criada. Entrando no painel...');
           setTimeout(() => { window.location.href = '/visao-geral'; }, 800);
         } else {

@@ -18,6 +18,18 @@ public class FichaMedicaRepository : IFichaMedicaRepository
         _cache = cache;
     }
 
+    public static async Task EnsureIndexesAsync(MongoDbContext context, CancellationToken ct = default)
+    {
+        var collection = context.FichaMedicas;
+
+        var pacienteIdIndex = new CreateIndexModel<FichaMedica>(
+            Builders<FichaMedica>.IndexKeys.Ascending(f => f.PacienteId),
+            new CreateIndexOptions { Name = "ix_pacienteId", Unique = true }
+        );
+
+        await collection.Indexes.CreateOneAsync(pacienteIdIndex, cancellationToken: ct);
+    }
+
     public async Task<FichaMedica> CreateAsync(FichaMedica ficha)
     {
         await _fichas.InsertOneAsync(ficha);
@@ -28,21 +40,14 @@ public class FichaMedicaRepository : IFichaMedicaRepository
     public async Task<FichaMedica?> GetByPacienteIdAsync(string PacienteId)
     {
         var cacheKey = $"ficha_user_{PacienteId}";
-        var cached = await _cache.GetStringAsync(cacheKey);
-        if (!string.IsNullOrEmpty(cached))
-        {
-            return JsonSerializer.Deserialize<FichaMedica>(cached);
-        }
+        try { var cached = await _cache.GetStringAsync(cacheKey); if (!string.IsNullOrEmpty(cached)) { return JsonSerializer.Deserialize<FichaMedica>(cached); } } catch { }
 
         var filter = Builders<FichaMedica>.Filter.Eq(f => f.PacienteId, PacienteId);
         var ficha = await _fichas.Find(filter).FirstOrDefaultAsync();
 
         if (ficha != null)
         {
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(ficha), new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
-            });
+            try { await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(ficha), new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) }); } catch { }
         }
         return ficha;
     }
