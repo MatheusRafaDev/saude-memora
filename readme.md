@@ -6,11 +6,11 @@
   <img src="https://img.shields.io/badge/.NET%209-Backend-512BD4?style=for-the-badge&logo=dotnet" />
   <img src="https://img.shields.io/badge/MongoDB-NoSQL-47A248?style=for-the-badge&logo=mongodb" />
   <img src="https://img.shields.io/badge/Cloudinary-Image%20Storage-3448C5?style=for-the-badge&logo=cloudinary" />
-  <img src="https://img.shields.io/badge/Groq%20AI-LLM-blueviolet?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Gemini%20AI-LLM-blueviolet?style=for-the-badge" />
 </p>
 
 > **Digitalize, organize e acesse documentos médicos com inteligência.**  
-> Aplicação que utiliza OCR + Inteligência Artificial (Groq) para transformar exames, carteirinhas e receitas em dados estruturados de forma automática.
+> Aplicação que utiliza OCR + Inteligência Artificial (Gemini) para transformar exames, carteirinhas e receitas em dados estruturados de forma automática.
 
 ## 🔗 Acesse o projeto
 
@@ -34,7 +34,7 @@ Com o **SaúdeMemora**, o usuário pode:
 **1. Processamento Inteligente de Documentos**
 - **Upload Inteligente com Seletor de Tipo**: Categorize o arquivo (Exame, Receita, Laudo, Atestado, Vacina, Encaminhamento) antes do upload.
 - **Integração com Câmera**: Capture documentos ou fotos da carteirinha do convênio diretamente pela câmera do celular ou webcam.
-- **OCR e LLM Específicos**: Prompts de IA adaptados e ajustados exclusivamente para cada tipo de documento, garantindo 90%+ de precisão na extração de dados médicos.
+- **OCR e LLM Específicos**: Prompts de IA adaptados e ajustados exclusivamente para cada tipo de documento, garantindo alta precisão na extração de dados médicos.
 - **Extração de Medicamentos**: A IA identifica remédios, dosagens e horários automaticamente.
 
 **2. Carteirinha do Convênio e Perfil**
@@ -67,7 +67,7 @@ Com o **SaúdeMemora**, o usuário pode:
 
 - **Frontend:** React + Vite, TailwindCSS (Vanilla UI), React Query (Cache e mutations), Wouter.
 - **Backend:** C# ASP.NET Core 8 API Minimal.
-- **Inteligência Artificial:** OCR.Space (Leitura ótica de textos complexos) + Groq AI / LLaMA (Interpretação e extração estruturada json).
+- **Inteligência Artificial:** OCR.Space (Leitura ótica de textos complexos) + Gemini (Interpretação e extração estruturada json).
 - **Banco de Dados:** MongoDB Atlas (NoSQL) para documentos flexíveis.
 - **Storage:** Cloudinary para fotos, permitindo exclusão em cascata automatizada.
 
@@ -81,4 +81,4 @@ Com o **SaúdeMemora**, o usuário pode:
 | **Backend / BD** | `MONGODB_CONNECTION_STRING`, `MONGODB_DATABASE_NAME` |
 | **Armazenamento** | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
 | **Autenticação** | `JWT_SECRET_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE` |
-| **Inteligência Artificial** | `GROQ_API_KEY`, `GEMINI_API_KEY`, `OCR_SPACE_API_KEY` |
+| **Inteligência Artificial** | `GEMINI_API_KEY`, `OCR_SPACE_API_KEY` |
