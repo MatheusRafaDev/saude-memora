@@ -1216,3 +1216,19 @@ static class UploadHelpers
         await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
     }
 }
+
+public static class DistributedCacheExtensions
+{
+    public static async Task<string?> SafeGetStringAsync(this Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, string key, CancellationToken ct = default)
+    {
+        try { return await Microsoft.Extensions.Caching.Distributed.DistributedCacheExtensions.GetStringAsync(cache, key, ct); } catch { return null; }
+    }
+    public static async Task SafeSetStringAsync(this Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, string key, string value, Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions options, CancellationToken ct = default)
+    {
+        try { await Microsoft.Extensions.Caching.Distributed.DistributedCacheExtensions.SetStringAsync(cache, key, value, options, ct); } catch { }
+    }
+    public static async Task SafeRemoveAsync(this Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, string key, CancellationToken ct = default)
+    {
+        try { await cache.RemoveAsync(key, ct); } catch { }
+    }
+}

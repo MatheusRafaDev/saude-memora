@@ -72,10 +72,13 @@ public class PacienteRepository : IPacienteRepository
         var paciente = await _pacientes.Find(p => p.Id == id).FirstOrDefaultAsync();
         if (paciente != null)
         {
-            var cacheable = (Paciente)paciente.MemberwiseClone();
-            cacheable.SenhaHash = "";
-            cacheable.ResetPasswordToken = null;
-            cacheable.TokenEmergencia = null;
+            var cacheable = JsonSerializer.Deserialize<Paciente>(JsonSerializer.Serialize(paciente));
+            if (cacheable != null)
+            {
+                cacheable.Senha = "";
+                cacheable.ResetPasswordToken = null;
+                cacheable.TokenEmergencia = null;
+            }
 
             try
             {
