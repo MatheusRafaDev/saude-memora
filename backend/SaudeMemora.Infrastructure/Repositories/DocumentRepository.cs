@@ -254,4 +254,22 @@ public class DocumentRepository : IDocumentRepository
 
         return doc;
     }
+
+    public async Task<int> ResetExpiredProcessingAsync()
+    {
+        var now = DateTime.UtcNow;
+        var filter = Builders<RegistroDocumento>.Filter.And(
+            Builders<RegistroDocumento>.Filter.Eq(d => d.Status, "processing"),
+            Builders<RegistroDocumento>.Filter.Lt(d => d.LockedUntil, now)
+        );
+
+        var update = Builders<RegistroDocumento>.Update
+            .Set(d => d.Status, "pending")
+            .Set(d => d.LockedBy, string.Empty)
+            .Set(d => d.LockedUntil, null)
+            .Inc(d => d.Version, 1);
+
+        var result = await _documents.UpdateManyAsync(filter, update);
+        return (int)result.ModifiedCount;
+    }
 }

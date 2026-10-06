@@ -12,4 +12,5 @@ public interface IPacienteRepository
     Task<Paciente> CreateAsync(Paciente paciente);
     Task UpdateAsync(Paciente paciente);
     Task DeleteAsync(string id);
+    Task<IEnumerable<Paciente>> GetUsersMarkedForDeletionAsync();
 }

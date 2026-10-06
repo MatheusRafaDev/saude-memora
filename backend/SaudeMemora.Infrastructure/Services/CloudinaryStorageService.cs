@@ -38,15 +38,20 @@ public class CloudinaryStorageService : IImageStorageService
         return (uploadResult.SecureUrl.ToString(), uploadResult.PublicId);
     }
 
-    public string GetSignedUrl(string publicId)
+    public string? GetSignedUrl(string publicId)
     {
         if (string.IsNullOrEmpty(publicId)) return null;
-        var transformation = new Transformation();
-        return _cloudinary.Api.UrlImgUp.Transform(transformation)
-                             .Signed(true)
+
+        // AuthToken usa API fluente: Duration/Expiration são métodos, não propriedades
+        var token = new AuthToken(_cloudinary.Api.Account.ApiSecret)
+            .Duration(900); // 15 minutos em segundos
+
+        return _cloudinary.Api.UrlImgUp
                              .Action("image")
                              .ResourceType("image")
                              .Type("authenticated")
+                             .Secure(true)
+                             .AuthToken(token)
                              .BuildUrl(publicId);
     }
 

@@ -83,7 +83,8 @@ public class PacienteRepository : IPacienteRepository
             .Set(p => p.ConsentimentoIa, paciente.ConsentimentoIa)
             .Set(p => p.TokenEmergencia, paciente.TokenEmergencia)
             .Set(p => p.ResetPasswordToken, paciente.ResetPasswordToken)
-            .Set(p => p.ResetPasswordExpiry, paciente.ResetPasswordExpiry);
+            .Set(p => p.ResetPasswordExpiry, paciente.ResetPasswordExpiry)
+            .Set(p => p.IsDeleting, paciente.IsDeleting);
 
         if (!string.IsNullOrEmpty(paciente.Senha)) 
         {
@@ -98,5 +99,10 @@ public class PacienteRepository : IPacienteRepository
     {
         await _pacientes.DeleteOneAsync(p => p.Id == id);
         await _cache.RemoveAsync($"paciente_{id}");
+    }
+
+    public async Task<IEnumerable<Paciente>> GetUsersMarkedForDeletionAsync()
+    {
+        return await _pacientes.Find(p => p.IsDeleting == true).ToListAsync();
     }
 }

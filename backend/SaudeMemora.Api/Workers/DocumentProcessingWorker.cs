@@ -27,6 +27,23 @@ public class DocumentProcessingWorker : BackgroundService
     {
         _logger.LogInformation("DocumentProcessingWorker started. WorkerId: {WorkerId}", _workerId);
 
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var repo = scope.ServiceProvider.GetRequiredService<IDocumentRepository>();
+            try 
+            {
+                var resetCount = await repo.ResetExpiredProcessingAsync();
+                if (resetCount > 0)
+                {
+                    _logger.LogInformation("Resetados {Count} documentos com lock expirado para pendente.", resetCount);
+                }
+            } 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao resetar documentos expirados na inicialização.");
+            }
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try

@@ -29,4 +29,9 @@ public interface IDocumentRepository
     /// Usa FindOneAndUpdate para garantir atomicidade.
     /// </summary>
     Task<RegistroDocumento?> DequeuePendingAsync(string workerId, TimeSpan lockDuration);
+    
+    /// <summary>
+    /// Reseta documentos cujo processamento expirou, devolvendo-os para 'pending'.
+    /// </summary>
+    Task<int> ResetExpiredProcessingAsync();
 }

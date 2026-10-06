@@ -4,5 +4,5 @@ public interface IImageStorageService
 {
     Task<(string imageUrl, string publicId)> UploadImageAsync(Stream stream, string fileName);
     Task DeleteImageAsync(string publicId);
-    string GetSignedUrl(string publicId);
+    string? GetSignedUrl(string publicId);
 }

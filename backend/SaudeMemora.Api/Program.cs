@@ -11,6 +11,9 @@ using SaudeMemora.Infrastructure.Repositories;
 using SaudeMemora.Infrastructure.Services;
 using SaudeMemora.Api.Workers;
 using SaudeMemora.Api.Endpoints;
+using SaudeMemora.Api.Middlewares;
+using SaudeMemora.Api.Filters;
+using SaudeMemora.Api.Hubs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -32,6 +35,10 @@ builder.Configuration.AddEnvironmentVariables();
 
 
 // Add services to the container.
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+builder.Services.AddSignalR();
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<MongoDbContext>();
@@ -47,6 +54,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>();
 builder.Services.AddHostedService<DocumentProcessingWorker>();
+builder.Services.AddHostedService<AccountCleanupWorker>();
 builder.Services.AddHostedService<KeepAliveWorker>();
 
 // CORS
@@ -162,6 +170,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         context.Fail("Security stamp invélido ou conta excluida.");
                     }
                 }
+            },
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/documents"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
             }
         };
     });
@@ -183,6 +201,7 @@ else
 }
 
 var app = builder.Build();
+app.UseExceptionHandler();
 app.UseForwardedHeaders();
 
 // Cria índices do MongoDB uma única vez no startup (fila + idempotência).
@@ -230,16 +249,12 @@ app.MapExamesEndpoints();
 app.MapEmergenciaEndpoints();
 app.MapChatEndpoints();
 
+app.MapHub<DocumentHub>("/hubs/documents");
+
 // ??? Auth Endpoints ??????????????????????????????????????????????????????????????????????????
 
-app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<RegisterPacienteDto> validator, IPacienteRepository repo) =>
+app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IPacienteRepository repo) =>
 {
-    var validationResult = await validator.ValidateAsync(dto);
-    if (!validationResult.IsValid)
-    {
-        return Results.BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
-    }
-
     dto.Email = dto.Email.ToLowerInvariant().Trim();
     var existing = await repo.GetByEmailAsync(dto.Email);
     if (existing != null)
@@ -265,16 +280,10 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IValidator<Reg
         return Results.BadRequest(new[] { "Email já cadastrado." });
     }
     return Results.Ok(new { Message = "Paciente registrado com sucesso!" });
-}).RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
 
-app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPacienteDto> validator, IPacienteRepository repo, IConfiguration config) =>
+app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository repo, IConfiguration config) =>
 {
-    var validationResult = await validator.ValidateAsync(dto);
-    if (!validationResult.IsValid)
-    {
-        return Results.BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
-    }
-
     dto.Email = dto.Email.ToLowerInvariant().Trim();
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
@@ -284,14 +293,10 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
         return Results.BadRequest(new[] { "Email ou senha inválidos." });
     }
 
-    try
+    if (!BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
     {
-        if (!BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
-        {
-            return Results.BadRequest(new[] { "Email ou senha inválidos." });
-        }
+        return Results.BadRequest(new[] { "Email ou senha inválidos." });
     }
-    catch { return Results.BadRequest(new[] { "Email ou senha inválidos." }); }
 
     // Generate Token
     var tokenHandler = new JwtSecurityTokenHandler();
@@ -326,7 +331,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IValidator<LoginPaci
         Token = jwt,
         User = new { paciente.Id, paciente.Nome, paciente.Email }
     });
-}).RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
 
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger, HttpContext context, IHttpClientFactory httpClientFactory) =>
 {
@@ -401,7 +406,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
     }
 
     return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberé um link de recuperação." });
-}).RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
 
 app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRepository repo) =>
 {
@@ -427,7 +432,7 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRe
     await repo.UpdateAsync(paciente);
 
     return Results.Ok(new { Message = "Sua senha foi redefinida com sucesso." });
-}).RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
 
 //  Paciente Endpoints 
 
@@ -511,7 +516,7 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     await repo.UpdateAsync(paciente);
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
-}).RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 
 // Atualiza telefone e endereço do paciente autenticado
 app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto, IDistributedCache cache) =>
@@ -529,7 +534,7 @@ app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPaciente
     await repo.UpdateAsync(paciente);
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
     return Results.Ok(new { Message = "Contato atualizado com sucesso." });
-}).RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 
 app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IOcrAiService ocr, IDistributedCache cache) =>
 {
@@ -629,62 +634,25 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
         return Results.BadRequest(new { message = "Senha incorreta." });
     }
 
-    try
-    {
-        if (!BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
-        {
-            return Results.BadRequest(new { message = "Senha incorreta." });
-        }
-    }
-    catch
+    if (!BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
     {
         return Results.BadRequest(new { message = "Senha incorreta." });
     }
 
-    // 1. Pega os documentos para apagar imagens
-    if (!string.IsNullOrWhiteSpace(paciente.IdPublicoCarteirinha))
-    {
-        try { await storage.DeleteImageAsync(paciente.IdPublicoCarteirinha); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
-    }
-    var docs = await docRepo.GetAllByPacienteIdAsync(userId);
-    foreach (var doc in docs)
-    {
-        foreach (var pubId in doc.IdPublicos)
-        {
-            if (!string.IsNullOrWhiteSpace(pubId))
-                try { await storage.DeleteImageAsync(pubId); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
-        }
-        await docRepo.DeleteAsync(doc.Id!);
-    }
+    // Em vez de apagar tudo sincronicamente, marca para exclusão
+    paciente.IsDeleting = true;
+    paciente.SecurityStamp = Guid.NewGuid().ToString("N"); // Invalida tokens atuais
+    await repo.UpdateAsync(paciente);
 
-    // 2. Apaga a ficha médica
-    var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
-    if (ficha != null)
-    {
-        await fichaRepo.DeleteAsync(ficha.Id!);
-    }
-
-    // 3. Apaga a imagem da carteirinha
-    if (!string.IsNullOrWhiteSpace(paciente.IdPublicoCarteirinha))
-    {
-        try { await storage.DeleteImageAsync(paciente.IdPublicoCarteirinha); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
-    }
-
-    // 4. Apaga logs
-    await logRepo.DeleteByPacienteIdAsync(userId);
-
-    // 5. Apaga o paciente
-    await repo.DeleteAsync(userId);
-
-    // 6. Limpa caches
+    // Limpa caches
     await cache.RemoveAsync($"paciente_{userId}");
     await cache.RemoveAsync($"ficha_{userId}");
     await cache.RemoveAsync($"docs_user_{userId}");
     await cache.RemoveAsync($"documents_v3_{userId}");
     await cache.RemoveAsync($"documents_count_v3_{userId}");
 
-    return Results.Ok(new { message = "Conta excluída com sucesso." });
-}).RequireAuthorization();
+    return Results.Ok(new { message = "Sua conta foi agendada para exclusão e será removida em breve." });
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 
 // ??? Logs Endpoints ??????????????????????????????????????????
 
@@ -774,7 +742,7 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     await repo.UpdateAsync(ficha);
     await cache.SafeRemoveAsync($"ficha_v2_{userId}");
     return Results.Ok(ficha);
-}).RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 
 //  Document Endpoints 
 
@@ -953,7 +921,7 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         resumo = d.Resumo,
         diagnostico = d.Diagnostico,
         medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
-        urlImagens = d.UrlImagens,
+        urlImagens = d.IdPublicos != null ? d.IdPublicos.Select(storage.GetSignedUrl).ToList() : new List<string>(),
         progress = d.Progress,
         errorMessage = d.ErrorMessage,
         criadoEm = d.CriadoEm,
@@ -1040,7 +1008,7 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         conteudo = doc.Conteudo,
         conclusoes = doc.Conclusoes,
         observacoes = doc.Observacoes,
-        urlImagens = doc.UrlImagens,
+        urlImagens = doc.IdPublicos != null ? doc.IdPublicos.Select(storage.GetSignedUrl).ToList() : new List<string>(),
         textoExtraido = doc.TextoExtraido,
         conteudoIndentado = doc.ConteudoIndentado,
         resultadosExame = doc.ResultadosExame,
@@ -1165,7 +1133,7 @@ app.MapPut("/api/documents/{id}", async (
     await cache.SafeRemoveAsync($"documents_v3_{userId}");
     await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
     return Results.Ok(new { message = "Documento atualizado com sucesso." });
-}).RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 
 // Exclui documento por ID (e remove do Cloudinary)
 app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>

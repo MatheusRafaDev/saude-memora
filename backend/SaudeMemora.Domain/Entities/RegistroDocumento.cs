@@ -70,6 +70,12 @@ public class ResultadoExameItem
 
     [BsonElement("confianca")]
     public double Confianca { get; set; } = 1.0;
+
+    [BsonElement("confirmacaoNecessaria")]
+    public bool ConfirmacaoNecessaria { get; set; } = false;
+
+    [BsonElement("motivoConfirmacao")]
+    public string MotivoConfirmacao { get; set; } = string.Empty;
 }
 
 public class LinhaIndentadaDocumento

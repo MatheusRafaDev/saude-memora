@@ -25,7 +25,8 @@ public class Paciente
     [BsonElement("nome")]
     public string Nome { get; set; } = string.Empty;
 
-
+    [BsonElement("isDeleting")]
+    public bool IsDeleting { get; set; } = false;
 
     [BsonElement("dataNascimento")]
     public string DataNascimento { get; set; } = string.Empty;
