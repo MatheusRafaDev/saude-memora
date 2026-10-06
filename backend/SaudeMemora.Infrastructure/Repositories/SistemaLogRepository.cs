@@ -26,4 +26,9 @@ public class SistemaLogRepository : ISistemaLogRepository
                           .Limit(limit)
                           .ToListAsync();
     }
+
+    public async Task DeleteByPacienteIdAsync(string pacienteId)
+    {
+        await _logs.DeleteManyAsync(l => l.PacienteId == pacienteId);
+    }
 }

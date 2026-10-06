@@ -545,7 +545,7 @@ app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPac
 }).RequireAuthorization();
 
 // Exclui a conta do paciente e todos os seus dados em cascata
-app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IImageStorageService storage) =>
+app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IImageStorageService storage, ISistemaLogRepository logRepo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -553,9 +553,21 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     var paciente = await repo.GetByIdAsync(userId);
     if (paciente == null) return Results.NotFound();
 
-    if (string.IsNullOrWhiteSpace(dto.Senha) || !BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
+    if (string.IsNullOrWhiteSpace(dto.Senha))
     {
-        return Results.BadRequest(new[] { "Senha incorreta." });
+        return Results.BadRequest(new { message = "Senha incorreta." });
+    }
+
+    try
+    {
+        if (!BCrypt.Net.BCrypt.Verify(dto.Senha, paciente.Senha))
+        {
+            return Results.BadRequest(new { message = "Senha incorreta." });
+        }
+    }
+    catch
+    {
+        return Results.BadRequest(new { message = "Senha incorreta." });
     }
 
     // 1. Pega os documentos para apagar imagens
@@ -583,10 +595,20 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
         try { await storage.DeleteImageAsync(paciente.IdPublicoCarteirinha); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
     }
 
-    // 4. Apaga o paciente
+    // 4. Apaga logs
+    await logRepo.DeleteByPacienteIdAsync(userId);
+
+    // 5. Apaga o paciente
     await repo.DeleteAsync(userId);
 
-    return Results.Ok(new { Message = "Conta excluÃƒÂ­da com sucesso." });
+    // 6. Limpa caches
+    await cache.RemoveAsync($"paciente_{userId}");
+    await cache.RemoveAsync($"ficha_{userId}");
+    await cache.RemoveAsync($"docs_user_{userId}");
+    await cache.RemoveAsync($"documents_v3_{userId}");
+    await cache.RemoveAsync($"documents_count_v3_{userId}");
+
+    return Results.Ok(new { message = "Conta excluída com sucesso." });
 }).RequireAuthorization();
 
 // ??? Logs Endpoints ??????????????????????????????????????????
@@ -807,7 +829,7 @@ app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user,
 
     await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
     return Results.Accepted($"/api/documents/{id}", new { id, status = "pending", progress = 25 });
-}).RequireAuthorization();
+}).RequireAuthorization().RequireRateLimiting("upload");
 
 
 // Lista todos os documentos do paciente autenticado

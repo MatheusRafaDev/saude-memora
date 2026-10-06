@@ -189,6 +189,9 @@ public class RegistroDocumento
     [BsonElement("attempts")]
     public int Attempts { get; set; } = 0;
 
+    [BsonElement("reprocessCount")]
+    public int ReprocessCount { get; set; } = 0;
+
     [BsonElement("lockedUntil")]
     public DateTime? LockedUntil { get; set; }
 

@@ -52,7 +52,15 @@ public class CloudinaryStorageService : IImageStorageService
 
     public async Task DeleteImageAsync(string publicId)
     {
-        var deletionParams = new DeletionParams(publicId);
-        await _cloudinary.DestroyAsync(deletionParams);
+        var deletionParams = new DeletionParams(publicId)
+        {
+            Type = "authenticated",
+            ResourceType = ResourceType.Image
+        };
+        var result = await _cloudinary.DestroyAsync(deletionParams);
+        if (result.Result != "ok" && result.Result != "not found")
+        {
+            Console.Error.WriteLine($"[Cloudinary Delete Error] Failed to delete {publicId}: {result.Result}");
+        }
     }
 }

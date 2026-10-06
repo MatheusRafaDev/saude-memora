@@ -38,6 +38,7 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
 
   useEffect(() => {
@@ -85,13 +86,22 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      setError('Por favor, digite sua senha para confirmar.');
+      return;
+    }
+    
     try {
-      await deleteAccount.mutateAsync();
+      await customFetch('/api/pacientes/me', {
+        method: 'DELETE',
+        body: JSON.stringify({ senha: deletePassword }) as any
+      });
       signOut();
       window.location.href = '/entrar';
-    } catch (err) {
-      setError('Erro ao deletar a conta.');
+    } catch (err: any) {
+      setError(err?.data?.message || err?.message || 'Erro ao deletar a conta.');
       setShowDeleteConfirm(false);
+      setDeletePassword('');
     }
   };
 
@@ -316,9 +326,12 @@ export default function Profile() {
           <p className="mt-1 text-xs text-red-600/80">Ao deletar sua conta, todos os seus dados e documentos serão apagados permanentemente.</p>
         </div>
         {showDeleteConfirm ? (
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowDeleteConfirm(false)} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-white text-muted-foreground border border-border hover:bg-muted transition-colors">Cancelar</button>
-            <button onClick={handleDeleteAccount} disabled={deleteAccount.isPending} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm">{deleteAccount.isPending ? 'Deletando...' : 'Sim, deletar tudo'}</button>
+          <div className="flex flex-col gap-2 w-full max-w-sm">
+            <input type="password" placeholder="Digite sua senha" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} className="h-10 rounded-lg border border-input bg-background px-3 text-sm" />
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); }} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-white text-muted-foreground border border-border hover:bg-muted transition-colors">Cancelar</button>
+              <button onClick={handleDeleteAccount} disabled={!deletePassword} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50">Sim, deletar tudo</button>
+            </div>
           </div>
         ) : (
           <button type="button" onClick={() => setShowDeleteConfirm(true)} className="rounded-xl px-4 py-2.5 text-xs font-bold bg-red-100 text-red-700 hover:bg-red-200 transition-colors">Deletar minha conta</button>

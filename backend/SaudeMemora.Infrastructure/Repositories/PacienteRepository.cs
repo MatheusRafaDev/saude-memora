@@ -58,38 +58,7 @@ public class PacienteRepository : IPacienteRepository
 
     public async Task<Paciente?> GetByIdAsync(string id)
     {
-        var cacheKey = $"paciente_{id}";
-        try
-        {
-            var cached = await _cache.GetStringAsync(cacheKey);
-            if (!string.IsNullOrEmpty(cached))
-            {
-                return JsonSerializer.Deserialize<Paciente>(cached);
-            }
-        }
-        catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
-
-        var paciente = await _pacientes.Find(p => p.Id == id).FirstOrDefaultAsync();
-        if (paciente != null)
-        {
-            var cacheable = JsonSerializer.Deserialize<Paciente>(JsonSerializer.Serialize(paciente));
-            if (cacheable != null)
-            {
-                cacheable.Senha = "";
-                cacheable.ResetPasswordToken = null;
-                cacheable.TokenEmergencia = null;
-            }
-
-            try
-            {
-                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(cacheable), new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
-                });
-            }
-            catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
-        }
-        return paciente;
+        return await _pacientes.Find(p => p.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task<Paciente> CreateAsync(Paciente paciente)
@@ -100,7 +69,28 @@ public class PacienteRepository : IPacienteRepository
 
     public async Task UpdateAsync(Paciente paciente)
     {
-        await _pacientes.ReplaceOneAsync(p => p.Id == paciente.Id, paciente);
+        var update = Builders<Paciente>.Update
+            .Set(p => p.Nome, paciente.Nome)
+            .Set(p => p.DataNascimento, paciente.DataNascimento)
+            .Set(p => p.Sexo, paciente.Sexo)
+            .Set(p => p.Email, paciente.Email)
+            .Set(p => p.Telefone, paciente.Telefone)
+            .Set(p => p.Endereco, paciente.Endereco)
+            .Set(p => p.PlanoSaude, paciente.PlanoSaude)
+            .Set(p => p.NumeroCarteirinha, paciente.NumeroCarteirinha)
+            .Set(p => p.UrlCarteirinha, paciente.UrlCarteirinha)
+            .Set(p => p.IdPublicoCarteirinha, paciente.IdPublicoCarteirinha)
+            .Set(p => p.ConsentimentoIa, paciente.ConsentimentoIa)
+            .Set(p => p.TokenEmergencia, paciente.TokenEmergencia)
+            .Set(p => p.ResetPasswordToken, paciente.ResetPasswordToken)
+            .Set(p => p.ResetPasswordExpiry, paciente.ResetPasswordExpiry);
+
+        if (!string.IsNullOrEmpty(paciente.Senha)) 
+        {
+            update = update.Set(p => p.Senha, paciente.Senha);
+        }
+
+        await _pacientes.UpdateOneAsync(p => p.Id == paciente.Id, update);
         await _cache.RemoveAsync($"paciente_{paciente.Id}");
     }
 

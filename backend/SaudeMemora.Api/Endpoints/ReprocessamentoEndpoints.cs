@@ -29,13 +29,14 @@ public static class ReprocessamentoEndpoints
             if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
             if (doc.Status == "processing") return Results.BadRequest(new { message = "Documento já está em processamento." });
-            if (doc.Attempts >= 10) return Results.BadRequest(new { message = "Limite de reprocessamentos atingido para este documento." });
+            if (doc.ReprocessCount >= 5) return Results.BadRequest(new { message = "Limite de reprocessamentos atingido para este documento." });
 
             doc.Status = "pending";
             doc.Progress = 0;
             doc.LockedUntil = null;
             doc.LockedBy = string.Empty;
             doc.Attempts = 0; 
+            doc.ReprocessCount++;
             doc.ErrorMessage = string.Empty;
 
             await repo.UpdateAsync(doc);
@@ -43,6 +44,6 @@ public static class ReprocessamentoEndpoints
             await cache.RemoveAsync($"documents_count_v3_{userId}");
             
             return Results.Ok(new { message = "Documento enviado para reprocessamento na fila." });
-        }).RequireAuthorization();
+        }).RequireAuthorization().RequireRateLimiting("upload");
     }
 }
