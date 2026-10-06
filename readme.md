@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.0.0-green?style=for-the-badge" />
   <img src="https://img.shields.io/badge/React%20%2B%20Vite-Frontend-00D8FF?style=for-the-badge&logo=react" />
-  <img src="https://img.shields.io/badge/.NET%208-Backend-512BD4?style=for-the-badge&logo=dotnet" />
+  <img src="https://img.shields.io/badge/.NET%209-Backend-512BD4?style=for-the-badge&logo=dotnet" />
   <img src="https://img.shields.io/badge/MongoDB-NoSQL-47A248?style=for-the-badge&logo=mongodb" />
   <img src="https://img.shields.io/badge/Cloudinary-Image%20Storage-3448C5?style=for-the-badge&logo=cloudinary" />
   <img src="https://img.shields.io/badge/Groq%20AI-LLM-blueviolet?style=for-the-badge" />

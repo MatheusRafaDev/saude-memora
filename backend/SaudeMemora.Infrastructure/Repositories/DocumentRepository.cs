@@ -87,7 +87,7 @@ public class DocumentRepository : IDocumentRepository
                 return JsonSerializer.Deserialize<IEnumerable<RegistroDocumento>>(cachedData)!;
             }
         }
-        catch { } // ignora erro se redis cair
+        catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); } // ignora erro se redis cair
 
         var projection = Builders<RegistroDocumento>.Projection
             .Exclude(d => d.TextoExtraido)
@@ -104,7 +104,7 @@ public class DocumentRepository : IDocumentRepository
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
             });
         }
-        catch { }
+        catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
 
         return docs;
     }
@@ -126,7 +126,7 @@ public class DocumentRepository : IDocumentRepository
         try {
             await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
             await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
-        } catch { }
+        } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         return docRecord;
     }
 
@@ -138,7 +138,7 @@ public class DocumentRepository : IDocumentRepository
             try {
                 await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
                 await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
-            } catch { }
+            } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
             return (docRecord, true);
         }
         catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey
@@ -169,7 +169,7 @@ public class DocumentRepository : IDocumentRepository
         try {
             await _cache.RemoveAsync($"docs_user_{userId}");
             await _cache.RemoveAsync($"documents_count_v3_{userId}");
-        } catch { }
+        } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         return true;
     }
 
@@ -182,7 +182,7 @@ public class DocumentRepository : IDocumentRepository
             try {
                 await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
                 await _cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
-            } catch { }
+            } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         }
     }
 
@@ -192,7 +192,7 @@ public class DocumentRepository : IDocumentRepository
         try {
             await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
             await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
-        } catch { }
+        } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
     }
 
     public async Task<RegistroDocumento?> DequeuePendingAsync(string workerId, TimeSpan lockDuration)
@@ -224,7 +224,7 @@ public class DocumentRepository : IDocumentRepository
             try {
                 await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
                 await _cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
-            } catch { }
+            } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         }
 
         return doc;

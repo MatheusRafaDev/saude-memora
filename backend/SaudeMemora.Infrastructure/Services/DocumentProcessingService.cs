@@ -179,11 +179,13 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
     private async Task<OcrCallResult> CallOcrSpaceAsync(string imageUrl, int engine, CancellationToken cancellationToken)
     {
         var encodedUrl = Uri.EscapeDataString(imageUrl);
-        var url = $"https://api.ocr.space/parse/imageurl?apikey={_ocrSpaceApiKey}&url={encodedUrl}&ocrengine={engine}&language=por&scale=true&isTable=true";
+        var url = $"https://api.ocr.space/parse/imageurl?url={encodedUrl}&ocrengine={engine}&language=por&scale=true&isTable=true";
         
         try
         {
-            var response = await _httpClient.GetAsync(url, cancellationToken);
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Add("apikey", _ocrSpaceApiKey);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
             var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
             {

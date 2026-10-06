@@ -67,7 +67,7 @@ public class PacienteRepository : IPacienteRepository
                 return JsonSerializer.Deserialize<Paciente>(cached);
             }
         }
-        catch { }
+        catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
 
         var paciente = await _pacientes.Find(p => p.Id == id).FirstOrDefaultAsync();
         if (paciente != null)
@@ -87,7 +87,7 @@ public class PacienteRepository : IPacienteRepository
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
                 });
             }
-            catch { }
+            catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         }
         return paciente;
     }

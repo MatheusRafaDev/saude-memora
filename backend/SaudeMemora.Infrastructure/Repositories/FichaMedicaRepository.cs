@@ -40,14 +40,14 @@ public class FichaMedicaRepository : IFichaMedicaRepository
     public async Task<FichaMedica?> GetByPacienteIdAsync(string PacienteId)
     {
         var cacheKey = $"ficha_user_{PacienteId}";
-        try { var cached = await _cache.GetStringAsync(cacheKey); if (!string.IsNullOrEmpty(cached)) { return JsonSerializer.Deserialize<FichaMedica>(cached); } } catch { }
+        try { var cached = await _cache.GetStringAsync(cacheKey); if (!string.IsNullOrEmpty(cached)) { return JsonSerializer.Deserialize<FichaMedica>(cached); } } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
 
         var filter = Builders<FichaMedica>.Filter.Eq(f => f.PacienteId, PacienteId);
         var ficha = await _fichas.Find(filter).FirstOrDefaultAsync();
 
         if (ficha != null)
         {
-            try { await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(ficha), new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) }); } catch { }
+            try { await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(ficha), new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) }); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         }
         return ficha;
     }

@@ -35,15 +35,17 @@ public static class EmergenciaEndpoints
         // 2. Endpoint público que retorna os dados a partir do token
         app.MapGet("/api/emergencia/{token}", async (
             string token,
+            HttpContext context,
             IPacienteRepository repo,
-            IFichaMedicaRepository fichaRepo,
-            IDocumentRepository docRepo) =>
+            IFichaMedicaRepository fichaRepo) =>
         {
             var paciente = await repo.GetByEmergenciaTokenAsync(token);
             if (paciente == null) return Results.NotFound();
 
+            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("Acesso de emergência ao perfil do paciente {PacienteId}", paciente.Id);
+
             var ficha = await fichaRepo.GetByPacienteIdAsync(paciente.Id!);
-            var docs = await docRepo.GetAllByPacienteIdAsync(paciente.Id!);
             
             var result = new
             {
@@ -56,7 +58,7 @@ public static class EmergenciaEndpoints
             };
 
             return Results.Ok(result);
-        }).AllowAnonymous();
+        }).AllowAnonymous().RequireRateLimiting("emergencia");
 
         // 3. Endpoint para rotacionar/revogar o token de emergência
         app.MapPost("/api/pacientes/me/emergencia/rotate", async (
