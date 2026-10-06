@@ -17,7 +17,7 @@ import Emergencia from '@/pages/Emergencia';
 import Chat from '@/pages/Chat';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
-import { StoreProvider } from '@/lib/store';
+
 import { AppShell } from '@/components/AppShell';
 import {
   Route,
@@ -149,12 +149,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <StoreProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </StoreProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
   );

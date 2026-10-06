@@ -9,7 +9,7 @@ public class RegisterPacienteDtoValidator : AbstractValidator<RegisterPacienteDt
         RuleFor(x => x.Nome).NotEmpty().WithMessage("Nome é obrigatório.");
         RuleFor(x => x.Email).NotEmpty().EmailAddress().WithMessage("Email inválido.");
 
-        RuleFor(x => x.Senha).NotEmpty().MinimumLength(6).WithMessage("A senha deve ter no mínimo 6 caracteres.");
+        RuleFor(x => x.Senha).NotEmpty().MinimumLength(8).WithMessage("A senha deve ter no mínimo 8 caracteres.");
     }
 }
 

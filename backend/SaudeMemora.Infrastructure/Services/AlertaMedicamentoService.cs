@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SaudeMemora.Application.Interfaces;
+using System.Net.Http;
 using SaudeMemora.Domain.Entities;
 
 namespace SaudeMemora.Infrastructure.Services;
@@ -12,13 +13,13 @@ namespace SaudeMemora.Infrastructure.Services;
 public class AlertaMedicamentoService : IAlertaMedicamentoService
 {
     private readonly ILogger<AlertaMedicamentoService> _logger;
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _geminiApiKey;
 
-    public AlertaMedicamentoService(ILogger<AlertaMedicamentoService> logger, IConfiguration configuration)
+    public AlertaMedicamentoService(ILogger<AlertaMedicamentoService> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
-        _httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/") };
+        _httpClientFactory = httpClientFactory;
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? configuration["Gemini:ApiKey"] ?? string.Empty;
     }
 
@@ -173,13 +174,15 @@ Seja conservador: na dúvida, não alerte com severidade alta. Se não houver in
             temperature = 0.0
         };
 
+        using var client = _httpClientFactory.CreateClient();
+        client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/");
         var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions")
         {
             Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json")
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _geminiApiKey);
 
-        var response = await _httpClient.SendAsync(request);
+        var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync();
@@ -187,11 +190,12 @@ Seja conservador: na dúvida, não alerte com severidade alta. Se não houver in
         var message = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
         if (string.IsNullOrWhiteSpace(message)) return new List<InteracaoIA>();
+        message = message.Replace("```json", "").Replace("```", "").Trim();
 
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var result = JsonSerializer.Deserialize<InteracoesResponse>(message, options);
 
-        return result?.Interacoes ?? new List<InteracaoIA>();
+        return result?.Interacoes?.ToList() ?? new List<InteracaoIA>();
     }
 
     private class InteracoesResponse

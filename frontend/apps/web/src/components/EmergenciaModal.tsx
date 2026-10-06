@@ -21,7 +21,7 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
     const fetchToken = async () => {
       try {
         setLoading(true);
-        const res = await customFetch<{ token: string }>('/api/pacientes/me/emergencia');
+        const res = await customFetch<{ token: string }>('/api/pacientes/me/emergencia', { method: 'POST' });
         if (isMounted) setToken(res.token);
       } catch (err) {
         if (isMounted) setError('Erro ao carregar token de emergência.');

@@ -21,6 +21,7 @@ public interface IDocumentRepository
     /// </summary>
     Task<bool> RequeueFailedAsync(string id, string userId);
     Task UpdateAsync(RegistroDocumento docRecord);
+    Task UpdateProgressAsync(string id, int progress);
     Task DeleteAsync(string id);
 
     /// <summary>

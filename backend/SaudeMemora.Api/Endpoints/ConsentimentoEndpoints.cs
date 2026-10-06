@@ -40,37 +40,48 @@ public static class ConsentimentoEndpoints
             var paciente = await repo.GetByIdAsync(userId);
             if (paciente == null) return Results.NotFound();
 
-            string? ip = context.Connection.RemoteIpAddress?.ToString();
-            string ipTruncado = string.Empty;
-            
-            if (!string.IsNullOrEmpty(ip))
+            string ipTruncado = "Unknown";
+            var ip = context.Connection.RemoteIpAddress;
+            if (ip != null)
             {
-                // Mask the IP: 192.168.1.5 -> 192.168.1.***
-                var parts = ip.Split('.');
-                if (parts.Length == 4)
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 {
-                    ipTruncado = $"{parts[0]}.{parts[1]}.{parts[2]}.***";
+                    var bytes = ip.GetAddressBytes();
+                    ipTruncado = $"{bytes[0]}.{bytes[1]}.{bytes[2]}.***";
                 }
-                else
+                else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
                 {
-                    // Fallback for IPv6 or other formats
-                    ipTruncado = ip.Length > 4 ? ip.Substring(0, ip.Length - 4) + "****" : "****";
+                    var bytes = ip.GetAddressBytes();
+                    for (int i = 6; i < 16; i++) bytes[i] = 0;
+                    ipTruncado = new System.Net.IPAddress(bytes).ToString();
                 }
             }
 
-            paciente.ConsentimentoIa = new ConsentimentoIa
+            if (paciente.ConsentimentoIa == null)
             {
-                Aceito = dto.Aceito,
-                VersaoTermo = "v1.0", // Hardcoded per requirements
-                AceitoEm = DateTime.UtcNow,
-                IpTruncado = ipTruncado
-            };
+                paciente.ConsentimentoIa = new ConsentimentoIa();
+            }
+
+            if (dto.Aceito && !paciente.ConsentimentoIa.Aceito)
+            {
+                paciente.ConsentimentoIa.Aceito = true;
+                paciente.ConsentimentoIa.VersaoTermo = "v1.0";
+                paciente.ConsentimentoIa.AceitoEm = paciente.ConsentimentoIa.AceitoEm ?? DateTime.UtcNow;
+                paciente.ConsentimentoIa.IpTruncado = paciente.ConsentimentoIa.IpTruncado ?? ipTruncado;
+                
+                paciente.ConsentimentoIa.Historico.Add(new ConsentimentoHistorico
+                {
+                    Acao = "Aceitou",
+                    DataHora = DateTime.UtcNow,
+                    IpTruncado = ipTruncado
+                });
+            }
 
             await repo.UpdateAsync(paciente);
             return Results.Ok(paciente.ConsentimentoIa);
         });
 
-        group.MapDelete("/", async (ClaimsPrincipal user, IPacienteRepository repo) =>
+        group.MapDelete("/", async (ClaimsPrincipal user, IPacienteRepository repo, HttpContext context) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Results.Unauthorized();
@@ -78,11 +89,34 @@ public static class ConsentimentoEndpoints
             var paciente = await repo.GetByIdAsync(userId);
             if (paciente == null) return Results.NotFound();
 
-            if (paciente.ConsentimentoIa != null)
+            if (paciente.ConsentimentoIa != null && paciente.ConsentimentoIa.Aceito)
             {
+                string ipTruncado = "Unknown";
+                var ip = context.Connection.RemoteIpAddress;
+                if (ip != null)
+                {
+                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    {
+                        var bytes = ip.GetAddressBytes();
+                        ipTruncado = $"{bytes[0]}.{bytes[1]}.{bytes[2]}.***";
+                    }
+                    else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                    {
+                        var bytes = ip.GetAddressBytes();
+                        for (int i = 6; i < 16; i++) bytes[i] = 0;
+                        ipTruncado = new System.Net.IPAddress(bytes).ToString();
+                    }
+                }
+
                 paciente.ConsentimentoIa.Aceito = false;
-                paciente.ConsentimentoIa.AceitoEm = DateTime.UtcNow;
-                // keep the term version and IP for auditing purposes
+                paciente.ConsentimentoIa.RevogadoEm = DateTime.UtcNow;
+                paciente.ConsentimentoIa.Historico.Add(new ConsentimentoHistorico
+                {
+                    Acao = "Revogou",
+                    DataHora = DateTime.UtcNow,
+                    IpTruncado = ipTruncado
+                });
+
                 await repo.UpdateAsync(paciente);
             }
 

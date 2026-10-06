@@ -212,9 +212,9 @@ export default function Auth() {
                 <LockKeyhole size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
                 <input
                   required autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  minLength={6} type={showPassword ? 'text' : 'password'} value={form.password}
+                  minLength={8} type={showPassword ? 'text' : 'password'} value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="No mínimo 6 caracteres"
+                  placeholder="No mínimo 8 caracteres"
                   className={`${inputCls} pl-10 pr-10`}
                 />
                 <button

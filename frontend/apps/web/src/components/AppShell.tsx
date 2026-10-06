@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Activity, BookOpen, FileText, LogOut, ShieldCheck, UserRound, Plus, ChevronDown, History, MessageSquare } from 'lucide-react';
-import { useStore } from '@/lib/store';
+import { useAuth } from '@/hooks/useAuth';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showEmergenciaModal, setShowEmergenciaModal] = useState(false);
-  const { signOut } = useStore();
+  const { signOut } = useAuth();
   const { data: profileRaw } = useGetApiPacientesMe();
   const { data: fichaRaw, isLoading: isFichaLoading } = useGetApiFichaMedicaMe();
   const { data: docsRaw } = useGetApiDocuments();

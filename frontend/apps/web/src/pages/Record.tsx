@@ -202,6 +202,7 @@ export default function Record() {
     bloodType: '',
     allergies: [] as string[],
     chronicDiseases: [] as string[],
+    medicamentosContinuos: [] as string[],
     organDonor: false
   });
   
@@ -222,6 +223,7 @@ export default function Record() {
         bloodType: r.tipoSanguineo || '',
         allergies: r.alergias || [],
         chronicDiseases: r.doencasCronicas || [],
+        medicamentosContinuos: r.medicamentosContinuos || [],
         organDonor: !!r.doadorOrgaos
       });
 
@@ -265,7 +267,8 @@ export default function Record() {
           tipoSanguineo: form.bloodType,
           doadorOrgaos: form.organDonor,
           alergias: form.allergies,
-          doencasCronicas: form.chronicDiseases
+          doencasCronicas: form.chronicDiseases,
+          medicamentosContinuos: form.medicamentosContinuos
         } as any
       });
       setSaved(true); 
@@ -376,6 +379,16 @@ export default function Record() {
                 selected={form.chronicDiseases}
                 onChange={(items) => set('chronicDiseases', items)}
                 chipColorClass="bg-orange-500/10 border-orange-500/30 text-orange-800 dark:text-orange-200 hover:bg-orange-500/20"
+              />
+
+              {/* Medicamentos Continuos Autocomplete Multi-Select */}
+              <AutocompleteMultiSelect
+                label="Medicamentos de uso contínuo"
+                placeholder="Digite para pesquisar medicamentos (ex: Losartana, Metformina)..."
+                options={[]}
+                selected={form.medicamentosContinuos}
+                onChange={(items) => set('medicamentosContinuos', items)}
+                chipColorClass="bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20"
               />
 
               {/* Organ donor */}

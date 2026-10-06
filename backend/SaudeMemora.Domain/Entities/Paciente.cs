@@ -60,11 +60,17 @@ public class Paciente
     [BsonElement("tokenEmergencia")]
     public string? TokenEmergencia { get; set; }
 
+    [BsonElement("contatoEmergencia")]
+    public string? ContatoEmergencia { get; set; }
+
     [BsonElement("resetPasswordToken")]
     public string? ResetPasswordToken { get; set; }
 
     [BsonElement("resetPasswordExpiry")]
     public DateTime? ResetPasswordExpiry { get; set; }
+
+    [BsonElement("securityStamp")]
+    public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -83,6 +89,24 @@ public class ConsentimentoIa
 
     [BsonElement("aceitoEm")]
     public DateTime? AceitoEm { get; set; }
+
+    [BsonElement("revogadoEm")]
+    public DateTime? RevogadoEm { get; set; }
+
+    [BsonElement("ipTruncado")]
+    public string? IpTruncado { get; set; }
+
+    [BsonElement("historico")]
+    public List<ConsentimentoHistorico> Historico { get; set; } = new();
+}
+
+public class ConsentimentoHistorico
+{
+    [BsonElement("acao")]
+    public string Acao { get; set; } = string.Empty;
+
+    [BsonElement("dataHora")]
+    public DateTime DataHora { get; set; } = DateTime.UtcNow;
 
     [BsonElement("ipTruncado")]
     public string? IpTruncado { get; set; }

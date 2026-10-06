@@ -17,7 +17,7 @@ public class DocumentProcessingService : IOcrAiService
     private readonly HttpClient _httpClient;
     private readonly string? _ocrSpaceApiKey;
     private readonly string? _geminiApiKey;
-    private readonly string? _groqApiKey;
+
     private readonly ILogger<DocumentProcessingService> _logger;
 
     public DocumentProcessingService(HttpClient httpClient, IConfiguration config, ILogger<DocumentProcessingService> logger)
@@ -25,7 +25,7 @@ public class DocumentProcessingService : IOcrAiService
         _httpClient = httpClient;
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
-        _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
+
         _logger = logger;
     }
 
@@ -170,7 +170,7 @@ Retorne ESTRITAMENTE um JSON no seguinte formato:
         else
         {
             var err = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogError("Groq falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+            _logger.LogError("Gemini falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
         }
 
         return new CarteirinhaExtraidaDto();
@@ -260,16 +260,16 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
             else 
             {
                 var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Groq falhou na unificação de texto. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+                _logger.LogError("Gemini falhou na unificação de texto. HTTP {StatusCode}: {Error}", response.StatusCode, err);
             }
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Chamada Groq de unificação cancelada.");
+            _logger.LogInformation("Chamada Gemini de unificação cancelada.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro na unificação via Groq.");
+            _logger.LogError(ex, "Erro na unificação via Gemini.");
         }
         
         // Em caso de falha, retorna o que tiver mais conteúdo
@@ -424,10 +424,47 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
         }
 
-        // ── EXAME DE SANGUE / LABORATORIAL ────────────────────────────────
-        else if (docType.Contains("sangue") || docType.Contains("laborat") || docType.Contains("hemograma") || docType.Contains("bioquim"))
+        // ── EXAME (Laboratorial vs Imagem) ────────────────────────────────
+        else if (docType.Contains("exame") || docType.Contains("sangue") || docType.Contains("laborat") || docType.Contains("hemograma") || docType.Contains("bioquim"))
         {
-            prompt = $@"Você é um MÉDICO LABORATORISTA especialista em análise de exames de sangue e exames laboratoriais brasileiros.
+            var textLower = unifiedText.ToLowerInvariant();
+            var isImagem = textLower.Contains("raio") || textLower.Contains("ultra") || textLower.Contains("ressonancia") || textLower.Contains("tomografia") || docType.Contains("imagem");
+
+            if (isImagem)
+            {
+                prompt = $@"Você é um MÉDICO RADIOLOGISTA especialista em análise de exames de imagem brasileiros.
+Sua tarefa é extrair com PRECISÃO os dados do exame de imagem abaixo.
+
+## REGRAS OBRIGATÓRIAS
+- ""tipoIdentificado"": SEMPRE ""exame""
+- ""titulo"": Nome do exame de imagem (ex: ""Radiografia do Tórax PA"", ""Ultrassonografia Abdominal Total"", ""Ressonância Magnética da Coluna Lombar""). NUNCA genérico.
+- ""medico"": Médico radiologista que assinou o laudo. Nunca inclua CRM aqui.
+- ""crm"": Apenas número e UF.
+- ""clinica"": Nome da clínica radiológica ou hospital (ex: ""Radioclínica"", ""Instituto de Radiologia"").
+- ""data"": Data de realização no formato dd/MM/yyyy.
+- ""resumo"": Técnica utilizada e região examinada (ex: ""Radiografia digital do tórax em PA e perfil com avaliação dos campos pulmonares"").
+- ""diagnostico"": A IMPRESSÃO DIAGNÓSTICA ou CONCLUSÃO do radiologista. Copie o texto da conclusão.
+- ""medicamentos"": SEMPRE lista vazia [].
+- ""textoFormatado"": TODO o texto reescrito com formatação lógica (\n).
+- ""conteudoIndentado"":
+    - header: título do exame e dados da instituição
+    - keyvalue: Paciente, Médico Solicitante, Data, Técnica
+    - text: Descrição do exame (achados radiológicos)
+    - text ou bullet: Impressão/Conclusão
+
+## Texto do documento:
+{unifiedText}
+
+## REGRAS GERAIS DE FORMATAÇÃO E VALIDAÇÃO
+- ""documentoValido"": Se a imagem for claramente lixo (foto de paisagem, meme, texto sem nenhuma relação com saúde, etc), retorne false. Se for um documento médico ou de saúde legítimo, retorne true.
+- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
+
+Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
+{jsonSchema}";
+            }
+            else
+            {
+                prompt = $@"Você é um MÉDICO LABORATORISTA especialista em análise de exames de sangue e exames laboratoriais brasileiros.
 Sua tarefa é extrair com PRECISÃO os dados do exame laboratorial abaixo.
 
 ## REGRAS OBRIGATÓRIAS
@@ -467,40 +504,7 @@ Sua tarefa é extrair com PRECISÃO os dados do exame laboratorial abaixo.
 
 Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
-        }
-
-        // ── EXAME DE IMAGEM (Raio-X, Ultrassom, Ressonância, TC) ──────────
-        else if (docType.Contains("imagem") || docType.Contains("raio") || docType.Contains("ultra") || docType.Contains("ressonancia") || docType.Contains("tomografia"))
-        {
-            prompt = $@"Você é um MÉDICO RADIOLOGISTA especialista em análise de exames de imagem brasileiros.
-Sua tarefa é extrair com PRECISÃO os dados do exame de imagem abaixo.
-
-## REGRAS OBRIGATÓRIAS
-- ""tipoIdentificado"": SEMPRE ""exame""
-- ""titulo"": Nome do exame de imagem (ex: ""Radiografia do Tórax PA"", ""Ultrassonografia Abdominal Total"", ""Ressonância Magnética da Coluna Lombar""). NUNCA genérico.
-- ""medico"": Médico radiologista que assinou o laudo. Nunca inclua CRM aqui.
-- ""crm"": Apenas número e UF.
-- ""clinica"": Nome da clínica radiológica ou hospital (ex: ""Radioclínica"", ""Instituto de Radiologia"").
-- ""data"": Data de realização no formato dd/MM/yyyy.
-- ""resumo"": Técnica utilizada e região examinada (ex: ""Radiografia digital do tórax em PA e perfil com avaliação dos campos pulmonares"").
-- ""diagnostico"": A IMPRESSÃO DIAGNÓSTICA ou CONCLUSÃO do radiologista. Copie o texto da conclusão.
-- ""medicamentos"": SEMPRE lista vazia [].
-- ""textoFormatado"": TODO o texto reescrito com formatação lógica (\n).
-- ""conteudoIndentado"":
-    - header: título do exame e dados da instituição
-    - keyvalue: Paciente, Médico Solicitante, Data, Técnica
-    - text: Descrição do exame (achados radiológicos)
-    - text ou bullet: Impressão/Conclusão
-
-## Texto do documento:
-{unifiedText}
-
-## REGRAS GERAIS DE FORMATAÇÃO E VALIDAÇÃO
-- ""documentoValido"": Se a imagem for claramente lixo (foto de paisagem, meme, texto sem nenhuma relação com saúde, etc), retorne false. Se for um documento médico ou de saúde legítimo, retorne true.
-- Nomes Próprios (médicos, clínicas, pacientes) DEVEM ser formatados estritamente em Title Case (Iniciais Maiúsculas, ex: 'Tadao Mori', 'Daniel Guidi Ferrari'). NUNCA retorne nomes em ALL CAPS (ex: 'DANIEL GUIDI FERRARI').
-
-Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
-{jsonSchema}";
+            }
         }
 
         // ── ENCAMINHAMENTO ─────────────────────────────────────────────────
@@ -600,12 +604,12 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
 {jsonSchema}";
         }
 
-        return await FallbackToGroqAsync(unifiedText, prompt, cancellationToken);
+        return await FallbackToGeminiAsync(unifiedText, prompt, cancellationToken);
     }
 
 
 
-    private async Task<DocumentoExtraidoDto> FallbackToGroqAsync(string unifiedText, string prompt, CancellationToken cancellationToken)
+    private async Task<DocumentoExtraidoDto> FallbackToGeminiAsync(string unifiedText, string prompt, CancellationToken cancellationToken)
     {
         var groqKey = _geminiApiKey;
         if (string.IsNullOrWhiteSpace(groqKey))
@@ -644,25 +648,25 @@ Retorne APENAS o JSON abaixo (sem markdown, sem explicações):
                     options.Converters.Add(new FlexibleBooleanConverter());
                     var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
                     dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq (Llama 3.1 8B).");
+                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Gemini (Flash).");
                     return dto;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Erro ao deserializar extração no Groq. JSON: {JsonResult}", jsonResult);
+                    _logger.LogError(ex, "Erro ao deserializar extração no Gemini. JSON: {JsonResult}", jsonResult);
                     return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro de conversão (JSON): {ex.Message}" };
                 }
             }
             else
             {
                 var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Groq falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+                _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
                 return ParseFallback(unifiedText);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro no fallback Groq.");
+            _logger.LogError(ex, "Erro no fallback Gemini.");
             return ParseFallback(unifiedText);
         }
     }

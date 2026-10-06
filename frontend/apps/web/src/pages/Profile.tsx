@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle, CreditCard, ImagePlus, LoaderCircle, Trash2, Camera, ZoomIn, X } from 'lucide-react';
 import { useGetApiPacientesMe, usePatchApiPacientesMePerfil, useDeleteApiPacientesMe, customFetch } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
-import { useStore } from '@/lib/store';
+import { useAuth } from '@/hooks/useAuth';
 import { useConsentimento, useSaveConsentimento, useRevokeConsentimento } from '../hooks/useConsentimento';
 
 export default function Profile() {
@@ -13,7 +13,7 @@ export default function Profile() {
   const { data: consentData } = useConsentimento();
   const revokeConsent = useRevokeConsentimento();
   const saveConsent = useSaveConsentimento();
-  const { signOut } = useStore();
+  const { signOut } = useAuth();
   const [zoomCarteirinha, setZoomCarteirinha] = useState(false);
 
   const [form, setForm] = useState({
@@ -26,7 +26,8 @@ export default function Profile() {
     chronicDiseases: '',
     planoSaude: '',
     numeroCarteirinha: '',
-    urlCarteirinha: ''
+    urlCarteirinha: '',
+    contatoEmergencia: ''
   });
 
   const { toast } = useToast();
@@ -54,7 +55,8 @@ export default function Profile() {
         chronicDiseases: (p.doencasCronicas || []).join(', '),
         planoSaude: p.planoSaude || '',
         numeroCarteirinha: p.numeroCarteirinha || '',
-        urlCarteirinha: p.urlCarteirinha || ''
+        urlCarteirinha: p.urlCarteirinha || '',
+        contatoEmergencia: p.contatoEmergencia || ''
       });
     }
   }, [profileRaw]);
@@ -73,7 +75,8 @@ export default function Profile() {
           dataNascimento: form.birthDate,
           email: form.email,
           planoSaude: form.planoSaude,
-          numeroCarteirinha: form.numeroCarteirinha
+          numeroCarteirinha: form.numeroCarteirinha,
+          contatoEmergencia: form.contatoEmergencia
         } as any
       });
 
@@ -107,7 +110,13 @@ export default function Profile() {
 
   const handleUploadCarteirinha = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('A carteirinha deve ter no máximo 10 MB.');
+      return;
+    }
 
     setUploadingCard(true);
     setCardExtracted(null);
@@ -190,6 +199,7 @@ export default function Profile() {
           <Field label="Nome completo" value={form.name} onChange={(v) => setForm({...form, name: v})} id="name" />
           <Field label="E-mail" value={form.email} onChange={(v) => setForm({...form, email: v})} id="email" type="email" />
           <Field label="Data de nascimento" value={form.birthDate} onChange={(v) => setForm({...form, birthDate: v})} id="birth-date" type="date" />
+          <Field label="Contato de Emergência" value={form.contatoEmergencia} onChange={(v) => setForm({...form, contatoEmergencia: v})} id="contato-emergencia" />
         </div>
       </section>
 
@@ -258,7 +268,7 @@ export default function Profile() {
               </button>
               </div>
             )}
-            <input type="file" ref={cardInputRef} className="hidden" accept="image/*" onChange={handleUploadCarteirinha} />
+            <input type="file" ref={cardInputRef} className="hidden" accept=".pdf,image/jpeg,image/png" onChange={handleUploadCarteirinha} />
             <input type="file" ref={cameraCardRef} className="hidden" accept="image/*" capture="environment" onChange={handleUploadCarteirinha} />
           </div>
         </div>

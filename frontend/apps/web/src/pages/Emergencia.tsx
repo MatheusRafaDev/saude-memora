@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
 import { customFetch } from '@workspace/api-client-react';
 import { ShieldAlert, Droplets, AlertTriangle, Pill, Activity, Smartphone, FileText } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 
 export default function Emergencia({ token }: { token?: string }) {
-  const [, setLocation] = useLocation();
   const [publicData, setPublicData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +26,7 @@ export default function Emergencia({ token }: { token?: string }) {
     };
 
     fetchData();
-  }, [setLocation]);
+  }, [token]);
 
   if (loading) {
     return (
@@ -111,35 +109,7 @@ export default function Emergencia({ token }: { token?: string }) {
               </div>
             </div>
 
-            {/* Documentos Compartilhados */}
-            {publicData.documentos && publicData.documentos.length > 0 && (
-              <div className="pt-6 border-t mt-6">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-3">
-                  <FileText size={14} className="text-blue-500" /> Histórico Clínico Compartilhado
-                </p>
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                  {publicData.documentos.map((doc: any) => (
-                    <div key={doc.id} className="bg-muted p-3 rounded-xl">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold text-sm text-foreground">{doc.titulo}</h3>
-                        <span className="text-[10px] bg-background px-1.5 py-0.5 rounded text-muted-foreground font-mono">
-                          {new Date(doc.data).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">{doc.tipo}</p>
-                      
-                      {doc.resumo && <p className="text-xs text-foreground mt-1 line-clamp-3">{doc.resumo}</p>}
-                      {doc.diagnostico && (
-                        <p className="text-xs mt-2 bg-blue-500/10 text-blue-700 dark:text-blue-400 p-2 rounded-md font-medium border border-blue-500/20">
-                          <span className="font-bold block text-[10px] uppercase mb-0.5 opacity-70">Diagnóstico</span>
-                          {doc.diagnostico}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+
           </div>
           
           <div className="bg-muted p-4 flex items-center justify-center border-t">

@@ -31,8 +31,8 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('A senha deve ter no mínimo 6 caracteres.');
+    if (password.length < 8) {
+      setError('A senha deve ter no mínimo 8 caracteres.');
       return;
     }
 
@@ -85,9 +85,9 @@ export default function ResetPassword() {
               <div className="relative">
                 <LockKeyhole size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
                 <input
-                  required minLength={6} type={showPassword ? 'text' : 'password'} value={password}
+                  required minLength={8} type={showPassword ? 'text' : 'password'} value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="No mínimo 6 caracteres"
+                  placeholder="No mínimo 8 caracteres"
                   className={`${inputCls} pl-10 pr-10`}
                 />
                 <button

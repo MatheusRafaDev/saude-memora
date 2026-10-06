@@ -31,4 +31,13 @@ public class SistemaLogRepository : ISistemaLogRepository
     {
         await _logs.DeleteManyAsync(l => l.PacienteId == pacienteId);
     }
+
+    public static async Task EnsureIndexesAsync(MongoDbContext context, CancellationToken cancellationToken = default)
+    {
+        var logs = context.Logs;
+        var indexKeysDefinition = Builders<SistemaLog>.IndexKeys.Ascending(l => l.Timestamp);
+        var indexOptions = new CreateIndexOptions { ExpireAfter = TimeSpan.FromDays(30) };
+        var indexModel = new CreateIndexModel<SistemaLog>(indexKeysDefinition, indexOptions);
+        await logs.Indexes.CreateOneAsync(indexModel, cancellationToken: cancellationToken);
+    }
 }

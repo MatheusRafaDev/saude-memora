@@ -12,8 +12,8 @@ public static class EmergenciaEndpoints
 {
     public static void MapEmergenciaEndpoints(this WebApplication app)
     {
-        // 1. Gera ou recupera o token de emergência
-        app.MapGet("/api/pacientes/me/emergencia", async (
+        // 1. Gera o token de emergência (agora como POST)
+        app.MapPost("/api/pacientes/me/emergencia", async (
             ClaimsPrincipal user, 
             IPacienteRepository repo) =>
         {
@@ -23,13 +23,11 @@ public static class EmergenciaEndpoints
             var paciente = await repo.GetByIdAsync(userId);
             if (paciente == null) return Results.NotFound();
 
-            if (string.IsNullOrEmpty(paciente.TokenEmergencia))
-            {
-                paciente.TokenEmergencia = Guid.NewGuid().ToString("N");
-                await repo.UpdateAsync(paciente);
-            }
+            var rawToken = Guid.NewGuid().ToString("N");
+            paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
+            await repo.UpdateAsync(paciente);
 
-            return Results.Ok(new { token = paciente.TokenEmergencia });
+            return Results.Ok(new { token = rawToken });
         }).RequireAuthorization();
 
         // 2. Endpoint público que retorna os dados a partir do token
@@ -39,7 +37,8 @@ public static class EmergenciaEndpoints
             IPacienteRepository repo,
             IFichaMedicaRepository fichaRepo) =>
         {
-            var paciente = await repo.GetByEmergenciaTokenAsync(token);
+            var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token)));
+            var paciente = await repo.GetByEmergenciaTokenAsync(tokenHash);
             if (paciente == null) return Results.NotFound();
 
             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
@@ -54,7 +53,7 @@ public static class EmergenciaEndpoints
                 alergias = ficha?.Alergias ?? new List<string>(),
                 doencasCronicas = ficha?.DoencasCronicas ?? new List<string>(),
                 medicamentosContinuos = ficha?.MedicamentosContinuos ?? new List<string>(),
-                contatosEmergencia = paciente.Telefone ?? "Não informado"
+                contatosEmergencia = paciente.ContatoEmergencia ?? "Não informado"
             };
 
             return Results.Ok(result);
@@ -71,10 +70,11 @@ public static class EmergenciaEndpoints
             var paciente = await repo.GetByIdAsync(userId);
             if (paciente == null) return Results.NotFound();
 
-            paciente.TokenEmergencia = Guid.NewGuid().ToString("N");
+            var rawToken = Guid.NewGuid().ToString("N");
+            paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
             await repo.UpdateAsync(paciente);
 
-            return Results.Ok(new { token = paciente.TokenEmergencia });
+            return Results.Ok(new { token = rawToken });
         }).RequireAuthorization();
     }
 }

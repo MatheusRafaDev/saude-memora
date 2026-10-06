@@ -188,11 +188,36 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task UpdateAsync(RegistroDocumento docRecord)
     {
-        await _documents.ReplaceOneAsync(d => d.Id == docRecord.Id, docRecord);
+        var filter = Builders<RegistroDocumento>.Filter.Where(d => d.Id == docRecord.Id && d.Version == docRecord.Version);
+        var oldVersion = docRecord.Version;
+        docRecord.Version++;
+
+        var result = await _documents.ReplaceOneAsync(filter, docRecord);
+        if (result.ModifiedCount == 0)
+        {
+            var dbDoc = await GetByIdAsync(docRecord.Id!);
+            if (dbDoc != null)
+            {
+                // Conflito: releitura e merge simples de versão
+                docRecord.Version = dbDoc.Version + 1;
+                await _documents.ReplaceOneAsync(d => d.Id == docRecord.Id && d.Version == dbDoc.Version, docRecord);
+            }
+        }
+
         try {
             await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
             await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
         } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
+    }
+
+    public async Task UpdateProgressAsync(string id, int progress)
+    {
+        var filter = Builders<RegistroDocumento>.Filter.Eq(d => d.Id, id);
+        var update = Builders<RegistroDocumento>.Update
+            .Set(d => d.Progress, progress)
+            .Inc(d => d.Version, 1);
+            
+        await _documents.UpdateOneAsync(filter, update);
     }
 
     public async Task<RegistroDocumento?> DequeuePendingAsync(string workerId, TimeSpan lockDuration)

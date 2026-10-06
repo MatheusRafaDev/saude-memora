@@ -13,8 +13,10 @@ interface UploadModalProps {
 const DOC_TYPES = [
   { value: 'exame',          label: 'Exame',              icon: FlaskConical, color: 'text-blue-500',   bg: 'bg-blue-500/10 border-blue-500/30'    },
   { value: 'receita',        label: 'Receita Médica',     icon: Pill,         color: 'text-emerald-500',bg: 'bg-emerald-500/10 border-emerald-500/30'},
-  { value: 'laudo',          label: 'Laudo / Relatório',  icon: Stethoscope,  color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/30' },
-  { value: 'atestado',       label: 'Atestado / Vacina',  icon: ShieldAlert,  color: 'text-amber-500',  bg: 'bg-amber-500/10 border-amber-500/30'   },
+  { value: 'laudo',          label: 'Laudo',              icon: Stethoscope,  color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/30' },
+  { value: 'relatorio',      label: 'Relatório',          icon: FileText,     color: 'text-indigo-500', bg: 'bg-indigo-500/10 border-indigo-500/30' },
+  { value: 'atestado',       label: 'Atestado',           icon: ShieldAlert,  color: 'text-amber-500',  bg: 'bg-amber-500/10 border-amber-500/30'   },
+  { value: 'vacina',         label: 'Vacina',             icon: Syringe,      color: 'text-rose-500',   bg: 'bg-rose-500/10 border-rose-500/30'     },
   { value: 'encaminhamento', label: 'Encaminhamento',     icon: ArrowRight,   color: 'text-orange-500', bg: 'bg-orange-500/10 border-orange-500/30' },
   { value: 'outro',          label: 'Auto-Detectar',      icon: BrainCircuit, color: 'text-primary',    bg: 'bg-primary/10 border-primary/30'       },
 ];
@@ -58,6 +60,12 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     const picked = Array.from(e.target.files || []);
     e.target.value = '';
     if (!picked.length) return;
+    
+    if (picked.some(f => f.size > 10 * 1024 * 1024)) {
+      setRejectedMessage('O tamanho máximo permitido por arquivo é 10 MB.');
+      return;
+    }
+    
     setRejectedMessage('');
     setError('');
     setFiles(prev => [...prev, ...picked]);
@@ -86,13 +94,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'u') { e.preventDefault(); setInternalOpen(true); }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
+
 
   useEffect(() => {
     if (!isOpen || step !== 'file') return;
@@ -295,7 +297,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             </div>
 
             {/* Inputs FORA da área clicável: se ficarem dentro, o click() da câmera borbulha e abre também o seletor de arquivos */}
-            <input ref={fileRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={handlePicked} />
+            <input ref={fileRef} type="file" multiple accept=".pdf,image/jpeg,image/png" className="hidden" onChange={handlePicked} />
             <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePicked} />
 
             {rejectedMessage && (

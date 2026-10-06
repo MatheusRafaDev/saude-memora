@@ -21,7 +21,8 @@ public static class ChatEndpoints
             IDocumentRepository docRepo,
             IFichaMedicaRepository fichaRepo,
             IPacienteRepository pacienteRepo,
-            IConfiguration config) =>
+            IConfiguration config,
+            IHttpClientFactory httpClientFactory) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Results.Unauthorized();
@@ -38,17 +39,14 @@ public static class ChatEndpoints
 
             // Pega todo o histórico do paciente (docs extraídos e ficha médica)
             var docs = await docRepo.GetAllByPacienteIdAsync(userId);
-            var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
+            var ficha = await fichaRepo.GetByPacienteIdAsync(userId) ?? new Domain.Entities.FichaMedica();
 
             var contextText = new StringBuilder();
-            if (ficha != null)
-            {
-                contextText.AppendLine($"[Ficha Médica]");
-                contextText.AppendLine($"Sangue: {ficha.TipoSanguineo}");
-                contextText.AppendLine($"Alergias: {string.Join(", ", ficha.Alergias)}");
-                contextText.AppendLine($"Doenças: {string.Join(", ", ficha.DoencasCronicas)}");
-                contextText.AppendLine($"Medicamentos Contínuos: {string.Join(", ", ficha.MedicamentosContinuos)}");
-            }
+            contextText.AppendLine($"[Ficha Médica]");
+            contextText.AppendLine($"Sangue: {ficha.TipoSanguineo}");
+            contextText.AppendLine($"Alergias: {string.Join(", ", ficha.Alergias ?? new List<string>())}");
+            contextText.AppendLine($"Doenças: {string.Join(", ", ficha.DoencasCronicas ?? new List<string>())}");
+            contextText.AppendLine($"Medicamentos Contínuos: {string.Join(", ", ficha.MedicamentosContinuos ?? new List<string>())}");
 
             contextText.AppendLine("\n[Histórico de Documentos Médicos]");
             foreach (var d in docs)
@@ -97,7 +95,8 @@ CONTEXTO DO PACIENTE:
                 temperature = 0.2
             };
 
-            using var httpClient = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/") };
+            using var httpClient = httpClientFactory.CreateClient();
+            httpClient.BaseAddress = new Uri("https://generativelanguage.googleapis.com/v1beta/openai/");
             var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions")
             {
                 Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json")

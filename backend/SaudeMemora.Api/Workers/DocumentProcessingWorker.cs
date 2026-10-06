@@ -100,14 +100,14 @@ public class DocumentProcessingWorker : BackgroundService
 
             // Atualiza o progresso inicial (já em 'processing' pelo lock)
             doc.Progress = 40; // Exemplo: Iniciando OCR
-            await repo.UpdateAsync(doc);
+            await repo.UpdateProgressAsync(doc.Id, doc.Progress);
             await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
 
             // Chamada para o Serviço de OCR e IA (que faz OCR.space + Gemini/Groq)
             var extractedData = await ocrAiService.ExtractMultipleDocumentsDataAsync(doc.UrlImagens, doc.Tipo, stoppingToken);
 
             doc.Progress = 90; // Exemplo: OCR e IA finalizados
-            await repo.UpdateAsync(doc);
+            await repo.UpdateProgressAsync(doc.Id, doc.Progress);
             await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
 
             if (!extractedData.DocumentoValido)
@@ -115,12 +115,26 @@ public class DocumentProcessingWorker : BackgroundService
                 throw new InvalidDocumentException();
             }
 
+            if (!string.IsNullOrEmpty(extractedData.Resumo) && extractedData.Resumo.StartsWith("Erro de conversão"))
+            {
+                throw new Exception($"Falha na extração de dados pela IA: {extractedData.Resumo}");
+            }
+
             // Popula o RegistroDocumento com os dados extraídos
             doc.TextoExtraido = extractedData.TextoExtraido;
             // doc.TextoFormatado = extractedData.TextoFormatado; // Se tivermos no Entity
             if (!string.IsNullOrEmpty(extractedData.TipoIdentificado))
             {
-                doc.Tipo = extractedData.TipoIdentificado.ToLowerInvariant();
+                var t = extractedData.TipoIdentificado.ToLowerInvariant();
+                if (t == "clinico" || t.Contains("laudo")) t = "laudo";
+                else if (t.Contains("receita") || t.Contains("prescrição") || t.Contains("prescricao")) t = "receita";
+                else if (t.Contains("exame")) t = "exame";
+                else if (t.Contains("atestado")) t = "atestado";
+                else if (t.Contains("vacina") || t.Contains("carteira")) t = "vacina";
+                else if (t.Contains("relatorio") || t.Contains("relatório")) t = "relatorio";
+                else if (t.Contains("encaminhamento")) t = "encaminhamento";
+                else t = "outro";
+                doc.Tipo = t;
             }
             doc.Titulo = extractedData.Titulo;
             doc.Medico = extractedData.Medico;
@@ -222,9 +236,9 @@ public class DocumentProcessingWorker : BackgroundService
             if (dbDoc != null)
             {
                 // Preserva edições do usuário que ocorreram enquanto o worker estava processando
-                if (string.IsNullOrEmpty(dbDoc.Titulo) || dbDoc.Titulo == "Novo Documento" || dbDoc.Titulo == "Desconhecido" || dbDoc.Titulo == doc.Titulo) 
+                if (string.IsNullOrEmpty(dbDoc.Titulo) || dbDoc.Titulo == "Novo Documento" || dbDoc.Titulo == "Documento em Processamento" || dbDoc.Titulo == "Desconhecido" || dbDoc.Titulo == doc.Titulo) 
                     dbDoc.Titulo = doc.Titulo;
-                if (string.IsNullOrEmpty(dbDoc.Tipo) || dbDoc.Tipo == "desconhecido" || dbDoc.Tipo == doc.Tipo) dbDoc.Tipo = doc.Tipo;
+                if (string.IsNullOrEmpty(dbDoc.Tipo) || dbDoc.Tipo == "desconhecido" || dbDoc.Tipo == "outro" || dbDoc.Tipo == doc.Tipo) dbDoc.Tipo = doc.Tipo;
                 if (string.IsNullOrEmpty(dbDoc.Medico) || dbDoc.Medico == doc.Medico) dbDoc.Medico = doc.Medico;
                 if (string.IsNullOrEmpty(dbDoc.Clinica) || dbDoc.Clinica == doc.Clinica) dbDoc.Clinica = doc.Clinica;
                 if (string.IsNullOrEmpty(dbDoc.Data) || dbDoc.Data == doc.Data) dbDoc.Data = doc.Data;
