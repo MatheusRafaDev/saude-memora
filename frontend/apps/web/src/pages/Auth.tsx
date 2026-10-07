@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch } from '@workspace/api-client-react';
+import { setStoredAuthToken } from '@/lib/auth';
 
 export default function Auth() {
   const [, setLocation] = useLocation();
@@ -29,7 +30,7 @@ export default function Auth() {
       if (mode === 'login') {
         const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
         if (result?.token) {
-          sessionStorage.setItem('auth_token', result.token);
+          setStoredAuthToken(result.token);
           setMessage('Acesso confirmado. Bem-vindo de volta.');
           setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
         } else {
@@ -41,7 +42,7 @@ export default function Auth() {
         });
         const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
         if (result?.token) {
-          sessionStorage.setItem('auth_token', result.token);
+          setStoredAuthToken(result.token);
           setMessage('Sua conta foi criada. Entrando no painel...');
           setTimeout(() => { window.location.href = '/visao-geral'; }, 800);
         } else {

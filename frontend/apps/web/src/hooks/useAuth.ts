@@ -1,6 +1,8 @@
+import { clearStoredAuthToken } from '@/lib/auth';
+
 export function useAuth() {
   const signOut = () => {
-    sessionStorage.removeItem('auth_token');
+    clearStoredAuthToken();
     window.location.href = '/entrar';
   };
 

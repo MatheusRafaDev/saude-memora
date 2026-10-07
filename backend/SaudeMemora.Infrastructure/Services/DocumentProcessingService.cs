@@ -121,7 +121,7 @@ public class DocumentProcessingService : IOcrAiService
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "gemini-3.8-flash",
+            model = "gemini-2.5-flash",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             max_tokens = 8192,
@@ -215,7 +215,7 @@ public class DocumentProcessingService : IOcrAiService
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "gemini-3.8-flash",
+            model = "gemini-2.5-flash",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0
         };
@@ -315,7 +315,7 @@ public class DocumentProcessingService : IOcrAiService
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "gemini-3.8-flash",
+            model = "gemini-2.5-flash",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             max_tokens = 8192,

@@ -184,7 +184,7 @@ Seja conservador: na dúvida, não alerte com severidade alta. Se não houver in
 
         var requestBody = new
         {
-            model = "gemini-3.8-flash",
+            model = "gemini-2.5-flash",
             messages = new[]
             {
                 new { role = "system", content = "Você é um assistente de checagem de interações medicamentosas. Devolva apenas JSON válido, sem texto em volta." },

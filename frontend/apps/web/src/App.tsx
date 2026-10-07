@@ -27,6 +27,7 @@ import {
 } from 'wouter';
 
 import { QueryCache } from '@tanstack/react-query';
+import { clearStoredAuthToken, getStoredAuthToken } from '@/lib/auth';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -34,7 +35,7 @@ const queryClient = new QueryClient({
       if (
         error?.status === 401 || error?.response?.status === 401
       ) {
-        sessionStorage.removeItem('auth_token');
+        clearStoredAuthToken();
         window.location.href = '/entrar';
       }
     }
@@ -45,8 +46,8 @@ const queryClient = new QueryClient({
 import { useGetApiPacientesMe, getGetApiPacientesMeQueryKey } from '@workspace/api-client-react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  const token = sessionStorage.getItem('auth_token');
-  
+  const token = getStoredAuthToken();
+
   // Validate user constantly (hook at top level)
   const { isLoading, isError } = useGetApiPacientesMe({
     query: {

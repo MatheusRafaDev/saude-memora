@@ -1303,7 +1303,7 @@ Obs: {ficha?.Observacoes}
     using var http = httpClientFactory.CreateClient();
     var payload = new
     {
-        model = "gemini-3.8-flash",
+        model = "gemini-2.5-flash",
         messages = new[] { new { role = "user", content = prompt } },
         temperature = 0.3
     };
