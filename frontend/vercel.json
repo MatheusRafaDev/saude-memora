@@ -2,6 +2,10 @@
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://saude-memora-4eio.onrender.com/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
