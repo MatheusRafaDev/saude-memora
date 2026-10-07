@@ -35,6 +35,7 @@ public static class ReprocessamentoEndpoints
             doc.Progress = 0;
             doc.LockedUntil = null;
             doc.LockedBy = string.Empty;
+            doc.NextAttemptAt = null;
             doc.Attempts = 0; 
             doc.ReprocessCount++;
             doc.ErrorMessage = string.Empty;

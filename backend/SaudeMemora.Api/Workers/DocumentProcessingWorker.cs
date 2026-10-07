@@ -324,7 +324,7 @@ public class DocumentProcessingWorker : BackgroundService
             await RejectInvalidDocumentAsync(doc, ex.Message, repo, storage, cache, logRepo);
             return true;
         }
-        catch (ConsentimentoNecessarioException ex)
+        catch (ConsentimentoNecessarioException)
         {
             _logger.LogWarning("Documento {DocId} falhou: consentimento de IA não foi aceito ou foi revogado.", doc.Id);
             
@@ -336,13 +336,13 @@ public class DocumentProcessingWorker : BackgroundService
                 DocumentoId = doc.Id, 
                 PacienteId = doc.PacienteId 
             });
-            
+
             doc.Status = "failed";
             doc.Progress = 0;
-            doc.ErrorMessage = ex.Message;
+            doc.ErrorMessage = "O processamento foi interrompido porque o consentimento para uso da IA não está ativo.";
             doc.LockedBy = string.Empty;
             doc.LockedUntil = null;
-            
+
             await repo.UpdateAsync(doc);
             await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
             await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
@@ -373,10 +373,16 @@ public class DocumentProcessingWorker : BackgroundService
             });
             
             doc.Attempts++;
+            doc.ErrorMessage = ex.Message;
+            doc.LockedBy = string.Empty;
+            doc.LockedUntil = null;
             if (doc.Attempts >= 3)
             {
                 doc.Status = "failed";
                 doc.Progress = 0;
+                await repo.UpdateAsync(doc);
+                await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
+                await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
             }
             else
             {
@@ -384,15 +390,11 @@ public class DocumentProcessingWorker : BackgroundService
                 doc.Status = "pending";
                 doc.Progress = 25; // Volta ao estágio original
                 doc.NextAttemptAt = DateTime.UtcNow.AddSeconds(doc.Attempts == 1 ? 30 : doc.Attempts == 2 ? 120 : 600);
-            }
 
-            doc.ErrorMessage = ex.Message;
-            doc.LockedBy = string.Empty;
-            doc.LockedUntil = null; // Libera o lock
-            
-            await repo.UpdateAsync(doc);
-            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
-            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
+                await repo.UpdateAsync(doc);
+                await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
+                await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
+            }
 
             return true; // Retorna true porque ele de fato pegou um item da fila (mesmo que com erro)
         }

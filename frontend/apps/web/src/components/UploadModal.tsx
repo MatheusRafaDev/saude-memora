@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Camera, ScanLine, Layers } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
-import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
+import { getInvalidDocumentMessage } from '@/lib/document-processing';
 
 interface UploadModalProps {
   open?: boolean;
@@ -126,11 +126,6 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     setStep('file');
   };
 
-  const updateProgress = (p: number) => {
-    setBackendProgress(prev => Math.max(prev, p));
-    setProcessingStep(prev => Math.max(prev, p >= 90 ? 5 : p >= 40 ? 3 : p >= 25 ? 1 : 0));
-  };
-
   const startUpload = async () => {
     if (!files.length) return;
     
@@ -186,7 +181,6 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
       docId = res.id;
       window.dispatchEvent(new CustomEvent('document-uploaded'));
       if (res.status === 'pronto') { setResultId(docId); setBackendProgress(100); setStep('done'); return; }
-      updateProgress(res.progress ?? 25);
     } catch (err) {
       const invalidMsg = getInvalidDocumentMessage(err);
       if (invalidMsg) { showRejected(invalidMsg); return; }
@@ -196,26 +190,12 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
       return;
     }
 
-    // Aguarda o worker (OCR + IA) para saber se o documento é válido
-    const outcome = await waitForDocumentProcessing(docId, { onProgress: updateProgress, isAborted: () => pollAbortedRef.current });
-    if (outcome.status === 'aborted') return;
-    window.dispatchEvent(new CustomEvent('document-uploaded'));
-
-    if (outcome.status === 'pronto') {
-      setResultId(docId);
-      setBackendProgress(100);
-      setProcessingStep(PROCESSING_STEPS.length);
-      setStep('done');
-    } else if (outcome.status === 'rejeitado') {
-      showRejected(outcome.message);
-    } else if (outcome.status === 'failed') {
-      setError(outcome.message);
-      setStep('file');
-    } else {
-      toast({ description: 'Seu documento ainda está sendo processado. Ele aparecerá na lista em instantes.' });
-      handleClose();
-      setLocation('/documentos');
-    }
+    toast({
+      title: 'Em processamento',
+      description: 'Seu documento foi enviado. Acompanhe o status na tabela de documentos.',
+    });
+    handleClose();
+    setLocation('/documentos');
   };
 
   const finishAndNavigate = () => {

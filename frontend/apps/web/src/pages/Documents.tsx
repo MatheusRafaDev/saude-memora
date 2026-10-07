@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check, FlaskConical, Pill, Stethoscope, ArrowRight, FileStack, AlertTriangle } from 'lucide-react';
-import { useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
+import { customFetch, useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -33,9 +33,12 @@ export default function Documents() {
   
   // Local state for optimistic deletes
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [reprocessingIds, setReprocessingIds] = useState<Set<string>>(new Set());
   const documents = rawDocuments.filter((doc: any) => !deletedIds.has(doc.id));
 
   const hasProcessing = documents.some((d: any) => d.status === 'pending' || d.status === 'processing');
+  const hasProcessingError = (doc: any) => Boolean(doc.errorMessage) && ['pending', 'processing', 'failed'].includes(doc.status);
+  const canReprocess = (doc: any) => doc.status === 'failed' || (doc.status === 'pending' && Boolean(doc.errorMessage));
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -57,6 +60,27 @@ export default function Documents() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
+
+  const handleReprocess = async (documentId: string) => {
+    setReprocessingIds(current => new Set(current).add(documentId));
+    try {
+      await customFetch(`/api/documents/${documentId}/reprocessar`, { method: 'POST' });
+      toast({ title: 'Reprocessamento iniciado', description: 'Acompanhe o status deste documento na tabela.' });
+      await refetch();
+    } catch (error: any) {
+      toast({
+        title: 'Não foi possível reprocessar',
+        description: error?.data?.message || 'Tente novamente mais tarde.',
+        variant: 'destructive',
+      });
+    } finally {
+      setReprocessingIds(current => {
+        const next = new Set(current);
+        next.delete(documentId);
+        return next;
+      });
+    }
+  };
   
   const handleConfirmDelete = () => {
     if (!documentToDelete) return;
@@ -309,12 +333,22 @@ export default function Documents() {
                     </td>
                     <td className="py-3.5 px-3">
                       {doc.status === 'pending' || doc.status === 'processing' ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-500">
-                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Processando'}
-                        </span>
+                        hasProcessingError(doc) ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                            <ShieldAlert size={10} /> {doc.status === 'processing' ? 'Nova tentativa' : 'Falha temporária'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-500">
+                            <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Processando'}
+                          </span>
+                        )
                       ) : doc.status === 'failed' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
                            <ShieldAlert size={10} /> Erro
+                        </span>
+                      ) : doc.status === 'rejeitado' ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                           <ShieldAlert size={10} /> Não reconhecido
                         </span>
                       ) : doc.revisaoPendente ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
@@ -333,7 +367,9 @@ export default function Documents() {
                       {doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground max-w-[280px]">
-                      <p className="truncate font-normal">{doc.resumo || 'Resumo extraído automaticamente.'}</p>
+                      <p className={`truncate font-normal ${hasProcessingError(doc) ? 'text-destructive' : ''}`} title={hasProcessingError(doc) ? doc.errorMessage : undefined}>
+                        {hasProcessingError(doc) ? `Falha anterior: ${doc.errorMessage}` : doc.resumo || 'Resumo extraído automaticamente.'}
+                      </p>
                     </td>
                     <td className="py-3.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
@@ -345,6 +381,18 @@ export default function Documents() {
                           <Link href={`/documentos/${doc.id}`} className="inline-flex items-center gap-1 font-bold text-primary hover:text-accent text-xs mr-1">
                             Ver <ChevronRight size={14} />
                           </Link>
+                        )}
+                        {canReprocess(doc) && (
+                          <button
+                            type="button"
+                            onClick={() => handleReprocess(doc.id)}
+                            disabled={reprocessingIds.has(doc.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-primary/20 px-2 py-1 text-xs font-bold text-primary hover:bg-primary/5 disabled:opacity-50"
+                            title="Reprocessar documento"
+                          >
+                            <RefreshCcw size={12} className={reprocessingIds.has(doc.id) ? 'animate-spin' : ''} />
+                            Reprocessar
+                          </button>
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -391,12 +439,22 @@ export default function Documents() {
                         {doc.tipo || 'Documento'}
                       </span>
                       {doc.status === 'pending' || doc.status === 'processing' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-blue-500">
-                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `${doc.progress || 0}%` : 'Processando'}
-                        </span>
+                        hasProcessingError(doc) ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                            <ShieldAlert size={10} /> {doc.status === 'processing' ? 'Nova tentativa' : 'Falha temporária'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-blue-500">
+                            <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `${doc.progress || 0}%` : 'Processando'}
+                          </span>
+                        )
                       ) : doc.status === 'failed' ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-destructive">
                            <ShieldAlert size={10} /> Erro
+                        </span>
+                      ) : doc.status === 'rejeitado' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                           <ShieldAlert size={10} /> Não reconhecido
                         </span>
                       ) : doc.revisaoPendente ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
@@ -437,6 +495,25 @@ export default function Documents() {
                     <span className="font-mono truncate block">{doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}</span>
                   </div>
                 </div>
+                {hasProcessingError(doc) && (
+                  <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+                    <p className="text-xs font-semibold text-destructive">
+                      {doc.status === 'failed' ? 'Falha no processamento' : 'Falha na tentativa anterior'}
+                    </p>
+                    <p className="mt-1 break-words text-xs text-muted-foreground">{doc.errorMessage || 'Tente reprocessar o documento.'}</p>
+                    {canReprocess(doc) && (
+                      <button
+                        type="button"
+                        onClick={() => handleReprocess(doc.id)}
+                        disabled={reprocessingIds.has(doc.id)}
+                        className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                      >
+                        <RefreshCcw size={13} className={reprocessingIds.has(doc.id) ? 'animate-spin' : ''} />
+                        Tentar novamente agora
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
