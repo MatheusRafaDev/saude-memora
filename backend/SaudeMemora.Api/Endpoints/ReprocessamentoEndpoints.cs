@@ -23,7 +23,7 @@ public static class ReprocessamentoEndpoints
 
             var paciente = await pacienteRepo.GetByIdAsync(userId);
             if (paciente?.ConsentimentoIa?.Aceito != true)
-                return Results.BadRequest(new { error = "É necessário consentir com o processamento por IA." });
+                return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
             var doc = await repo.GetByIdAsync(id);
             if (doc == null || doc.PacienteId != userId) return Results.NotFound();

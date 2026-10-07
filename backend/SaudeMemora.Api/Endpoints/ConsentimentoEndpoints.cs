@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -6,6 +6,7 @@ using SaudeMemora.Domain.Entities;
 using SaudeMemora.Domain.Interfaces;
 using SaudeMemora.Application.DTOs;
 using System.Security.Claims;
+using SaudeMemora.Api.Helpers;
 
 namespace SaudeMemora.Api.Endpoints;
 
@@ -40,41 +41,44 @@ public static class ConsentimentoEndpoints
             var paciente = await repo.GetByIdAsync(userId);
             if (paciente == null) return Results.NotFound();
 
-            string ipTruncado = "Unknown";
-            var ip = context.Connection.RemoteIpAddress;
-            if (ip != null)
-            {
-                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                {
-                    var bytes = ip.GetAddressBytes();
-                    ipTruncado = $"{bytes[0]}.{bytes[1]}.{bytes[2]}.***";
-                }
-                else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-                {
-                    var bytes = ip.GetAddressBytes();
-                    for (int i = 6; i < 16; i++) bytes[i] = 0;
-                    ipTruncado = new System.Net.IPAddress(bytes).ToString();
-                }
-            }
+            string ipTruncado = NetworkHelpers.GetTruncatedIp(context);
 
             if (paciente.ConsentimentoIa == null)
             {
                 paciente.ConsentimentoIa = new ConsentimentoIa();
             }
 
-            if (dto.Aceito && !paciente.ConsentimentoIa.Aceito)
+            if (dto.Aceito)
             {
-                paciente.ConsentimentoIa.Aceito = true;
-                paciente.ConsentimentoIa.VersaoTermo = "v1.0";
-                paciente.ConsentimentoIa.AceitoEm = paciente.ConsentimentoIa.AceitoEm ?? DateTime.UtcNow;
-                paciente.ConsentimentoIa.IpTruncado = paciente.ConsentimentoIa.IpTruncado ?? ipTruncado;
-                
-                paciente.ConsentimentoIa.Historico.Add(new ConsentimentoHistorico
+                if (!paciente.ConsentimentoIa.Aceito)
                 {
-                    Acao = "Aceitou",
-                    DataHora = DateTime.UtcNow,
-                    IpTruncado = ipTruncado
-                });
+                    paciente.ConsentimentoIa.Aceito = true;
+                    paciente.ConsentimentoIa.VersaoTermo = "v1.0";
+                    paciente.ConsentimentoIa.AceitoEm = DateTime.UtcNow; // Atualiza sempre ao reaceitar
+                    paciente.ConsentimentoIa.IpTruncado = ipTruncado;
+                    paciente.ConsentimentoIa.RevogadoEm = null; // Limpa revogação
+                    
+                    paciente.ConsentimentoIa.Historico.Add(new ConsentimentoHistorico
+                    {
+                        Acao = "Aceitou",
+                        DataHora = DateTime.UtcNow,
+                        IpTruncado = ipTruncado
+                    });
+                }
+            }
+            else
+            {
+                if (paciente.ConsentimentoIa.Aceito)
+                {
+                    paciente.ConsentimentoIa.Aceito = false;
+                    paciente.ConsentimentoIa.RevogadoEm = DateTime.UtcNow;
+                    paciente.ConsentimentoIa.Historico.Add(new ConsentimentoHistorico
+                    {
+                        Acao = "Revogou",
+                        DataHora = DateTime.UtcNow,
+                        IpTruncado = ipTruncado
+                    });
+                }
             }
 
             await repo.UpdateAsync(paciente);
@@ -91,22 +95,7 @@ public static class ConsentimentoEndpoints
 
             if (paciente.ConsentimentoIa != null && paciente.ConsentimentoIa.Aceito)
             {
-                string ipTruncado = "Unknown";
-                var ip = context.Connection.RemoteIpAddress;
-                if (ip != null)
-                {
-                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                    {
-                        var bytes = ip.GetAddressBytes();
-                        ipTruncado = $"{bytes[0]}.{bytes[1]}.{bytes[2]}.***";
-                    }
-                    else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-                    {
-                        var bytes = ip.GetAddressBytes();
-                        for (int i = 6; i < 16; i++) bytes[i] = 0;
-                        ipTruncado = new System.Net.IPAddress(bytes).ToString();
-                    }
-                }
+                string ipTruncado = NetworkHelpers.GetTruncatedIp(context);
 
                 paciente.ConsentimentoIa.Aceito = false;
                 paciente.ConsentimentoIa.RevogadoEm = DateTime.UtcNow;

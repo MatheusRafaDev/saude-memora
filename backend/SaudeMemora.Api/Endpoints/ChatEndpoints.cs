@@ -35,7 +35,7 @@ public static class ChatEndpoints
 
             var paciente = await pacienteRepo.GetByIdAsync(userId);
             if (paciente?.ConsentimentoIa?.Aceito != true)
-                return Results.BadRequest(new { error = "É necessário consentir com o processamento por IA para utilizar o chat." });
+                return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
             // Pega todo o histórico do paciente (docs extraídos e ficha médica)
             var docs = await docRepo.GetAllByPacienteIdAsync(userId);

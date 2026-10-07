@@ -18,7 +18,7 @@ namespace SaudeMemora.Api.Workers
             _logger = logger;
             _httpClient = new HttpClient();
             // Pegamos a URL da API das variáveis de ambiente. Se não estiver configurada, não vai rodar o ping.
-            _apiUrl = Environment.GetEnvironmentVariable("VITE_API_URL") ?? "";
+            _apiUrl = Environment.GetEnvironmentVariable("PUBLIC_API_URL") ?? "";
             
             // Certifica de não terminar com barra
             if (_apiUrl.EndsWith("/"))
@@ -31,7 +31,7 @@ namespace SaudeMemora.Api.Workers
         {
             if (string.IsNullOrWhiteSpace(_apiUrl))
             {
-                _logger.LogWarning("[KeepAlive] VITE_API_URL não configurada. O ping automático para evitar hibernação está desativado.");
+                _logger.LogWarning("[KeepAlive] PUBLIC_API_URL não configurada. O ping automático para evitar hibernação está desativado.");
                 return;
             }
 

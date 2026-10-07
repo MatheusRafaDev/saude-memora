@@ -19,4 +19,9 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 ENV PORT=8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:$PORT/api/ping || exit 1
+
+USER app
 ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=http://+:$PORT dotnet SaudeMemora.Api.dll"]

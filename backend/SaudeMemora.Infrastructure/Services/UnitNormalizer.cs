@@ -2,91 +2,113 @@ namespace SaudeMemora.Infrastructure.Services;
 
 /// <summary>
 /// Normaliza unidades de medida extraídas pela IA para padrões clínicos BR.
-/// Evita que o mesmo analito apareça com unidades incompatíveis na série histórica.
+/// A chave é (analitoNormalizado, unidadeRaw) — conversões só para analitos conhecidos.
+/// Para analito/unidade desconhecidos retorna null (sem conversão silenciosa).
 /// </summary>
 public static class UnitNormalizer
 {
-    // Mapa: unidade original (lowercase, sem espaço) → unidade canônica + fator multiplicador
-    private static readonly Dictionary<string, (string Unit, double Factor)> _map = new(StringComparer.OrdinalIgnoreCase)
+    // Chave: (analito_lower, unidade_lower_sem_espaço)  →  (unidadeCanônica, fator)
+    private static readonly Dictionary<(string Analito, string Unidade), (string CanonUnit, double Factor)> _map =
+        new(new KeyComparer())
     {
-        // Colesterol / Lipídios: tudo para mg/dL
-        { "mmol/l",   ("mg/dL", 38.67) },  // colesterol/triglicerídeos
-        { "mmol/l ",  ("mg/dL", 38.67) },
-        { "mmoll",    ("mg/dL", 38.67) },
+        // Glicose: mmol/L → mg/dL  (fator 18,02)
+        { ("glicemia",           "mmol/l"),  ("mg/dL", 18.02) },
+        { ("glicose",            "mmol/l"),  ("mg/dL", 18.02) },
+        { ("glicemia_jejum",     "mmol/l"),  ("mg/dL", 18.02) },
+        { ("glicemia_2h",        "mmol/l"),  ("mg/dL", 18.02) },
+        { ("hemoglobina_glicada","mmol/l"),  ("mg/dL", 18.02) },
 
-        // Glicemia: mmol/L → mg/dL
-        // Overlapping: se for glicose, fator é 18.02; usamos heurística no caller
-        // (mmol/L já coberto acima com fator genérico de lipídios; glicose tratada separado)
+        // Colesterol total / HDL / LDL: mmol/L → mg/dL  (fator 38,67)
+        { ("colesterol_total",   "mmol/l"),  ("mg/dL", 38.67) },
+        { ("colesterol_hdl",     "mmol/l"),  ("mg/dL", 38.67) },
+        { ("colesterol_ldl",     "mmol/l"),  ("mg/dL", 38.67) },
 
-        // Hemoglobina: g/dL → g/dL (sem conversão), mas normaliza caps
-        { "g/dl",  ("g/dL",  1.0) },
-        { "g/l",   ("g/dL",  0.1) },  // g/L → g/dL
+        // Triglicerídeos: mmol/L → mg/dL  (fator 88,57)
+        { ("triglicerideos",     "mmol/l"),  ("mg/dL", 88.57) },
 
-        // Creatinina: μmol/L → mg/dL
-        { "µmol/l",   ("mg/dL", 0.011312) },
-        { "umol/l",   ("mg/dL", 0.011312) },
-        { "μmol/l",   ("mg/dL", 0.011312) },
+        // Creatinina: µmol/L → mg/dL
+        { ("creatinina",         "µmol/l"),  ("mg/dL", 0.011312) },
+        { ("creatinina",         "umol/l"),  ("mg/dL", 0.011312) },
+        { ("creatinina",         "μmol/l"),  ("mg/dL", 0.011312) },
 
-        // TSH / Hormônios: mIU/L → mUI/mL (equivalentes, só normaliza o nome)
-        { "miu/ml",  ("mUI/mL", 1.0) },
-        { "miu/l",   ("mUI/mL", 1.0) },
-        { "muiu/ml", ("mUI/mL", 1.0) },
-        { "µiu/ml",  ("mUI/mL", 1.0) },
-        { "uiu/ml",  ("mUI/mL", 1.0) },
+        // Ácido úrico: µmol/L → mg/dL
+        { ("acido_urico",        "µmol/l"),  ("mg/dL", 0.016807) },
+        { ("acido_urico",        "umol/l"),  ("mg/dL", 0.016807) },
+        { ("acido_urico",        "μmol/l"),  ("mg/dL", 0.016807) },
 
         // Vitamina D: nmol/L → ng/mL
-        { "nmol/l",  ("ng/mL", 0.4006) },
+        { ("vitamina_d",         "nmol/l"),  ("ng/mL", 0.4006) },
 
         // Vitamina B12: pmol/L → pg/mL
-        { "pmol/l",  ("pg/mL", 1.355) },
+        { ("vitamina_b12",       "pmol/l"),  ("pg/mL", 1.355) },
 
-        // Ferritina, PSA: já geralmente em ng/mL
-        { "ng/ml",   ("ng/mL", 1.0) },
+        // Hemoglobina: g/L → g/dL
+        { ("hemoglobina",        "g/l"),     ("g/dL",  0.1) },
 
-        // Percentual: mantém
-        { "%",       ("%", 1.0) },
-
-        // Contagem (leucócitos, plaquetas): padroniza notação
-        { "x10^9/l",    ("/µL", 1000.0) },
-        { "x10³/µl",    ("/µL", 1.0) },
-        { "x10³/ul",    ("/µL", 1.0) },
-        { "10^9/l",     ("/µL", 1000.0) },
-        { "mil/µl",     ("/µL", 1000.0) },
-        { "mil/ul",     ("/µL", 1000.0) },
-        { "/µl",        ("/µL", 1.0) },
-        { "/ul",        ("/µL", 1.0) },
+        // TSH / Hormônios: mIU/L → mUI/mL
+        { ("tsh",  "miu/l"),    ("mUI/mL", 1.0) },
+        { ("tsh",  "miu/ml"),   ("mUI/mL", 1.0) },
+        { ("tsh",  "muiu/ml"),  ("mUI/mL", 1.0) },
+        { ("tsh",  "µiu/ml"),   ("mUI/mL", 1.0) },
+        { ("tsh",  "uiu/ml"),   ("mUI/mL", 1.0) },
+        { ("tsh",  "mui/l"),    ("mUI/mL", 0.001) }, // mUI/L → mUI/mL
     };
 
-    // Analitos que usam fator de glicose para mmol/L → mg/dL
-    private static readonly HashSet<string> _glucoseAnalitos = new(StringComparer.OrdinalIgnoreCase)
+    // Normalizações de unidade puras (capitalização/notação), sem depender do analito
+    private static readonly Dictionary<string, (string CanonUnit, double Factor)> _unitOnly =
+        new(StringComparer.OrdinalIgnoreCase)
     {
-        "glicemia", "glicose", "glicemia_jejum", "glicemia_2h", "hemoglobina_glicada"
+        { "x10^9/l",   ("/µL", 1000.0) },
+        { "x10³/µl",   ("/µL", 1.0)    },
+        { "x10³/ul",   ("/µL", 1.0)    },
+        { "x109/l",    ("/µL", 1000.0) },
+        { "10^9/l",    ("/µL", 1000.0) },
+        { "mil/µl",    ("/µL", 1000.0) },
+        { "mil/ul",    ("/µL", 1000.0) },
+        { "/µl",       ("/µL", 1.0)    },
+        { "/ul",       ("/µL", 1.0)    },
+        { "g/dl",      ("g/dL", 1.0)   },
+        { "mg/dl",     ("mg/dL", 1.0)  },
+        { "ng/ml",     ("ng/mL", 1.0)  },
+        { "pg/ml",     ("pg/mL", 1.0)  },
+        { "miu/ml",    ("mUI/mL", 1.0) },
+        { "muiu/ml",   ("mUI/mL", 1.0) },
+        { "µiu/ml",    ("mUI/mL", 1.0) },
+        { "uiu/ml",    ("mUI/mL", 1.0) },
+        { "%",         ("%", 1.0)       },
     };
 
     /// <summary>
     /// Tenta normalizar a unidade e, se necessário, converte o valor.
-    /// Retorna null se a unidade não for reconhecida (nenhuma conversão feita).
+    /// Retorna null se o par (analito, unidade) não for reconhecido.
     /// </summary>
     public static (double Value, string Unit)? TryNormalize(string analitoNormalizado, double value, string rawUnit)
     {
         if (string.IsNullOrWhiteSpace(rawUnit)) return null;
 
-        var key = rawUnit.Trim().ToLowerInvariant().Replace(" ", "");
+        var unitKey = rawUnit.Trim().ToLowerInvariant().Replace(" ", "");
+        var analitoKey = (analitoNormalizado ?? "").Trim().ToLowerInvariant();
 
-        // Caso especial: mmol/L com analito de glicose → usar fator 18.02
-        if ((key == "mmol/l" || key == "mmoll") && _glucoseAnalitos.Contains(analitoNormalizado))
-        {
-            return (Math.Round(value * 18.02, 2), "mg/dL");
-        }
+        // 1. Conversão específica por (analito, unidade)
+        if (_map.TryGetValue((analitoKey, unitKey), out var specific))
+            return (Math.Round(value * specific.Factor, 4), specific.CanonUnit);
 
-        if (_map.TryGetValue(key, out var mapping))
-        {
-            return (Math.Round(value * mapping.Factor, 4), mapping.Unit);
-        }
+        // 2. Normalização de unidade pura (só capitalização/notação)
+        if (_unitOnly.TryGetValue(unitKey, out var unitMap))
+            return (Math.Round(value * unitMap.Factor, 4), unitMap.CanonUnit);
 
-        // Normaliza apenas a capitalização para mg/dL, se já está lá
-        if (key == "mg/dl") return (value, "mg/dL");
+        return null; // desconhecido: sem conversão silenciosa
+    }
 
-        return null; // Unidade já está no padrão ou não é reconhecida
+    private sealed class KeyComparer : IEqualityComparer<(string Analito, string Unidade)>
+    {
+        public bool Equals((string Analito, string Unidade) x, (string Analito, string Unidade) y)
+            => string.Equals(x.Analito, y.Analito, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(x.Unidade, y.Unidade, StringComparison.OrdinalIgnoreCase);
+
+        public int GetHashCode((string Analito, string Unidade) obj)
+            => HashCode.Combine(
+                obj.Analito?.ToLowerInvariant(),
+                obj.Unidade?.ToLowerInvariant());
     }
 }

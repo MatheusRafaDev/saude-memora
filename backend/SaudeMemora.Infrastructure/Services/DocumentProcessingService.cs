@@ -456,7 +456,7 @@ public class FlexibleBooleanConverter : System.Text.Json.Serialization.JsonConve
         if (reader.TokenType == JsonTokenType.String)
         {
             var str = reader.GetString()?.ToLowerInvariant();
-            if (str == "true" || str == "1" || str == "yes") return true;
+            if (str == "true" || str == "1" || str == "yes" || str == "sim" || str == "verdadeiro" || str == "s") return true;
             return false;
         }
         if (reader.TokenType == JsonTokenType.Number)

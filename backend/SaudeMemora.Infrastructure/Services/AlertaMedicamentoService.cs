@@ -40,7 +40,9 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
         // Checar duplicidades
         foreach (var m in medNovos)
         {
-            if (medContinuos.Any(c => c.Contains(m) || m.Contains(c)))
+            if (m.Length < 4) continue;
+            // Verifica com contínuos
+            if (medContinuos.Any(c => c.Length >= 4 && (c.Contains(m) || m.Contains(c))))
             {
                 alertas.Add(new AlertaDocumento
                 {
@@ -50,13 +52,26 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
                     Medicamentos = new List<string> { m }
                 });
             }
+            // Verifica dentro da própria receita (entre os novos)
+            var outrosNovos = medNovos.Where(n => n != m && n.Length >= 4).ToList();
+            if (outrosNovos.Any(n => n.Contains(m) || m.Contains(n)))
+            {
+                alertas.Add(new AlertaDocumento
+                {
+                    Tipo = "duplicidade",
+                    Severidade = "moderada",
+                    Mensagem = $"Possível duplicidade na receita: {m} parece ser semelhante a outro item da lista.",
+                    Medicamentos = new List<string> { m }
+                });
+            }
         }
 
         // Checar alergias
         var alergiasClasses = MapearClassesAlergia(alergias);
         foreach (var m in medNovos)
         {
-            if (alergiasClasses.Any(ac => ac.Contains(m) || m.Contains(ac)))
+            if (m.Length < 4) continue;
+            if (alergiasClasses.Any(ac => ac.Length >= 4 && (ac.Contains(m) || m.Contains(ac))))
             {
                 alertas.Add(new AlertaDocumento
                 {
@@ -68,18 +83,22 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
             }
         }
 
-        // 2. IA - Interações
-        if (!string.IsNullOrEmpty(_geminiApiKey) && medContinuos.Any())
+        // 2. IA - Interações (inclusive entre os próprios medicamentos novos)
+        var todosMedicamentos = medNovos.Concat(medContinuos).Distinct().ToList();
+        if (!string.IsNullOrEmpty(_geminiApiKey) && todosMedicamentos.Count > 1)
         {
             try
             {
-                var interacoes = await ChecarInteracoesComIA(medNovos, medContinuos);
+                var interacoes = await ChecarInteracoesComIA(todosMedicamentos);
                 foreach (var inter in interacoes)
                 {
+                    var sev = inter.Severidade?.ToLowerInvariant();
+                    if (sev != "baixa" && sev != "moderada" && sev != "alta") sev = "baixa";
+
                     alertas.Add(new AlertaDocumento
                     {
                         Tipo = "interacao",
-                        Severidade = inter.Severidade,
+                        Severidade = sev,
                         Mensagem = inter.Explicacao + " Recomendação: " + inter.Recomendacao,
                         Medicamentos = inter.Medicamentos
                     });
@@ -93,7 +112,8 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
                     Tipo = "erro_ia",
                     Severidade = "baixa",
                     Mensagem = "Não foi possível verificar interações medicamentosas via IA no momento.",
-                    Medicamentos = new List<string>()
+                    Medicamentos = new List<string>(),
+                    Retentavel = true
                 });
             }
         }
@@ -141,18 +161,17 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
         return ampliado.Distinct().ToList();
     }
 
-    private async Task<List<InteracaoIA>> ChecarInteracoesComIA(List<string> novos, List<string> continuos)
+    private async Task<List<InteracaoIA>> ChecarInteracoesComIA(List<string> medicamentos)
     {
         var prompt = $@"
-Analise possíveis interações medicamentosas entre as seguintes listas:
-Novos Receitados: {string.Join(", ", novos)}
-Contínuos: {string.Join(", ", continuos)}
+Analise possíveis interações medicamentosas entre os medicamentos desta lista:
+Lista completa: {string.Join(", ", medicamentos)}
 
 Devolva um JSON estrito no formato abaixo, e responda em pt-BR:
 {{
   ""interacoes"": [
     {{
-      ""severidade"": ""baixa"", // baixa, moderada, alta
+      ""severidade"": ""baixa"",
       ""explicacao"": ""Breve motivo da interação"",
       ""recomendacao"": ""consulte seu médico/farmacêutico"",
       ""medicamentos"": [""nome_1"", ""nome_2""]
@@ -192,7 +211,11 @@ Seja conservador: na dúvida, não alerte com severidade alta. Se não houver in
         if (string.IsNullOrWhiteSpace(message)) return new List<InteracaoIA>();
         message = message.Replace("```json", "").Replace("```", "").Trim();
 
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var options = new JsonSerializerOptions 
+        { 
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
         var result = JsonSerializer.Deserialize<InteracoesResponse>(message, options);
 
         return result?.Interacoes?.ToList() ?? new List<InteracaoIA>();

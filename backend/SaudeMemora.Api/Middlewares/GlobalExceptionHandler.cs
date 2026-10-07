@@ -8,18 +8,21 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace SaudeMemora.Api.Middlewares;
 
 public class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger;
-    private readonly ISistemaLogRepository _logRepo;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, ISistemaLogRepository logRepo)
+    // Item 8: ISistemaLogRepository é Scoped — não pode ser injetado no construtor de Singleton.
+    // Usamos IServiceScopeFactory e criamos scope dentro do TryHandleAsync.
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
-        _logRepo = logRepo;
+        _scopeFactory = scopeFactory;
     }
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
@@ -28,14 +31,23 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         var userId = httpContext.User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Registrar no log
-        await _logRepo.CriarLogAsync(new SistemaLog
+        // Registrar no log (dentro de scope para resolver serviço Scoped)
+        try
         {
-            Nivel = "Error",
-            Acao = "ExcecaoGlobal",
-            Detalhes = $"[{httpContext.Request.Method} {httpContext.Request.Path}] {exception.Message}\n{exception.StackTrace}",
-            PacienteId = userId
-        });
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var logRepo = scope.ServiceProvider.GetRequiredService<ISistemaLogRepository>();
+            await logRepo.CriarLogAsync(new SistemaLog
+            {
+                Nivel = "Error",
+                Acao = "ExcecaoGlobal",
+                Detalhes = $"[{httpContext.Request.Method} {httpContext.Request.Path}] {exception.GetType().Name}\n{exception.StackTrace}",
+                PacienteId = userId
+            });
+        }
+        catch (Exception logEx)
+        {
+            _logger.LogWarning(logEx, "Falha ao registrar exceção global no log.");
+        }
 
         // Configurar a resposta ProblemDetails
         var problemDetails = new ProblemDetails
@@ -46,13 +58,9 @@ public class GlobalExceptionHandler : IExceptionHandler
             Instance = httpContext.Request.Path
         };
 
-        if (exception is ArgumentException || exception is InvalidOperationException)
-        {
-            problemDetails.Status = StatusCodes.Status400BadRequest;
-            problemDetails.Title = "Requisição inválida";
-            problemDetails.Detail = exception.Message;
-        }
-        else if (exception is UnauthorizedAccessException)
+        // Item 8: ArgumentException e InvalidOperationException genéricas → 500 (sem expor Message).
+        // Apenas exceções de domínio mapeadas explicitamente → 4xx.
+        if (exception is UnauthorizedAccessException)
         {
             problemDetails.Status = StatusCodes.Status401Unauthorized;
             problemDetails.Title = "Não autorizado";

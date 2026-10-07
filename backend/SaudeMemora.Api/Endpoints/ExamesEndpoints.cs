@@ -114,7 +114,8 @@ public static class ExamesEndpoints
                 if (doc.Tipo != "exame" || doc.Status != "pronto" || doc.ResultadosExame == null) continue;
                 if (string.IsNullOrEmpty(doc.Data)) continue;
 
-                if (!DateTime.TryParseExact(doc.Data, "dd/MM/yyyy", null,
+                if (!DateTime.TryParseExact(doc.Data, "dd/MM/yyyy",
+                    System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.None, out var docData)) continue;
 
                 if (docData < dataLimite) continue;
@@ -159,19 +160,23 @@ public static class ExamesEndpoints
                 });
             }
 
-            // 3. Detecção de outlier estatístico (Z-Score) sobre a série histórica
-            if (resultados.Count >= 3)
+            // 3. Detecção de outlier estatístico com desvio AMOSTRAL e limiar 2,5-sigma
+            // Exige mínimo de 4 pontos para ser estatisticamente significativo.
+            if (resultados.Count >= 4)
             {
                 var valores = resultados.Select(r => r.Valor).ToList();
                 var media = valores.Average();
-                var desvio = Math.Sqrt(valores.Sum(v => Math.Pow(v - media, 2)) / valores.Count);
+                // Desvio amostral (dividido por n-1)
+                var desvio = valores.Count > 1
+                    ? Math.Sqrt(valores.Sum(v => Math.Pow(v - media, 2)) / (valores.Count - 1))
+                    : 0;
 
                 if (desvio > 0)
                 {
                     foreach (var r in resultados.Where(r => !r.IsOutlier))
                     {
                         var zScore = Math.Abs(r.Valor - media) / desvio;
-                        if (zScore > ZScoreFactor)
+                        if (zScore > 2.5)
                         {
                             r.IsOutlier = true;
                             r.OutlierMotivo = $"Valor {r.Valor} {r.Unidade} é estatisticamente atípico " +

@@ -1,4 +1,4 @@
-# 🏥 SaúdeMemora
+﻿# 🏥 SaúdeMemora
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.0.0-green?style=for-the-badge" />
@@ -80,5 +80,8 @@ Com o **SaúdeMemora**, o usuário pode:
 | **Frontend** | `VITE_API_URL` |
 | **Backend / BD** | `MONGODB_CONNECTION_STRING`, `MONGODB_DATABASE_NAME` |
 | **Armazenamento** | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
-| **Autenticação** | `JWT_SECRET_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE` |
+| **Autenticação** | `JWT_SECRET_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_EXPIRES_IN` (ex: 7d ou 12h) |
 | **Inteligência Artificial** | `GEMINI_API_KEY`, `OCR_SPACE_API_KEY` |
+| **Segurança/Proxy** | `TRUSTED_PROXIES` (ex: `10.0.0.0/8`, vazio para loopback) |
+
+> **Nota sobre Uploads:** O endpoint /api/documents/upload aceita arquivos de até 10MB. Se estiver usando um proxy reverso como o Nginx, lembre-se de configurar client_max_body_size 10M; na configuração do servidor para permitir uploads desse tamanho.

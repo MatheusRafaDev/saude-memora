@@ -25,6 +25,10 @@ public class AlertaDocumento
 
     [BsonElement("dispensado")]
     public bool Dispensado { get; set; } = false;
+
+    [BsonElement("retentavel")]
+    [BsonIgnoreIfDefault]
+    public bool Retentavel { get; set; } = false;
 }
 
 public class MedicamentoDocumento

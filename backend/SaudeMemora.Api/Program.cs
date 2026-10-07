@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using SaudeMemora.Application.DTOs;
@@ -11,9 +11,9 @@ using SaudeMemora.Infrastructure.Repositories;
 using SaudeMemora.Infrastructure.Services;
 using SaudeMemora.Api.Workers;
 using SaudeMemora.Api.Endpoints;
+using SaudeMemora.Api.Helpers;
 using SaudeMemora.Api.Middlewares;
 using SaudeMemora.Api.Filters;
-using SaudeMemora.Api.Hubs;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -37,7 +37,7 @@ builder.Configuration.AddEnvironmentVariables();
 // Add services to the container.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddSignalR();
+// SignalR removido
 
 builder.Services.AddOpenApi();
 
@@ -96,19 +96,19 @@ builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = 429;
     o.AddPolicy("auth", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-        GetIpKey(ctx),
+        NetworkHelpers.GetIpKey(ctx),
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
         
     o.AddPolicy("upload", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-        ctx.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? GetIpKey(ctx),
+        ctx.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? NetworkHelpers.GetIpKey(ctx),
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
 
     o.AddPolicy("emergencia", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-        GetIpKey(ctx),
+        NetworkHelpers.GetIpKey(ctx),
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
 
     o.AddPolicy("chat", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-        ctx.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? GetIpKey(ctx),
+        ctx.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? NetworkHelpers.GetIpKey(ctx),
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
 });
 
@@ -185,16 +185,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         context.Fail("Security stamp inválido ou conta excluída.");
                     }
                 }
-            },
-            OnMessageReceived = context =>
-            {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/documents"))
-                {
-                    context.Token = accessToken;
-                }
-                return Task.CompletedTask;
             }
         };
     });
@@ -269,7 +259,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
-// --- Health / Ping ???
+// --- Health / Ping
 app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).AllowAnonymous();
 
 app.MapConsentimentoEndpoints();
@@ -280,9 +270,9 @@ app.MapExamesEndpoints();
 app.MapEmergenciaEndpoints();
 app.MapChatEndpoints();
 
-app.MapHub<DocumentHub>("/hubs/documents");
+// MapHub removido
 
-// --- Auth Endpoints ??????????????????????????????????????????????????????????????????????????
+// --- Auth Endpoints
 
 app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IPacienteRepository repo) =>
 {
@@ -334,8 +324,17 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
     var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? config["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT_SECRET_KEY is missing.");
     var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? config["JwtSettings:Issuer"];
     var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? config["JwtSettings:Audience"];
-    var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN");
-    int expiresDays = int.TryParse(jwtExpiresInStr, out var parsedDays) ? parsedDays : 7; // Default 7 days
+    var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN")?.Trim()?.ToLowerInvariant();
+    TimeSpan expiresIn = TimeSpan.FromDays(7); // Default 7 days
+    if (!string.IsNullOrEmpty(jwtExpiresInStr))
+    {
+        if (jwtExpiresInStr.EndsWith("h") && double.TryParse(jwtExpiresInStr.TrimEnd('h'), out var hours))
+            expiresIn = TimeSpan.FromHours(hours);
+        else if (jwtExpiresInStr.EndsWith("d") && double.TryParse(jwtExpiresInStr.TrimEnd('d'), out var days))
+            expiresIn = TimeSpan.FromDays(days);
+        else if (double.TryParse(jwtExpiresInStr, out var rawDays)) // fallback documentado como dias
+            expiresIn = TimeSpan.FromDays(rawDays);
+    }
     
     var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret));
     var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
@@ -349,7 +348,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
             new Claim(ClaimTypes.Name, paciente.Nome),
             new Claim("SecurityStamp", paciente.SecurityStamp ?? string.Empty)
         }),
-        Expires = DateTime.UtcNow.AddDays(expiresDays),
+        Expires = DateTime.UtcNow.Add(expiresIn),
         Issuer = jwtIssuer,
         Audience = jwtAudience,
         SigningCredentials = credentials
@@ -630,7 +629,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
             try { await storage.DeleteImageAsync(oldPublicId); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
 
         return Results.Ok(new { 
-            url,
+            url = storage.GetSignedUrl(id),
             planoSaude = paciente.PlanoSaude,
             numeroCarteirinha = paciente.NumeroCarteirinha
         });
@@ -638,7 +637,8 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     catch (Exception ex)
     {
         try { await storage.DeleteImageAsync(id); } catch { }
-        return Results.Problem("Falha ao processar carteirinha. " + ex.Message, statusCode: 500);
+        app.Logger.LogError(ex, "Erro ao processar carteirinha para usuário {UserId}", userId);
+        return Results.Problem("Falha ao processar carteirinha.", statusCode: 500);
     }
 }).RequireAuthorization().RequireRateLimiting("upload").DisableAntiforgery().WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(10L * 1024 * 1024));
 
@@ -699,9 +699,9 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     return Results.Ok(new { message = "Sua conta foi agendada para exclusão e será removida em breve." });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 
-// --- Logs Endpoints ??????????????????????????????????????????
+// --- Logs Endpoints
 
-// --- Ficha Médica Endpoints ??????????????????????????????????????
+// --- Ficha Médica Endpoints
 
 app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
@@ -750,14 +750,14 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
             PacienteId = userId,
             HistoricoFamiliar = dto.HistoricoFamiliar,
             Cirurgias = dto.Cirurgias,
-            Fuma = dto.Fuma,
-            Bebe = dto.Bebe,
+            Fuma = dto.Fuma ?? false,
+            Bebe = dto.Bebe ?? false,
             HabitosGerais = dto.HabitosGerais,
             Observacoes = dto.Observacoes,
             Condicoes = dto.Condicoes ?? new List<CondicaoMedica>(),
             OutrasDoencas = dto.OutrasDoencas,
             TipoSanguineo = dto.TipoSanguineo,
-            DoadorOrgaos = dto.DoadorOrgaos,
+            DoadorOrgaos = dto.DoadorOrgaos ?? false,
             Alergias = dto.Alergias ?? new List<string>(),
             DoencasCronicas = dto.DoencasCronicas ?? new List<string>(),
             MedicamentosContinuos = dto.MedicamentosContinuos ?? new List<string>()
@@ -766,21 +766,20 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
         await cache.SafeRemoveAsync($"ficha_v2_{userId}");
         return Results.Ok(newFicha);
     }
-    
-    // Substituição total dos campos conforme a semântica de PUT/PATCH deste endpoint
-    ficha.HistoricoFamiliar = dto.HistoricoFamiliar;
-    ficha.Cirurgias = dto.Cirurgias;
-    ficha.Fuma = dto.Fuma;
-    ficha.Bebe = dto.Bebe;
-    ficha.HabitosGerais = dto.HabitosGerais;
-    ficha.Observacoes = dto.Observacoes;
-    ficha.OutrasDoencas = dto.OutrasDoencas;
-    ficha.TipoSanguineo = dto.TipoSanguineo;
-    ficha.DoadorOrgaos = dto.DoadorOrgaos;
-    ficha.Alergias = dto.Alergias ?? new List<string>();
-    ficha.DoencasCronicas = dto.DoencasCronicas ?? new List<string>();
-    ficha.MedicamentosContinuos = dto.MedicamentosContinuos ?? new List<string>();
-    ficha.Condicoes = dto.Condicoes ?? new List<CondicaoMedica>();
+    // Atualização parcial (PATCH): só atualiza os campos enviados
+    if (dto.HistoricoFamiliar != null) ficha.HistoricoFamiliar = dto.HistoricoFamiliar;
+    if (dto.Cirurgias != null) ficha.Cirurgias = dto.Cirurgias;
+    if (dto.Fuma.HasValue) ficha.Fuma = dto.Fuma.Value;
+    if (dto.Bebe.HasValue) ficha.Bebe = dto.Bebe.Value;
+    if (dto.HabitosGerais != null) ficha.HabitosGerais = dto.HabitosGerais;
+    if (dto.Observacoes != null) ficha.Observacoes = dto.Observacoes;
+    if (dto.OutrasDoencas != null) ficha.OutrasDoencas = dto.OutrasDoencas;
+    if (dto.TipoSanguineo != null) ficha.TipoSanguineo = dto.TipoSanguineo;
+    if (dto.DoadorOrgaos.HasValue) ficha.DoadorOrgaos = dto.DoadorOrgaos.Value;
+    if (dto.Alergias != null) ficha.Alergias = dto.Alergias;
+    if (dto.DoencasCronicas != null) ficha.DoencasCronicas = dto.DoencasCronicas;
+    if (dto.MedicamentosContinuos != null) ficha.MedicamentosContinuos = dto.MedicamentosContinuos;
+    if (dto.Condicoes != null) ficha.Condicoes = dto.Condicoes;
     ficha.UpdatedAt = DateTime.UtcNow;
     
     await repo.UpdateAsync(ficha);
@@ -1004,7 +1003,10 @@ app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentReposit
         encaminhamentos = list.Count(d => d.Tipo == "encaminhamento"),
         relatorios = list.Count(d => d.Tipo == "relatorio"),
         outros = list.Count(d => d.Tipo == "outro"),
-        receitasAtivas = list.Count(d => d.Tipo == "receita" && d.Status == "pronto")
+        receitasAtivas = list.Count(d => d.Tipo == "receita" && d.Status == "pronto" && 
+            (string.IsNullOrEmpty(d.Data) || 
+             (DateTime.TryParseExact(d.Data, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt) 
+              && dt >= DateTime.Today.AddDays(-30))))
     };
 
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
@@ -1088,9 +1090,22 @@ app.MapPut("/api/documents/{id}", async (
 
     if (!string.IsNullOrWhiteSpace(updateDto.Data))
     {
-        bool isValid = System.Text.RegularExpressions.Regex.IsMatch(updateDto.Data, @"^\d{2}/\d{2}/\d{4}$");
-        if (!isValid && DateTime.TryParse(updateDto.Data, out _)) isValid = true;
-        if (!isValid) return Results.BadRequest(new { error = "A data informada é inválida. Utilize o formato dd/MM/yyyy." });
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        if (DateTime.TryParseExact(updateDto.Data, "dd/MM/yyyy", culture,
+                System.Globalization.DateTimeStyles.None, out _))
+        {
+            // formato canônico — mantém
+        }
+        else if (DateTime.TryParseExact(updateDto.Data, "yyyy-MM-dd", culture,
+                System.Globalization.DateTimeStyles.None, out var dtIso))
+        {
+            // converte para dd/MM/yyyy ao salvar
+            updateDto.Data = dtIso.ToString("dd/MM/yyyy", culture);
+        }
+        else
+        {
+            return Results.BadRequest(new { error = "A data informada é inválida. Utilize dd/MM/yyyy ou yyyy-MM-dd." });
+        }
     }
 
     doc.Titulo = updateDto.Titulo ?? doc.Titulo;
@@ -1193,22 +1208,19 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     var doc = await repo.GetByIdAsync(id);
     if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
-    // Remove todas as imagens do Cloudinary (Fire-and-forget)
+    await repo.DeleteAsync(id);
+
     if (doc.IdPublicos != null && doc.IdPublicos.Any())
     {
-        _ = Task.Run(async () => {
-            foreach (var publicId in doc.IdPublicos)
+        foreach (var publicId in doc.IdPublicos)
+        {
+            if (!string.IsNullOrWhiteSpace(publicId))
             {
-                if (!string.IsNullOrWhiteSpace(publicId))
-                {
-                    try { await storage.DeleteImageAsync(publicId); }
-                    catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar: {ex.Message}"); }
-                }
+                try { await storage.DeleteImageAsync(publicId); }
+                catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar: {ex.Message}"); }
             }
-        });
+        }
     }
-
-    await repo.DeleteAsync(id);
     await cache.SafeRemoveAsync($"documents_v3_{userId}");
     await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
     return Results.Ok(new { message = "Documento deletado com sucesso." });
@@ -1225,30 +1237,46 @@ app.MapGet("/api/reports/generate", async (int? months, ClaimsPrincipal user, IP
     if (paciente == null || paciente.ConsentimentoIa?.Aceito != true)
         return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
-    var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
+    var culture = System.Globalization.CultureInfo.InvariantCulture;
     var allDocs = await docRepo.GetAllByPacienteIdAsync(userId);
 
     int m = months ?? 6;
     if (m <= 0) m = 6;
-    if (m > 120) m = 120; // limite de 10 anos
+    if (m > 120) m = 120;
     var limitData = DateTime.UtcNow.AddMonths(-m);
-    var recentDocs = allDocs.Where(d => d.CriadoEm >= limitData).ToList();
 
-    var idadeStr = paciente?.DataNascimento ?? "Não informada";
+    // Filtra por data do documento (parseada) com fallback para CriadoEm
+    var recentDocs = allDocs.Where(d =>
+    {
+        if (!string.IsNullOrEmpty(d.Data) &&
+            DateTime.TryParseExact(d.Data, "dd/MM/yyyy", culture,
+                System.Globalization.DateTimeStyles.None, out var docDate))
+            return docDate >= limitData;
+        return d.CriadoEm >= limitData;
+    }).ToList();
+
+    // Envia idade em vez de data de nascimento
+    int idadePaciente = 0;
+    if (DateTime.TryParse(paciente?.DataNascimento, out var nascimento))
+    {
+        idadePaciente = DateTime.Today.Year - nascimento.Year;
+        if (nascimento.Date > DateTime.Today.AddYears(-idadePaciente)) idadePaciente--;
+    }
+
+    var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
 
     var prompt = $@"
 Você é um médico especialista montando um dossiê clínico (prontuário resumido) para outro médico ler antes da consulta.
 Aqui estão os dados do paciente:
 
 [Perfil]:
-Idade/DataNascimento: {idadeStr}, Sexo: {paciente?.Sexo}
+Idade: {idadePaciente} anos, Sexo: {paciente?.Sexo}
 
 [Ficha Médica]:
 Tipo Sanguíneo: {ficha?.TipoSanguineo}
 Alergias: {string.Join(", ", ficha?.Alergias ?? new List<string>())}
 Doenças Crônicas: {string.Join(", ", ficha?.DoencasCronicas ?? new List<string>())}
-
-[Ficha Médica]:
+Medicamentos Contínuos: {string.Join(", ", ficha?.MedicamentosContinuos ?? new List<string>())}
 Histórico Familiar: {ficha?.HistoricoFamiliar}
 Cirurgias: {ficha?.Cirurgias}
 Fuma: {ficha?.Fuma}, Bebe: {ficha?.Bebe}
@@ -1259,7 +1287,8 @@ Obs: {ficha?.Observacoes}
 ";
     foreach (var doc in recentDocs)
     {
-        prompt += $"\n- {doc.Data} | {doc.Tipo.ToUpper()} | {doc.Titulo}: {doc.Resumo} | Diagnóstico: {doc.Diagnostico}";
+        var tipo = string.IsNullOrEmpty(doc.Tipo) ? "DOCUMENTO" : doc.Tipo.ToUpperInvariant();
+        prompt += $"\n- {doc.Data} | {tipo} | {doc.Titulo}: {doc.Resumo} | Diagnóstico: {doc.Diagnostico}";
         if (doc.Medicamentos != null && doc.Medicamentos.Count > 0)
         {
             prompt += $" | Remédios: {string.Join(", ", doc.Medicamentos.Select(med => med.Nome + " " + med.Dosagem))}";
@@ -1288,14 +1317,14 @@ Obs: {ficha?.Observacoes}
     {
         var error = await res.Content.ReadAsStringAsync();
         logger.LogError("Erro da IA ao gerar relatório: {Error}", error);
-        return Results.Json(new { message = "Falha ao gerar relatório", detail = error }, statusCode: 502);
+        return Results.Json(new { message = "Falha ao gerar relatório. Tente novamente mais tarde." }, statusCode: 502);
     }
 
     var json = await res.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
     var report = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
     return Results.Ok(new { Report = report });
-}).RequireAuthorization();
+}).RequireAuthorization().RequireRateLimiting("chat");
 
 app.Run();
 
@@ -1369,7 +1398,7 @@ public class ResultadoExameUpdateDto
     public double Confianca { get; set; } = 1.0;
 }
 
-// --- Helpers de Upload ??????????????????????????????????????????????????????
+// --- Helpers de Upload
 
 static class UploadHelpers
 {
@@ -1378,7 +1407,7 @@ static class UploadHelpers
 
     /// <summary>
     /// SHA-256 de cada arquivo, combinados em ordem num SHA-256 final.
-    /// Hash por arquivo evita ambiguidade de concatenação; a ordem importa (séo páginas).
+    /// Hash por arquivo evita ambiguidade de concatenação; a ordem importa (são páginas).
     /// </summary>
     public static async Task<string> ComputeUploadHashAsync(IReadOnlyList<IFormFile> files, CancellationToken ct)
     {
