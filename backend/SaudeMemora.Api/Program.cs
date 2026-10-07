@@ -58,16 +58,29 @@ builder.Services.AddHostedService<AccountCleanupWorker>();
 builder.Services.AddHostedService<KeepAliveWorker>();
 
 // CORS
-var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173";
-var allowedOrigins = corsOriginsStr.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173,https://localhost:5173,http://127.0.0.1:5173,https://127.0.0.1:5173";
+var allowedOrigins = corsOriginsStr
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .ToArray();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowNextJs", policy =>
+    options.AddPolicy("SaudeMemoraCors", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 
@@ -89,6 +102,15 @@ string GetIpKey(HttpContext ctx)
         return $"{bytes[0]:x2}{bytes[1]:x2}:{bytes[2]:x2}{bytes[3]:x2}:{bytes[4]:x2}{bytes[5]:x2}::/48";
     }
     return ip.ToString();
+}
+
+bool IsSecureRequest(HttpContext context)
+{
+    if (context.Request.IsHttps)
+        return true;
+
+    var forwardedProto = context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
+    return string.Equals(forwardedProto, "https", StringComparison.OrdinalIgnoreCase);
 }
 
 // Rate limit
@@ -248,13 +270,10 @@ _ = Task.Run(async () =>
 });
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi("/openapi/{documentName}.json");
 
 app.UseHttpsRedirection();
-app.UseCors("AllowNextJs");
+app.UseCors("SaudeMemoraCors");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -357,14 +376,25 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
     var token = tokenHandler.CreateToken(tokenDescriptor);
     var jwt = tokenHandler.WriteToken(token);
 
-    var isSecureRequest = string.Equals(context.Request.Scheme, "https", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
+    var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "true", "true", StringComparison.OrdinalIgnoreCase);
+    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
+    var sameSiteMode = cookieSameSite switch
+    {
+        "None" => SameSiteMode.None,
+        "Strict" => SameSiteMode.Strict,
+        _ => SameSiteMode.Lax
+    };
+
+    if (sameSiteMode == SameSiteMode.None && !cookieSecure)
+    {
+        sameSiteMode = SameSiteMode.Lax;
+    }
 
     context.Response.Cookies.Append("auth_token", jwt, new CookieOptions
     {
         HttpOnly = true,
-        SameSite = SameSiteMode.Lax,
-        Secure = isSecureRequest,
+        SameSite = sameSiteMode,
+        Secure = cookieSecure,
         Expires = DateTimeOffset.UtcNow.Add(expiresIn),
         IsEssential = true,
         Path = "/"
@@ -377,14 +407,25 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
 
 app.MapPost("/api/auth/logout", (HttpContext context) =>
 {
-    var isSecureRequest = string.Equals(context.Request.Scheme, "https", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
+    var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "true", "true", StringComparison.OrdinalIgnoreCase);
+    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
+    var sameSiteMode = cookieSameSite switch
+    {
+        "None" => SameSiteMode.None,
+        "Strict" => SameSiteMode.Strict,
+        _ => SameSiteMode.Lax
+    };
+
+    if (sameSiteMode == SameSiteMode.None && !cookieSecure)
+    {
+        sameSiteMode = SameSiteMode.Lax;
+    }
 
     context.Response.Cookies.Delete("auth_token", new CookieOptions
     {
         HttpOnly = true,
-        SameSite = SameSiteMode.Lax,
-        Secure = isSecureRequest,
+        SameSite = sameSiteMode,
+        Secure = cookieSecure,
         Path = "/"
     });
 
@@ -718,11 +759,10 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     // Limpa caches
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
     await cache.SafeRemoveAsync($"ficha_v2_{userId}");
-    await cache.SafeRemoveAsync($"documents_v3_{userId}");
-    await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
+    await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
+    await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     await cache.SafeRemoveAsync($"secstamp_{userId}");
     await cache.SafeRemoveAsync($"ficha_user_{userId}");
-    await cache.SafeRemoveAsync($"docs_user_{userId}");
 
     return Results.Ok(new { message = "Sua conta foi agendada para exclusão e será removida em breve." });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
@@ -972,7 +1012,7 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
-    var cacheKey = $"documents_v3_{userId}";
+    var cacheKey = DocumentRepository.UserDocumentsCacheKey(userId);
     string? cached = null;
     try { cached = await cache.SafeGetStringAsync(cacheKey); } catch (Exception ex) { Console.Error.WriteLine("[Cache Ignorado] " + ex.Message); }
     if (cached != null) return Results.Content(cached, "application/json");
@@ -1013,7 +1053,7 @@ app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentReposit
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
-    var cacheKey = $"documents_count_v3_{userId}";
+    var cacheKey = DocumentRepository.UserDocumentCountCacheKey(userId);
     var cached = await cache.SafeGetStringAsync(cacheKey);
     if (cached != null) return Results.Content(cached, "application/json");
 
@@ -1222,8 +1262,8 @@ app.MapPut("/api/documents/{id}", async (
     }
 
     await repo.UpdateAsync(doc);
-    await cache.SafeRemoveAsync($"documents_v3_{userId}");
-    await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
+    await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
+    await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     return Results.Ok(new { message = "Documento atualizado com sucesso." });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 
@@ -1249,8 +1289,8 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
             }
         }
     }
-    await cache.SafeRemoveAsync($"documents_v3_{userId}");
-    await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
+    await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
+    await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     return Results.Ok(new { message = "Documento deletado com sucesso." });
 }).RequireAuthorization();
 
@@ -1461,8 +1501,8 @@ static class UploadHelpers
 
     public static async Task InvalidateDocumentListCachesAsync(IDistributedCache cache, string userId)
     {
-        await cache.SafeRemoveAsync($"documents_v3_{userId}");
-        await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
+        await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
+        await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     }
 }
 

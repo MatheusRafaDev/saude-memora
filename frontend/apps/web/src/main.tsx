@@ -6,11 +6,17 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import './index.css';
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const normalizedApiUrl = configuredApiUrl && configuredApiUrl !== "undefined" && configuredApiUrl !== "null" && !configuredApiUrl.startsWith("//")
+  ? configuredApiUrl.replace(/\/+$/, "")
+  : null;
+
 // Auth is cookie-backed. The browser handles cookie transmission automatically,
 // so we intentionally avoid a JS-readable bearer token getter.
 setAuthTokenGetter(() => null);
-// The proxy in vite will handle /api calls locally, but in production (Vercel) we need to point to the real backend.
-setBaseUrl(import.meta.env.VITE_API_URL || import.meta.env.BASE_URL.replace(/\/$/, ''));
+// Use an explicit API URL only when configured. In local development we leave the
+// request relative so Vite's proxy can route /api/* to the backend.
+setBaseUrl(normalizedApiUrl);
 
 // Register PWA Service Worker
 if ('serviceWorker' in navigator) {

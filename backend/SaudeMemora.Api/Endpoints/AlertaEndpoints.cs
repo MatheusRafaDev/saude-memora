@@ -31,7 +31,8 @@ public static class AlertaEndpoints
             alerta.Dispensado = true;
 
             await repo.UpdateAsync(doc);
-            await cache.SafeRemoveAsync($"documents_v3_{userId}");
+            await cache.SafeRemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentsCacheKey(userId));
+            await cache.SafeRemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentCountCacheKey(userId));
 
             return Results.Ok(new { message = "Alerta dispensado com sucesso." });
         }).RequireAuthorization();

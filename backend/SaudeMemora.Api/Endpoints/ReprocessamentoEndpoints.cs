@@ -40,8 +40,8 @@ public static class ReprocessamentoEndpoints
             doc.ErrorMessage = string.Empty;
 
             await repo.UpdateAsync(doc);
-            await cache.RemoveAsync($"documents_v3_{userId}");
-            await cache.RemoveAsync($"documents_count_v3_{userId}");
+            await cache.RemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentsCacheKey(userId));
+            await cache.RemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentCountCacheKey(userId));
             
             return Results.Ok(new { message = "Documento enviado para reprocessamento na fila." });
         }).RequireAuthorization().RequireRateLimiting("upload");

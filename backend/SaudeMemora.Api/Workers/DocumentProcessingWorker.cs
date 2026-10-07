@@ -8,6 +8,7 @@ using SaudeMemora.Domain.Entities;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
 using SaudeMemora.Infrastructure.Data;
+using SaudeMemora.Infrastructure.Repositories;
 
 namespace SaudeMemora.Api.Workers;
 
@@ -119,14 +120,14 @@ public class DocumentProcessingWorker : BackgroundService
             // Atualiza o progresso inicial (já em 'processing' pelo lock)
             doc.Progress = 40; // Exemplo: Iniciando OCR
             await repo.UpdateProgressAsync(doc.Id, doc.Progress);
-            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
 
             // Chamada para o Serviço de OCR e IA (que faz OCR.space + Gemini/Groq)
             var extractedData = await ocrAiService.ExtractMultipleDocumentsDataAsync(doc.UrlImagens, doc.Tipo, stoppingToken);
 
             doc.Progress = 90; // Exemplo: OCR e IA finalizados
             await repo.UpdateProgressAsync(doc.Id, doc.Progress);
-            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
 
             if (!extractedData.DocumentoValido)
             {
@@ -297,8 +298,8 @@ public class DocumentProcessingWorker : BackgroundService
             }
             
             await repo.UpdateAsync(doc);
-            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
-            await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
 
             _logger.LogInformation("Documento {DocId} processado com SUCESSO.", doc.Id);
             
@@ -341,8 +342,8 @@ public class DocumentProcessingWorker : BackgroundService
             doc.LockedUntil = null;
             
             await repo.UpdateAsync(doc);
-            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
-            await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
 
             return true;
         }
@@ -388,8 +389,8 @@ public class DocumentProcessingWorker : BackgroundService
             doc.LockedUntil = null; // Libera o lock
             
             await repo.UpdateAsync(doc);
-            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
-            await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
+            await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
 
             return true; // Retorna true porque ele de fato pegou um item da fila (mesmo que com erro)
         }
@@ -421,8 +422,8 @@ public class DocumentProcessingWorker : BackgroundService
             await cache.SafeSetStringAsync(RejectedHashKey(doc.PacienteId, doc.FileHash), message,
                 new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24) });
 
-        await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
-        await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
+        await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
+        await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
 
         await logRepo.CriarLogAsync(new SistemaLog
         {

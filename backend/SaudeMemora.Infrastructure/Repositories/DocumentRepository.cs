@@ -13,6 +13,9 @@ public class DocumentRepository : IDocumentRepository
     private const string QueueIndexName = "ix_status_lockedUntil";
     private const string IdempotencyIndexName = "ux_pacienteId_fileHash";
 
+    public static string UserDocumentsCacheKey(string userId) => $"documents:user:{userId}";
+    public static string UserDocumentCountCacheKey(string userId) => $"documents:count:{userId}";
+
     private readonly IMongoCollection<RegistroDocumento> _documents;
     private readonly IDistributedCache _cache;
 
@@ -78,7 +81,7 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task<IEnumerable<RegistroDocumento>> GetAllByPacienteIdAsync(string userId)
     {
-        var cacheKey = $"docs_user_{userId}";
+        var cacheKey = UserDocumentsCacheKey(userId);
         try
         {
             var cachedData = await _cache.GetStringAsync(cacheKey);
@@ -124,8 +127,8 @@ public class DocumentRepository : IDocumentRepository
     {
         await _documents.InsertOneAsync(docRecord);
         try {
-            await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
-            await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
+            await _cache.RemoveAsync(UserDocumentsCacheKey(docRecord.PacienteId));
+            await _cache.RemoveAsync(UserDocumentCountCacheKey(docRecord.PacienteId));
         } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         return docRecord;
     }
@@ -136,8 +139,8 @@ public class DocumentRepository : IDocumentRepository
         {
             await _documents.InsertOneAsync(docRecord);
             try {
-                await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
-                await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
+                await _cache.RemoveAsync(UserDocumentsCacheKey(docRecord.PacienteId));
+                await _cache.RemoveAsync(UserDocumentCountCacheKey(docRecord.PacienteId));
             } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
             return (docRecord, true);
         }
@@ -167,8 +170,8 @@ public class DocumentRepository : IDocumentRepository
         if (result.ModifiedCount == 0) return false;
 
         try {
-            await _cache.RemoveAsync($"docs_user_{userId}");
-            await _cache.RemoveAsync($"documents_count_v3_{userId}");
+            await _cache.RemoveAsync(UserDocumentsCacheKey(userId));
+            await _cache.RemoveAsync(UserDocumentCountCacheKey(userId));
         } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         return true;
     }
@@ -180,8 +183,8 @@ public class DocumentRepository : IDocumentRepository
         {
             await _documents.DeleteOneAsync(d => d.Id == id);
             try {
-                await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
-                await _cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+                await _cache.RemoveAsync(UserDocumentsCacheKey(doc.PacienteId));
+                await _cache.RemoveAsync(UserDocumentCountCacheKey(doc.PacienteId));
             } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         }
     }
@@ -211,8 +214,8 @@ public class DocumentRepository : IDocumentRepository
         }
 
         try {
-            await _cache.RemoveAsync($"docs_user_{docRecord.PacienteId}");
-            await _cache.RemoveAsync($"documents_count_v3_{docRecord.PacienteId}");
+            await _cache.RemoveAsync(UserDocumentsCacheKey(docRecord.PacienteId));
+            await _cache.RemoveAsync(UserDocumentCountCacheKey(docRecord.PacienteId));
         } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
     }
 
@@ -257,8 +260,8 @@ public class DocumentRepository : IDocumentRepository
         if (doc != null)
         {
             try {
-                await _cache.RemoveAsync($"docs_user_{doc.PacienteId}");
-                await _cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+                await _cache.RemoveAsync(UserDocumentsCacheKey(doc.PacienteId));
+                await _cache.RemoveAsync(UserDocumentCountCacheKey(doc.PacienteId));
             } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
         }
 

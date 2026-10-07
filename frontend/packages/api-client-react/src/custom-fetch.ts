@@ -25,8 +25,19 @@ let _authTokenGetter: AuthTokenGetter | null = null;
  * Useful for Expo bundles that need to call a remote API server.
  * Pass `null` to clear the base URL.
  */
+function normalizeBaseUrl(url: string | null | undefined): string | null {
+  if (typeof url !== "string") return null;
+
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === "undefined" || trimmed === "null" || trimmed.startsWith("//")) {
+    return null;
+  }
+
+  return trimmed.replace(/\/+$/, "");
+}
+
 export function setBaseUrl(url: string | null): void {
-  _baseUrl = url ? url.replace(/\/+$/, "") : null;
+  _baseUrl = normalizeBaseUrl(url);
 }
 
 /**
