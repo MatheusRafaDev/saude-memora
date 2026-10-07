@@ -10,8 +10,13 @@ public class MongoDbContext
 
     public MongoDbContext(IConfiguration configuration)
     {
-        var connectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? configuration["MongoDbSettings:ConnectionString"];
-        var databaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? configuration["MongoDbSettings:DatabaseName"];
+        var connectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING")
+            ?? configuration["MongoDbSettings:ConnectionString"]
+            ?? "mongodb://localhost:27017";
+
+        var databaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME")
+            ?? configuration["MongoDbSettings:DatabaseName"]
+            ?? "saudeMemora";
 
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new InvalidOperationException("MONGODB_CONNECTION_STRING ausente. Configure a string de conexão do MongoDB antes de iniciar a API.");
