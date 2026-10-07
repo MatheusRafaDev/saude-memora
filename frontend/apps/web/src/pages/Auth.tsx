@@ -3,7 +3,6 @@ import { Link, useLocation } from 'wouter';
 import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch } from '@workspace/api-client-react';
-import { setStoredAuthToken } from '@/lib/auth';
 
 export default function Auth() {
   const [, setLocation] = useLocation();
@@ -28,28 +27,16 @@ export default function Auth() {
 
     try {
       if (mode === 'login') {
-        const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
-        if (result?.token) {
-          setStoredAuthToken(result.token);
-          setMessage('Acesso confirmado. Bem-vindo de volta.');
-          setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
-        } else {
-          setError('Erro inesperado ao realizar login.');
-        }
+        await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
+        setMessage('Acesso confirmado. Bem-vindo de volta.');
+        setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
       } else {
         await registerMutation.mutateAsync({
           data: { nome: form.name, dataNascimento: form.birthDate, sexo: form.sex, email: form.email, senha: form.password }
         });
-        const result = await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } }) as unknown as any;
-        if (result?.token) {
-          setStoredAuthToken(result.token);
-          setMessage('Sua conta foi criada. Entrando no painel...');
-          setTimeout(() => { window.location.href = '/visao-geral'; }, 800);
-        } else {
-          setMessage('Sua conta foi criada. Faça login para acessar.');
-          setMode('login');
-          setForm({ ...form, password: '' });
-        }
+        await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
+        setMessage('Sua conta foi criada. Entrando no painel...');
+        setTimeout(() => { window.location.href = '/visao-geral'; }, 800);
       }
     } catch (err: any) {
       if (err.data && Array.isArray(err.data))      setError(err.data.join(', '));

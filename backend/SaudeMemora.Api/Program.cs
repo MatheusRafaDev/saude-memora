@@ -303,7 +303,7 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IPacienteRepos
     return Results.Ok(new { Message = "Paciente registrado com sucesso!" });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
 
-app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository repo, IConfiguration config) =>
+app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository repo, IConfiguration config, HttpContext context) =>
 {
     dto.Email = dto.Email.ToLowerInvariant().Trim();
     var paciente = await repo.GetByEmailAsync(dto.Email);
@@ -357,11 +357,39 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
     var token = tokenHandler.CreateToken(tokenDescriptor);
     var jwt = tokenHandler.WriteToken(token);
 
+    var isSecureRequest = string.Equals(context.Request.Scheme, "https", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
+
+    context.Response.Cookies.Append("auth_token", jwt, new CookieOptions
+    {
+        HttpOnly = true,
+        SameSite = SameSiteMode.Lax,
+        Secure = isSecureRequest,
+        Expires = DateTimeOffset.UtcNow.Add(expiresIn),
+        IsEssential = true,
+        Path = "/"
+    });
+
     return Results.Ok(new {
-        Token = jwt,
         User = new { paciente.Id, paciente.Nome, paciente.Email }
     });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
+
+app.MapPost("/api/auth/logout", (HttpContext context) =>
+{
+    var isSecureRequest = string.Equals(context.Request.Scheme, "https", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault(), "https", StringComparison.OrdinalIgnoreCase);
+
+    context.Response.Cookies.Delete("auth_token", new CookieOptions
+    {
+        HttpOnly = true,
+        SameSite = SameSiteMode.Lax,
+        Secure = isSecureRequest,
+        Path = "/"
+    });
+
+    return Results.Ok(new { Message = "Logout realizado com sucesso." });
+});
 
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger, HttpContext context, IHttpClientFactory httpClientFactory) =>
 {
