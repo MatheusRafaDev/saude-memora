@@ -6,6 +6,16 @@ public static class NetworkHelpers
 {
     public static string GetIpKey(HttpContext ctx)
     {
+        var forwardedFor = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+        {
+            var firstIp = forwardedFor.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(firstIp) && System.Net.IPAddress.TryParse(firstIp, out var forwardedIp))
+            {
+                return forwardedIp.IsIPv4MappedToIPv6 ? forwardedIp.MapToIPv4().ToString() : forwardedIp.ToString();
+            }
+        }
+
         var ip = ctx.Connection.RemoteIpAddress;
         if (ip == null) return "anon";
         if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();

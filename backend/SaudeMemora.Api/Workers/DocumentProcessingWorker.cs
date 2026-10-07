@@ -252,42 +252,43 @@ public class DocumentProcessingWorker : BackgroundService
             }
 
             // Finaliza o processamento com sucesso
-            var dbDoc = await repo.GetByIdAsync(doc.Id!);
-            if (dbDoc != null)
+            var currentDocId = doc.Id;
+            RegistroDocumento? persistedDoc = string.IsNullOrWhiteSpace(currentDocId) ? null : await repo.GetByIdAsync(currentDocId);
+            if (persistedDoc != null)
             {
                 // Preserva edições do usuário que ocorreram enquanto o worker estava processando
-                if (string.IsNullOrEmpty(dbDoc.Titulo) || dbDoc.Titulo == "Novo Documento" || dbDoc.Titulo == "Documento em Processamento" || dbDoc.Titulo == "Desconhecido" || dbDoc.Titulo == doc.Titulo) 
-                    dbDoc.Titulo = doc.Titulo;
-                if (string.IsNullOrEmpty(dbDoc.Tipo) || dbDoc.Tipo == "desconhecido" || dbDoc.Tipo == "outro" || dbDoc.Tipo == doc.Tipo) dbDoc.Tipo = doc.Tipo;
-                if (string.IsNullOrEmpty(dbDoc.Medico) || dbDoc.Medico == doc.Medico) dbDoc.Medico = doc.Medico;
-                if (string.IsNullOrEmpty(dbDoc.Clinica) || dbDoc.Clinica == doc.Clinica) dbDoc.Clinica = doc.Clinica;
-                if (string.IsNullOrEmpty(dbDoc.Data) || dbDoc.Data == doc.Data) dbDoc.Data = doc.Data;
-                if (string.IsNullOrEmpty(dbDoc.Resumo) || dbDoc.Resumo == doc.Resumo) dbDoc.Resumo = doc.Resumo;
-                if (string.IsNullOrEmpty(dbDoc.Diagnostico) || dbDoc.Diagnostico == doc.Diagnostico) dbDoc.Diagnostico = doc.Diagnostico;
-                if (string.IsNullOrEmpty(dbDoc.Crm) || dbDoc.Crm == doc.Crm) dbDoc.Crm = doc.Crm;
-                if (string.IsNullOrEmpty(dbDoc.NomeExame) || dbDoc.NomeExame == doc.NomeExame) dbDoc.NomeExame = doc.NomeExame;
-                if (string.IsNullOrEmpty(dbDoc.TipoExame) || dbDoc.TipoExame == doc.TipoExame) dbDoc.TipoExame = doc.TipoExame;
-                if (string.IsNullOrEmpty(dbDoc.Resultado) || dbDoc.Resultado == doc.Resultado) dbDoc.Resultado = doc.Resultado;
-                if (string.IsNullOrEmpty(dbDoc.Especialidade) || dbDoc.Especialidade == doc.Especialidade) dbDoc.Especialidade = doc.Especialidade;
-                if (string.IsNullOrEmpty(dbDoc.TipoClinico) || dbDoc.TipoClinico == doc.TipoClinico) dbDoc.TipoClinico = doc.TipoClinico;
-                if (string.IsNullOrEmpty(dbDoc.Conteudo) || dbDoc.Conteudo == doc.Conteudo) dbDoc.Conteudo = doc.Conteudo;
-                if (string.IsNullOrEmpty(dbDoc.Conclusoes) || dbDoc.Conclusoes == doc.Conclusoes) dbDoc.Conclusoes = doc.Conclusoes;
-                if (string.IsNullOrEmpty(dbDoc.Observacoes) || dbDoc.Observacoes == doc.Observacoes) dbDoc.Observacoes = doc.Observacoes;
+                if (string.IsNullOrEmpty(persistedDoc.Titulo) || persistedDoc.Titulo == "Novo Documento" || persistedDoc.Titulo == "Documento em Processamento" || persistedDoc.Titulo == "Desconhecido" || persistedDoc.Titulo == doc.Titulo)
+                    persistedDoc.Titulo = doc.Titulo;
+                if (string.IsNullOrEmpty(persistedDoc.Tipo) || persistedDoc.Tipo == "desconhecido" || persistedDoc.Tipo == "outro" || persistedDoc.Tipo == doc.Tipo) persistedDoc.Tipo = doc.Tipo;
+                if (string.IsNullOrEmpty(persistedDoc.Medico) || persistedDoc.Medico == doc.Medico) persistedDoc.Medico = doc.Medico;
+                if (string.IsNullOrEmpty(persistedDoc.Clinica) || persistedDoc.Clinica == doc.Clinica) persistedDoc.Clinica = doc.Clinica;
+                if (string.IsNullOrEmpty(persistedDoc.Data) || persistedDoc.Data == doc.Data) persistedDoc.Data = doc.Data;
+                if (string.IsNullOrEmpty(persistedDoc.Resumo) || persistedDoc.Resumo == doc.Resumo) persistedDoc.Resumo = doc.Resumo;
+                if (string.IsNullOrEmpty(persistedDoc.Diagnostico) || persistedDoc.Diagnostico == doc.Diagnostico) persistedDoc.Diagnostico = doc.Diagnostico;
+                if (string.IsNullOrEmpty(persistedDoc.Crm) || persistedDoc.Crm == doc.Crm) persistedDoc.Crm = doc.Crm;
+                if (string.IsNullOrEmpty(persistedDoc.NomeExame) || persistedDoc.NomeExame == doc.NomeExame) persistedDoc.NomeExame = doc.NomeExame;
+                if (string.IsNullOrEmpty(persistedDoc.TipoExame) || persistedDoc.TipoExame == doc.TipoExame) persistedDoc.TipoExame = doc.TipoExame;
+                if (string.IsNullOrEmpty(persistedDoc.Resultado) || persistedDoc.Resultado == doc.Resultado) persistedDoc.Resultado = doc.Resultado;
+                if (string.IsNullOrEmpty(persistedDoc.Especialidade) || persistedDoc.Especialidade == doc.Especialidade) persistedDoc.Especialidade = doc.Especialidade;
+                if (string.IsNullOrEmpty(persistedDoc.TipoClinico) || persistedDoc.TipoClinico == doc.TipoClinico) persistedDoc.TipoClinico = doc.TipoClinico;
+                if (string.IsNullOrEmpty(persistedDoc.Conteudo) || persistedDoc.Conteudo == doc.Conteudo) persistedDoc.Conteudo = doc.Conteudo;
+                if (string.IsNullOrEmpty(persistedDoc.Conclusoes) || persistedDoc.Conclusoes == doc.Conclusoes) persistedDoc.Conclusoes = doc.Conclusoes;
+                if (string.IsNullOrEmpty(persistedDoc.Observacoes) || persistedDoc.Observacoes == doc.Observacoes) persistedDoc.Observacoes = doc.Observacoes;
 
-                dbDoc.TextoExtraido = doc.TextoExtraido;
-                dbDoc.Medicamentos = doc.Medicamentos;
-                dbDoc.ConteudoIndentado = doc.ConteudoIndentado;
-                dbDoc.ResultadosExame = doc.ResultadosExame;
-                dbDoc.CamposBaixaConfianca = doc.CamposBaixaConfianca;
-                dbDoc.RevisaoPendente = doc.RevisaoPendente;
-                dbDoc.Alertas = doc.Alertas;
+                persistedDoc.TextoExtraido = doc.TextoExtraido;
+                persistedDoc.Medicamentos = doc.Medicamentos ?? new List<MedicamentoDocumento>();
+                persistedDoc.ConteudoIndentado = doc.ConteudoIndentado ?? new List<LinhaIndentadaDocumento>();
+                persistedDoc.ResultadosExame = doc.ResultadosExame ?? new List<ResultadoExameItem>();
+                persistedDoc.CamposBaixaConfianca = doc.CamposBaixaConfianca ?? new List<string>();
+                persistedDoc.RevisaoPendente = doc.RevisaoPendente;
+                persistedDoc.Alertas = doc.Alertas ?? new List<AlertaDocumento>();
 
-                dbDoc.Status = "pronto";
-                dbDoc.Progress = 100;
-                dbDoc.ErrorMessage = string.Empty;
-                dbDoc.LockedBy = string.Empty;
-                dbDoc.LockedUntil = null;
-                doc = dbDoc;
+                persistedDoc.Status = "pronto";
+                persistedDoc.Progress = 100;
+                persistedDoc.ErrorMessage = string.Empty;
+                persistedDoc.LockedBy = string.Empty;
+                persistedDoc.LockedUntil = null;
+                doc = persistedDoc;
             }
             else
             {

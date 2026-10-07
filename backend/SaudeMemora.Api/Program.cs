@@ -90,14 +90,102 @@ bool IsSecureRequest(HttpContext context)
     return string.Equals(forwardedProto, "https", StringComparison.OrdinalIgnoreCase);
 }
 
+TimeSpan ParseJwtLifetime(IConfiguration config)
+{
+    var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN")?.Trim()?.ToLowerInvariant() ?? config["JwtSettings:ExpiresIn"]?.Trim()?.ToLowerInvariant();
+    if (string.IsNullOrEmpty(jwtExpiresInStr))
+        return TimeSpan.FromDays(7);
+
+    if (jwtExpiresInStr.EndsWith("h") && double.TryParse(jwtExpiresInStr.TrimEnd('h'), out var hours))
+        return TimeSpan.FromHours(hours);
+
+    if (jwtExpiresInStr.EndsWith("d") && double.TryParse(jwtExpiresInStr.TrimEnd('d'), out var days))
+        return TimeSpan.FromDays(days);
+
+    if (double.TryParse(jwtExpiresInStr, out var rawDays))
+        return TimeSpan.FromDays(rawDays);
+
+    return TimeSpan.FromDays(7);
+}
+
+void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
+{
+    var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "false", "true", StringComparison.OrdinalIgnoreCase);
+    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
+    var sameSiteMode = cookieSameSite switch
+    {
+        "None" => SameSiteMode.None,
+        "Strict" => SameSiteMode.Strict,
+        _ => SameSiteMode.Lax
+    };
+
+    if (sameSiteMode == SameSiteMode.None && !cookieSecure)
+    {
+        sameSiteMode = SameSiteMode.Lax;
+    }
+
+    context.Response.Cookies.Append("auth_token", jwt, new CookieOptions
+    {
+        HttpOnly = true,
+        SameSite = sameSiteMode,
+        Secure = cookieSecure,
+        Expires = DateTimeOffset.UtcNow.Add(expiresIn),
+        IsEssential = true,
+        Path = "/"
+    });
+}
+
+string CreateJwtToken(Paciente paciente, IConfiguration config)
+{
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? config["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT_SECRET_KEY is missing.");
+    var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? config["JwtSettings:Issuer"];
+    var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? config["JwtSettings:Audience"];
+    var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret));
+    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
+
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, paciente.Id ?? string.Empty),
+            new Claim(ClaimTypes.Email, paciente.Email),
+            new Claim(ClaimTypes.Name, paciente.Nome),
+            new Claim("SecurityStamp", paciente.SecurityStamp ?? string.Empty)
+        }),
+        Expires = DateTime.UtcNow.Add(ParseJwtLifetime(config)),
+        Issuer = jwtIssuer,
+        Audience = jwtAudience,
+        SigningCredentials = credentials
+    };
+
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    return tokenHandler.WriteToken(token);
+}
+
 // Rate limit
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = 429;
+    o.AddPolicy("register", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        NetworkHelpers.GetIpKey(ctx),
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
+    o.AddPolicy("login", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        NetworkHelpers.GetIpKey(ctx),
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+    o.AddPolicy("refresh", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        NetworkHelpers.GetIpKey(ctx),
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
+    o.AddPolicy("passwordRecovery", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        NetworkHelpers.GetIpKey(ctx),
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 3, Window = TimeSpan.FromMinutes(10) }));
+    o.AddPolicy("passwordReset", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+        NetworkHelpers.GetIpKey(ctx),
+        _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(10) }));
     o.AddPolicy("auth", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
         NetworkHelpers.GetIpKey(ctx),
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1) }));
-        
+
     o.AddPolicy("upload", ctx => System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
         ctx.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? NetworkHelpers.GetIpKey(ctx),
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
@@ -164,29 +252,43 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var token = JwtTokenReader.GetJwtTokenFromRequest(context.Request);
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    context.Token = token;
+                }
+
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 var userManager = context.HttpContext.RequestServices.GetRequiredService<IPacienteRepository>();
                 var cache = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>();
                 var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
                 var stamp = context.Principal?.FindFirstValue("SecurityStamp");
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    var cachedStamp = await cache.SafeGetStringAsync($"secstamp_{userId}");
-                    if (cachedStamp == null)
-                    {
-                        var user = await userManager.GetByIdAsync(userId);
-                        if (user != null)
-                        {
-                            cachedStamp = user.IsDeleting ? "DELETED" : user.SecurityStamp;
-                            await cache.SafeSetStringAsync($"secstamp_{userId}", cachedStamp, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60) });
-                        }
-                    }
 
-                    if (cachedStamp == null || cachedStamp == "DELETED" || cachedStamp != stamp)
+                if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(stamp))
+                {
+                    context.Fail("Token sem identidade válida.");
+                    return;
+                }
+
+                var cachedStamp = await cache.SafeGetStringAsync($"secstamp_{userId}");
+                if (cachedStamp == null)
+                {
+                    var user = await userManager.GetByIdAsync(userId);
+                    if (user != null)
                     {
-                        context.Fail("Security stamp inválido ou conta excluída.");
+                        cachedStamp = user.IsDeleting ? "DELETED" : user.SecurityStamp;
+                        await cache.SafeSetStringAsync($"secstamp_{userId}", cachedStamp ?? string.Empty, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60) });
                     }
+                }
+
+                if (cachedStamp == null || cachedStamp == "DELETED" || cachedStamp != stamp)
+                {
+                    context.Fail("Security stamp inválido ou conta excluída.");
                 }
             }
         };
@@ -253,7 +355,6 @@ _ = Task.Run(async () =>
 // Configure the HTTP request pipeline.
 app.MapOpenApi("/openapi/{documentName}.json");
 
-app.UseHttpsRedirection();
 app.UseCors("SaudeMemoraCors");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -261,6 +362,7 @@ app.UseRateLimiter();
 
 // --- Health / Ping
 app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).AllowAnonymous();
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok", timestamp = DateTime.UtcNow })).AllowAnonymous();
 
 app.MapConsentimentoEndpoints();
 app.MapReprocessamentoEndpoints();
@@ -289,7 +391,8 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IPacienteRepos
         DataNascimento = dto.DataNascimento,
         Sexo = dto.Sexo,
         Email = dto.Email,
-        Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha)
+        Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
+        SecurityStamp = Guid.NewGuid().ToString("N")
     };
 
     try
@@ -301,7 +404,7 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IPacienteRepos
         return Results.BadRequest(new[] { "Email já cadastrado." });
     }
     return Results.Ok(new { Message = "Paciente registrado com sucesso!" });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("register");
 
 app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository repo, IConfiguration config, HttpContext context) =>
 {
@@ -309,7 +412,6 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null || paciente.IsDeleting)
     {
-        // Previne timing attack
         BCrypt.Net.BCrypt.Verify(dto.Senha, "$2a$11$yKWev6D/v/mDpwK9y2m8.evF7U20l03B.v48v5N60/D7Q/r3v1E4O");
         return Results.BadRequest(new[] { "Email ou senha inválidos." });
     }
@@ -319,76 +421,44 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
         return Results.BadRequest(new[] { "Email ou senha inválidos." });
     }
 
-    // Generate Token
-    var tokenHandler = new JwtSecurityTokenHandler();
-    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? config["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT_SECRET_KEY is missing.");
-    var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? config["JwtSettings:Issuer"];
-    var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? config["JwtSettings:Audience"];
-    var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN")?.Trim()?.ToLowerInvariant();
-    TimeSpan expiresIn = TimeSpan.FromDays(7); // Default 7 days
-    if (!string.IsNullOrEmpty(jwtExpiresInStr))
-    {
-        if (jwtExpiresInStr.EndsWith("h") && double.TryParse(jwtExpiresInStr.TrimEnd('h'), out var hours))
-            expiresIn = TimeSpan.FromHours(hours);
-        else if (jwtExpiresInStr.EndsWith("d") && double.TryParse(jwtExpiresInStr.TrimEnd('d'), out var days))
-            expiresIn = TimeSpan.FromDays(days);
-        else if (double.TryParse(jwtExpiresInStr, out var rawDays)) // fallback documentado como dias
-            expiresIn = TimeSpan.FromDays(rawDays);
-    }
-    
-    var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret));
-    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
-
-    var tokenDescriptor = new SecurityTokenDescriptor
-    {
-        Subject = new ClaimsIdentity(new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, paciente.Id!),
-            new Claim(ClaimTypes.Email, paciente.Email),
-            new Claim(ClaimTypes.Name, paciente.Nome),
-            new Claim("SecurityStamp", paciente.SecurityStamp ?? string.Empty)
-        }),
-        Expires = DateTime.UtcNow.Add(expiresIn),
-        Issuer = jwtIssuer,
-        Audience = jwtAudience,
-        SigningCredentials = credentials
-    };
-
-    var token = tokenHandler.CreateToken(tokenDescriptor);
-    var jwt = tokenHandler.WriteToken(token);
-
-    var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "true", "true", StringComparison.OrdinalIgnoreCase);
-    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
-    var sameSiteMode = cookieSameSite switch
-    {
-        "None" => SameSiteMode.None,
-        "Strict" => SameSiteMode.Strict,
-        _ => SameSiteMode.Lax
-    };
-
-    if (sameSiteMode == SameSiteMode.None && !cookieSecure)
-    {
-        sameSiteMode = SameSiteMode.Lax;
-    }
-
-    context.Response.Cookies.Append("auth_token", jwt, new CookieOptions
-    {
-        HttpOnly = true,
-        SameSite = sameSiteMode,
-        Secure = cookieSecure,
-        Expires = DateTimeOffset.UtcNow.Add(expiresIn),
-        IsEssential = true,
-        Path = "/"
-    });
+    var expiresIn = ParseJwtLifetime(config);
+    var jwt = CreateJwtToken(paciente, config);
+    SetAuthCookie(context, jwt, expiresIn);
 
     return Results.Ok(new {
         User = new { paciente.Id, paciente.Nome, paciente.Email }
     });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("login");
+
+app.MapPost("/api/auth/refresh", async (ClaimsPrincipal user, IPacienteRepository repo, IConfiguration config, HttpContext context) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrWhiteSpace(userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var paciente = await repo.GetByIdAsync(userId);
+    if (paciente == null || paciente.IsDeleting)
+    {
+        return Results.Unauthorized();
+    }
+
+    var currentStamp = user.FindFirstValue("SecurityStamp");
+    if (string.IsNullOrWhiteSpace(currentStamp) || currentStamp != paciente.SecurityStamp)
+    {
+        return Results.Unauthorized();
+    }
+
+    var jwt = CreateJwtToken(paciente, config);
+    SetAuthCookie(context, jwt, ParseJwtLifetime(config));
+
+    return Results.Ok(new { User = new { paciente.Id, paciente.Nome, paciente.Email } });
+}).RequireAuthorization().RequireRateLimiting("refresh");
 
 app.MapPost("/api/auth/logout", (HttpContext context) =>
 {
-    var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "true", "true", StringComparison.OrdinalIgnoreCase);
+    var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "false", "true", StringComparison.OrdinalIgnoreCase);
     var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
     var sameSiteMode = cookieSameSite switch
     {
@@ -422,7 +492,6 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
     var paciente = await repo.GetByEmailAsync(dto.Email);
     if (paciente == null)
     {
-        // Retorna Ok para não expor quais emails existem na base
         return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
     }
 
@@ -486,7 +555,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
     }
 
     return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("passwordRecovery");
 
 app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
@@ -507,13 +576,13 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRe
     paciente.Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
     paciente.ResetPasswordToken = null;
     paciente.ResetPasswordExpiry = null;
-    paciente.SecurityStamp = Guid.NewGuid().ToString("N"); // Invalidate previous tokens
+    paciente.SecurityStamp = Guid.NewGuid().ToString("N");
 
     await repo.UpdateAsync(paciente);
     await cache.SafeRemoveAsync($"secstamp_{paciente.Id}");
 
     return Results.Ok(new { Message = "Sua senha foi redefinida com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("auth");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("passwordReset");
 
 //  Paciente Endpoints 
 
@@ -797,14 +866,14 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
         var newFicha = new FichaMedica
         {
             PacienteId = userId,
-            HistoricoFamiliar = dto.HistoricoFamiliar,
-            Cirurgias = dto.Cirurgias,
+            HistoricoFamiliar = dto.HistoricoFamiliar ?? string.Empty,
+            Cirurgias = dto.Cirurgias ?? string.Empty,
             Fuma = dto.Fuma ?? false,
             Bebe = dto.Bebe ?? false,
-            HabitosGerais = dto.HabitosGerais,
-            Observacoes = dto.Observacoes,
+            HabitosGerais = dto.HabitosGerais ?? string.Empty,
+            Observacoes = dto.Observacoes ?? string.Empty,
             Condicoes = dto.Condicoes ?? new List<CondicaoMedica>(),
-            OutrasDoencas = dto.OutrasDoencas,
+            OutrasDoencas = dto.OutrasDoencas ?? string.Empty,
             TipoSanguineo = dto.TipoSanguineo,
             DoadorOrgaos = dto.DoadorOrgaos ?? false,
             Alergias = dto.Alergias ?? new List<string>(),

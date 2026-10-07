@@ -19,9 +19,10 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 ENV PORT=8080
+EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:$PORT/api/ping || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD /bin/sh -c 'curl -fsS http://localhost:${PORT}/api/ping || exit 1'
 
 USER app
-ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=http://+:$PORT dotnet SaudeMemora.Api.dll"]
+ENTRYPOINT ["/bin/sh", "-c", "export ASPNETCORE_URLS=http://+:${PORT}; exec dotnet SaudeMemora.Api.dll"]

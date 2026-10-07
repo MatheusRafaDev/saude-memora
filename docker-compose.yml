@@ -1,0 +1,63 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: saudememora-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      PORT: 8080
+      MONGODB_CONNECTION_STRING: mongodb://mongo:27017
+      MONGODB_DATABASE_NAME: saudeMemora
+      REDIS_CONNECTION_STRING: redis:6379
+      JWT_SECRET_KEY: replace-with-a-long-random-secret-32-chars
+      JWT_ISSUER: saude-memora
+      JWT_AUDIENCE: saude-memora
+      JWT_EXPIRES_IN: 7d
+      FRONTEND_URL: http://localhost:5173
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      COOKIE_SECURE: "false"
+      COOKIE_SAME_SITE: Lax
+      CLOUDINARY_CLOUD_NAME: ""
+      CLOUDINARY_API_KEY: ""
+      CLOUDINARY_API_SECRET: ""
+      GEMINI_API_KEY: ""
+      OCR_SPACE_API_KEY: ""
+      BREVO_API_KEY: ""
+      BREVO_FROM_EMAIL: nao-responda@saudememora.com.br
+      TRUSTED_PROXIES: ""
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  mongo:
+    image: mongo:7
+    container_name: saudememora-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: saudeMemora
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: saudememora-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "no"]
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongo_data:
+  redis_data:
