@@ -111,7 +111,7 @@ TimeSpan ParseJwtLifetime(IConfiguration config)
 void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
 {
     var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "false", "true", StringComparison.OrdinalIgnoreCase);
-    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
+    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? (IsSecureRequest(context) ? "None" : "Lax");
     var sameSiteMode = cookieSameSite switch
     {
         "None" => SameSiteMode.None,
@@ -459,7 +459,7 @@ app.MapPost("/api/auth/refresh", async (ClaimsPrincipal user, IPacienteRepositor
 app.MapPost("/api/auth/logout", (HttpContext context) =>
 {
     var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "false", "true", StringComparison.OrdinalIgnoreCase);
-    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
+    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? (IsSecureRequest(context) ? "None" : "Lax");
     var sameSiteMode = cookieSameSite switch
     {
         "None" => SameSiteMode.None,
