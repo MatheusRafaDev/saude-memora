@@ -65,18 +65,12 @@ public class CloudinaryStorageService : IImageStorageService
 
         var cloudinary = GetCloudinaryOrThrow();
 
-        var apiSecret = cloudinary.Api?.Account?.ApiSecret ?? throw new InvalidOperationException("Chave secreta do Cloudinary não disponível.");
-
-        // AuthToken usa API fluente: Duration/Expiration são métodos, não propriedades
-        var token = new AuthToken(apiSecret)
-            .Duration(900); // 15 minutos em segundos
-
         return cloudinary.Api.UrlImgUp
                          .Action("image")
                          .ResourceType("image")
                          .Type("authenticated")
                          .Secure(true)
-                         .AuthToken(token)
+                         .Signed(true)
                          .BuildUrl(publicId);
     }
 
