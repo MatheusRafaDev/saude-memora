@@ -69,6 +69,7 @@ public class DocumentoExtraidoDto
     public List<ConfiancaCampoDto> Confiancas { get; set; } = new();
     public string TextoExtraido { get; set; } = string.Empty;
     public string TextoFormatado { get; set; } = string.Empty;
+    public bool RevisaoPendente { get; set; } = false;
 }
 
 public class MedicamentoExtraidoDto

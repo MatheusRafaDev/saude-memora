@@ -175,12 +175,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         var user = await userManager.GetByIdAsync(userId);
                         if (user != null)
                         {
-                            cachedStamp = user.SecurityStamp;
+                            cachedStamp = user.IsDeleting ? "DELETED" : user.SecurityStamp;
                             await cache.SafeSetStringAsync($"secstamp_{userId}", cachedStamp, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60) });
                         }
                     }
 
-                    if (cachedStamp == null || cachedStamp != stamp)
+                    if (cachedStamp == null || cachedStamp == "DELETED" || cachedStamp != stamp)
                     {
                         context.Fail("Security stamp inválido ou conta excluída.");
                     }
@@ -238,6 +238,22 @@ _ = Task.Run(async () =>
     try { await SistemaLogRepository.EnsureIndexesAsync(dbContext, token); }
     catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Logs (TTL)"); }
     
+    try
+    {
+        var filter = Builders<Paciente>.Filter.Exists("securityStamp", false);
+        var pacientes = await dbContext.Pacientes.Find(filter).ToListAsync(token);
+        foreach(var p in pacientes)
+        {
+            await dbContext.Pacientes.UpdateOneAsync(
+                Builders<Paciente>.Filter.Eq(x => x.Id, p.Id),
+                Builders<Paciente>.Update.Set("securityStamp", Guid.NewGuid().ToString("N")),
+                cancellationToken: token);
+        }
+        if (pacientes.Count > 0)
+            app.Logger.LogInformation("[Mongo] Preenchido SecurityStamp em {Count} pacientes.", pacientes.Count);
+    }
+    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha na migração do SecurityStamp"); }
+
     app.Logger.LogInformation("[Mongo] Processo de criação de índices concluído.");
 });
 
@@ -301,7 +317,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
 {
     dto.Email = dto.Email.ToLowerInvariant().Trim();
     var paciente = await repo.GetByEmailAsync(dto.Email);
-    if (paciente == null)
+    if (paciente == null || paciente.IsDeleting)
     {
         // Previne timing attack
         BCrypt.Net.BCrypt.Verify(dto.Senha, "$2a$11$yKWev6D/v/mDpwK9y2m8.evF7U20l03B.v48v5N60/D7Q/r3v1E4O");
@@ -667,6 +683,8 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     // Em vez de apagar tudo sincronicamente, marca para exclusão
     paciente.IsDeleting = true;
     paciente.SecurityStamp = Guid.NewGuid().ToString("N"); // Invalida tokens atuais
+    paciente.TokenEmergencia = null;
+    paciente.TokenEmergenciaExpiraEm = null;
     await repo.UpdateAsync(paciente);
 
     // Limpa caches
@@ -675,6 +693,8 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     await cache.SafeRemoveAsync($"documents_v3_{userId}");
     await cache.SafeRemoveAsync($"documents_count_v3_{userId}");
     await cache.SafeRemoveAsync($"secstamp_{userId}");
+    await cache.SafeRemoveAsync($"ficha_user_{userId}");
+    await cache.SafeRemoveAsync($"docs_user_{userId}");
 
     return Results.Ok(new { message = "Sua conta foi agendada para exclusão e será removida em breve." });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
@@ -949,7 +969,9 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         progress = d.Progress,
         errorMessage = d.ErrorMessage,
         criadoEm = d.CriadoEm,
-        revisaoPendente = d.RevisaoPendente
+        revisaoPendente = d.RevisaoPendente,
+        alertas = d.Alertas,
+        revisadoEm = d.RevisadoEm
     }).OrderByDescending(d => d.criadoEm).ToList();
 
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
@@ -1041,7 +1063,9 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         camposBaixaConfianca = doc.CamposBaixaConfianca,
         progress = doc.Progress,
         errorMessage = doc.ErrorMessage,
-        criadoEm = doc.CriadoEm
+        criadoEm = doc.CriadoEm,
+        alertas = doc.Alertas,
+        revisadoEm = doc.RevisadoEm
     });
 }).RequireAuthorization();
 
@@ -1385,18 +1409,4 @@ static class UploadHelpers
     }
 }
 
-public static class DistributedCacheExtensions
-{
-    public static async Task<string?> SafeGetStringAsync(this Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, string key, CancellationToken ct = default)
-    {
-        try { return await Microsoft.Extensions.Caching.Distributed.DistributedCacheExtensions.GetStringAsync(cache, key, ct); } catch { return null; }
-    }
-    public static async Task SafeSetStringAsync(this Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, string key, string value, Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions options, CancellationToken ct = default)
-    {
-        try { await Microsoft.Extensions.Caching.Distributed.DistributedCacheExtensions.SetStringAsync(cache, key, value, options, ct); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
-    }
-    public static async Task SafeRemoveAsync(this Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, string key, CancellationToken ct = default)
-    {
-        try { await cache.RemoveAsync(key, ct); } catch (Exception ex) { Console.Error.WriteLine("[Ignored Exception] " + ex.Message); }
-    }
-}
+

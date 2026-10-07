@@ -188,9 +188,9 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task UpdateAsync(RegistroDocumento docRecord)
     {
-        var filter = Builders<RegistroDocumento>.Filter.Where(d => d.Id == docRecord.Id && d.Version == docRecord.Version);
         var oldVersion = docRecord.Version;
         docRecord.Version++;
+        var filter = Builders<RegistroDocumento>.Filter.Where(d => d.Id == docRecord.Id && d.Version == oldVersion);
 
         var result = await _documents.ReplaceOneAsync(filter, docRecord);
         if (result.ModifiedCount == 0)
@@ -199,8 +199,14 @@ public class DocumentRepository : IDocumentRepository
             if (dbDoc != null)
             {
                 // Conflito: releitura e merge simples de versão
-                docRecord.Version = dbDoc.Version + 1;
-                await _documents.ReplaceOneAsync(d => d.Id == docRecord.Id && d.Version == dbDoc.Version, docRecord);
+                var currentVersion = dbDoc.Version;
+                docRecord.Version = currentVersion + 1;
+                var retryResult = await _documents.ReplaceOneAsync(d => d.Id == docRecord.Id && d.Version == currentVersion, docRecord);
+                
+                if (retryResult.ModifiedCount == 0)
+                {
+                    throw new MongoException("Falha de concorrência ao atualizar documento após retry.");
+                }
             }
         }
 
@@ -228,6 +234,10 @@ public class DocumentRepository : IDocumentRepository
             Builders<RegistroDocumento>.Filter.Or(
                 Builders<RegistroDocumento>.Filter.Eq(d => d.LockedUntil, null),
                 Builders<RegistroDocumento>.Filter.Lt(d => d.LockedUntil, now)
+            ),
+            Builders<RegistroDocumento>.Filter.Or(
+                Builders<RegistroDocumento>.Filter.Eq(d => d.NextAttemptAt, null),
+                Builders<RegistroDocumento>.Filter.Lt(d => d.NextAttemptAt, now)
             )
         );
 
@@ -263,13 +273,28 @@ public class DocumentRepository : IDocumentRepository
             Builders<RegistroDocumento>.Filter.Lt(d => d.LockedUntil, now)
         );
 
-        var update = Builders<RegistroDocumento>.Update
-            .Set(d => d.Status, "pending")
-            .Set(d => d.LockedBy, string.Empty)
-            .Set(d => d.LockedUntil, null)
-            .Inc(d => d.Version, 1);
-
-        var result = await _documents.UpdateManyAsync(filter, update);
-        return (int)result.ModifiedCount;
+        var docs = await _documents.Find(filter).ToListAsync();
+        int count = 0;
+        foreach (var doc in docs)
+        {
+            doc.Attempts++;
+            if (doc.Attempts >= 3)
+            {
+                doc.Status = "failed";
+                doc.ErrorMessage = "Tempo limite de processamento excedido múltiplas vezes.";
+            }
+            else
+            {
+                doc.Status = "pending";
+                doc.NextAttemptAt = DateTime.UtcNow.AddSeconds(doc.Attempts == 1 ? 30 : doc.Attempts == 2 ? 120 : 600);
+            }
+            doc.LockedBy = string.Empty;
+            doc.LockedUntil = null;
+            doc.Version++;
+            
+            await _documents.ReplaceOneAsync(d => d.Id == doc.Id, doc);
+            count++;
+        }
+        return count;
     }
 }

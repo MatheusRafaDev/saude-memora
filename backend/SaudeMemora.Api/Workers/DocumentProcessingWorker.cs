@@ -7,6 +7,7 @@ using SaudeMemora.Application.Exceptions;
 using SaudeMemora.Domain.Entities;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
+using SaudeMemora.Infrastructure.Data;
 
 namespace SaudeMemora.Api.Workers;
 
@@ -118,14 +119,14 @@ public class DocumentProcessingWorker : BackgroundService
             // Atualiza o progresso inicial (já em 'processing' pelo lock)
             doc.Progress = 40; // Exemplo: Iniciando OCR
             await repo.UpdateProgressAsync(doc.Id, doc.Progress);
-            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
 
             // Chamada para o Serviço de OCR e IA (que faz OCR.space + Gemini/Groq)
             var extractedData = await ocrAiService.ExtractMultipleDocumentsDataAsync(doc.UrlImagens, doc.Tipo, stoppingToken);
 
             doc.Progress = 90; // Exemplo: OCR e IA finalizados
             await repo.UpdateProgressAsync(doc.Id, doc.Progress);
-            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
 
             if (!extractedData.DocumentoValido)
             {
@@ -296,8 +297,8 @@ public class DocumentProcessingWorker : BackgroundService
             }
             
             await repo.UpdateAsync(doc);
-            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
-            await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
 
             _logger.LogInformation("Documento {DocId} processado com SUCESSO.", doc.Id);
             
@@ -340,9 +341,19 @@ public class DocumentProcessingWorker : BackgroundService
             doc.LockedUntil = null;
             
             await repo.UpdateAsync(doc);
-            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
-            await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
 
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignora quando está desligando
+            _logger.LogInformation("Processamento cancelado por shutdown.");
+            doc.Status = "pending";
+            doc.LockedBy = string.Empty;
+            doc.LockedUntil = null;
+            await repo.UpdateAsync(doc);
             return true;
         }
         catch (Exception ex)
@@ -369,6 +380,7 @@ public class DocumentProcessingWorker : BackgroundService
                 // Devolve para pending para retry automático mais tarde
                 doc.Status = "pending";
                 doc.Progress = 25; // Volta ao estágio original
+                doc.NextAttemptAt = DateTime.UtcNow.AddSeconds(doc.Attempts == 1 ? 30 : doc.Attempts == 2 ? 120 : 600);
             }
 
             doc.ErrorMessage = ex.Message;
@@ -376,8 +388,8 @@ public class DocumentProcessingWorker : BackgroundService
             doc.LockedUntil = null; // Libera o lock
             
             await repo.UpdateAsync(doc);
-            await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
-            await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
+            await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
 
             return true; // Retorna true porque ele de fato pegou um item da fila (mesmo que com erro)
         }
@@ -403,14 +415,14 @@ public class DocumentProcessingWorker : BackgroundService
         // 3. Marcadores temporários: o front (polling) descobre que foi recusado; reenviar o mesmo arquivo é recusado na hora
         var marker = JsonSerializer.Serialize(new { userId = doc.PacienteId, message });
         if (!string.IsNullOrEmpty(doc.Id))
-            await cache.SetStringAsync(RejectedDocKey(doc.Id), marker,
+            await cache.SafeSetStringAsync(RejectedDocKey(doc.Id), marker,
                 new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) });
         if (!string.IsNullOrEmpty(doc.FileHash))
-            await cache.SetStringAsync(RejectedHashKey(doc.PacienteId, doc.FileHash), message,
+            await cache.SafeSetStringAsync(RejectedHashKey(doc.PacienteId, doc.FileHash), message,
                 new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24) });
 
-        await cache.RemoveAsync($"documents_v3_{doc.PacienteId}");
-        await cache.RemoveAsync($"documents_count_v3_{doc.PacienteId}");
+        await cache.SafeRemoveAsync($"documents_v3_{doc.PacienteId}");
+        await cache.SafeRemoveAsync($"documents_count_v3_{doc.PacienteId}");
 
         await logRepo.CriarLogAsync(new SistemaLog
         {

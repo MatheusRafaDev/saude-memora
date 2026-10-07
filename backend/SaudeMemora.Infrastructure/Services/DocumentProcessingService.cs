@@ -78,7 +78,10 @@ public class DocumentProcessingService : IOcrAiService
             
             if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
             {
-                if (!engine1Task.Result.Succeeded && !engine2Task.Result.Succeeded) anyOcrApiFailure = true;
+                if (!engine1Task.Result.Succeeded && !engine2Task.Result.Succeeded) 
+                {
+                    throw new Exception("Falha na API de OCR ao processar uma das páginas.");
+                }
                 continue;
             }
                 
@@ -88,9 +91,6 @@ public class DocumentProcessingService : IOcrAiService
 
         if (allTexts.Count == 0)
         {
-            // Se a API do OCR falhou, é transitório (retry). Se rodou e não achou texto, a imagem é inválida.
-            if (anyOcrApiFailure)
-                throw new Exception("Nenhum texto encontrado em nenhuma das imagens enviadas (falha na API de OCR).");
             throw new InvalidDocumentException();
         }
 
@@ -124,6 +124,8 @@ public class DocumentProcessingService : IOcrAiService
             model = "gemini-3.8-flash",
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
+            max_tokens = 8192,
+            reasoning_effort = "low",
             response_format = new { type = "json_object" }
         };
 
@@ -305,59 +307,46 @@ public class DocumentProcessingService : IOcrAiService
         if (string.IsNullOrWhiteSpace(groqKey))
         {
             _logger.LogWarning("Chave GROQ_API_KEY não encontrada. Usando modo de segurança string.");
-            return ParseFallback(unifiedText);
+            var fallbackDto = ParseFallback(unifiedText);
+            fallbackDto.RevisaoPendente = true;
+            return fallbackDto;
         }
 
-        try
+        var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+        var payload = new
         {
-            var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-            var payload = new
-            {
-                model = "gemini-3.8-flash",
-                messages = new[] { new { role = "user", content = prompt } },
-                temperature = 0.0,
-                max_tokens = 4096,
-                response_format = new { type = "json_object" }
-            };
+            model = "gemini-3.8-flash",
+            messages = new[] { new { role = "user", content = prompt } },
+            temperature = 0.0,
+            max_tokens = 8192,
+            reasoning_effort = "low",
+            response_format = new { type = "json_object" }
+        };
+        
+        var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
+        request.Headers.Add("Authorization", $"Bearer {groqKey}");
+        request.Content = JsonContent.Create(payload);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+            var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
             
-            var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
-            request.Headers.Add("Authorization", $"Bearer {groqKey}");
-            request.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(request, cancellationToken);
+            jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
             
-            if (response.IsSuccessStatusCode)
-            {
-                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-                var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
-                
-                jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
-                
-                try 
-                {
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    options.Converters.Add(new FlexibleBooleanConverter());
-                    var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                    dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Gemini (Flash).");
-                    return dto;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Erro ao deserializar extração no Gemini. JSON: {JsonResult}", jsonResult);
-                    return new DocumentoExtraidoDto { TextoExtraido = unifiedText, Resumo = $"Erro de conversão (JSON): {ex.Message}" };
-                }
-            }
-            else
-            {
-                var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
-                return ParseFallback(unifiedText);
-            }
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            options.Converters.Add(new FlexibleBooleanConverter());
+            var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+            dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
+            _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Gemini (Flash).");
+            return dto;
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError(ex, "Erro no fallback Gemini.");
-            return ParseFallback(unifiedText);
+            var err = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+            throw new Exception($"Gemini HTTP {response.StatusCode}: {err}");
         }
     }
 

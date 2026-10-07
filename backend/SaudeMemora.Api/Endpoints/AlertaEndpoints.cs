@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Domain.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
+using SaudeMemora.Infrastructure.Data;
 
 namespace SaudeMemora.Api.Endpoints;
 
@@ -30,7 +31,7 @@ public static class AlertaEndpoints
             alerta.Dispensado = true;
 
             await repo.UpdateAsync(doc);
-            await cache.RemoveAsync($"documents_v3_{userId}");
+            await cache.SafeRemoveAsync($"documents_v3_{userId}");
 
             return Results.Ok(new { message = "Alerta dispensado com sucesso." });
         }).RequireAuthorization();

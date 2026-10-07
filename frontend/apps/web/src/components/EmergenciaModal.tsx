@@ -11,25 +11,27 @@ interface EmergenciaModalProps {
 
 export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
   const [token, setToken] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ possuiToken: boolean; expiraEm: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     
     let isMounted = true;
-    const fetchToken = async () => {
+    const fetchStatus = async () => {
       try {
         setLoading(true);
-        const res = await customFetch<{ token: string }>('/api/pacientes/me/emergencia', { method: 'POST' });
-        if (isMounted) setToken(res.token);
+        const res = await customFetch<{ possuiToken: boolean; expiraEm: string | null }>('/api/pacientes/me/emergencia/status');
+        if (isMounted) setStatus(res);
       } catch (err) {
-        if (isMounted) setError('Erro ao carregar token de emergência.');
+        if (isMounted) setError('Erro ao carregar status de emergência.');
       } finally {
         if (isMounted) setLoading(false);
       }
     };
-    fetchToken();
+    fetchStatus();
     return () => { isMounted = false; };
   }, [open]);
 
@@ -37,15 +39,20 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
 
   const url = token ? `${window.location.origin}/emergencia/${token}` : '';
 
-  const handleRotate = async () => {
+  const handleGenerate = async () => {
+    if (status?.possuiToken) {
+      if (!window.confirm('Gerar um novo link invalidará o anterior. Deseja continuar?')) return;
+    }
+    
     try {
-      setLoading(true);
-      const res = await customFetch<{ token: string }>('/api/pacientes/me/emergencia/rotate', { method: 'POST' });
+      setGenerating(true);
+      const res = await customFetch<{ token: string; expiraEm: string | null }>('/api/pacientes/me/emergencia', { method: 'POST' });
       setToken(res.token);
+      setStatus({ possuiToken: true, expiraEm: res.expiraEm });
     } catch (err) {
-      setError('Erro ao gerar novo link.');
+      setError('Erro ao gerar link.');
     } finally {
-      setLoading(false);
+      setGenerating(false);
     }
   };
 
@@ -63,26 +70,27 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
             Cartão de Emergência
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Compartilhe este QR Code para rápido acesso médico.
+            Compartilhe um link para rápido acesso médico aos seus dados vitais.
           </p>
         </div>
 
         {loading ? (
           <div className="flex h-40 items-center justify-center">
-            <div className="animate-pulse text-muted-foreground font-semibold">Gerando cartão...</div>
+            <div className="animate-pulse text-muted-foreground font-semibold">Carregando status...</div>
           </div>
         ) : error ? (
-          <div className="flex h-40 items-center justify-center">
-            <div className="text-red-500 font-semibold">{error}</div>
+          <div className="flex h-40 flex-col items-center justify-center">
+            <div className="text-red-500 font-semibold mb-4">{error}</div>
+            <button onClick={onClose} className="px-4 py-2 bg-muted rounded-lg font-semibold">Fechar</button>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center text-center">
+        ) : token ? (
+          <div className="flex flex-col items-center justify-center text-center animate-in fade-in">
             <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl mb-6 inline-block">
               <QRCodeSVG value={url} size={200} />
             </div>
             <h3 className="text-lg font-bold text-foreground">Escaneie para acessar</h3>
             <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-              Em caso de emergência, socorristas podem acessar seus dados vitais (tipo sanguíneo, alergias e medicamentos contínuos).
+              Salve este QR Code. Por segurança, o link original não pode ser recuperado novamente depois de fechar esta tela.
             </p>
             <div className="mt-6 flex flex-col items-center gap-3 w-full">
               <button 
@@ -100,14 +108,31 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
                 >
                   Visualizar Cartão
                 </a>
-                <button 
-                  onClick={handleRotate} 
-                  className="text-xs font-semibold text-destructive hover:underline"
-                >
-                  Revogar e Gerar Novo
-                </button>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center">
+            {status?.possuiToken ? (
+              <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 p-4 rounded-lg text-sm mb-6 w-full text-left">
+                <p className="font-semibold mb-1">Você já possui um link ativo.</p>
+                <p>Por questões de segurança, links gerados anteriormente não podem ser visualizados novamente.</p>
+                <p className="mt-2 text-xs">Gerar um novo link invalidará o anterior.</p>
+              </div>
+            ) : (
+              <div className="bg-blue-50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-200 p-4 rounded-lg text-sm mb-6 w-full text-left">
+                <p>Você ainda não possui um link de emergência.</p>
+                <p className="mt-1">Gere um agora para permitir acesso aos seus dados vitais em caso de acidente.</p>
+              </div>
+            )}
+            
+            <button 
+              onClick={handleGenerate} 
+              disabled={generating}
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full"
+            >
+              {generating ? 'Gerando...' : (status?.possuiToken ? 'Gerar Novo Link' : 'Gerar Link')}
+            </button>
           </div>
         )}
       </div>

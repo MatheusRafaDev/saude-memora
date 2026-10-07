@@ -198,6 +198,10 @@ public class RegistroDocumento
     [BsonElement("reprocessCount")]
     public int ReprocessCount { get; set; } = 0;
 
+    [BsonElement("nextAttemptAt")]
+    [BsonIgnoreIfNull]
+    public DateTime? NextAttemptAt { get; set; }
+
     [BsonElement("lockedUntil")]
     public DateTime? LockedUntil { get; set; }
 

@@ -12,10 +12,8 @@ public static class EmergenciaEndpoints
 {
     public static void MapEmergenciaEndpoints(this WebApplication app)
     {
-        // 1. Gera o token de emergência (agora como POST)
-        app.MapPost("/api/pacientes/me/emergencia", async (
-            ClaimsPrincipal user, 
-            IPacienteRepository repo) =>
+        // Endpoint de status
+        app.MapGet("/api/pacientes/me/emergencia/status", async (ClaimsPrincipal user, IPacienteRepository repo) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Results.Unauthorized();
@@ -23,19 +21,41 @@ public static class EmergenciaEndpoints
             var paciente = await repo.GetByIdAsync(userId);
             if (paciente == null) return Results.NotFound();
 
-            var rawToken = Guid.NewGuid().ToString("N");
-            paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
-            
-            var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
-            int expirationDays = int.TryParse(expirationDaysString, out var days) ? days : 30;
-            paciente.TokenEmergenciaExpiraEm = DateTime.UtcNow.AddDays(expirationDays);
-
-            await repo.UpdateAsync(paciente);
-
-            return Results.Ok(new { token = rawToken, expiraEm = paciente.TokenEmergenciaExpiraEm });
+            return Results.Ok(new
+            {
+                possuiToken = !string.IsNullOrEmpty(paciente.TokenEmergencia) && 
+                              (paciente.TokenEmergenciaExpiraEm == null || paciente.TokenEmergenciaExpiraEm > DateTime.UtcNow),
+                expiraEm = paciente.TokenEmergenciaExpiraEm
+            });
         }).RequireAuthorization();
 
-        // 2. Endpoint público que retorna os dados a partir do token
+        // Gera token novo
+        app.MapPost("/api/pacientes/me/emergencia", async (ClaimsPrincipal user, IPacienteRepository repo) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Results.Unauthorized();
+
+            var paciente = await repo.GetByIdAsync(userId);
+            if (paciente == null) return Results.NotFound();
+
+            var (rawToken, expiraEm) = await GerarNovoTokenEmergenciaAsync(paciente, repo);
+            return Results.Ok(new { token = rawToken, expiraEm });
+        }).RequireAuthorization();
+
+        // Rotaciona token (mesma lógica do POST)
+        app.MapPost("/api/pacientes/me/emergencia/rotate", async (ClaimsPrincipal user, IPacienteRepository repo) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Results.Unauthorized();
+
+            var paciente = await repo.GetByIdAsync(userId);
+            if (paciente == null) return Results.NotFound();
+
+            var (rawToken, expiraEm) = await GerarNovoTokenEmergenciaAsync(paciente, repo);
+            return Results.Ok(new { token = rawToken, expiraEm });
+        }).RequireAuthorization();
+
+        // Endpoint público que retorna os dados a partir do token
         app.MapGet("/api/emergencia/{token}", async (
             string token,
             HttpContext context,
@@ -44,11 +64,11 @@ public static class EmergenciaEndpoints
         {
             var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token)));
             var paciente = await repo.GetByEmergenciaTokenAsync(tokenHash);
-            if (paciente == null) return Results.NotFound();
+            if (paciente == null || paciente.IsDeleting) return Results.NotFound();
 
             if (paciente.TokenEmergenciaExpiraEm.HasValue && paciente.TokenEmergenciaExpiraEm.Value < DateTime.UtcNow)
             {
-                return Results.NotFound(); // Retornar 404 para token expirado, conforme solicitado
+                return Results.NotFound();
             }
 
             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
@@ -68,28 +88,21 @@ public static class EmergenciaEndpoints
 
             return Results.Ok(result);
         }).AllowAnonymous().RequireRateLimiting("emergencia");
+    }
 
-        // 3. Endpoint para rotacionar/revogar o token de emergência
-        app.MapPost("/api/pacientes/me/emergencia/rotate", async (
-            ClaimsPrincipal user, 
-            IPacienteRepository repo) =>
+    private static async Task<(string rawToken, DateTime? expiraEm)> GerarNovoTokenEmergenciaAsync(SaudeMemora.Domain.Entities.Paciente paciente, IPacienteRepository repo)
+    {
+        var rawToken = Guid.NewGuid().ToString("N");
+        paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
+        
+        var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
+        if (!int.TryParse(expirationDaysString, out var days) || days < 1 || days > 365)
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null) return Results.Unauthorized();
+            days = 30;
+        }
+        paciente.TokenEmergenciaExpiraEm = DateTime.UtcNow.AddDays(days);
 
-            var paciente = await repo.GetByIdAsync(userId);
-            if (paciente == null) return Results.NotFound();
-
-            var rawToken = Guid.NewGuid().ToString("N");
-            paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
-            
-            var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
-            int expirationDays = int.TryParse(expirationDaysString, out var days) ? days : 30;
-            paciente.TokenEmergenciaExpiraEm = DateTime.UtcNow.AddDays(expirationDays);
-
-            await repo.UpdateAsync(paciente);
-
-            return Results.Ok(new { token = rawToken, expiraEm = paciente.TokenEmergenciaExpiraEm });
-        }).RequireAuthorization();
+        await repo.UpdateAsync(paciente);
+        return (rawToken, paciente.TokenEmergenciaExpiraEm);
     }
 }

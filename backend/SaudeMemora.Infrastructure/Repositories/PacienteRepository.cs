@@ -84,7 +84,10 @@ public class PacienteRepository : IPacienteRepository
             .Set(p => p.TokenEmergencia, paciente.TokenEmergencia)
             .Set(p => p.ResetPasswordToken, paciente.ResetPasswordToken)
             .Set(p => p.ResetPasswordExpiry, paciente.ResetPasswordExpiry)
-            .Set(p => p.IsDeleting, paciente.IsDeleting);
+            .Set(p => p.IsDeleting, paciente.IsDeleting)
+            .Set(p => p.SecurityStamp, paciente.SecurityStamp)
+            .Set(p => p.ContatoEmergencia, paciente.ContatoEmergencia)
+            .Set(p => p.TokenEmergenciaExpiraEm, paciente.TokenEmergenciaExpiraEm);
 
         if (!string.IsNullOrEmpty(paciente.Senha)) 
         {
@@ -92,13 +95,15 @@ public class PacienteRepository : IPacienteRepository
         }
 
         await _pacientes.UpdateOneAsync(p => p.Id == paciente.Id, update);
-        await _cache.RemoveAsync($"paciente_{paciente.Id}");
+        await _cache.SafeRemoveAsync($"paciente_v2_{paciente.Id}");
+        await _cache.SafeRemoveAsync($"secstamp_{paciente.Id}");
     }
 
     public async Task DeleteAsync(string id)
     {
         await _pacientes.DeleteOneAsync(p => p.Id == id);
-        await _cache.RemoveAsync($"paciente_{id}");
+        await _cache.SafeRemoveAsync($"paciente_v2_{id}");
+        await _cache.SafeRemoveAsync($"secstamp_{id}");
     }
 
     public async Task<IEnumerable<Paciente>> GetUsersMarkedForDeletionAsync()
