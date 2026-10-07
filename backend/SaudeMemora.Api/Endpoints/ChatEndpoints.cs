@@ -92,7 +92,7 @@ INSTRUÇÕES DE RESPOSTA:
 
             var requestBody = new
             {
-                model = "gemini-2.5-flash",
+                model = "gemini-3.8-flash",
                 messages = new[]
                 {
                     new { role = "system", content = promptSystem },
