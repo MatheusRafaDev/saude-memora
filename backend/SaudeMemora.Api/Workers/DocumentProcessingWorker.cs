@@ -118,8 +118,9 @@ public class DocumentProcessingWorker : BackgroundService
             }
 
             // Atualiza o progresso inicial (já em 'processing' pelo lock)
+            var docId = doc.Id ?? throw new InvalidOperationException("Documento sem identificador ao iniciar processamento.");
             doc.Progress = 40; // Exemplo: Iniciando OCR
-            await repo.UpdateProgressAsync(doc.Id, doc.Progress);
+            await repo.UpdateProgressAsync(docId, doc.Progress);
             await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
 
             // Chamada para o Serviço de OCR e IA (que faz OCR.space + Gemini/Groq)

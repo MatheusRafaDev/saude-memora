@@ -65,7 +65,6 @@ public class DocumentProcessingService : IOcrAiService
             throw new Exception("Faltam chaves de API (OCR_SPACE_API_KEY ou GEMINI_API_KEY). Configure no .env.");
 
         var allTexts = new List<string>();
-        var anyOcrApiFailure = false;
 
         foreach (var url in imageUrls)
         {

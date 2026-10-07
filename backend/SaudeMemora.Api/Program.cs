@@ -59,28 +59,18 @@ builder.Services.AddHostedService<KeepAliveWorker>();
 
 // CORS
 var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173,https://localhost:5173,http://127.0.0.1:5173,https://127.0.0.1:5173";
-var allowedOrigins = corsOriginsStr
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    .Where(origin => !string.IsNullOrWhiteSpace(origin))
-    .ToArray();
+var allowedOrigins = CorsSettings.ParseAllowedOrigins(corsOriginsStr);
+if (allowedOrigins.Length == 0)
+    throw new InvalidOperationException("CORS_ALLOWED_ORIGINS ou FRONTEND_URL deve conter pelo menos uma origem segura. Nenhum fallback wildcard é permitido em produção.");
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("SaudeMemoraCors", policy =>
     {
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        }
-        else
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -90,19 +80,6 @@ builder.Services.AddCors(options =>
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["JwtSettings:Secret"];
 if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
     throw new InvalidOperationException("JWT_SECRET_KEY ausente ou curta (mín. 32 chars).");
-
-// Helpers for IP Masking
-string GetIpKey(HttpContext ctx)
-{
-    var ip = ctx.Connection.RemoteIpAddress;
-    if (ip == null) return "anon";
-    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-    {
-        var bytes = ip.GetAddressBytes();
-        return $"{bytes[0]:x2}{bytes[1]:x2}:{bytes[2]:x2}{bytes[3]:x2}:{bytes[4]:x2}{bytes[5]:x2}::/48";
-    }
-    return ip.ToString();
-}
 
 bool IsSecureRequest(HttpContext context)
 {
@@ -165,6 +142,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JwtSettings:Issuer"];
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JwtSettings:Audience"];
+if (string.IsNullOrWhiteSpace(jwtIssuer))
+    throw new InvalidOperationException("JWT_ISSUER ausente. Configure a issuer do JWT antes de iniciar a API.");
+if (string.IsNullOrWhiteSpace(jwtAudience))
+    throw new InvalidOperationException("JWT_AUDIENCE ausente. Configure a audience do JWT antes de iniciar a API.");
 var key = Encoding.ASCII.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -1032,7 +1013,10 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         resumo = d.Resumo,
         diagnostico = d.Diagnostico,
         medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
-        urlImagens = d.IdPublicos != null ? d.IdPublicos.Select(storage.GetSignedUrl).ToList() : new List<string>(),
+        urlImagens = d.IdPublicos != null ? d.IdPublicos
+            .Select(idPublico => storage.GetSignedUrl(idPublico) ?? string.Empty)
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .ToList() : new List<string>(),
         progress = d.Progress,
         errorMessage = d.ErrorMessage,
         criadoEm = d.CriadoEm,
@@ -1125,7 +1109,10 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         conteudo = doc.Conteudo,
         conclusoes = doc.Conclusoes,
         observacoes = doc.Observacoes,
-        urlImagens = doc.IdPublicos != null ? doc.IdPublicos.Select(storage.GetSignedUrl).ToList() : new List<string>(),
+        urlImagens = doc.IdPublicos != null ? doc.IdPublicos
+            .Select(idPublico => storage.GetSignedUrl(idPublico) ?? string.Empty)
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .ToList() : new List<string>(),
         textoExtraido = doc.TextoExtraido,
         conteudoIndentado = doc.ConteudoIndentado,
         resultadosExame = doc.ResultadosExame,

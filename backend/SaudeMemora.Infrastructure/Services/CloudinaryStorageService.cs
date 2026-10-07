@@ -7,7 +7,8 @@ namespace SaudeMemora.Infrastructure.Services;
 
 public class CloudinaryStorageService : IImageStorageService
 {
-    private readonly Cloudinary _cloudinary;
+    private readonly Cloudinary? _cloudinary;
+    private readonly bool _isConfigured;
 
     public CloudinaryStorageService(IConfiguration config)
     {
@@ -15,12 +16,32 @@ public class CloudinaryStorageService : IImageStorageService
         var apiKey = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") ?? config["CloudinarySettings:ApiKey"];
         var apiSecret = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") ?? config["CloudinarySettings:ApiSecret"];
 
+        if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
+        {
+            _cloudinary = null;
+            _isConfigured = false;
+            return;
+        }
+
         var account = new Account(cloudName, apiKey, apiSecret);
         _cloudinary = new Cloudinary(account);
+        _isConfigured = true;
+    }
+
+    private Cloudinary GetCloudinaryOrThrow()
+    {
+        if (!_isConfigured || _cloudinary == null)
+        {
+            throw new InvalidOperationException("Cloudinary não configurado. Defina CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET antes de usar upload/imagens.");
+        }
+
+        return _cloudinary;
     }
 
     public async Task<(string imageUrl, string publicId)> UploadImageAsync(Stream stream, string fileName)
     {
+        var cloudinary = GetCloudinaryOrThrow();
+
         var uploadParams = new ImageUploadParams
         {
             File = new FileDescription(fileName, stream),
@@ -28,7 +49,7 @@ public class CloudinaryStorageService : IImageStorageService
             Type = "authenticated"
         };
 
-        var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+        var uploadResult = await cloudinary.UploadAsync(uploadParams);
 
         if (uploadResult.Error != null)
         {
@@ -42,27 +63,33 @@ public class CloudinaryStorageService : IImageStorageService
     {
         if (string.IsNullOrEmpty(publicId)) return null;
 
+        var cloudinary = GetCloudinaryOrThrow();
+
+        var apiSecret = cloudinary.Api?.Account?.ApiSecret ?? throw new InvalidOperationException("Chave secreta do Cloudinary não disponível.");
+
         // AuthToken usa API fluente: Duration/Expiration são métodos, não propriedades
-        var token = new AuthToken(_cloudinary.Api.Account.ApiSecret)
+        var token = new AuthToken(apiSecret)
             .Duration(900); // 15 minutos em segundos
 
-        return _cloudinary.Api.UrlImgUp
-                             .Action("image")
-                             .ResourceType("image")
-                             .Type("authenticated")
-                             .Secure(true)
-                             .AuthToken(token)
-                             .BuildUrl(publicId);
+        return cloudinary.Api.UrlImgUp
+                         .Action("image")
+                         .ResourceType("image")
+                         .Type("authenticated")
+                         .Secure(true)
+                         .AuthToken(token)
+                         .BuildUrl(publicId);
     }
 
     public async Task DeleteImageAsync(string publicId)
     {
+        var cloudinary = GetCloudinaryOrThrow();
+
         var deletionParams = new DeletionParams(publicId)
         {
             Type = "authenticated",
             ResourceType = ResourceType.Image
         };
-        var result = await _cloudinary.DestroyAsync(deletionParams);
+        var result = await cloudinary.DestroyAsync(deletionParams);
         if (result.Result != "ok" && result.Result != "not found")
         {
             Console.Error.WriteLine($"[Cloudinary Delete Error] Failed to delete {publicId}: {result.Result}");

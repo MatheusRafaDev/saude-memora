@@ -10,8 +10,14 @@ public class MongoDbContext
 
     public MongoDbContext(IConfiguration configuration)
     {
-        var connectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? configuration.GetSection("MongoDbSettings:ConnectionString").Value;
-        var databaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? configuration.GetSection("MongoDbSettings:DatabaseName").Value;
+        var connectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING") ?? configuration["MongoDbSettings:ConnectionString"];
+        var databaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE_NAME") ?? configuration["MongoDbSettings:DatabaseName"];
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException("MONGODB_CONNECTION_STRING ausente. Configure a string de conexão do MongoDB antes de iniciar a API.");
+
+        if (string.IsNullOrWhiteSpace(databaseName))
+            throw new InvalidOperationException("MONGODB_DATABASE_NAME ausente. Configure o nome do banco MongoDB antes de iniciar a API.");
 
         var client = new MongoClient(connectionString);
         _database = client.GetDatabase(databaseName);
