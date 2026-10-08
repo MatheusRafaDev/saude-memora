@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { Check, ClipboardList, Droplets, FileText, Plus, Save, Search, X } from 'lucide-react';
 import { useGetApiFichaMedicaMe, usePatchApiFichaMedicaMe } from '@workspace/api-client-react';
+import { CatalogAutocomplete } from '@/components/CatalogAutocomplete';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -381,14 +382,11 @@ export default function Record() {
                 chipColorClass="bg-orange-500/10 border-orange-500/30 text-orange-800 dark:text-orange-200 hover:bg-orange-500/20"
               />
 
-              {/* Medicamentos Continuos Autocomplete Multi-Select */}
-              <AutocompleteMultiSelect
+              {/* Medicamentos Continuos */}
+              <CatalogAutocomplete
                 label="Medicamentos de uso contínuo"
-                placeholder="Digite para pesquisar medicamentos (ex: Losartana, Metformina)..."
-                options={[]}
                 selected={form.medicamentosContinuos}
                 onChange={(items) => set('medicamentosContinuos', items)}
-                chipColorClass="bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20"
               />
 
               {/* Organ donor */}

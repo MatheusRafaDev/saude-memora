@@ -48,6 +48,12 @@ builder.Services.AddScoped<IFichaMedicaRepository, FichaMedicaRepository>();
 builder.Services.AddScoped<ISistemaLogRepository, SistemaLogRepository>();
 builder.Services.AddScoped<IImageStorageService, CloudinaryStorageService>();
 builder.Services.AddScoped<IAlertaMedicamentoService, AlertaMedicamentoService>();
+builder.Services.AddScoped<IMedicamentoCatalogoRepository, MedicamentoCatalogoRepository>();
+builder.Services.AddScoped<IMedicamentoCatalogoService, MedicamentoCatalogoService>();
+builder.Services.AddScoped<ICid10CatalogoRepository, Cid10CatalogoRepository>();
+builder.Services.AddScoped<ICid10CatalogoService, Cid10CatalogoService>();
+builder.Services.AddScoped<ICnesCatalogoRepository, CnesCatalogoRepository>();
+builder.Services.AddScoped<ICnesCatalogoService, CnesCatalogoService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 
@@ -356,6 +362,27 @@ _ = Task.Run(async () =>
 
     try { await SistemaLogRepository.EnsureIndexesAsync(dbContext, token); }
     catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Logs (TTL)"); }
+
+    try
+    {
+        var catalogRepository = app.Services.GetRequiredService<IMedicamentoCatalogoRepository>();
+        await catalogRepository.EnsureIndexesAsync(token);
+    }
+    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção MedicamentosCatalogo"); }
+
+    try
+    {
+        var cid10Repository = app.Services.GetRequiredService<ICid10CatalogoRepository>();
+        await cid10Repository.EnsureIndexesAsync(token);
+    }
+    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Cid10Catalogo"); }
+
+    try
+    {
+        var cnesRepository = app.Services.GetRequiredService<ICnesCatalogoRepository>();
+        await cnesRepository.EnsureIndexesAsync(token);
+    }
+    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção CnesCatalogo"); }
     
     try
     {
@@ -393,6 +420,8 @@ app.MapReprocessamentoEndpoints();
 app.MapRevisaoEndpoints();
 app.MapAlertaEndpoints();
 app.MapMedicamentoEndpoints();
+app.MapMedicamentoCatalogoEndpoints();
+app.MapCdosCatalogosEndpoints();
 app.MapExamesEndpoints();
 app.MapEmergenciaEndpoints();
 app.MapChatEndpoints();

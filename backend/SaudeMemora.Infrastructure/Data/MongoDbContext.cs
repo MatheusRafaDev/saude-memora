@@ -31,5 +31,8 @@ public class MongoDbContext
     public IMongoCollection<RegistroDocumento> Documentos => _database.GetCollection<RegistroDocumento>("Documentos");
     public IMongoCollection<Paciente> Pacientes => _database.GetCollection<Paciente>("Pacientes");
     public IMongoCollection<FichaMedica> FichaMedicas => _database.GetCollection<FichaMedica>("FichaMedicas");
+    public IMongoCollection<MedicamentoCatalogo> MedicamentosCatalogo => _database.GetCollection<MedicamentoCatalogo>("MedicamentosCatalogo");
+    public IMongoCollection<Cid10Registro> Cid10Catalogo => _database.GetCollection<Cid10Registro>("Cid10Catalogo");
+    public IMongoCollection<CnesRegistro> CnesCatalogo => _database.GetCollection<CnesRegistro>("CnesCatalogo");
     public IMongoCollection<SistemaLog> Logs => _database.GetCollection<SistemaLog>("Logs");
 }
