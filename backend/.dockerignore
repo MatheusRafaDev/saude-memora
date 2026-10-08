@@ -1,6 +1,4 @@
 .git
-.github
-frontend
 **/bin
 **/obj
 **/node_modules

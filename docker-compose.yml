@@ -1,8 +1,8 @@
 services:
   api:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: saudememora-api
     environment:
       ASPNETCORE_ENVIRONMENT: Development

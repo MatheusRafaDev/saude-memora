@@ -2,17 +2,16 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copiar arquivos de projeto para manter o restore cacheado.
-COPY backend/SaudeMemora.slnx backend/
-COPY backend/SaudeMemora.Api/SaudeMemora.Api.csproj backend/SaudeMemora.Api/
-COPY backend/SaudeMemora.Application/SaudeMemora.Application.csproj backend/SaudeMemora.Application/
-COPY backend/SaudeMemora.Domain/SaudeMemora.Domain.csproj backend/SaudeMemora.Domain/
-COPY backend/SaudeMemora.Infrastructure/SaudeMemora.Infrastructure.csproj backend/SaudeMemora.Infrastructure/
-RUN dotnet restore backend/SaudeMemora.Api/SaudeMemora.Api.csproj
+COPY SaudeMemora.slnx ./
+COPY SaudeMemora.Api/SaudeMemora.Api.csproj SaudeMemora.Api/
+COPY SaudeMemora.Application/SaudeMemora.Application.csproj SaudeMemora.Application/
+COPY SaudeMemora.Domain/SaudeMemora.Domain.csproj SaudeMemora.Domain/
+COPY SaudeMemora.Infrastructure/SaudeMemora.Infrastructure.csproj SaudeMemora.Infrastructure/
+RUN dotnet restore SaudeMemora.Api/SaudeMemora.Api.csproj
 
-# O catálogo ANVISA fica fora do diretório do backend e é incluído no contexto raiz.
-COPY backend/ backend/
-COPY data/anvisa/medicamentos.csv data/anvisa/medicamentos.csv
-WORKDIR /src/backend/SaudeMemora.Api
+# Copiar o código e o catálogo ANVISA, ambos disponíveis no contexto backend/.
+COPY . ./
+WORKDIR /src/SaudeMemora.Api
 RUN dotnet publish -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final

@@ -108,10 +108,7 @@ export default function Chat() {
             Encontre exames, medicamentos e outras informações salvas na sua jornada de saúde.
           </p>
         </div>
-        <div className="hidden items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 sm:flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Privado e seguro
-        </div>
+
       </div>
 
       <div className="flex h-[min(720px,calc(100dvh-320px))] min-h-[320px] flex-col overflow-hidden rounded-3xl border border-border/70 bg-white shadow-[0_20px_60px_-32px_rgba(21,50,84,0.28)] md:h-[min(720px,calc(100dvh-250px))] md:min-h-[380px]">
@@ -122,12 +119,7 @@ export default function Chat() {
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-sm font-bold text-foreground sm:text-base">Consulta do seu histórico</h2>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">Respostas baseadas nas informações registradas</p>
             </div>
-          </div>
-          <div className="hidden shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 sm:flex">
-            <Check size={13} strokeWidth={2.5} />
-            Histórico conectado
           </div>
         </header>
 
@@ -231,10 +223,6 @@ export default function Chat() {
               >
                 <Send size={16} />
               </button>
-            </div>
-            <div className="mt-2 flex items-center justify-between px-1 text-[10px] text-muted-foreground sm:text-[11px]">
-              <span>Enter para enviar · Shift + Enter para nova linha</span>
-              <span className="hidden items-center gap-1 sm:flex"><ShieldCheck size={12} /> Seus dados são privados</span>
             </div>
           </form>
         </div>
