@@ -233,61 +233,71 @@ export default function Dashboard() {
   return (
     <div className="page-enter space-y-5 pb-8">
       {/* ── Header bar ── */}
-      <section className="rounded-2xl bg-primary px-6 py-4 flex items-center justify-between gap-4 shadow-md">
-        <div>
-          <p className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">
-            Visão geral de saúde
-          </p>
-          <h1 className="text-lg font-bold text-white mt-0.5">
-            Olá, {firstName}
-          </h1>
-          <div className="mt-2 flex flex-wrap gap-2">
+      <section className="relative isolate overflow-hidden rounded-3xl border border-primary/10 bg-white px-5 py-6 shadow-[0_24px_65px_-48px_rgba(25,48,83,0.42)] sm:px-7 sm:py-7">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_8%_0%,rgba(28,84,135,0.09),transparent_45%),radial-gradient(ellipse_at_100%_100%,rgba(20,125,128,0.08),transparent_38%)]" />
+        <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-accent">
+              Seu espaço de saúde
+            </p>
+            <h1 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-foreground sm:text-3xl">
+              Olá, {firstName}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">Aqui está um resumo das suas informações.</p>
+          </div>
+          <button
+            onClick={() => triggerUploadModal()}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90"
+          >
+            <Plus size={15} /> Adicionar documento
+          </button>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-border/60 pt-4">
             {bloodType && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 border border-white/15 px-2.5 py-1 text-xs font-semibold text-white">
-                <Droplets size={11} className="text-red-300" /> {bloodType}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                <Droplets size={12} /> {bloodType}
               </span>
             )}
             {age !== null && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 border border-white/15 px-2.5 py-1 text-xs font-semibold text-white">
-                <CalendarDays size={11} className="text-blue-200" /> {age} anos
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/80 px-3 py-1.5 text-xs font-semibold text-foreground">
+                <CalendarDays size={12} className="text-primary" /> {age} anos
               </span>
             )}
             {allergies.length > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-400/20 border border-amber-300/30 px-2.5 py-1 text-xs font-semibold text-white">
-                <AlertTriangle size={11} className="text-amber-300" />{" "}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">
+                <AlertTriangle size={12} />{" "}
                 {allergies.length} alergia{allergies.length > 1 ? "s" : ""}
               </span>
             )}
             {donor && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-400/20 border border-emerald-300/30 px-2.5 py-1 text-xs font-semibold text-white">
-                <Shield size={11} className="text-emerald-300" /> Doador de
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                <Shield size={12} /> Doador de
                 órgãos
               </span>
             )}
             {alertasAtivos.length > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-lg bg-red-500/20 border border-red-400/30 px-2.5 py-1 text-xs font-semibold text-white">
-                <ShieldAlert size={11} className="text-red-300" />{" "}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800">
+                <ShieldAlert size={12} />{" "}
                 {alertasAtivos.length} aviso
                 {alertasAtivos.length > 1 ? "s" : ""} médico
                 {alertasAtivos.length > 1 ? "s" : ""}
               </span>
             )}
-          </div>
         </div>
       </section>
 
       {/* ── 3-col grid: Perfil | Anamnese | Documentos ── */}
       <div className="grid gap-5 lg:grid-cols-3">
         {/* ── 1. Perfil ── */}
-        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+        <section className="overflow-hidden rounded-2xl border border-border/80 bg-white shadow-[0_12px_38px_-30px_rgba(25,48,83,0.38)]">
+          <div className="flex items-center justify-between border-b border-border/70 px-5 py-4">
             <div className="flex items-center gap-2">
-              <User size={14} className="text-blue-400" />
-              <span className="text-sm font-bold">Perfil</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary"><User size={15} /></span>
+              <span className="text-sm font-bold text-foreground">Perfil</span>
             </div>
             <Link
               href="/perfil"
-              className="text-[11px] font-semibold text-blue-200 hover:text-white hover:underline"
+              className="text-[11px] font-semibold text-primary hover:underline"
             >
               Editar
             </Link>
@@ -383,15 +393,15 @@ export default function Dashboard() {
         </section>
 
         {/* ── 2. Anamnese ── */}
-        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+        <section className="overflow-hidden rounded-2xl border border-border/80 bg-white shadow-[0_12px_38px_-30px_rgba(25,48,83,0.38)]">
+          <div className="flex items-center justify-between border-b border-border/70 px-5 py-4">
             <div className="flex items-center gap-2">
-              <BookOpen size={14} className="text-blue-400" />
-              <span className="text-sm font-bold">Anamnese</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary"><BookOpen size={15} /></span>
+              <span className="text-sm font-bold text-foreground">Anamnese</span>
             </div>
             <Link
               href="/anamnese"
-              className="text-[11px] font-semibold text-blue-200 hover:text-white hover:underline"
+              className="text-[11px] font-semibold text-primary hover:underline"
             >
               Preencher
             </Link>
@@ -519,15 +529,15 @@ export default function Dashboard() {
         </section>
 
         {/* ── 3. Documentos ── */}
-        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+        <section className="overflow-hidden rounded-2xl border border-border/80 bg-white shadow-[0_12px_38px_-30px_rgba(25,48,83,0.38)]">
+          <div className="flex items-center justify-between border-b border-border/70 px-5 py-4">
             <div className="flex items-center gap-2">
-              <Activity size={14} className="text-blue-400" />
-              <span className="text-sm font-bold">Documentos</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary"><Activity size={15} /></span>
+              <span className="text-sm font-bold text-foreground">Documentos</span>
             </div>
             <Link
               href="/documentos"
-              className="text-[11px] font-semibold text-blue-200 hover:text-white hover:underline"
+              className="text-[11px] font-semibold text-primary hover:underline"
             >
               Ver todos
             </Link>
@@ -626,15 +636,15 @@ export default function Dashboard() {
       </div>
 
       {/* ── 4. Relatórios e Estatísticas (Para o Médico) ── */}
-      <section className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xs">
-          <div className="flex flex-col gap-3 bg-[#0f172a] px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between">
+      <section className="overflow-hidden rounded-3xl border border-border/80 bg-white shadow-[0_16px_48px_-34px_rgba(25,48,83,0.38)]">
+          <div className="flex flex-col gap-3 border-b border-border/70 bg-gradient-to-r from-white via-white to-secondary/40 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-400/10 text-blue-300">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-primary">
                 <BarChart3 size={17} />
               </div>
               <div>
-                <h2 className="text-sm font-bold">Resumo para sua consulta</h2>
-                <p className="mt-0.5 text-[11px] text-slate-300">Informações extraídas do seu histórico de saúde</p>
+                <h2 className="text-sm font-bold text-foreground">Resumo para sua consulta</h2>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Informações extraídas do seu histórico de saúde</p>
               </div>
             </div>
             <Link
