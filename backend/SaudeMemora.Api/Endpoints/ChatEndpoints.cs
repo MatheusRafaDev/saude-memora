@@ -38,7 +38,7 @@ public static class ChatEndpoints
                 ?? config["GROQ_API_KEY"]
                 ?? config["Groq:ApiKey"]
                 ?? string.Empty;
-            const string groqModel = "llama-3.3-70b-versatile";
+            const string groqModel = "openai/gpt-oss-120b";
             const string groqBaseUrl = "https://api.groq.com/openai/v1/";
 
             if (string.IsNullOrWhiteSpace(groqApiKey))
@@ -154,9 +154,11 @@ INSTRUÇÕES DE RESPOSTA:
             var response = await httpClient.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
                 app.Logger.LogWarning(
-                    "A API do Groq retornou {StatusCode} ao processar a consulta do paciente.",
-                    (int)response.StatusCode);
+                    "A API do Groq retornou {StatusCode} ao processar a consulta do paciente. Erro: {ErrorBody}",
+                    (int)response.StatusCode,
+                    errorBody);
                 return Results.Json(new
                 {
                     title = "Serviço de IA indisponível",
