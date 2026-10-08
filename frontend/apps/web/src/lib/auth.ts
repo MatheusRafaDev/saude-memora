@@ -15,7 +15,7 @@ export function setStoredAuthToken(token: string): void {
   }
 
   const isSecureContext = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-  const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toUTCString();
+  const expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toUTCString();
   const secureValue = isSecureContext ? '; Secure' : '';
 
   document.cookie = `${AUTH_TOKEN_COOKIE}=${encodeURIComponent(token)}; Path=/; SameSite=Lax; expires=${expires}${secureValue}`;

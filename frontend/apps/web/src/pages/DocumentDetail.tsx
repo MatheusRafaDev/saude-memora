@@ -11,6 +11,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
+type MedicamentoDescricao = {
+  nome: string;
+  descricao: string;
+  fonte: string;
+};
+
 export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [match, params] = useRoute('/documentos/:id');
   const id = propId || (params as any)?.id;
@@ -27,7 +33,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [showTranscriptionModal, setShowTranscriptionModal] = useState(false);
   const [showFullScreenModal, setShowFullScreenModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [descriptions, setDescriptions] = useState<Record<number, { nome: string; descricao: string; fonte: string }>>({});
+  const [descriptions, setDescriptions] = useState<Record<number, MedicamentoDescricao>>({});
   const [loadingDescriptions, setLoadingDescriptions] = useState<Record<number, boolean>>({});
   const [descriptionErrors, setDescriptionErrors] = useState<Record<number, string>>({});
 
@@ -69,8 +75,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     const consultar = async () => {
       const resultados = await Promise.all(medicamentos.map(async (medicine: any, index: number) => {
         try {
-          const response = await customFetch(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
-          const data = await response.json();
+          const data = await customFetch<MedicamentoDescricao>(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
           return [index, data] as const;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Não foi possível acessar a API da ANVISA.';
@@ -114,8 +119,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     setDescriptionErrors((current) => ({ ...current, [index]: '' }));
 
     try {
-      const response = await customFetch(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
-      const data = await response.json();
+      const data = await customFetch<MedicamentoDescricao>(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
       setDescriptions((current) => ({ ...current, [index]: data }));
       setDescriptionErrors((current) => {
         const next = { ...current };

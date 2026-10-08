@@ -28,19 +28,47 @@ export default defineConfig({
         name: 'Saúde Memora',
         short_name: 'S.Memora',
         description: 'Prontuário Médico Inteligente',
+        id: '/saude-memora/',
+        scope: '/',
+        start_url: '/',
         theme_color: '#0d9488',
         background_color: '#ffffff',
         display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone'],
+        orientation: 'any',
         icons: [
           {
             src: '/pwa-192x192.jpg',
             sizes: '192x192',
-            type: 'image/jpeg'
+            type: 'image/jpeg',
+            purpose: 'any maskable'
           },
           {
             src: '/pwa-512x512.jpg',
             sizes: '512x512',
-            type: 'image/jpeg'
+            type: 'image/jpeg',
+            purpose: 'any maskable'
+          }
+        ],
+        shortcuts: [
+          {
+            name: 'Enviar documento',
+            short_name: 'Enviar',
+            description: 'Envie um novo documento',
+            url: '/enviar',
+            icons: [{ src: '/pwa-192x192.jpg', sizes: '192x192', type: 'image/jpeg' }]
+          }
+        ]
+      },
+      workbox: {
+        navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.method === 'GET' && request.url.includes('/api/'),
+            handler: 'NetworkOnly'
           }
         ]
       }

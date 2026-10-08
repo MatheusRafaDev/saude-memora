@@ -27,6 +27,11 @@ import {
 } from 'wouter';
 
 import { QueryCache } from '@tanstack/react-query';
+import {
+  customFetch,
+  useGetApiPacientesMe,
+  getGetApiPacientesMeQueryKey,
+} from '@workspace/api-client-react';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
@@ -40,8 +45,31 @@ const queryClient = new QueryClient({
   })
 });
 
+const SESSION_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
-import { useGetApiPacientesMe, getGetApiPacientesMeQueryKey } from '@workspace/api-client-react';
+function HomeRoute() {
+  const { isLoading, isError, isSuccess } = useGetApiPacientesMe({
+    query: {
+      queryKey: getGetApiPacientesMeQueryKey(),
+      retry: false,
+      staleTime: 5 * 60 * 1000,
+      enabled: true
+    }
+  });
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (isSuccess) {
+      setLocation('/visao-geral');
+    }
+  }, [isSuccess, setLocation]);
+
+  if (isLoading) {
+    return null;
+  }
+
+  return <Home />;
+}
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   // Authentication is cookie-backed, so the fetch layer relies on the browser's
@@ -62,6 +90,47 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
       setLocation('/entrar');
     }
   }, [isError, setLocation]);
+
+  useEffect(() => {
+    if (isLoading || isError) {
+      return;
+    }
+
+    let refreshInProgress = false;
+    const refreshSession = async () => {
+      if (refreshInProgress) {
+        return;
+      }
+
+      refreshInProgress = true;
+      try {
+        await customFetch('/api/auth/refresh', { method: 'POST' });
+      } catch {
+        setLocation('/entrar');
+      } finally {
+        refreshInProgress = false;
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      void refreshSession();
+    }, SESSION_REFRESH_INTERVAL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [isError, isLoading, setLocation]);
 
   if (isError) {
     return null;
@@ -119,7 +188,7 @@ function Router() {
     // survives a page crash.
     <RoutedErrorBoundary>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/" component={HomeRoute} />
         <Route path="/entrar" component={Auth} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/visao-geral">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>
