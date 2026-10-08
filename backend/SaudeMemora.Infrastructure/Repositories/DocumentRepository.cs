@@ -112,6 +112,14 @@ public class DocumentRepository : IDocumentRepository
         return docs;
     }
 
+    public async Task<IEnumerable<RegistroDocumento>> GetAllForChatByPacienteIdAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _documents.Find(d => d.PacienteId == userId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<RegistroDocumento?> GetByIdAsync(string id)
     {
         var doc = await _documents.Find(d => d.Id == id).FirstOrDefaultAsync();
