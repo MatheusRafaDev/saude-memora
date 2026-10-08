@@ -52,6 +52,7 @@ public class AccountCleanupWorker : BackgroundService
         var pacienteRepo = scope.ServiceProvider.GetRequiredService<IPacienteRepository>();
         var docRepo = scope.ServiceProvider.GetRequiredService<IDocumentRepository>();
         var fichaRepo = scope.ServiceProvider.GetRequiredService<IFichaMedicaRepository>();
+        var chatHistoryRepo = scope.ServiceProvider.GetRequiredService<IChatHistoryRepository>();
         var logRepo = scope.ServiceProvider.GetRequiredService<ISistemaLogRepository>();
         var storage = scope.ServiceProvider.GetRequiredService<IImageStorageService>();
 
@@ -102,10 +103,13 @@ public class AccountCleanupWorker : BackgroundService
                     await fichaRepo.DeleteAsync(ficha.Id);
                 }
 
-                // 4. Apaga logs
+                // 4. Apaga o histórico do chat
+                await chatHistoryRepo.DeleteByPacienteIdAsync(paciente.Id, stoppingToken);
+
+                // 5. Apaga logs
                 await logRepo.DeleteByPacienteIdAsync(paciente.Id);
 
-                // 5. Apaga o paciente
+                // 6. Apaga o paciente
                 await pacienteRepo.DeleteAsync(paciente.Id);
 
                 _logger.LogInformation("Paciente {PacienteId} e seus dados foram excluídos com sucesso.", paciente.Id);

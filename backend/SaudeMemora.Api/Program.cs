@@ -45,6 +45,7 @@ builder.Services.AddSingleton<MongoDbContext>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
 builder.Services.AddScoped<IFichaMedicaRepository, FichaMedicaRepository>();
+builder.Services.AddScoped<IChatHistoryRepository, ChatHistoryRepository>();
 builder.Services.AddScoped<ISistemaLogRepository, SistemaLogRepository>();
 builder.Services.AddScoped<IImageStorageService, CloudinaryStorageService>();
 builder.Services.AddScoped<IAlertaMedicamentoService, AlertaMedicamentoService>();
@@ -316,6 +317,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     }
                 }
 
+
                 if (cachedStamp == null || cachedStamp == "DELETED" || cachedStamp != stamp)
                 {
                     context.Fail("Security stamp inválido ou conta excluída.");
@@ -359,6 +361,9 @@ _ = Task.Run(async () =>
 
     try { await FichaMedicaRepository.EnsureIndexesAsync(dbContext, token); }
     catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Fichas Médicas"); }
+
+    try { await ChatHistoryRepository.EnsureIndexesAsync(dbContext, token); }
+    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção ChatHistoricos"); }
 
     try { await SistemaLogRepository.EnsureIndexesAsync(dbContext, token); }
     catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Logs (TTL)"); }
@@ -1618,5 +1623,3 @@ static class UploadHelpers
         await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     }
 }
-
-

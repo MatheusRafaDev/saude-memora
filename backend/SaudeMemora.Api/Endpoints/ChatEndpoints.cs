@@ -13,14 +13,43 @@ namespace SaudeMemora.Api.Endpoints;
 
 public static class ChatEndpoints
 {
+    private const string AiDisclaimer = "Aviso: Esta resposta é gerada por IA e não substitui orientação médica.";
+
+    private static string RemoveAiDisclaimer(string response)
+    {
+        var disclaimerIndex = response.LastIndexOf(AiDisclaimer, StringComparison.Ordinal);
+        return disclaimerIndex < 0
+            ? response
+            : response[..disclaimerIndex].TrimEnd('\r', '\n', '-', ' ');
+    }
+
     public static void MapChatEndpoints(this WebApplication app)
     {
+        app.MapGet("/api/chat/history", async (
+            ClaimsPrincipal user,
+            IChatHistoryRepository chatHistoryRepo,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Results.Unauthorized();
+
+            var history = await chatHistoryRepo.GetAllByPacienteIdAsync(userId, cancellationToken);
+            var messages = history.SelectMany(item => new[]
+            {
+                new ChatHistoryMessage(item.Id + "-user", "user", item.Pergunta, item.CriadoEm),
+                new ChatHistoryMessage(item.Id + "-assistant", "assistant", item.Resposta, item.CriadoEm)
+            });
+
+            return Results.Ok(new { messages });
+        }).RequireAuthorization();
+
         app.MapPost("/api/chat", async (
             ChatRequest req,
             ClaimsPrincipal user,
             IDocumentRepository docRepo,
             IFichaMedicaRepository fichaRepo,
             IPacienteRepository pacienteRepo,
+            IChatHistoryRepository chatHistoryRepo,
             IConfiguration config,
             IHttpClientFactory httpClientFactory,
             CancellationToken cancellationToken) =>
@@ -131,17 +160,24 @@ INSTRUÇÕES DE RESPOSTA:
 - Se não encontrar a informação, diga com naturalidade: ""Não encontrei essa informação nos seus registros.""
 - Seja conciso, mas inclua os detalhes relevantes que constam nos registros. Não repita a mesma conclusão em frases diferentes.
 - Responda como apoio para consultar os registros, sem substituir atendimento médico.
-- Adicione no final da mensagem: 'Aviso: Esta resposta é gerada por IA e não substitui orientação médica.'
+- Não repita avisos sobre IA ou orientação médica no final das respostas; esse aviso já aparece fixo na interface.
 ";
 
+            var recentHistory = await chatHistoryRepo.GetRecentByPacienteIdAsync(userId, 10, cancellationToken);
             var requestBody = new
             {
                 model = groqModel,
-                messages = new[]
+                messages = new List<object>
                 {
-                    new { role = "system", content = promptSystem },
-                    new { role = "user", content = req.Message }
-                },
+                    new { role = "system", content = promptSystem }
+                }
+                .Concat(recentHistory.SelectMany(item => new object[]
+                {
+                    new { role = "user", content = item.Pergunta },
+                    new { role = "assistant", content = RemoveAiDisclaimer(item.Resposta) }
+                }))
+                .Append(new { role = "user", content = req.Message })
+                .ToArray(),
                 temperature = 0.2,
                 max_tokens = 1024
             };
@@ -171,17 +207,17 @@ INSTRUÇÕES DE RESPOSTA:
                 }, statusCode: StatusCodes.Status503ServiceUnavailable);
             }
 
+            string reply;
             try
             {
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 using var doc = JsonDocument.Parse(responseContent);
-                var reply = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+                reply = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()
+                    ?? string.Empty;
                 if (string.IsNullOrWhiteSpace(reply))
                     throw new InvalidOperationException("A resposta da IA estava vazia.");
-
-                return Results.Ok(new { response = reply });
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 app.Logger.LogWarning(ex, "A resposta da API do Groq não tinha o formato esperado.");
                 return Results.Json(new
@@ -190,6 +226,21 @@ INSTRUÇÕES DE RESPOSTA:
                     detail = "O serviço de IA respondeu com um formato inesperado. Tente novamente."
                 }, statusCode: StatusCodes.Status502BadGateway);
             }
+
+            try
+            {
+                await chatHistoryRepo.SaveExchangeAsync(userId, req.Message, reply, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                app.Logger.LogError(ex, "Não foi possível salvar a conversa do paciente {PacienteId}.", userId);
+                return Results.Problem(
+                    title: "Não foi possível salvar a conversa",
+                    detail: "A resposta foi gerada, mas não pôde ser salva. Tente novamente.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            return Results.Ok(new { response = reply });
         }).RequireAuthorization().RequireRateLimiting("chat");
     }
 }
@@ -198,3 +249,5 @@ public class ChatRequest
 {
     public string Message { get; set; } = string.Empty;
 }
+
+public record ChatHistoryMessage(string Id, string Role, string Content, DateTime CreatedAt);
