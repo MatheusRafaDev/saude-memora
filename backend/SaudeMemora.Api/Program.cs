@@ -1169,6 +1169,9 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         cid = d.Cid,
         cnes = d.Cnes,
         medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
+        nomeExame = d.NomeExame,
+        tipoExame = d.TipoExame,
+        resultadosExame = d.ResultadosExame.Select(r => new { r.Nome, r.NomeNormalizado }),
         urlImagens = d.IdPublicos != null ? d.IdPublicos
             .Select(idPublico => storage.GetSignedUrl(idPublico) ?? string.Empty)
             .Where(url => !string.IsNullOrWhiteSpace(url))

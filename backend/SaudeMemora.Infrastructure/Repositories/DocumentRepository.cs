@@ -13,7 +13,7 @@ public class DocumentRepository : IDocumentRepository
     private const string QueueIndexName = "ix_status_lockedUntil";
     private const string IdempotencyIndexName = "ux_pacienteId_fileHash";
 
-    public static string UserDocumentsCacheKey(string userId) => $"documents:user:{userId}";
+    public static string UserDocumentsCacheKey(string userId) => $"documents:user:v2:{userId}";
     public static string UserDocumentCountCacheKey(string userId) => $"documents:count:{userId}";
 
     private readonly IMongoCollection<RegistroDocumento> _documents;

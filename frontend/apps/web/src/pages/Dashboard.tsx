@@ -35,6 +35,19 @@ import {
 } from "@workspace/api-client-react";
 import { triggerUploadModal } from "@/components/UploadModal";
 
+function uniqueLabels(values: unknown[]): string[] {
+  const seen = new Set<string>();
+
+  return values.flatMap((value) => {
+    if (typeof value !== "string") return [];
+    const label = value.trim().replace(/\s+/g, " ");
+    const key = label.toLocaleLowerCase("pt-BR");
+    if (!label || seen.has(key)) return [];
+    seen.add(key);
+    return [label];
+  });
+}
+
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
   const [isCarteirinhaZoomOpen, setIsCarteirinhaZoomOpen] = useState(false);
@@ -57,20 +70,18 @@ export default function Dashboard() {
 
   // — Anamnese —
   const bloodType = ficha.tipoSanguineo as string | undefined;
-  const allergies = (ficha.alergias as string[]) || [];
-  const chronicDiseases = (ficha.doencasCronicas as string[]) || [];
+  const allergies = uniqueLabels(Array.isArray(ficha.alergias) ? ficha.alergias : []);
+  const chronicDiseases = uniqueLabels(Array.isArray(ficha.doencasCronicas) ? ficha.doencasCronicas : []);
   const conditions = (ficha.condicoes as any[]) || [];
   const positiveConditions = conditions.filter((c: any) => c.tem);
-  const allConditions = [
+  const allConditions = uniqueLabels([
     ...chronicDiseases,
     ...positiveConditions.map((c: any) => c.nome),
-  ];
-  const continuousMedications: string[] = Array.isArray(ficha.medicamentosContinuos)
-    ? ficha.medicamentosContinuos.filter(
-        (medication: unknown): medication is string =>
-          typeof medication === "string" && medication.trim().length > 0,
-      )
-    : [];
+    ficha.outrasDoencas,
+  ]);
+  const continuousMedications = uniqueLabels(
+    Array.isArray(ficha.medicamentosContinuos) ? ficha.medicamentosContinuos : [],
+  );
   const familyHistory = ficha.historicoFamiliar as string | undefined;
   const smoker = ficha.fuma as boolean | undefined;
   const alcohol = ficha.bebe as boolean | undefined;
@@ -101,14 +112,17 @@ export default function Dashboard() {
     const medications = Array.isArray(doc.medicamentos) ? doc.medicamentos : [];
     const uniqueMedicationNames = new Map<string, string>();
     medications.forEach((medication: any) => {
-      const name = typeof medication.nome === "string" ? medication.nome.trim() : "";
-      if (name) uniqueMedicationNames.set(name.toLocaleLowerCase(), name);
+      const name = typeof medication.nome === "string" ? medication.nome.trim().replace(/\s+/g, " ") : "";
+      const key = name.toLocaleLowerCase("pt-BR");
+      if (name) uniqueMedicationNames.set(key, name);
     });
     uniqueMedicationNames.forEach((name, key) => {
       const current = medicationCounts.get(key);
       medicationCounts.set(key, { nome: current?.nome ?? name, count: (current?.count ?? 0) + 1 });
     });
+  });
 
+  processedDocs.forEach((doc: any) => {
     const examResults = Array.isArray(doc.resultadosExame) ? doc.resultadosExame : [];
     const isExamDocument = (doc.tipo || "").toLowerCase().includes("exame") ||
       Boolean(doc.nomeExame || doc.tipoExame || examResults.length);
@@ -116,11 +130,14 @@ export default function Dashboard() {
 
     const examName = [doc.tipoExame, doc.nomeExame, doc.titulo]
       .find((value: unknown) => typeof value === "string" && value.trim())?.trim();
-    if (!examName) return;
-
-    const key = examName.toLocaleLowerCase();
-    const current = examCounts.get(key);
-    examCounts.set(key, { nome: current?.nome ?? examName, count: (current?.count ?? 0) + 1 });
+    const resultNames = examName
+      ? [examName]
+      : examResults.flatMap((result: any) => [result.nomeNormalizado, result.nome]);
+    uniqueLabels(resultNames).forEach((name) => {
+      const key = name.toLocaleLowerCase("pt-BR");
+      const current = examCounts.get(key);
+      examCounts.set(key, { nome: current?.nome ?? name, count: (current?.count ?? 0) + 1 });
+    });
   });
 
   const topMedicacoes = [...medicationCounts.values()]
