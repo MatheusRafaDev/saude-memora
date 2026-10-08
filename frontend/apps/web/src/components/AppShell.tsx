@@ -55,7 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             {/* Logo */}
             <Link href={isAnamnesePending ? "/anamnese" : "/visao-geral"} className="flex items-center gap-2.5 shrink-0" data-testid="link-brand">
-              <span className="flex items-center justify-center">
+              <span className="brand-logo flex items-center justify-center">
                 <LourdesHeartMark className="h-7 w-7" />
               </span>
               <span className="leading-tight hidden sm:block">
@@ -215,7 +215,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* ── Main content ───────────────────────────────────────────────── */}
-      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10">
+      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10 bg-[radial-gradient(circle_at_top,_rgba(58,108,255,0.08),transparent_35%)]">
         {children}
       </main>
 

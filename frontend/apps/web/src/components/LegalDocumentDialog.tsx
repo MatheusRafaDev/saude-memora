@@ -15,19 +15,19 @@ const documents = {
       {
         title: '1. Aceitação dos Termos',
         paragraphs: [
-          'Ao utilizar o Saúde Memora, você concorda com estes termos de uso. Se não concordar, por favor, não utilize a plataforma.',
+          'Ao utilizar o SaúdeMemora, você concorda com estes termos de uso. Se não concordar, por favor, não utilize a plataforma.',
         ],
       },
       {
         title: '2. Uso de Inteligência Artificial',
         paragraphs: [
-          'O Saúde Memora utiliza ferramentas de IA de terceiros (como Google Gemini e OCR.space) para extrair texto e dados estruturados das imagens de receitas médicas, laudos e exames que você envia. Ao aceitar os termos de consentimento, você autoriza o envio dessas imagens para processamento e a armazenagem dos resultados para fins de preenchimento do seu prontuário pessoal.',
+          'O SaúdeMemora utiliza ferramentas de IA de terceiros (como Google Gemini e OCR.space) para extrair texto e dados estruturados das imagens de receitas médicas, laudos e exames que você envia. Ao aceitar os termos de consentimento, você autoriza o envio dessas imagens para processamento e a armazenagem dos resultados para fins de preenchimento do seu prontuário pessoal.',
         ],
       },
       {
         title: '3. Responsabilidade',
         paragraphs: [
-          'Os dados extraídos pela IA podem conter imprecisões. É de responsabilidade do usuário verificar as informações extraídas e validar com seu médico. O Saúde Memora não fornece diagnósticos médicos, apenas organiza seu histórico de saúde.',
+          'Os dados extraídos pela IA podem conter imprecisões. É de responsabilidade do usuário verificar as informações extraídas e validar com seu médico. O SaúdeMemora não fornece diagnósticos médicos, apenas organiza seu histórico de saúde.',
         ],
       },
     ],

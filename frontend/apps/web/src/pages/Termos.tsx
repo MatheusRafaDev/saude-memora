@@ -19,13 +19,13 @@ export default function Termos() {
         <div className="prose prose-sm md:prose-base dark:prose-invert">
           <h2 className="text-xl font-bold mt-8 mb-4">1. Aceitação dos Termos</h2>
           <p>
-            Ao utilizar o Saúde Memora, você concorda com estes termos de uso. Se não concordar,
+            Ao utilizar o SaúdeMemora, você concorda com estes termos de uso. Se não concordar,
             por favor, não utilize a plataforma.
           </p>
 
           <h2 className="text-xl font-bold mt-8 mb-4">2. Uso de Inteligência Artificial</h2>
           <p>
-            O Saúde Memora utiliza ferramentas de IA de terceiros (como Google Gemini e OCR.space) para extrair
+            O SaúdeMemora utiliza ferramentas de IA de terceiros (como Google Gemini e OCR.space) para extrair
             texto e dados estruturados das imagens de receitas médicas, laudos e exames que você envia.
             Ao aceitar os termos de consentimento, você autoriza o envio dessas imagens para processamento e a armazenagem
             dos resultados para fins de preenchimento do seu prontuário pessoal.
@@ -34,7 +34,7 @@ export default function Termos() {
           <h2 className="text-xl font-bold mt-8 mb-4">3. Responsabilidade</h2>
           <p>
             Os dados extraídos pela IA podem conter imprecisões. É de responsabilidade do usuário
-            verificar as informações extraídas e validar com seu médico. O Saúde Memora não fornece
+            verificar as informações extraídas e validar com seu médico. O SaúdeMemora não fornece
             diagnósticos médicos, apenas organiza seu histórico de saúde.
           </p>
         </div>

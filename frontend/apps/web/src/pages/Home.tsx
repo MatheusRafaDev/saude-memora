@@ -43,10 +43,10 @@ const navigation = [
 
 function Brand({ animate = false }: { animate?: boolean }) {
   return (
-    <Link href="/" className="flex w-fit items-center gap-2.5" aria-label="Saúde Memora — início">
+    <Link href="/" className="flex w-fit items-center gap-2.5" aria-label="SaúdeMemora — início">
       <img src="/logo.png" alt="" className={`h-9 w-9 object-contain${animate ? ' home-logo-arrival' : ''}`} />
       <span className="text-[15px] font-bold tracking-tight text-foreground">
-        Saúde <span className="text-accent">Memora</span>
+        Saúde<span className="text-accent">Memora</span>
       </span>
     </Link>
   );
@@ -55,13 +55,13 @@ function Brand({ animate = false }: { animate?: boolean }) {
 function ProductPreview() {
   return (
     <div
-      aria-label="Prévia da plataforma Saúde Memora"
+      aria-label="Prévia da plataforma SaúdeMemora"
       className="overflow-hidden rounded-lg border border-border bg-card shadow-soft"
     >
       <div className="flex min-h-12 items-center justify-between border-b border-border px-4 sm:px-5">
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="" className="h-6 w-6 object-contain" />
-          <span className="text-xs font-semibold text-foreground">Saúde Memora</span>
+          <span className="text-xs font-semibold text-foreground">SaúdeMemora</span>
         </div>
         <span className="text-[11px] text-muted-foreground">Visão geral</span>
       </div>
@@ -234,7 +234,7 @@ export default function Home() {
             </div>
             <div className="mt-7 grid gap-8 md:grid-cols-2 md:gap-12">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Saúde Memora</h3>
+                <h3 className="text-sm font-semibold text-foreground">SaúdeMemora</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   A plataforma reúne documentos e informações de saúde para ajudar você a consultar seu histórico quando precisar.
                   Ela apoia a organização dos registros e não substitui a avaliação ou a orientação de profissionais de saúde.
@@ -243,7 +243,7 @@ export default function Home() {
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Sobre o criador</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Sou Matheus Rafael, criador do Saúde Memora. Desenvolvi este projeto com o propósito de facilitar a organização
+                  Sou Matheus Rafael, criador do SaúdeMemora. Desenvolvi este projeto com o propósito de facilitar a organização
                   e o acesso às informações de saúde no dia a dia.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -304,7 +304,7 @@ export default function Home() {
             >
               <Github size={17} />
             </a>
-            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Saúde Memora</p>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} SaúdeMemora</p>
           </div>
         </div>
       </footer>

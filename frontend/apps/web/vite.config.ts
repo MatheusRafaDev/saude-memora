@@ -25,8 +25,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Saúde Memora',
-        short_name: 'S.Memora',
+        name: 'SaúdeMemora',
+        short_name: 'SaúdeMemora',
         description: 'Prontuário Médico Inteligente',
         id: '/saude-memora/',
         scope: '/',

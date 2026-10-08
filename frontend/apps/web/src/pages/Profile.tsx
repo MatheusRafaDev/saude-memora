@@ -317,7 +317,7 @@ export default function Profile() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-extrabold flex items-center gap-2">Sessão</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Sair com segurança do seu espaço no Saúde Memora.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Sair com segurança do seu espaço no SaúdeMemora.</p>
         </div>
         <button type="button" onClick={() => { void signOut(); }} disabled={isSigningOut} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60">{isSigningOut ? 'Saindo...' : 'Sair da conta'}</button>
       </div>
