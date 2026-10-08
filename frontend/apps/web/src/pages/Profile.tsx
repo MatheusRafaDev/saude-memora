@@ -6,6 +6,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsentimento, useSaveConsentimento, useRevokeConsentimento } from '../hooks/useConsentimento';
 
+function formatPhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (!digits) return '';
+
+  const areaCode = digits.slice(0, 2);
+  const number = digits.slice(2);
+  const formattedNumber = number.length > 4
+    ? `${number.slice(0, -4)}-${number.slice(-4)}`
+    : number;
+
+  return `(${areaCode}${digits.length > 2 ? `) ${formattedNumber}` : ''}`;
+}
+
 export default function Profile() {
   const { data: profileRaw, isLoading, refetch } = useGetApiPacientesMe();
   const patchPerfil = usePatchApiPacientesMePerfil();
@@ -56,7 +69,7 @@ export default function Profile() {
         planoSaude: p.planoSaude || '',
         numeroCarteirinha: p.numeroCarteirinha || '',
         urlCarteirinha: p.urlCarteirinha || '',
-        contatoEmergencia: p.contatoEmergencia || ''
+        contatoEmergencia: formatPhoneNumber(p.contatoEmergencia || '')
       });
     }
   }, [profileRaw]);
@@ -199,7 +212,14 @@ export default function Profile() {
           <Field label="Nome completo" value={form.name} onChange={(v) => setForm({...form, name: v})} id="name" />
           <Field label="E-mail" value={form.email} onChange={(v) => setForm({...form, email: v})} id="email" type="email" />
           <Field label="Data de nascimento" value={form.birthDate} onChange={(v) => setForm({...form, birthDate: v})} id="birth-date" type="date" />
-          <Field label="Contato de Emergência" value={form.contatoEmergencia} onChange={(v) => setForm({...form, contatoEmergencia: v})} id="contato-emergencia" />
+          <Field
+            label="Contato de Emergência"
+            value={form.contatoEmergencia}
+            onChange={(value) => set('contatoEmergencia', formatPhoneNumber(value))}
+            id="contato-emergencia"
+            type="tel"
+            placeholder="(11) 99999-9999"
+          />
         </div>
       </section>
 
@@ -361,7 +381,6 @@ export default function Profile() {
   </div>;
 }
 
-function Field({ label, value, onChange, id, type = 'text', disabled = false }: { label: string; value: string; onChange: (value: string) => void; id: string; type?: string; disabled?: boolean }) {
-  return <label className="block"><span className="mb-2 block text-[11px] font-bold">{label}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} data-testid={`input-profile-${id}`} className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm outline-none focus:ring-4 focus:ring-accent/10 disabled:opacity-60" /></label>;
+function Field({ label, value, onChange, id, type = 'text', disabled = false, placeholder }: { label: string; value: string; onChange: (value: string) => void; id: string; type?: string; disabled?: boolean; placeholder?: string }) {
+  return <label className="block"><span className="mb-2 block text-[11px] font-bold">{label}</span><input type={type} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} placeholder={placeholder} data-testid={`input-profile-${id}`} className="h-11 w-full rounded-xl border border-input bg-background px-4 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-4 focus:ring-accent/10 disabled:opacity-60" /></label>;
 }
-

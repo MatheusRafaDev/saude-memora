@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, LoaderCircle, Search, X } from 'lucide-react';
+import { Check, LoaderCircle, Plus, Search, X } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 
 type CatalogSource = 'medicamentos' | 'cid10' | 'cnes';
@@ -34,12 +34,16 @@ export function CatalogAutocomplete({
   label,
   selected,
   onChange,
+  sourceOptions = SOURCES,
+  allowCustomEntry = false,
 }: {
   label: string;
   selected: string[];
   onChange: (items: string[]) => void;
+  sourceOptions?: { value: CatalogSource; label: string }[];
+  allowCustomEntry?: boolean;
 }) {
-  const [source, setSource] = useState<CatalogSource>('medicamentos');
+  const [source, setSource] = useState<CatalogSource>(sourceOptions[0]?.value ?? 'medicamentos');
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,7 +91,18 @@ export function CatalogAutocomplete({
 
   const addItem = (item: CatalogItem) => {
     const value = formatItem(item, source);
-    if (value && !selected.includes(value)) onChange([...selected, value]);
+    if (value && !selected.some((item) => item.toLocaleLowerCase() === value.toLocaleLowerCase())) {
+      onChange([...selected, value]);
+    }
+    setQuery('');
+    setItems([]);
+  };
+
+  const addCustomItem = () => {
+    const value = query.trim();
+    if (value && !selected.some((item) => item.toLocaleLowerCase() === value.toLocaleLowerCase())) {
+      onChange([...selected, value]);
+    }
     setQuery('');
     setItems([]);
   };
@@ -118,14 +133,26 @@ export function CatalogAutocomplete({
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (allowCustomEntry && event.key === 'Enter' && query.trim()) {
+                event.preventDefault();
+                addCustomItem();
+              }
+            }}
             placeholder={`Buscar ${source === 'medicamentos' ? 'medicamentos' : source === 'cid10' ? 'CID-10' : 'CNES'}...`}
             className="h-11 w-full rounded-xl border border-input bg-background px-4 pr-10 text-xs font-medium outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10"
           />
           <Search size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           {loading && <LoaderCircle size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted-foreground" />}
 
-          {query.trim().length >= 3 && !loading && (
+          {((query.trim().length >= 3 && !loading) || (allowCustomEntry && query.trim().length > 0)) && (
             <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-2xl">
+              {allowCustomEntry && (
+                <button type="button" onClick={addCustomItem} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold text-accent hover:bg-accent/10">
+                  <span className="truncate">Adicionar “{query.trim()}”</span>
+                  <Plus size={14} className="shrink-0" />
+                </button>
+              )}
               {items.length > 0 ? items.map((item, index) => {
                 const value = formatItem(item, source);
                 return (
@@ -136,25 +163,29 @@ export function CatalogAutocomplete({
                 );
               }) : error ? (
                 <div className="px-3 py-3 text-xs text-destructive text-center">{error}</div>
-              ) : (
+              ) : !allowCustomEntry ? (
                 <div className="px-3 py-3 text-xs text-muted-foreground text-center">Nenhum registro encontrado.</div>
-              )}
+              ) : query.trim().length >= 3 && !loading && !error ? (
+                <div className="px-3 py-2 text-[11px] text-muted-foreground">Ou selecione um medicamento encontrado no catálogo.</div>
+              ) : null}
             </div>
           )}
         </div>
 
-        <div className="flex rounded-xl border border-input bg-background p-1">
-          {SOURCES.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => { setSource(option.value); setQuery(''); setItems([]); }}
-              className={`rounded-lg px-3 py-2 text-[10px] font-bold transition-colors ${source === option.value ? 'bg-accent text-white' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        {sourceOptions.length > 1 && (
+          <div className="flex rounded-xl border border-input bg-background p-1">
+            {sourceOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => { setSource(option.value); setQuery(''); setItems([]); }}
+                className={`rounded-lg px-3 py-2 text-[10px] font-bold transition-colors ${source === option.value ? 'bg-accent text-white' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -383,11 +383,18 @@ export default function Record() {
               />
 
               {/* Medicamentos Continuos */}
+              <div className="space-y-1">
               <CatalogAutocomplete
-                label="Medicamentos de uso contínuo"
-                selected={form.medicamentosContinuos}
-                onChange={(items) => set('medicamentosContinuos', items)}
+                  label="Medicamentos de uso contínuo"
+                  selected={form.medicamentosContinuos}
+                  onChange={(items) => set('medicamentosContinuos', items)}
+                  sourceOptions={[{ value: 'medicamentos', label: 'Medicamentos' }]}
+                  allowCustomEntry
               />
+                <p className="text-[11px] text-muted-foreground">
+                  Busque no catálogo ou digite o nome e pressione Enter para adicionar.
+                </p>
+              </div>
 
               {/* Organ donor */}
               <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-4">
@@ -465,4 +472,3 @@ function Field({ label, value, onChange, id, textarea = false, placeholder = '' 
     }
   </label>;
 }
-

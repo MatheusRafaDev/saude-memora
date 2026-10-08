@@ -63,6 +63,12 @@ export default function Dashboard() {
     ...chronicDiseases,
     ...positiveConditions.map((c: any) => c.nome),
   ];
+  const continuousMedications: string[] = Array.isArray(ficha.medicamentosContinuos)
+    ? ficha.medicamentosContinuos.filter(
+        (medication: unknown): medication is string =>
+          typeof medication === "string" && medication.trim().length > 0,
+      )
+    : [];
   const familyHistory = ficha.historicoFamiliar as string | undefined;
   const smoker = ficha.fuma as boolean | undefined;
   const alcohol = ficha.bebe as boolean | undefined;
@@ -432,6 +438,37 @@ export default function Dashboard() {
               ) : (
                 <p className="text-xs text-muted-foreground italic">
                   Não informado
+                </p>
+              )}
+            </div>
+
+            {/* Medicamentos de uso contínuo */}
+            <div>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                  <Pill size={12} className="text-emerald-600" /> Medicamentos de uso contínuo
+                </p>
+                <Link
+                  href="/anamnese"
+                  className="shrink-0 text-[10px] font-semibold text-primary hover:underline"
+                >
+                  Editar
+                </Link>
+              </div>
+              {continuousMedications.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {continuousMedications.map((medication, index) => (
+                    <span
+                      key={`${medication}-${index}`}
+                      className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800"
+                    >
+                      {medication}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs italic text-muted-foreground">
+                  Nenhum cadastrado. <Link href="/anamnese" className="not-italic font-semibold text-primary hover:underline">Adicionar</Link>
                 </p>
               )}
             </div>
