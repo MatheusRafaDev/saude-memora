@@ -217,6 +217,7 @@
 .page-enter { animation: page-enter 0.4s cubic-bezier(.16,1,.3,1) both; }
 .fade-in    { animation: fade-in 0.35s ease both; }
 .slide-up   { animation: slide-up 0.4s cubic-bezier(.16,1,.3,1) both; }
+.home-logo-arrival { animation: home-logo-arrival 0.55s cubic-bezier(.16,1,.3,1) both; }
 
 .stagger-1 { animation-delay: 50ms; }
 .stagger-2 { animation-delay: 100ms; }
@@ -235,6 +236,10 @@
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes home-logo-arrival {
+  from { opacity: 0; transform: translateY(4px) scale(.88) rotate(-6deg); }
+  to   { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
 }
 @keyframes continuous {
   0%   { transform: translateX(-100%); }
@@ -265,6 +270,10 @@
   background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--border)) 37%, hsl(var(--muted)) 63%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-logo-arrival { animation: none; }
 }
 
 /* Inputs */

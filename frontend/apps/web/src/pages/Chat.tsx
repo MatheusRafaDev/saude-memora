@@ -20,6 +20,8 @@ const suggestedQuestions = [
   'Quais exames fiz recentemente?',
   'Tenho alguma alergia registrada?',
   'Quais medicamentos aparecem no meu histórico?',
+  'Quais condições de saúde estão registradas?',
+  'Há algum documento recente no meu histórico?',
 ];
 
 function removeAiDisclaimer(content: string) {
@@ -161,7 +163,7 @@ export default function Chat() {
 
           {messages.length === 1 && messages[0].id === 'welcome' && !isHistoryLoading && (
             <div className="ml-10 max-w-2xl">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Você pode perguntar</p>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Exemplos de perguntas</p>
               <div className="flex flex-wrap gap-2">
                 {suggestedQuestions.map((question) => (
                   <button

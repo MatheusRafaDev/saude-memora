@@ -1,14 +1,16 @@
 import { Link } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
+import { PublicPageHeader } from '@/components/PublicPageHeader';
 
 export default function Termos() {
   return (
-    <div className="min-h-screen bg-background p-6 md:p-12">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft size={16} className="mr-2" /> Voltar
+    <div className="min-h-screen bg-background text-foreground">
+      <PublicPageHeader />
+      <main className="mx-auto max-w-3xl space-y-8 px-5 py-8 sm:px-8 md:py-12">
+        <Link href="/" className="inline-flex items-center text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <ArrowLeft size={16} className="mr-2" /> Voltar ao início
         </Link>
-        
+
         <div>
           <h1 className="text-3xl font-extrabold mb-4">Termos de Uso</h1>
           <p className="text-muted-foreground">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
@@ -36,7 +38,7 @@ export default function Termos() {
             diagnósticos médicos, apenas organiza seu histórico de saúde.
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
