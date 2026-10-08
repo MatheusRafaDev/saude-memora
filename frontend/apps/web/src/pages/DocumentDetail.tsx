@@ -6,7 +6,12 @@ import {
   ClipboardList, IdCard, User, Building2, FlaskConical, Activity, 
   Building, FileText, ChevronDown, ChevronUp, Copy, ActivitySquare, AlertTriangle
 } from 'lucide-react';
-import { useGetApiDocumentsId, useDeleteApiDocumentsId, customFetch } from '@workspace/api-client-react';
+import {
+  useGetApiDocumentsId,
+  useDeleteApiDocumentsId,
+  getGetApiDocumentsIdQueryKey,
+  customFetch
+} from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -23,8 +28,14 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const deleteMutation = useDeleteApiDocumentsId();
+  const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(id || '');
 
-  const { data: docRaw, isLoading, refetch } = useGetApiDocumentsId(id || '');
+  const { data: docRaw, isLoading, refetch } = useGetApiDocumentsId(id || '', {
+    query: {
+      queryKey: getGetApiDocumentsIdQueryKey(id || ''),
+      enabled: isValidObjectId
+    }
+  });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
@@ -181,6 +192,10 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev: any) => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  if (!isValidObjectId) {
+    return <div className="page-enter p-12 text-center text-red-500 font-bold">Documento não encontrado.</div>;
+  }
 
   if (isLoading) {
     return <div className="page-enter p-12 text-center text-muted-foreground">Carregando detalhes do documento...</div>;

@@ -1166,6 +1166,9 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
+    if (!MongoDB.Bson.ObjectId.TryParse(id, out _))
+        return Results.BadRequest(new { error = "O identificador do documento é inválido." });
+
     var doc = await repo.GetByIdAsync(id);
     if (doc == null)
     {
