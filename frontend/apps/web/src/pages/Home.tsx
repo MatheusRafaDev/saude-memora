@@ -1,13 +1,17 @@
 import { useState, type MouseEvent } from 'react';
 import {
   Activity,
+  ArrowUpRight,
   ArrowRight,
   ClipboardList,
   FileText,
   Github,
+  Heart,
   Linkedin,
   Menu,
   Pill,
+  ShieldCheck,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { Link } from 'wouter';
@@ -38,7 +42,6 @@ const resources = [
 const navigation = [
   { href: '/', label: 'Início' },
   { href: '#recursos', label: 'Recursos' },
-  { href: '#sobre', label: 'Sobre' },
 ];
 
 function Brand({ animate = false }: { animate?: boolean }) {
@@ -55,53 +58,70 @@ function Brand({ animate = false }: { animate?: boolean }) {
 function ProductPreview() {
   return (
     <div
-      aria-label="Prévia da plataforma SaúdeMemora"
-      className="overflow-hidden rounded-lg border border-border bg-card shadow-soft"
+      aria-label="Prévia ilustrativa da plataforma SaúdeMemora"
+      className="relative mx-auto w-full max-w-[600px]"
     >
-      <div className="flex min-h-12 items-center justify-between border-b border-border px-4 sm:px-5">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="" className="h-6 w-6 object-contain" />
-          <span className="text-xs font-semibold text-foreground">SaúdeMemora</span>
+      <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-transparent to-accent/15 blur-2xl" aria-hidden="true" />
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-border/80 bg-white shadow-[0_32px_90px_-38px_rgba(25,48,83,0.35)]">
+        <div className="flex min-h-14 items-center justify-between border-b border-border/70 bg-white/90 px-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="" className="h-7 w-7 object-contain" />
+            <span className="text-xs font-bold text-foreground">SaúdeMemora</span>
+          </div>
+          <span className="rounded-full bg-secondary px-3 py-1 text-[10px] font-semibold text-primary">Prévia ilustrativa</span>
         </div>
-        <span className="text-[11px] text-muted-foreground">Visão geral</span>
-      </div>
 
-      <div className="grid min-h-[290px] sm:grid-cols-[132px_1fr]">
-        <aside className="hidden border-r border-border bg-muted/50 p-3 sm:block">
-          <p className="mb-2 px-2 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Menu</p>
-          <div className="space-y-1 text-[11px]">
-            <p className="rounded-md bg-secondary px-2 py-2 font-medium text-primary">Visão geral</p>
-            <p className="px-2 py-2 text-muted-foreground">Documentos</p>
-            <p className="px-2 py-2 text-muted-foreground">Ficha médica</p>
-          </div>
-        </aside>
-
-        <div className="p-4 sm:p-5">
-          <p className="text-[10px] font-medium text-muted-foreground">Sua área de saúde</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">Informações organizadas</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Exames, medicamentos e documentos reunidos em um só lugar.
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {['Exames', 'Medicamentos', 'Documentos'].map((item) => (
-              <div key={item} className="flex min-h-16 items-center gap-2 rounded-md border border-border bg-background px-2.5 py-2">
-                <span className="h-7 w-1 rounded-full bg-primary/70" aria-hidden="true" />
-                <span className="text-[11px] font-medium text-foreground">{item}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 rounded-md border border-border">
-            <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-              <span className="text-[11px] font-semibold text-foreground">Documentos recentes</span>
-              <span className="text-[10px] text-muted-foreground">Sua biblioteca</span>
+        <div className="grid min-h-[330px] sm:grid-cols-[145px_1fr]">
+          <aside className="hidden border-r border-border/70 bg-slate-50/80 p-4 sm:block">
+            <p className="mb-3 px-2 text-[9px] font-bold uppercase tracking-[.16em] text-muted-foreground">Seu espaço</p>
+            <div className="space-y-1.5 text-[11px]">
+              <p className="flex items-center gap-2 rounded-xl bg-primary px-2.5 py-2.5 font-semibold text-white"><Activity size={13} /> Visão geral</p>
+              <p className="flex items-center gap-2 rounded-xl px-2.5 py-2.5 text-muted-foreground"><FileText size={13} /> Documentos</p>
+              <p className="flex items-center gap-2 rounded-xl px-2.5 py-2.5 text-muted-foreground"><ClipboardList size={13} /> Ficha médica</p>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-4">
-              <FileText size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
-              <p className="text-[10px] leading-4 text-muted-foreground">
-                Seus documentos de saúde ficam disponíveis nesta área.
-              </p>
+            <div className="mt-8 rounded-xl border border-primary/10 bg-white p-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary text-primary"><ShieldCheck size={14} /></div>
+              <p className="mt-2 text-[10px] font-semibold text-foreground">Acesso protegido</p>
+              <p className="mt-1 text-[9px] leading-4 text-muted-foreground">Seu histórico em um espaço pessoal.</p>
+            </div>
+          </aside>
+
+          <div className="p-4 sm:p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-medium text-muted-foreground">Seu espaço de saúde</p>
+                <h2 className="mt-1 text-lg font-bold tracking-tight text-foreground">Visão geral</h2>
+              </div>
+              <span className="rounded-full border border-border px-2.5 py-1 text-[9px] font-medium text-muted-foreground">Tudo em ordem</span>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {[
+                { icon: FileText, label: 'Documentos', value: 'Seu histórico' },
+                { icon: Activity, label: 'Exames', value: 'Resultados' },
+                { icon: Pill, label: 'Medicamentos', value: 'Receitas' },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="rounded-2xl border border-border/80 bg-white p-3">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-primary"><Icon size={15} /></span>
+                  <p className="mt-3 text-[10px] font-semibold text-foreground">{label}</p>
+                  <p className="mt-1 text-[9px] text-muted-foreground">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 rounded-2xl border border-border/80 bg-white">
+              <div className="flex items-center justify-between border-b border-border/70 px-3.5 py-3">
+                <span className="text-[10px] font-bold text-foreground">Acesso rápido</span>
+                <ArrowUpRight size={14} className="text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-3 px-3.5 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"><Sparkles size={15} /></span>
+                <div>
+                  <p className="text-[10px] font-semibold text-foreground">Organize um novo documento</p>
+                  <p className="mt-0.5 text-[9px] text-muted-foreground">Exames, receitas e outros registros</p>
+                </div>
+                <ArrowRight size={14} className="ml-auto text-muted-foreground" />
+              </div>
             </div>
           </div>
         </div>
@@ -123,7 +143,7 @@ export default function Home() {
 
   return (
     <div className="min-h-[100dvh] bg-background font-sans text-foreground">
-      <header className="sticky top-0 z-20 border-b border-border bg-background">
+      <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Brand animate />
 
@@ -133,6 +153,7 @@ export default function Home() {
                 {label}
               </a>
             ))}
+            <Link href="/sobre" className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-primary">Sobre</Link>
           </nav>
 
           <div className="hidden items-center gap-2 md:flex">
@@ -171,6 +192,7 @@ export default function Home() {
                   {label}
                 </a>
               ))}
+              <Link href="/sobre" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted">Sobre</Link>
               <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3">
                 <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md border border-border px-3 py-2.5 text-center text-sm font-semibold text-foreground">
                   Entrar
@@ -185,28 +207,38 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-[0.9fr_1.1fr] md:gap-12 md:py-20 lg:gap-16">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Organização da sua saúde</p>
-            <h1 className="mt-4 max-w-xl text-balance text-4xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-5xl">
-              Suas informações de saúde em um só lugar.
-            </h1>
-            <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground">
-              Organize exames, medicamentos, documentos e histórico de saúde de forma simples e segura.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link href="/entrar" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-                Acessar plataforma <ArrowRight size={16} />
-              </Link>
-              <a href="#recursos" onClick={(event) => navigateToSection(event, '#recursos')} className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-5 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
-                Conhecer a plataforma
-              </a>
+        <section className="relative isolate overflow-hidden">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_18%_15%,rgba(28,84,135,0.09),transparent_38%),radial-gradient(ellipse_at_88%_40%,rgba(20,125,128,0.08),transparent_34%)]" />
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 md:grid-cols-[0.92fr_1.08fr] md:gap-10 md:py-24 lg:gap-16">
+            <div className="page-enter">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm">
+                <Heart size={13} className="fill-accent/15 text-accent" />
+                Seu histórico de saúde, mais organizado
+              </div>
+              <h1 className="mt-6 max-w-xl text-balance text-4xl font-bold leading-[1.08] tracking-[-0.045em] text-foreground sm:text-5xl lg:text-[3.65rem]">
+                Cuidar da sua saúde também é <span className="text-primary">ter sua história por perto.</span>
+              </h1>
+              <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground sm:text-[17px]">
+                Reúna exames, receitas e informações importantes em um espaço pessoal, para encontrar o que precisa com mais facilidade.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/entrar" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90">
+                  Acessar plataforma <ArrowRight size={16} />
+                </Link>
+                <a href="#recursos" onClick={(event) => navigateToSection(event, '#recursos')} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-white/75 px-5 text-sm font-semibold text-foreground transition-colors hover:bg-white">
+                  Conhecer os recursos
+                </a>
+              </div>
+              <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[11px] font-medium text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} className="text-accent" /> Espaço pessoal</span>
+                <span className="inline-flex items-center gap-1.5"><FileText size={14} className="text-accent" /> Seus documentos reunidos</span>
+              </div>
             </div>
+            <div className="slide-up"><ProductPreview /></div>
           </div>
-          <ProductPreview />
         </section>
 
-        <section id="recursos" className="scroll-mt-20 border-y border-border bg-muted/40">
+        <section id="recursos" className="scroll-mt-20 border-y border-border/70 bg-slate-50/70">
           <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <div className="max-w-2xl">
               <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Tudo organizado em um só lugar</h2>
@@ -216,8 +248,8 @@ export default function Home() {
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {resources.map(({ icon: Icon, title, description }) => (
-                <article key={title} className="rounded-md border border-border bg-card p-5">
-                  <Icon size={19} strokeWidth={1.8} className="text-accent" aria-hidden="true" />
+                <article key={title} className="rounded-2xl border border-border/80 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent"><Icon size={19} strokeWidth={1.8} aria-hidden="true" /></span>
                   <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
                   <p className="mt-2 text-[13px] leading-5 text-muted-foreground">{description}</p>
                 </article>
@@ -226,48 +258,16 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="sobre" className="scroll-mt-20 border-b border-border">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <section className="border-b border-border/70">
+          <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 py-12 sm:px-6 sm:py-16 md:flex-row md:items-center">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Sobre</p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">Um projeto para organizar informações de saúde.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Conheça o projeto</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Tecnologia para deixar seu histórico mais acessível.</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">Entenda por que o SaúdeMemora foi criado e os princípios que orientam a plataforma.</p>
             </div>
-            <div className="mt-7 grid gap-8 md:grid-cols-2 md:gap-12">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">SaúdeMemora</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  A plataforma reúne documentos e informações de saúde para ajudar você a consultar seu histórico quando precisar.
-                  Ela apoia a organização dos registros e não substitui a avaliação ou a orientação de profissionais de saúde.
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Sobre o criador</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Sou Matheus Rafael, criador do SaúdeMemora. Desenvolvi este projeto com o propósito de facilitar a organização
-                  e o acesso às informações de saúde no dia a dia.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <a
-                    href="https://www.linkedin.com/in/matheus-rafael-50a676219/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted hover:text-primary"
-                  >
-                    <Linkedin size={15} aria-hidden="true" />
-                    LinkedIn
-                  </a>
-                  <a
-                    href="https://github.com/MatheusRafaDev"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted hover:text-primary"
-                  >
-                    <Github size={15} aria-hidden="true" />
-                    GitHub
-                  </a>
-                </div>
-              </div>
-            </div>
+            <Link href="/sobre" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+              Conheça nossa história <ArrowUpRight size={16} />
+            </Link>
           </div>
         </section>
       </main>
@@ -281,7 +281,7 @@ export default function Home() {
           </div>
           <nav aria-label="Links institucionais" className="flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
             <a href="#recursos" onClick={(event) => navigateToSection(event, '#recursos')} className="hover:text-primary">Recursos</a>
-            <a href="#sobre" onClick={(event) => navigateToSection(event, '#sobre')} className="hover:text-primary">Sobre</a>
+            <Link href="/sobre" className="hover:text-primary">Sobre</Link>
             <Link href="/privacidade" className="hover:text-primary">Privacidade</Link>
             <Link href="/termos" className="hover:text-primary">Termos de uso</Link>
           </nav>

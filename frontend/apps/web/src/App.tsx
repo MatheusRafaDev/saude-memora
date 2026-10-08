@@ -17,6 +17,7 @@ import Emergencia from '@/pages/Emergencia';
 import Chat from '@/pages/Chat';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
+import Sobre from '@/pages/Sobre';
 
 import { AppShell } from '@/components/AppShell';
 import {
@@ -203,6 +204,7 @@ function Router() {
         <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
         <Route path="/termos" component={Termos} />
         <Route path="/privacidade" component={Privacidade} />
+        <Route path="/sobre" component={Sobre} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
