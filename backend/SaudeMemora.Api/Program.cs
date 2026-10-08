@@ -377,6 +377,32 @@ _ = Task.Run(async () =>
 
     try
     {
+        using var scope = app.Services.CreateScope();
+        var catalogRepository = scope.ServiceProvider.GetRequiredService<IMedicamentoCatalogoRepository>();
+        if (await catalogRepository.ContarAsync(token) == 0)
+        {
+            var catalogPath = Path.Combine(app.Environment.ContentRootPath, "Data", "medicamentos.csv");
+            if (!File.Exists(catalogPath))
+            {
+                app.Logger.LogError("[Medicamentos] Arquivo da base ANVISA não encontrado em {CatalogPath}.", catalogPath);
+            }
+            else
+            {
+                await using var catalogStream = File.OpenRead(catalogPath);
+                var catalogService = scope.ServiceProvider.GetRequiredService<IMedicamentoCatalogoService>();
+                var importResult = await catalogService.ImportarAsync(catalogStream, token);
+                app.Logger.LogInformation(
+                    "[Medicamentos] Base ANVISA inicializada: {Imported} registros importados, {Invalid} inválidos e {Duplicates} duplicados.",
+                    importResult.RegistrosImportados,
+                    importResult.RegistrosInvalidos,
+                    importResult.RegistrosDuplicados);
+            }
+        }
+    }
+    catch (Exception ex) { app.Logger.LogError(ex, "[Medicamentos] Falha ao inicializar o catálogo ANVISA"); }
+
+    try
+    {
         var cid10Repository = app.Services.GetRequiredService<ICid10CatalogoRepository>();
         await cid10Repository.EnsureIndexesAsync(token);
     }

@@ -631,7 +631,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       {description?.descricao && (
                         <div className="mt-3 border-t border-border/50 pt-3">
                           <p className="text-xs leading-5 text-muted-foreground">{description.descricao}</p>
-                          <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Fonte: {description.fonte}</p>
+                          {description.fonte === 'CATALOGO-OFICIAL' ? (
+                            <p className="mt-2 text-[10px] leading-4 text-muted-foreground/70">
+                              Dados do cadastro de medicamentos da Anvisa. Para posologia e orientações completas, consulte a bula oficial.
+                            </p>
+                          ) : (
+                            <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Fonte: {description.fonte}</p>
+                          )}
                         </div>
                       )}
                       {descriptionError && (
@@ -915,7 +921,16 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                         {medicine.dosagem} {medicine.horario && `• ${medicine.horario}`}
                       </p>
                       {description?.descricao ? (
-                        <p className="mt-3 text-xs leading-5 text-white/80">{description.descricao}</p>
+                        <div className="mt-3">
+                          <p className="text-xs leading-5 text-white/80">{description.descricao}</p>
+                          {description.fonte === 'CATALOGO-OFICIAL' ? (
+                            <p className="mt-2 text-[10px] leading-4 text-white/55">
+                              Dados do cadastro de medicamentos da Anvisa — não substituem a bula oficial.
+                            </p>
+                          ) : (
+                            <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-white/45">Fonte: {description.fonte}</p>
+                          )}
+                        </div>
                       ) : descriptionError ? (
                         <p className="mt-3 text-xs leading-5 text-amber-300">Bula indisponível. Tente consultar novamente.</p>
                       ) : (

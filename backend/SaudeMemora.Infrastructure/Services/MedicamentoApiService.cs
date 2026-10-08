@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SaudeMemora.Application.Interfaces;
+using SaudeMemora.Domain.Entities;
 
 namespace SaudeMemora.Infrastructure.Services;
 
@@ -82,8 +84,23 @@ public sealed class MedicamentoApiService : IMedicamentoApiService
         if (_catalogoRepository is null)
             return null;
 
-        var medicamentos = await _catalogoRepository.BuscarAsync(nome, 1, cancellationToken);
-        var medicamento = medicamentos.FirstOrDefault();
+        var searchTerms = new[]
+        {
+            nome.Trim(),
+            Regex.Replace(nome, @"\b\d+(?:[.,]\d+)?\s*(?:mg|mcg|μg|g|ml|mcg/ml|mg/ml)\b", "", RegexOptions.IgnoreCase).Trim(),
+        }
+        .Where(term => term.Length >= 3)
+        .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        MedicamentoCatalogo? medicamento = null;
+        foreach (var searchTerm in searchTerms)
+        {
+            var matches = await _catalogoRepository.BuscarAsync(searchTerm, 10, cancellationToken);
+            medicamento = matches.FirstOrDefault();
+            if (medicamento is not null)
+                break;
+        }
+
         if (medicamento is null || string.IsNullOrWhiteSpace(medicamento.Descricao))
             return null;
 

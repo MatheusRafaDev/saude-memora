@@ -6,7 +6,13 @@ type CatalogSource = 'medicamentos' | 'cid10' | 'cnes';
 
 type CatalogItem = {
   codigo?: string;
+  processoAnvisa?: string;
+  principioAtivo?: string;
   descricao?: string;
+  registroAnvisa?: string;
+  situacaoRegistro?: string;
+  fabricante?: string;
+  classeTerapeutica?: string;
   categoria?: string;
   nivel?: string;
   nome?: string;
@@ -24,10 +30,26 @@ const SOURCES: { value: CatalogSource; label: string }[] = [
   { value: 'cnes', label: 'CNES' },
 ];
 
-function formatItem(item: CatalogItem, source: CatalogSource): string {
-  const code = item.codigo ?? item.nome ?? '';
+function getItemName(item: CatalogItem): string {
+  return item.nome ?? item.codigo ?? '';
+}
+
+function getItemValue(item: CatalogItem, source: CatalogSource): string {
+  const name = getItemName(item);
+  if (source === 'medicamentos') return name;
+
   const description = item.descricao ?? item.nome ?? '';
-  return description && description !== code ? `${code} — ${description}` : code;
+  return description && description !== name ? `${name} — ${description}` : name;
+}
+
+function getItemDetails(item: CatalogItem): string {
+  return [
+    item.principioAtivo && `Princípio ativo: ${item.principioAtivo}`,
+    item.classeTerapeutica && `Classe: ${item.classeTerapeutica}`,
+    item.registroAnvisa && `Registro Anvisa: ${item.registroAnvisa}`,
+    item.situacaoRegistro && `Situação: ${item.situacaoRegistro}`,
+    !item.principioAtivo && item.descricao,
+  ].filter(Boolean).join(' · ');
 }
 
 export function CatalogAutocomplete({
@@ -90,7 +112,7 @@ export function CatalogAutocomplete({
   }, [query, source]);
 
   const addItem = (item: CatalogItem) => {
-    const value = formatItem(item, source);
+    const value = getItemValue(item, source);
     if (value && !selected.some((item) => item.toLocaleLowerCase() === value.toLocaleLowerCase())) {
       onChange([...selected, value]);
     }
@@ -154,10 +176,14 @@ export function CatalogAutocomplete({
                 </button>
               )}
               {items.length > 0 ? items.map((item, index) => {
-                const value = formatItem(item, source);
+                const name = getItemName(item);
+                const details = getItemDetails(item);
                 return (
-                  <button key={`${value}-${index}`} type="button" onClick={() => addItem(item)} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-accent/10 hover:text-accent">
-                    <span className="truncate">{value}</span>
+                  <button key={`${name}-${index}`} type="button" onClick={() => addItem(item)} className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-accent/10 hover:text-accent">
+                    <span className="min-w-0">
+                      <span className="block truncate">{name}</span>
+                      {details && <span className="mt-0.5 block truncate text-[10px] font-normal text-muted-foreground">{details}</span>}
+                    </span>
                     <Check size={14} className="shrink-0 text-muted-foreground" />
                   </button>
                 );

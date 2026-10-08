@@ -37,8 +37,14 @@ export default function Documents() {
   const documents = rawDocuments.filter((doc: any) => !deletedIds.has(doc.id));
 
   const hasProcessing = documents.some((d: any) => d.status === 'pending' || d.status === 'processing');
-  const hasProcessingError = (doc: any) => Boolean(doc.errorMessage) && ['pending', 'processing', 'failed'].includes(doc.status);
-  const canReprocess = (doc: any) => doc.status === 'failed' || (doc.status === 'pending' && Boolean(doc.errorMessage));
+  const isFailed = (doc: any) => doc.status === 'failed';
+  const canReprocess = (doc: any) => isFailed(doc);
+  const getSummary = (doc: any) => {
+    if (doc.status === 'pending' || doc.status === 'processing') return 'Documento em processamento.';
+    if (isFailed(doc)) return 'Não foi possível processar este documento.';
+    if (doc.status === 'rejeitado') return 'O documento não foi reconhecido.';
+    return doc.resumo || 'Resumo extraído automaticamente.';
+  };
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -333,15 +339,9 @@ export default function Documents() {
                     </td>
                     <td className="py-3.5 px-3">
                       {doc.status === 'pending' || doc.status === 'processing' ? (
-                        hasProcessingError(doc) ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
-                            <ShieldAlert size={10} /> {doc.status === 'processing' ? 'Nova tentativa' : 'Falha temporária'}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-500">
-                            <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Processando'}
-                          </span>
-                        )
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-500">
+                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Na fila'}
+                        </span>
                       ) : doc.status === 'failed' ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
                            <ShieldAlert size={10} /> Erro
@@ -367,8 +367,8 @@ export default function Documents() {
                       {doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="py-3.5 px-3 text-muted-foreground max-w-[280px]">
-                      <p className={`truncate font-normal ${hasProcessingError(doc) ? 'text-destructive' : ''}`} title={hasProcessingError(doc) ? doc.errorMessage : undefined}>
-                        {hasProcessingError(doc) ? `Falha anterior: ${doc.errorMessage}` : doc.resumo || 'Resumo extraído automaticamente.'}
+                      <p className={`truncate font-normal ${isFailed(doc) ? 'text-destructive' : ''}`} title={isFailed(doc) ? 'Documento não processado.' : undefined}>
+                        {getSummary(doc)}
                       </p>
                     </td>
                     <td className="py-3.5 px-3 text-right">
@@ -439,15 +439,9 @@ export default function Documents() {
                         {doc.tipo || 'Documento'}
                       </span>
                       {doc.status === 'pending' || doc.status === 'processing' ? (
-                        hasProcessingError(doc) ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
-                            <ShieldAlert size={10} /> {doc.status === 'processing' ? 'Nova tentativa' : 'Falha temporária'}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-blue-500">
-                            <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `${doc.progress || 0}%` : 'Processando'}
-                          </span>
-                        )
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-blue-500">
+                          <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Na fila'}
+                        </span>
                       ) : doc.status === 'failed' ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-destructive">
                            <ShieldAlert size={10} /> Erro
@@ -495,12 +489,10 @@ export default function Documents() {
                     <span className="font-mono truncate block">{doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}</span>
                   </div>
                 </div>
-                {hasProcessingError(doc) && (
+                {isFailed(doc) && (
                   <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                    <p className="text-xs font-semibold text-destructive">
-                      {doc.status === 'failed' ? 'Falha no processamento' : 'Falha na tentativa anterior'}
-                    </p>
-                    <p className="mt-1 break-words text-xs text-muted-foreground">{doc.errorMessage || 'Tente reprocessar o documento.'}</p>
+                    <p className="text-xs font-semibold text-destructive">Falha no processamento</p>
+                    <p className="mt-1 break-words text-xs text-muted-foreground">Não foi possível analisar este documento. Você pode tentar processá-lo novamente.</p>
                     {canReprocess(doc) && (
                       <button
                         type="button"
@@ -541,4 +533,3 @@ export default function Documents() {
     </div>
   );
 }
-

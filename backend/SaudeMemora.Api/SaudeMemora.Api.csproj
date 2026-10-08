@@ -22,4 +22,8 @@
     <ProjectReference Include="..\SaudeMemora.Infrastructure\SaudeMemora.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\data\anvisa\medicamentos.csv" Link="Data\medicamentos.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

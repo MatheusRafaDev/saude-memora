@@ -19,12 +19,26 @@ public sealed class MedicamentoCatalogoRepository : IMedicamentoCatalogoReposito
         var nomeIndex = new CreateIndexModel<MedicamentoCatalogo>(
             Builders<MedicamentoCatalogo>.IndexKeys.Ascending(m => m.NomeNormalizado),
             new CreateIndexOptions { Name = "ix_medicamento_nome_normalizado" });
-        var processoIndex = new CreateIndexModel<MedicamentoCatalogo>(
-            Builders<MedicamentoCatalogo>.IndexKeys.Ascending(m => m.ProcessoAnvisa),
-            new CreateIndexOptions { Name = "ix_medicamento_processo_anvisa", Unique = true });
+        var principioAtivoIndex = new CreateIndexModel<MedicamentoCatalogo>(
+            Builders<MedicamentoCatalogo>.IndexKeys.Ascending(m => m.PrincipioAtivoNormalizado),
+            new CreateIndexOptions { Name = "ix_medicamento_principio_ativo_normalizado" });
+        var processoNomeIndex = new CreateIndexModel<MedicamentoCatalogo>(
+            Builders<MedicamentoCatalogo>.IndexKeys
+                .Ascending(m => m.ProcessoAnvisa)
+                .Ascending(m => m.NomeNormalizado),
+            new CreateIndexOptions { Name = "ix_medicamento_processo_nome", Unique = true });
 
         await _medicamentos.Indexes.CreateOneAsync(nomeIndex, cancellationToken: cancellationToken);
-        await _medicamentos.Indexes.CreateOneAsync(processoIndex, cancellationToken: cancellationToken);
+        await _medicamentos.Indexes.CreateOneAsync(principioAtivoIndex, cancellationToken: cancellationToken);
+
+        var indexes = await _medicamentos.Indexes.ListAsync(cancellationToken);
+        var existingIndexes = await indexes.ToListAsync(cancellationToken);
+        if (existingIndexes.Any(index => index.GetValue("name", "").AsString == "ix_medicamento_processo_anvisa"))
+        {
+            await _medicamentos.Indexes.DropOneAsync("ix_medicamento_processo_anvisa", cancellationToken);
+        }
+
+        await _medicamentos.Indexes.CreateOneAsync(processoNomeIndex, cancellationToken: cancellationToken);
     }
 
     public async Task ReplaceAllAsync(IEnumerable<MedicamentoCatalogo> medicamentos, CancellationToken cancellationToken = default)
@@ -52,13 +66,15 @@ public sealed class MedicamentoCatalogoRepository : IMedicamentoCatalogoReposito
 
         var normalizado = Normalizar(query);
         var filter = Builders<MedicamentoCatalogo>.Filter.Or(
-            Builders<MedicamentoCatalogo>.Filter.Regex(m => m.NomeNormalizado, $"^{System.Text.RegularExpressions.Regex.Escape(normalizado)}"),
-            Builders<MedicamentoCatalogo>.Filter.Regex(m => m.NomeNormalizado, $"{System.Text.RegularExpressions.Regex.Escape(normalizado)}"));
+            Builders<MedicamentoCatalogo>.Filter.Regex(m => m.NomeNormalizado, System.Text.RegularExpressions.Regex.Escape(normalizado)),
+            Builders<MedicamentoCatalogo>.Filter.Regex(m => m.PrincipioAtivoNormalizado, System.Text.RegularExpressions.Regex.Escape(normalizado)));
 
         return await _medicamentos
             .Find(filter)
             .Limit(limit)
-            .Sort(Builders<MedicamentoCatalogo>.Sort.Ascending(m => m.Nome))
+            .Sort(Builders<MedicamentoCatalogo>.Sort
+                .Ascending(m => m.SituacaoRegistro)
+                .Ascending(m => m.Nome))
             .ToListAsync(cancellationToken);
     }
 

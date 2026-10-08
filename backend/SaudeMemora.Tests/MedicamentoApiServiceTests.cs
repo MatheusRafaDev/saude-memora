@@ -100,6 +100,26 @@ public class MedicamentoApiServiceTests
         Assert.Equal("CATALOGO-OFICIAL", result.Fonte);
     }
 
+    [Fact]
+    public async Task BuscarDescricaoAsync_FalhaDaAnvisa_RemoveDosagemEConsultaCatalogo()
+    {
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
+        var repository = new QueryAwareMedicamentoRepository();
+        var service = new MedicamentoApiService(
+            new HttpClient(handler) { BaseAddress = new Uri("https://consultas.anvisa.gov.br/") },
+            new BularioApiOptions { BaseUrl = "https://consultas.anvisa.gov.br/" },
+            NullLogger<MedicamentoApiService>.Instance,
+            repository);
+
+        var result = await service.BuscarDescricaoAsync("Amoxicilina 500mg");
+
+        Assert.NotNull(result);
+        Assert.Equal("AMOXICILINA", result.Nome);
+        Assert.Equal("Princípio ativo: amoxicilina tri-hidratada.", result.Descricao);
+        Assert.Equal("CATALOGO-OFICIAL", result.Fonte);
+        Assert.Equal(["Amoxicilina 500mg", "Amoxicilina"], repository.Queries);
+    }
+
     private sealed class StubHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
@@ -121,5 +141,32 @@ public class MedicamentoApiServiceTests
         public Task<IReadOnlyList<MedicamentoCatalogo>> BuscarAsync(string query, int limit, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<MedicamentoCatalogo>>(new[] { _medicamento });
         public Task<long> ContarAsync(CancellationToken cancellationToken = default) => Task.FromResult(1L);
+    }
+
+    private sealed class QueryAwareMedicamentoRepository : IMedicamentoCatalogoRepository
+    {
+        public List<string> Queries { get; } = [];
+
+        public Task EnsureIndexesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task ReplaceAllAsync(IEnumerable<MedicamentoCatalogo> medicamentos, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<long> ContarAsync(CancellationToken cancellationToken = default) => Task.FromResult(1L);
+
+        public Task<IReadOnlyList<MedicamentoCatalogo>> BuscarAsync(string query, int limit, CancellationToken cancellationToken = default)
+        {
+            Queries.Add(query);
+            IReadOnlyList<MedicamentoCatalogo> results = query == "Amoxicilina"
+                ? [new MedicamentoCatalogo
+                {
+                    Id = "1",
+                    ProcessoAnvisa = "25351168623200208",
+                    Nome = "AMOXICILINA",
+                    NomeNormalizado = "amoxicilina",
+                    PrincipioAtivo = "amoxicilina tri-hidratada",
+                    Descricao = "Princípio ativo: amoxicilina tri-hidratada."
+                }]
+                : Array.Empty<MedicamentoCatalogo>();
+
+            return Task.FromResult(results);
+        }
     }
 }

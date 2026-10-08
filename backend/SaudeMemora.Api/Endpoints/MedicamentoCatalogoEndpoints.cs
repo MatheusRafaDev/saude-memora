@@ -31,10 +31,13 @@ public static class MedicamentoCatalogoEndpoints
                 {
                     m.ProcessoAnvisa,
                     m.Nome,
+                    m.PrincipioAtivo,
                     m.Descricao,
                     m.Fabricante,
                     m.TipoProduto,
-                    m.ClasseTerapeutica
+                    m.ClasseTerapeutica,
+                    m.RegistroAnvisa,
+                    m.SituacaoRegistro
                 })
             });
         });

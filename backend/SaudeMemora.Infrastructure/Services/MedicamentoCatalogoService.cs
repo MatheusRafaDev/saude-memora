@@ -1,4 +1,5 @@
 using System.Text;
+using MongoDB.Bson;
 using SaudeMemora.Application.Interfaces;
 using SaudeMemora.Domain.Entities;
 
@@ -6,8 +7,8 @@ namespace SaudeMemora.Infrastructure.Services;
 
 public sealed class MedicamentoCatalogoService : IMedicamentoCatalogoService
 {
-    private const int MaxFileSizeBytes = 25 * 1024 * 1024;
-    private const int MaxRows = 100_000;
+    private const int MaxFileSizeBytes = 64 * 1024 * 1024;
+    private const int MaxRows = 250_000;
     private static readonly char[] Separadores = [';', '\t', ','];
 
     private readonly IMedicamentoCatalogoRepository _repository;
@@ -46,7 +47,7 @@ public sealed class MedicamentoCatalogoService : IMedicamentoCatalogoService
         var medicamentos = new List<MedicamentoCatalogo>();
         var invalidos = 0;
         var duplicados = 0;
-        var processos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var produtos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var importadoEm = DateTime.UtcNow;
 
         foreach (var values in lines.Skip(1))
@@ -58,7 +59,7 @@ public sealed class MedicamentoCatalogoService : IMedicamentoCatalogoService
                 continue;
             }
 
-            if (!processos.Add(registro.ProcessoAnvisa))
+            if (!produtos.Add($"{registro.ProcessoAnvisa}\u001f{registro.NomeNormalizado}"))
             {
                 duplicados++;
                 continue;
@@ -79,17 +80,28 @@ public sealed class MedicamentoCatalogoService : IMedicamentoCatalogoService
         var columns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (var index = 0; index < header.Count; index++)
         {
-            var name = header[index].Trim().ToLowerInvariant();
+            var name = Normalizar(header[index]);
             if (!string.IsNullOrWhiteSpace(name))
             {
                 columns[name] = index;
             }
         }
 
-        var required = new[] { "numprocesso", "nomeproduto", "descricao" };
-        if (required.Any(name => !columns.ContainsKey(name)))
+        MapAlias(columns, "numprocesso", "numprocesso", "numeroprocesso", "processoanvisa");
+        MapAlias(columns, "nomeproduto", "nomeproduto");
+        MapAlias(columns, "descricao", "descricao");
+        MapAlias(columns, "principioativo", "principioativo", "substanciaativa");
+        MapAlias(columns, "fabricante", "fabricante", "empresadetentoraregistro", "empresadetentorregistro");
+        MapAlias(columns, "tipoproduto", "tipoproduto", "categoriaregulatoria");
+        MapAlias(columns, "classterapeutica", "classterapeutica");
+        MapAlias(columns, "registroanvisa", "registroanvisa", "numeroregistroproduto");
+        MapAlias(columns, "situacaoregistro", "situacaoregistro");
+
+        if (!columns.ContainsKey("numprocesso") ||
+            !columns.ContainsKey("nomeproduto") ||
+            (!columns.ContainsKey("descricao") && !columns.ContainsKey("principioativo")))
         {
-            throw new InvalidDataException("O cabeçalho deve conter numProcesso, nomeProduto e descricao.");
+            throw new InvalidDataException("O cabeçalho deve conter número de processo, nome do produto e descrição ou princípio ativo.");
         }
 
         return columns;
@@ -107,8 +119,22 @@ public sealed class MedicamentoCatalogoService : IMedicamentoCatalogoService
 
         var processo = GetValue(values, columns, "numprocesso").Trim();
         var nome = GetValue(values, columns, "nomeproduto").Trim();
+        var registro = GetValue(values, columns, "registroanvisa").Trim();
+        var principioAtivo = GetValue(values, columns, "principioativo").Trim();
+        var classeTerapeutica = GetValue(values, columns, "classterapeutica").Trim();
         var descricao = GetValue(values, columns, "descricao").Trim();
-        if (string.IsNullOrWhiteSpace(processo) || string.IsNullOrWhiteSpace(nome) || string.IsNullOrWhiteSpace(descricao))
+        if (string.IsNullOrWhiteSpace(descricao))
+        {
+            descricao = string.Join(" ", new[]
+            {
+                string.IsNullOrWhiteSpace(principioAtivo) ? null : $"Princípio ativo: {principioAtivo}.",
+                string.IsNullOrWhiteSpace(classeTerapeutica) ? null : $"Classe terapêutica: {classeTerapeutica}."
+            }.Where(value => value is not null));
+        }
+
+        if ((string.IsNullOrWhiteSpace(processo) && string.IsNullOrWhiteSpace(registro)) ||
+            string.IsNullOrWhiteSpace(nome) ||
+            string.IsNullOrWhiteSpace(descricao))
         {
             return null;
         }
@@ -116,16 +142,32 @@ public sealed class MedicamentoCatalogoService : IMedicamentoCatalogoService
         var normalized = Normalizar(nome);
         return new MedicamentoCatalogo
         {
-            Id = Guid.NewGuid().ToString("N"),
-            ProcessoAnvisa = processo,
+            Id = ObjectId.GenerateNewId().ToString(),
+            ProcessoAnvisa = string.IsNullOrWhiteSpace(processo) ? registro : processo,
             Nome = nome,
             NomeNormalizado = normalized,
+            PrincipioAtivo = principioAtivo,
+            PrincipioAtivoNormalizado = Normalizar(principioAtivo),
             Descricao = descricao,
             Fabricante = GetValue(values, columns, "fabricante").Trim(),
             TipoProduto = GetValue(values, columns, "tipoproduto").Trim(),
-            ClasseTerapeutica = GetValue(values, columns, "classterapeutica").Trim(),
+            ClasseTerapeutica = classeTerapeutica,
+            RegistroAnvisa = registro,
+            SituacaoRegistro = GetValue(values, columns, "situacaoregistro").Trim(),
             ImportadoEm = importadoEm
         };
+    }
+
+    private static void MapAlias(IDictionary<string, int> columns, string target, params string[] aliases)
+    {
+        foreach (var alias in aliases)
+        {
+            if (columns.TryGetValue(alias, out var index))
+            {
+                columns[target] = index;
+                return;
+            }
+        }
     }
 
     private static string GetValue(IReadOnlyList<string> values, IReadOnlyDictionary<string, int> columns, string column)
@@ -158,15 +200,16 @@ public sealed class MedicamentoCatalogoService : IMedicamentoCatalogoService
             return Encoding.Unicode;
         }
 
-        var candidates = Encoding.GetEncodings()
-            .Select(encodingInfo => (Encoding: Encoding.GetEncoding(encodingInfo.Name), EncodingInfo: encodingInfo))
-            .Where(candidate => candidate.EncodingInfo.CodePage is not 65001)
-            .Where(candidate => candidate.Encoding.GetString(bytes).Contains("numProcesso", StringComparison.OrdinalIgnoreCase) ||
-                                candidate.Encoding.GetString(bytes).Contains("nomeProduto", StringComparison.OrdinalIgnoreCase))
-            .Select(candidate => candidate.Encoding)
-            .ToList();
-
-        return candidates.Count > 0 ? candidates[0] : Encoding.GetEncoding("windows-1252");
+        try
+        {
+            _ = new UTF8Encoding(false, true).GetString(bytes);
+            return Encoding.UTF8;
+        }
+        catch (DecoderFallbackException)
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            return Encoding.GetEncoding("windows-1252");
+        }
     }
 
     private static List<string[]> ParseCsvRows(string text)

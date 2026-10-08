@@ -18,6 +18,12 @@ public sealed class MedicamentoCatalogo
     [BsonElement("nomeNormalizado")]
     public string NomeNormalizado { get; set; } = string.Empty;
 
+    [BsonElement("principioAtivo")]
+    public string PrincipioAtivo { get; set; } = string.Empty;
+
+    [BsonElement("principioAtivoNormalizado")]
+    public string PrincipioAtivoNormalizado { get; set; } = string.Empty;
+
     [BsonElement("descricao")]
     public string Descricao { get; set; } = string.Empty;
 
@@ -29,6 +35,12 @@ public sealed class MedicamentoCatalogo
 
     [BsonElement("classeTerapeutica")]
     public string ClasseTerapeutica { get; set; } = string.Empty;
+
+    [BsonElement("registroAnvisa")]
+    public string RegistroAnvisa { get; set; } = string.Empty;
+
+    [BsonElement("situacaoRegistro")]
+    public string SituacaoRegistro { get; set; } = string.Empty;
 
     [BsonElement("origem")]
     public string Origem { get; set; } = "ANVISA";
