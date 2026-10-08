@@ -29,6 +29,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [descriptions, setDescriptions] = useState<Record<number, { nome: string; descricao: string; fonte: string }>>({});
   const [loadingDescriptions, setLoadingDescriptions] = useState<Record<number, boolean>>({});
+  const [descriptionErrors, setDescriptionErrors] = useState<Record<number, string>>({});
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -62,6 +63,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     }
 
     setDescriptions({});
+    setDescriptionErrors({});
     setLoadingDescriptions(Object.fromEntries(medicamentos.map((_: any, index: number) => [index, true])));
 
     const consultar = async () => {
@@ -70,13 +72,18 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           const response = await customFetch(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
           const data = await response.json();
           return [index, data] as const;
-        } catch {
-          return [index, null] as const;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Não foi possível acessar a API da ANVISA.';
+          return [index, { error: message }] as const;
         }
       }));
 
       const nextDescriptions = Object.fromEntries(resultados.filter(([, data]) => data?.descricao).map(([index, data]) => [index, data]));
+      const nextErrors = Object.fromEntries(
+        resultados.filter(([, data]) => !data?.descricao && data?.error).map(([index, data]) => [index, data.error])
+      );
       setDescriptions(nextDescriptions);
+      setDescriptionErrors(nextErrors);
       setLoadingDescriptions({});
     };
 
@@ -104,13 +111,20 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
   const handleConsultarDescricao = async (medicine: any, index: number) => {
     setLoadingDescriptions((current) => ({ ...current, [index]: true }));
+    setDescriptionErrors((current) => ({ ...current, [index]: '' }));
 
     try {
       const response = await customFetch(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
       const data = await response.json();
       setDescriptions((current) => ({ ...current, [index]: data }));
-    } catch {
-      setDescriptions((current) => ({ ...current, [index]: { nome: medicine.nome, descricao: '', fonte: 'Bulario' } }));
+      setDescriptionErrors((current) => {
+        const next = { ...current };
+        delete next[index];
+        return next;
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível acessar a API da ANVISA.';
+      setDescriptionErrors((current) => ({ ...current, [index]: message }));
       toast({ description: 'Não foi possível consultar a descrição neste momento.', variant: 'destructive' });
     } finally {
       setLoadingDescriptions((current) => ({ ...current, [index]: false }));
@@ -575,6 +589,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <div className="mt-6 space-y-3">
                 {doc.medicamentos.map((medicine: any, idx: number) => {
                   const description = descriptions[idx];
+                  const descriptionError = descriptionErrors[idx];
                   return (
                     <div key={medicine.nome || idx} className="rounded-2xl border border-border/40 bg-muted/30 p-4 transition-colors hover:bg-muted/60">
                       <div className="flex items-start justify-between gap-3">
@@ -599,6 +614,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           <p className="text-xs leading-5 text-muted-foreground">{description.descricao}</p>
                           <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Fonte: {description.fonte}</p>
                         </div>
+                      )}
+                      {descriptionError && (
+                        <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                          Bula indisponível: {descriptionError}
+                        </p>
                       )}
                     </div>
                   );
@@ -868,6 +888,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <div className="mt-5 space-y-3">
                 {(doc.medicamentos ?? []).map((medicine: any, index: number) => {
                   const description = descriptions[index];
+                  const descriptionError = descriptionErrors[index];
                   return (
                     <div key={medicine.nome || index} className="rounded-2xl border border-white/10 bg-white/10 p-4">
                       <p className="text-sm font-extrabold">{medicine.nome}</p>
@@ -876,8 +897,10 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       </p>
                       {description?.descricao ? (
                         <p className="mt-3 text-xs leading-5 text-white/80">{description.descricao}</p>
+                      ) : descriptionError ? (
+                        <p className="mt-3 text-xs leading-5 text-amber-300">Bula indisponível. Tente consultar novamente.</p>
                       ) : (
-                        <p className="mt-3 text-xs italic text-white/40">Informação não disponível na API.</p>
+                        <p className="mt-3 text-xs italic text-white/40">Consulta da bula em andamento ou indisponível.</p>
                       )}
                     </div>
                   );
