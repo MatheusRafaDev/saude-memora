@@ -88,17 +88,10 @@ export default function Dashboard() {
   const donor = ficha.doadorOrgaos as boolean | undefined;
   const habits = ficha.habitosGerais as string | undefined;
 
-  // — Anamnese score —
-  let anamneseScore = 0;
-  if (bloodType) anamneseScore += 20;
-  if (allergies.length > 0) anamneseScore += 20;
-  if (chronicDiseases.length > 0 || positiveConditions.length > 0)
-    anamneseScore += 20;
-  if (familyHistory) anamneseScore += 20;
-  if (smoker !== undefined || habits) anamneseScore += 20;
-
   // — Documents —
   const recentDocs = docs.slice(0, 4);
+  const documentsForReview = docs.filter((doc: any) => doc.revisaoPendente);
+  const documentsProcessing = docs.filter((doc: any) => doc.status === "pending" || doc.status === "processing");
 
   // — Relatórios para o médico —
   const processedDocs = docs.filter((doc: any) => doc.status === "pronto");
@@ -286,6 +279,75 @@ export default function Dashboard() {
         </div>
       </section>
 
+      <section className="rounded-3xl border border-border/80 bg-white p-5 shadow-[0_14px_42px_-34px_rgba(25,48,83,0.35)] sm:p-6">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-accent">Organização pessoal</p>
+          <h2 className="mt-1 text-lg font-bold tracking-tight text-foreground">Próximos passos</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Sugestões para manter seus registros em dia — não são alertas nem avaliações médicas.
+          </p>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {documentsForReview.length > 0 && (
+            <Link
+              href={`/documentos/${documentsForReview[0].id}?edit=true`}
+              className="group flex min-h-[140px] flex-col rounded-2xl border border-border/80 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary"><FileText size={16} /></span>
+              <span className="mt-3 text-sm font-bold text-foreground">Revise os dados extraídos</span>
+              <span className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
+                {documentsForReview.length} documento{documentsForReview.length === 1 ? "" : "s"} aguardando sua conferência.
+              </span>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                Revisar documento <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Link>
+          )}
+          {documentsProcessing.length > 0 && (
+            <Link
+              href="/documentos"
+              className="group flex min-h-[140px] flex-col rounded-2xl border border-border/80 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary"><LoaderCircle size={16} className="animate-spin" /></span>
+              <span className="mt-3 text-sm font-bold text-foreground">Acompanhe o processamento</span>
+              <span className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
+                {documentsProcessing.length} documento{documentsProcessing.length === 1 ? "" : "s"} em processamento. O status aparece na sua lista.
+              </span>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                Ver documentos <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Link>
+          )}
+          {docs.length === 0 && (
+            <button
+              type="button"
+              onClick={() => triggerUploadModal()}
+              className="group flex min-h-[140px] flex-col items-start rounded-2xl border border-border/80 bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary"><FilePlus2 size={16} /></span>
+              <span className="mt-3 text-sm font-bold text-foreground">Adicione um documento</span>
+              <span className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">Guarde exames, receitas ou outros registros que queira consultar depois.</span>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                Enviar documento <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </button>
+          )}
+          <Link
+            href="/anamnese"
+            className="group flex min-h-[140px] flex-col rounded-2xl border border-border/80 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-primary"><BookOpen size={16} /></span>
+            <span className="mt-3 text-sm font-bold text-foreground">Revise sua ficha médica</span>
+            <span className="mt-1 flex-1 text-xs leading-5 text-muted-foreground">
+              Confira se as informações que escolheu registrar continuam corretas. Campos sem registro, por si só, não indicam um problema de saúde.
+            </span>
+            <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+              Abrir ficha <ChevronRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+        </div>
+      </section>
+
       {/* ── 3-col grid: Perfil | Anamnese | Documentos ── */}
       <div className="grid gap-5 lg:grid-cols-3">
         {/* ── 1. Perfil ── */}
@@ -425,7 +487,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground italic">
-                  Não informado
+                  Nenhuma informação registrada.
                 </p>
               )}
             </div>
@@ -449,7 +511,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground italic">
-                  Não informado
+                  Nenhuma informação registrada.
                 </p>
               )}
             </div>

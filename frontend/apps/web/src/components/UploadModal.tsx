@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Camera, ScanLine, Layers } from 'lucide-react';
+import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Layers } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
-import { getInvalidDocumentMessage } from '@/lib/document-processing';
+import { getInvalidDocumentMessage, waitForDocumentProcessing } from '@/lib/document-processing';
 
 interface UploadModalProps {
   open?: boolean;
@@ -22,60 +22,68 @@ const DOC_TYPES = [
 ];
 
 const PROCESSING_STEPS = [
-  'Enviando para o seu espaço...',
-  'Preparando arquivo...',
-  'Lendo informações...',
-  'Organizando dados médicos...',
-  'Salvando na sua ficha...',
+  'Enviando o arquivo...',
+  'Documento recebido, iniciando análise...',
+  'Lendo o conteúdo do documento...',
+  'Organizando as informações identificadas...',
+  'Preparando o documento para revisão...',
 ];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
 import { useLocation } from 'wouter';
-import { useToast } from '@/hooks/use-toast';
 
 export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSuccess }: UploadModalProps) {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const [step, setStep] = useState<'type' | 'file' | 'processing' | 'done'>('type');
+  const [step, setStep] = useState<'type' | 'file' | 'processing' | 'done' | 'failed'>('type');
   const [docType, setDocType] = useState('');
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [resultId, setResultId] = useState<string | null>(null);
+  const [canReview, setCanReview] = useState(false);
   const [error, setError] = useState('');
   const [processingStep, setProcessingStep] = useState(0);
   const [backendProgress, setBackendProgress] = useState(0);
+  const [processingMessage, setProcessingMessage] = useState('');
+  const [batchCompleted, setBatchCompleted] = useState(0);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const pollAbortedRef = useRef(false);
-  const [rejectedMessage, setRejectedMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
-  // Adiciona arquivos e limpa o input (senão o iOS não dispara onChange ao tirar outra foto com o mesmo nome "image.jpg")
-  const handlePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = Array.from(e.target.files || []);
-    e.target.value = '';
+  const addFiles = (picked: File[]) => {
     if (!picked.length) return;
-    
-    if (picked.some(f => f.size > 10 * 1024 * 1024)) {
-      setRejectedMessage('O tamanho máximo permitido por arquivo é 10 MB.');
+    const invalidFile = picked.find((file) => !ACCEPTED_FILE_TYPES.includes(file.type));
+    if (invalidFile) {
+      setError('Envie arquivos PDF, JPG ou PNG.');
       return;
     }
-    
-    setRejectedMessage('');
+    if (picked.some((file) => file.size > MAX_FILE_SIZE)) {
+      setError('O tamanho máximo permitido por arquivo é 10 MB.');
+      return;
+    }
+
     setError('');
     setFiles(prev => [...prev, ...picked]);
+  };
+
+  // Limpa o input para o iOS disparar onChange mesmo ao tirar outra foto com o mesmo nome.
+  const handlePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(e.target.files || []));
+    e.target.value = '';
   };
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setIsDragging(false);
-    if (e.dataTransfer.files?.length) setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files!)]);
+    if (e.dataTransfer.files?.length) addFiles(Array.from(e.dataTransfer.files));
   };
 
   useEffect(() => {
@@ -105,7 +113,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
           const f = item.getAsFile(); if (f) newFiles.push(f);
         }
       }
-      if (newFiles.length) { setFiles(prev => [...prev, ...newFiles]); e.preventDefault(); }
+      if (newFiles.length) { addFiles(newFiles); e.preventDefault(); }
     };
     window.addEventListener('paste', handler as any);
     return () => window.removeEventListener('paste', handler as any);
@@ -114,17 +122,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   if (!isOpen || !mounted) return null;
 
   const resetModal = () => {
-    setFiles([]); setStep('type'); setDocType(''); setResultId(null); setError(''); setRejectedMessage(''); setProcessingStep(0); setBackendProgress(0); setCurrentFileIndex(0);
+    setFiles([]); setStep('type'); setDocType(''); setIsBatchMode(false); setResultId(null); setCanReview(false); setError(''); setProcessingMessage(''); setProcessingStep(0); setBackendProgress(0); setBatchCompleted(0); setCurrentFileIndex(0);
   };
   const handleClose = () => { pollAbortedRef.current = true; resetModal(); setInternalOpen(false); if (externalOnClose) externalOnClose(); };
-
-  // Documento recusado: volta para a etapa de arquivo, descarta as imagens e pede outra foto
-  const showRejected = (message: string) => {
-    setFiles([]);
-    setCurrentFileIndex(0);
-    setRejectedMessage(message);
-    setStep('file');
-  };
 
   const startUpload = async () => {
     if (!files.length) return;
@@ -132,33 +132,33 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     if (isBatchMode) {
       pollAbortedRef.current = false;
       setError('');
-      setRejectedMessage('');
+      setProcessingMessage('');
       setStep('processing');
       setProcessingStep(0);
-      setBackendProgress(10);
+      setBackendProgress(0);
+      setBatchCompleted(0);
       
+      let queued = 0;
       try {
-        const promises = files.map(f => {
+        for (const file of files) {
           const formData = new FormData();
-          formData.append('file', f);
+          formData.append('file', file);
           formData.append('documentType', 'outro');
-          return customFetch('/api/documents/upload', { method: 'POST', body: formData as any });
-        });
-        
-        await Promise.all(promises);
+          await customFetch('/api/documents/upload', { method: 'POST', body: formData as any });
+          queued += 1;
+          setBatchCompleted(queued);
+          setBackendProgress(Math.round((queued / files.length) * 100));
+        }
         window.dispatchEvent(new CustomEvent('document-uploaded'));
-        
-        toast({ 
-          title: "Em processamento", 
-          description: `${files.length} documentos foram enviados para a fila! Acompanhe o status na tabela.`,
-        });
-        
-        handleClose();
-        setLocation('/documentos');
+        setProcessingMessage(`${files.length} documentos foram enviados para processamento. Você pode acompanhar o status na lista de documentos.`);
+        setStep('done');
       } catch (err) {
         console.error('Erro no upload em lote:', err);
-        setError('Falha ao enviar documentos em lote. Verifique sua conexão e tente novamente.');
-        setStep('file');
+        window.dispatchEvent(new CustomEvent('document-uploaded'));
+        setProcessingMessage(queued > 0
+          ? `${queued} de ${files.length} documentos foram enviados. Os demais não foram enviados; confira a lista antes de tentar novamente.`
+          : 'Nenhum arquivo foi enviado. Verifique sua conexão e tente novamente.');
+        setStep('failed');
       }
       return;
     }
@@ -169,38 +169,73 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     
     pollAbortedRef.current = false;
     setError('');
-    setRejectedMessage('');
+    setProcessingMessage('');
     setStep('processing');
     setProcessingStep(0);
-    setBackendProgress(10);
+    setBackendProgress(0);
 
     let docId: string;
     try {
       const res = (await customFetch('/api/documents/upload', { method: 'POST', body: formData as any })) as any;
       if (!res || !res.id) throw new Error('ID não retornado.');
       docId = res.id;
+      setResultId(docId);
       window.dispatchEvent(new CustomEvent('document-uploaded'));
-      if (res.status === 'pronto') { setResultId(docId); setBackendProgress(100); setStep('done'); return; }
+      if (res.status === 'pronto') {
+        setBackendProgress(100);
+        setProcessingStep(PROCESSING_STEPS.length - 1);
+        setCanReview(true);
+        setStep('done');
+        return;
+      }
     } catch (err) {
       const invalidMsg = getInvalidDocumentMessage(err);
-      if (invalidMsg) { showRejected(invalidMsg); return; }
+      if (invalidMsg) {
+        setProcessingMessage(invalidMsg);
+        setStep('failed');
+        return;
+      }
       console.error('Erro no upload:', err);
-      setError('Falha ao enviar documento. Verifique sua conexão e tente novamente.');
-      setStep('file');
+      setProcessingMessage('Falha ao enviar o documento. Verifique sua conexão e tente novamente.');
+      setStep('failed');
       return;
     }
 
-    toast({
-      title: 'Em processamento',
-      description: 'Seu documento foi enviado. Acompanhe o status na tabela de documentos.',
+    const outcome = await waitForDocumentProcessing(docId, {
+      isAborted: () => pollAbortedRef.current,
+      onProgress: (value) => {
+        const progressValue = Math.max(0, Math.min(100, value));
+        setBackendProgress(progressValue);
+        setProcessingStep(
+          progressValue >= 90 ? 4 :
+            progressValue >= 40 ? 3 :
+              progressValue >= 25 ? 2 : 1,
+        );
+      },
     });
-    handleClose();
-    setLocation('/documentos');
+
+    if (outcome.status === 'aborted') return;
+    window.dispatchEvent(new CustomEvent('document-uploaded'));
+    if (outcome.status === 'pronto') {
+      setBackendProgress(100);
+      setProcessingStep(PROCESSING_STEPS.length - 1);
+      setCanReview(true);
+      setStep('done');
+      onSuccess?.(docId);
+      return;
+    }
+
+    setProcessingMessage(outcome.status === 'rejeitado'
+      ? outcome.message
+      : outcome.status === 'failed'
+        ? outcome.message
+        : 'O processamento está demorando mais que o esperado. O arquivo foi enviado e você pode acompanhar o status na lista de documentos.');
+    setStep('failed');
   };
 
   const finishAndNavigate = () => {
     handleClose();
-    setLocation(resultId ? `/documentos/${resultId}` : '/documentos');
+    setLocation(resultId ? `/documentos/${resultId}${canReview ? '?edit=true' : ''}` : '/documentos');
   };
 
   const selectedType = DOC_TYPES.find(t => t.value === docType);
@@ -280,23 +315,6 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             <input ref={fileRef} type="file" multiple accept=".pdf,image/jpeg,image/png" className="hidden" onChange={handlePicked} />
             <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePicked} />
 
-            {rejectedMessage && (
-              <div role="alert" className="page-enter flex gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                  <ScanLine size={20} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-extrabold text-amber-800 dark:text-amber-200">Documento não reconhecido</p>
-                  <p className="mt-0.5 text-xs leading-5 text-amber-900/80 dark:text-amber-100/80">{rejectedMessage}</p>
-                  <p className="mt-1 text-[11px] text-amber-900/60 dark:text-amber-100/60">Nada foi salvo no seu histórico.</p>
-                  <button type="button" onClick={() => cameraRef.current?.click()}
-                    className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl bg-amber-500 px-4 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-600 active:scale-[.98]">
-                    <Camera size={14} /> Tirar outra foto
-                  </button>
-                </div>
-              </div>
-            )}
-
             <div 
               onClick={() => fileRef.current?.click()}
               onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
@@ -350,6 +368,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
                   <div className="mt-5 text-center">
                     <span className="block text-sm font-bold text-foreground">{files.length} arquivo(s) selecionado(s)</span>
+                    <span className="mt-1 block max-w-[280px] truncate text-[11px] text-muted-foreground" title={files[currentFileIndex].name}>
+                      {files[currentFileIndex].name}
+                    </span>
                     <span className="block text-[11px] text-muted-foreground mt-0.5">{(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB no total</span>
                   </div>
                 </div>
@@ -359,7 +380,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     <UploadCloud size={26} strokeWidth={2.5} />
                   </span>
                   <h3 className="mt-4 text-base font-extrabold text-foreground tracking-tight">{isDragging ? 'Pode soltar aqui!' : 'Arraste ou clique para selecionar'}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground font-medium">PDF, JPG ou PNG (até 20 MB)</p>
+                  <p className="mt-1 text-xs text-muted-foreground font-medium">PDF, JPG ou PNG (até 10 MB por arquivo)</p>
                   
                   <div className="mt-6 flex flex-wrap justify-center gap-3 w-full pointer-events-auto">
                     <button type="button" onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
@@ -381,7 +402,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <button type="button" onClick={handleClose} className="flex-1 h-12 rounded-2xl border border-border bg-white dark:bg-slate-800 text-sm font-bold text-foreground hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all shadow-sm cursor-pointer">Cancelar</button>
               <button type="button" onClick={startUpload} disabled={files.length === 0}
                 className="flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 hover:shadow-md transition-all shadow-sm cursor-pointer">
-                Processar documento
+                {isBatchMode ? `Enviar ${files.length || ''} documento(s)` : 'Enviar e processar'}
               </button>
             </div>
           </div>
@@ -394,26 +415,30 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <LoaderCircle size={32} className="animate-spin" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold">Processando com IA...</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{PROCESSING_STEPS[Math.min(processingStep, PROCESSING_STEPS.length - 1)]}</p>
-              <p className="mt-2 text-[10px] text-muted-foreground/70">Verificando se a imagem é um documento médico legível · pode levar até 30s</p>
+              <h3 className="text-base font-extrabold">Preparando seus dados...</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isBatchMode
+                  ? `Enviando ${batchCompleted + 1} de ${files.length} documentos...`
+                  : PROCESSING_STEPS[Math.min(processingStep, PROCESSING_STEPS.length - 1)]}
+              </p>
+              <p className="mt-2 text-[10px] text-muted-foreground/70">A leitura pode levar alguns minutos. Se fechar esta janela, o processamento continua em segundo plano.</p>
             </div>
             <div className="mx-auto max-w-[380px] space-y-2">
               <div className="flex justify-between text-[10px] font-bold">
-                <span className="text-muted-foreground">Progresso</span>
+                <span className="text-muted-foreground">{isBatchMode ? 'Arquivos enviados' : 'Progresso'}</span>
                 <span className="font-mono text-primary">{progress}%</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${progress}%` }} />
               </div>
-              <div className="flex flex-col gap-1.5 mt-3 text-left">
+              {!isBatchMode && <div className="flex flex-col gap-1.5 mt-3 text-left">
                 {PROCESSING_STEPS.map((s, i) => (
                   <div key={i} className={`flex items-center gap-2 text-[11px] transition-all ${i < processingStep ? 'text-emerald-600 dark:text-emerald-400' : i === processingStep ? 'text-foreground font-bold' : 'text-muted-foreground/40'}`}>
                     {i < processingStep ? <Check size={11} className="text-emerald-500 shrink-0" /> : i === processingStep ? <LoaderCircle size={11} className="animate-spin text-primary shrink-0" /> : <span className="w-[11px] shrink-0" />}
                     {s}
                   </div>
                 ))}
-              </div>
+              </div>}
             </div>
           </div>
         )}
@@ -425,13 +450,36 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <span className="flex mx-auto h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow mb-3">
                 <CheckCircle2 size={28} />
               </span>
-              <h2 className="text-xl font-extrabold tracking-tight text-foreground">Documento Processado!</h2>
-              <p className="mt-1 text-xs text-muted-foreground">{files.length} arquivo(s) extraído(s) e classificado(s) pela IA.</p>
+              <h2 className="text-xl font-extrabold tracking-tight text-foreground">{isBatchMode ? 'Envio concluído' : 'Pronto para revisar'}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{isBatchMode ? `${files.length} documentos enviados para processamento.` : 'Confira os dados extraídos e corrija o que for necessário.'}</p>
+            </div>
+            <div className="rounded-2xl border border-primary/10 bg-primary/[0.04] p-4 text-xs leading-5 text-muted-foreground">
+              {isBatchMode
+                ? processingMessage
+                : 'O documento já foi recebido pelo sistema. Na próxima tela, você pode revisar e editar as informações extraídas antes de confirmar a revisão.'}
             </div>
             <div className="flex items-center gap-3 pt-1">
-              <button type="button" onClick={resetModal} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Enviar Outro</button>
+              <button type="button" onClick={resetModal} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Enviar outro</button>
               <button type="button" onClick={finishAndNavigate} className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer">
-                <FileText size={15} /> Ver Documento
+                <FileText size={15} /> {isBatchMode ? 'Acompanhar envios' : 'Revisar informações'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 'failed' && (
+          <div className="space-y-5 py-2">
+            <div className="text-center">
+              <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                <ShieldAlert size={27} />
+              </span>
+              <h2 className="text-xl font-extrabold tracking-tight text-foreground">Não foi possível concluir</h2>
+              <p role="alert" className="mt-2 text-xs leading-5 text-muted-foreground">{processingMessage}</p>
+            </div>
+            <div className="flex items-center gap-3 pt-1">
+              <button type="button" onClick={handleClose} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Fechar</button>
+              <button type="button" onClick={finishAndNavigate} className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer">
+                <FileText size={15} /> {resultId ? 'Ver documento' : 'Ver documentos'}
               </button>
             </div>
           </div>

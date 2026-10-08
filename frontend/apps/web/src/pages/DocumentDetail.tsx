@@ -285,20 +285,36 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             </span>
             <div>
               <p className="text-sm font-bold text-amber-900 dark:text-amber-500">
-                Confira estes campos antes de confiar neste documento
+                Revise os dados extraídos deste documento
               </p>
               <p className="text-xs font-semibold text-amber-700/70 dark:text-amber-500/70 mt-0.5">
-                A IA relatou baixa confiança em: {(doc.camposBaixaConfianca || []).join(', ')}
+                {isEditing
+                  ? 'Salve suas alterações para depois confirmar que conferiu as informações.'
+                  : (doc.camposBaixaConfianca || []).length > 0
+                    ? `A extração pode estar imprecisa nestes campos: ${doc.camposBaixaConfianca.join(', ')}`
+                    : 'Confira se as informações correspondem ao documento original.'}
               </p>
             </div>
           </div>
           <button
             onClick={handleConfirmRevisao}
-            disabled={isConfirmingRevisao}
-            className="shrink-0 h-9 px-4 bg-amber-500 text-white font-bold text-xs rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 cursor-pointer"
+            disabled={isConfirmingRevisao || isEditing}
+            className="shrink-0 h-9 px-4 bg-amber-500 text-white font-bold text-xs rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            {isConfirmingRevisao ? 'Confirmando...' : 'Confirmar Revisão'}
+            {isConfirmingRevisao ? 'Confirmando...' : isEditing ? 'Salve antes de confirmar' : 'Confirmar Revisão'}
           </button>
+        </div>
+      )}
+
+      {isEditing && (
+        <div className="flex items-start gap-3 rounded-2xl border border-primary/15 bg-primary/[0.04] p-4">
+          <Info size={17} className="mt-0.5 shrink-0 text-primary" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Confira os dados extraídos</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Revise os campos e corrija qualquer informação antes de salvar suas alterações.
+            </p>
+          </div>
         </div>
       )}
 
