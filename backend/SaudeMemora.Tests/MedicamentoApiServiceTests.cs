@@ -33,7 +33,7 @@ public class MedicamentoApiServiceTests
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(
-                    "{\"nomeProduto\":\"DIPIRONA\",\"descricao\":\"Medicamento para o tratamento de alergias\"}",
+                    "{\"nomeProduto\":\"DIPIRONA\",\"descricao\":\"Medicamento para o tratamento de alergias\",\"principioAtivo\":\"dipirona monoidratada\",\"empresa\":\"Fabricante Exemplo\",\"classeTerapeutica\":\"Analgésico\",\"numRegistro\":\"12345\",\"situacaoRegistro\":\"Ativo\"}",
                     Encoding.UTF8,
                     "application/json")
             };
@@ -52,6 +52,11 @@ public class MedicamentoApiServiceTests
         Assert.Equal("DIPIRONA", result.Nome);
         Assert.Equal("Medicamento para o tratamento de alergias", result.Descricao);
         Assert.Equal("ANVISA", result.Fonte);
+        Assert.Equal("dipirona monoidratada", result.PrincipioAtivo);
+        Assert.Equal("Fabricante Exemplo", result.Fabricante);
+        Assert.Equal("Analgésico", result.ClasseTerapeutica);
+        Assert.Equal("12345", result.RegistroAnvisa);
+        Assert.Equal("Ativo", result.SituacaoRegistro);
     }
 
     [Fact]
@@ -117,6 +122,12 @@ public class MedicamentoApiServiceTests
         Assert.Equal("AMOXICILINA", result.Nome);
         Assert.Equal("Princípio ativo: amoxicilina tri-hidratada.", result.Descricao);
         Assert.Equal("CATALOGO-OFICIAL", result.Fonte);
+        Assert.Equal("amoxicilina tri-hidratada", result.PrincipioAtivo);
+        Assert.Equal("Fabricante Exemplo", result.Fabricante);
+        Assert.Equal("Medicamento", result.TipoProduto);
+        Assert.Equal("Antibiótico", result.ClasseTerapeutica);
+        Assert.Equal("123456789", result.RegistroAnvisa);
+        Assert.Equal("Ativo", result.SituacaoRegistro);
         Assert.Equal(["Amoxicilina 500mg", "Amoxicilina"], repository.Queries);
     }
 
@@ -162,7 +173,12 @@ public class MedicamentoApiServiceTests
                     Nome = "AMOXICILINA",
                     NomeNormalizado = "amoxicilina",
                     PrincipioAtivo = "amoxicilina tri-hidratada",
-                    Descricao = "Princípio ativo: amoxicilina tri-hidratada."
+                    Descricao = "Princípio ativo: amoxicilina tri-hidratada.",
+                    Fabricante = "Fabricante Exemplo",
+                    TipoProduto = "Medicamento",
+                    ClasseTerapeutica = "Antibiótico",
+                    RegistroAnvisa = "123456789",
+                    SituacaoRegistro = "Ativo"
                 }]
                 : Array.Empty<MedicamentoCatalogo>();
 

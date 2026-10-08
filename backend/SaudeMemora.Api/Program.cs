@@ -1166,6 +1166,8 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         data = d.Data,
         resumo = d.Resumo,
         diagnostico = d.Diagnostico,
+        cid = d.Cid,
+        cnes = d.Cnes,
         medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
         urlImagens = d.IdPublicos != null ? d.IdPublicos
             .Select(idPublico => storage.GetSignedUrl(idPublico) ?? string.Empty)
@@ -1257,6 +1259,8 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         data = doc.Data,
         resumo = doc.Resumo,
         diagnostico = doc.Diagnostico,
+        cid = doc.Cid,
+        cnes = doc.Cnes,
         medicamentos = doc.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
         nomeExame = doc.NomeExame,
         tipoExame = doc.TipoExame,
@@ -1327,6 +1331,8 @@ app.MapPut("/api/documents/{id}", async (
     doc.Resumo = updateDto.Resumo ?? doc.Resumo;
     doc.Diagnostico = updateDto.Diagnostico ?? doc.Diagnostico;
     doc.Crm = updateDto.Crm ?? doc.Crm;
+    doc.Cid = updateDto.Cid ?? doc.Cid;
+    doc.Cnes = updateDto.Cnes ?? doc.Cnes;
     doc.NomeExame = updateDto.NomeExame ?? doc.NomeExame;
     doc.TipoExame = updateDto.TipoExame ?? doc.TipoExame;
     doc.Resultado = updateDto.Resultado ?? doc.Resultado;
@@ -1567,6 +1573,8 @@ public class DocumentUpdateDto
     public string? Resumo { get; set; }
     public string? Diagnostico { get; set; }
     public string? Crm { get; set; }
+    public string? Cid { get; set; }
+    public string? Cnes { get; set; }
     public string? NomeExame { get; set; }
     public string? TipoExame { get; set; }
     public string? Resultado { get; set; }

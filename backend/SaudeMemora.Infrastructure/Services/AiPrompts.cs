@@ -42,6 +42,8 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
   ""data"": ""string (dd/MM/yyyy)"",
   ""resumo"": ""string"",
   ""diagnostico"": ""string"",
+  ""cid"": ""string (código CID-10 exatamente como aparece no documento; vazio se não constar)"",
+  ""cnes"": ""string (número CNES do estabelecimento exatamente como aparece no documento; vazio se não constar)"",
   ""textoFormatado"": ""string"",
   ""medicamentos"": [{ ""nome"": ""string"", ""dosagem"": ""string"", ""horario"": ""string"" }],
   ""conteudoIndentado"": [{ ""tipo"": ""string (header|keyvalue|bullet|text)"", ""texto"": ""string"", ""chave"": ""string"", ""valor"": ""string"" }],
@@ -68,6 +70,8 @@ Sua tarefa é extrair com PRECISÃO MÁXIMA todos os dados de uma receita médic
 - ""titulo"": Use ""Receita Médica"" ou o nome específico (ex: ""Receita de Controle Especial"", ""Receita Azul"")
 - ""medico"": SOMENTE o nome do médico prescritor. Nunca inclua CRM aqui.
 - ""crm"": Apenas o número e UF (ex: ""12345/SP""). Se não houver, deixe vazio.
+- ""cid"": Código CID-10 exatamente como aparece na receita; vazio se não constar. Não deduza o CID a partir dos medicamentos ou do diagnóstico.
+- ""cnes"": Número CNES do estabelecimento exatamente como aparece na receita; vazio se não constar. Não confunda com CRM, CNPJ ou telefone.
 - ""clinica"": Nome da clínica, consultório ou hospital onde foi emitida. Vazio se não constar.
 - ""data"": Data de emissão no formato dd/MM/yyyy.
 - ""resumo"": Uma frase descrevendo o objetivo (ex: ""Prescrição de antibiótico amoxicilina e antifebril para tratamento de infecção"").

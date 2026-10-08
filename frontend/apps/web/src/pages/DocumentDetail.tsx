@@ -4,7 +4,7 @@ import {
   ArrowLeft, CalendarDays, ChevronRight, ChevronLeft, FileCheck2, Info, Pill, 
   Stethoscope, MoreVertical, Trash2, Pencil, Code, Save, X, Plus,
   ClipboardList, IdCard, User, Building2, FlaskConical, Activity, 
-  Building, FileText, ChevronDown, ChevronUp, Copy, ActivitySquare, AlertTriangle
+  Building, FileText, ChevronDown, ChevronUp, Copy, ActivitySquare, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import {
   useGetApiDocumentsId,
@@ -20,7 +20,26 @@ type MedicamentoDescricao = {
   nome: string;
   descricao: string;
   fonte: string;
+  principioAtivo?: string;
+  fabricante?: string;
+  tipoProduto?: string;
+  classeTerapeutica?: string;
+  registroAnvisa?: string;
+  situacaoRegistro?: string;
 };
+
+function getDocumentCode(doc: any, field: 'cid' | 'cnes'): string {
+  const keyPattern = field === 'cid' ? /\bcid(?:[\s-]?10)?\b/i : /\bcnes\b/i;
+  const structuredValue = doc.conteudoIndentado?.find((item: any) =>
+    item.tipo === 'keyvalue' && keyPattern.test(item.chave || '')
+  )?.valor;
+  if (structuredValue) return structuredValue;
+
+  const textPattern = field === 'cid'
+    ? /\bCID(?:[\s-]?10)?\s*[:\-]?\s*([A-Z]\d{2}(?:\.\d{1,2})?)/im
+    : /\bCNES\s*[:\-]?\s*(\d{7})\b/i;
+  return doc.textoExtraido?.match(textPattern)?.[1] || '';
+}
 
 export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [match, params] = useRoute('/documentos/:id');
@@ -66,6 +85,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         resumo: doc.resumo || '',
         diagnostico: doc.diagnostico || '',
         crm: doc.crm || '',
+        cid: doc.cid || getDocumentCode(doc, 'cid'),
+        cnes: doc.cnes || getDocumentCode(doc, 'cnes'),
         resultadosExame: doc.resultadosExame ? JSON.parse(JSON.stringify(doc.resultadosExame)) : [],
       });
     }
@@ -162,6 +183,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           resumo:      formData.resumo,
           diagnostico: formData.diagnostico,
           crm:         formData.crm,
+          cid:         formData.cid,
+          cnes:        formData.cnes,
           resultadosExame: formData.resultadosExame,
         })
       });
@@ -206,6 +229,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   }
 
   const doc = docRaw as unknown as any;
+  const cid = doc.cid || getDocumentCode(doc, 'cid');
+  const cnes = doc.cnes || getDocumentCode(doc, 'cnes');
   const date = new Date(doc.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
   const typeLabel = doc.tipo || 'Documento';
 
@@ -522,6 +547,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             
             if (doc.data && !chavesPresentesLower.some(c => c.includes('data') || c.includes('entrada'))) topFields.push({ chave: 'Data do Documento', valor: doc.data, name: 'data' });
             if (doc.crm && !chavesPresentesLower.some(c => c.includes('crm'))) topFields.push({ chave: 'CRM', valor: doc.crm, name: 'crm' });
+            if (cid && !chavesPresentesLower.some(c => /\bcid(?:[\s-]?10)?\b/i.test(c))) topFields.push({ chave: 'CID-10', valor: cid, name: 'cid' });
+            if (cnes && !chavesPresentesLower.some(c => /\bcnes\b/i.test(c))) topFields.push({ chave: 'CNES', valor: cnes, name: 'cnes' });
 
             const allFields = [...topFields, ...kvFields];
             if (allFields.length === 0 && !isEditing) return null;
@@ -573,6 +600,28 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                         className="w-full text-sm font-bold text-foreground bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">CID-10</label>
+                      <input
+                        type="text"
+                        name="cid"
+                        value={formData.cid}
+                        onChange={handleChange}
+                        placeholder="Não informado"
+                        className="w-full text-sm font-bold text-foreground bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">CNES do estabelecimento</label>
+                      <input
+                        type="text"
+                        name="cnes"
+                        value={formData.cnes}
+                        onChange={handleChange}
+                        placeholder="Não informado"
+                        className="w-full text-sm font-bold text-foreground bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                      />
+                    </div>
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
@@ -609,6 +658,14 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 {doc.medicamentos.map((medicine: any, idx: number) => {
                   const description = descriptions[idx];
                   const descriptionError = descriptionErrors[idx];
+                  const details = [
+                    ['Princípio ativo', description?.principioAtivo],
+                    ['Fabricante', description?.fabricante],
+                    ['Classe terapêutica', description?.classeTerapeutica],
+                    ['Categoria', description?.tipoProduto],
+                    ['Registro Anvisa', description?.registroAnvisa],
+                    ['Situação do registro', description?.situacaoRegistro],
+                  ].filter(([, value]) => Boolean(value));
                   return (
                     <div key={medicine.nome || idx} className="rounded-2xl border border-border/40 bg-muted/30 p-4 transition-colors hover:bg-muted/60">
                       <div className="flex items-start justify-between gap-3">
@@ -618,19 +675,42 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                             {medicine.dosagem} {medicine.horario && `• ${medicine.horario}`}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleConsultarDescricao(medicine, idx)}
-                          disabled={loadingDescriptions[idx]}
-                          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-[11px] font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
-                        >
-                          {loadingDescriptions[idx] ? 'Consultando…' : description?.descricao ? 'Atualizado' : 'Consultar'}
-                          <ChevronRight size={14} />
-                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Opções da bula de ${medicine.nome}`}
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-card text-muted-foreground transition-colors hover:bg-muted"
+                            >
+                              <MoreVertical size={17} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              disabled={loadingDescriptions[idx]}
+                              onSelect={() => void handleConsultarDescricao(medicine, idx)}
+                            >
+                              <RefreshCw size={15} />
+                              {loadingDescriptions[idx] ? 'Consultando…' : 'Consultar bula novamente'}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      {description?.descricao && (
+                      {description && (description.descricao || details.length > 0) && (
                         <div className="mt-3 border-t border-border/50 pt-3">
-                          <p className="text-xs leading-5 text-muted-foreground">{description.descricao}</p>
+                          {description.descricao && description.descricao !== `Princípio ativo: ${description.principioAtivo}.` && (
+                            <p className="text-xs leading-5 text-muted-foreground">{description.descricao}</p>
+                          )}
+                          {details.length > 0 && (
+                            <dl className="grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                              {details.map(([label, value]) => (
+                                <div key={label}>
+                                  <dt className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70">{label}</dt>
+                                  <dd className="mt-0.5 font-medium text-foreground/80">{value}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                          )}
                           {description.fonte === 'CATALOGO-OFICIAL' ? (
                             <p className="mt-2 text-[10px] leading-4 text-muted-foreground/70">
                               Dados do cadastro de medicamentos da Anvisa. Para posologia e orientações completas, consulte a bula oficial.
@@ -642,7 +722,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       )}
                       {descriptionError && (
                         <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-[11px] font-medium text-amber-700 dark:text-amber-400">
-                          Bula indisponível: {descriptionError}
+                          Não foi possível atualizar os dados do medicamento: {descriptionError}
                         </p>
                       )}
                     </div>
@@ -914,15 +994,35 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 {(doc.medicamentos ?? []).map((medicine: any, index: number) => {
                   const description = descriptions[index];
                   const descriptionError = descriptionErrors[index];
+                  const details = [
+                    ['Princípio ativo', description?.principioAtivo],
+                    ['Fabricante', description?.fabricante],
+                    ['Classe terapêutica', description?.classeTerapeutica],
+                    ['Categoria', description?.tipoProduto],
+                    ['Registro Anvisa', description?.registroAnvisa],
+                    ['Situação do registro', description?.situacaoRegistro],
+                  ].filter(([, value]) => Boolean(value));
                   return (
                     <div key={medicine.nome || index} className="rounded-2xl border border-white/10 bg-white/10 p-4">
                       <p className="text-sm font-extrabold">{medicine.nome}</p>
                       <p className="mt-1 text-xs text-white/55">
                         {medicine.dosagem} {medicine.horario && `• ${medicine.horario}`}
                       </p>
-                      {description?.descricao ? (
+                      {description && (description.descricao || details.length > 0) ? (
                         <div className="mt-3">
-                          <p className="text-xs leading-5 text-white/80">{description.descricao}</p>
+                          {description.descricao && description.descricao !== `Princípio ativo: ${description.principioAtivo}.` && (
+                            <p className="text-xs leading-5 text-white/80">{description.descricao}</p>
+                          )}
+                          {details.length > 0 && (
+                            <dl className="mt-2 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                              {details.map(([label, value]) => (
+                                <div key={label}>
+                                  <dt className="text-[10px] font-bold uppercase tracking-wide text-white/45">{label}</dt>
+                                  <dd className="mt-0.5 text-white/80">{value}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                          )}
                           {description.fonte === 'CATALOGO-OFICIAL' ? (
                             <p className="mt-2 text-[10px] leading-4 text-white/55">
                               Dados do cadastro de medicamentos da Anvisa — não substituem a bula oficial.
@@ -932,7 +1032,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           )}
                         </div>
                       ) : descriptionError ? (
-                        <p className="mt-3 text-xs leading-5 text-amber-300">Bula indisponível. Tente consultar novamente.</p>
+                        <p className="mt-3 text-xs leading-5 text-amber-300">Não foi possível atualizar os dados. Use o menu de opções para consultar novamente.</p>
                       ) : (
                         <p className="mt-3 text-xs italic text-white/40">Consulta da bula em andamento ou indisponível.</p>
                       )}

@@ -123,6 +123,12 @@ public class RegistroDocumento
     [BsonElement("crm")]
     public string Crm { get; set; } = string.Empty;
 
+    [BsonElement("cid")]
+    public string Cid { get; set; } = string.Empty;
+
+    [BsonElement("cnes")]
+    public string Cnes { get; set; } = string.Empty;
+
     [BsonElement("medicamentos")]
     public List<MedicamentoDocumento> Medicamentos { get; set; } = new();
 

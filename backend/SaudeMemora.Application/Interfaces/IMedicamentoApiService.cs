@@ -8,4 +8,10 @@ public interface IMedicamentoApiService
 public sealed record MedicamentoDescricao(
     string Nome,
     string Descricao,
-    string Fonte);
+    string Fonte,
+    string PrincipioAtivo = "",
+    string Fabricante = "",
+    string TipoProduto = "",
+    string ClasseTerapeutica = "",
+    string RegistroAnvisa = "",
+    string SituacaoRegistro = "");

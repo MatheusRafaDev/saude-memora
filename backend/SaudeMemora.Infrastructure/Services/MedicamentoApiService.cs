@@ -60,16 +60,22 @@ public sealed class MedicamentoApiService : IMedicamentoApiService
 
             using var detailDocument = JsonDocument.Parse(await detailResponse.Content.ReadAsStringAsync(cancellationToken));
             var details = detailDocument.RootElement;
-            var descricao = GetString(details, "descricao")
-                ?? GetString(details, "descricaoProduto")
-                ?? GetString(details, "nomeProduto")
-                ?? GetString(details, "tipoProduto");
+            var descricao = GetString(details, "descricao", "descricaoProduto", "nomeProduto", "tipoProduto");
             var medicamento = GetString(details, "nomeProduto") ?? GetString(firstResult, "nomeProduto") ?? nome.Trim();
 
             if (string.IsNullOrWhiteSpace(descricao))
                 return await BuscarNoCatalogoAsync(nome.Trim(), cancellationToken);
 
-            return new MedicamentoDescricao(medicamento, descricao.Trim(), "ANVISA");
+            return new MedicamentoDescricao(
+                medicamento,
+                descricao.Trim(),
+                "ANVISA",
+                GetString(details, firstResult, "principioAtivo", "substanciaAtiva", "principioAtivoProduto"),
+                GetString(details, firstResult, "fabricante", "empresa", "razaoSocial"),
+                GetString(details, firstResult, "tipoProduto", "categoriaRegulatoria"),
+                GetString(details, firstResult, "classeTerapeutica", "classesTerapeuticas"),
+                GetString(details, firstResult, "registroAnvisa", "numeroRegistro", "numRegistro", "registro"),
+                GetString(details, firstResult, "situacaoRegistro", "situacao"));
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
@@ -107,14 +113,38 @@ public sealed class MedicamentoApiService : IMedicamentoApiService
         return new MedicamentoDescricao(
             medicamento.Nome,
             medicamento.Descricao.Trim(),
-            "CATALOGO-OFICIAL");
+            "CATALOGO-OFICIAL",
+            medicamento.PrincipioAtivo,
+            medicamento.Fabricante,
+            medicamento.TipoProduto,
+            medicamento.ClasseTerapeutica,
+            medicamento.RegistroAnvisa,
+            medicamento.SituacaoRegistro);
     }
 
-    private static string? GetString(JsonElement element, string propertyName)
+    private static string? GetString(JsonElement element, params string[] propertyNames)
     {
-        if (!element.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
+        if (element.ValueKind != JsonValueKind.Object)
             return null;
 
-        return property.GetString();
+        foreach (var propertyName in propertyNames)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (!string.Equals(propertyName, property.Name, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (property.Value.ValueKind == JsonValueKind.String)
+                    return property.Value.GetString();
+
+                if (property.Value.ValueKind == JsonValueKind.Number)
+                    return property.Value.GetRawText();
+            }
+        }
+
+        return null;
     }
+
+    private static string GetString(JsonElement first, JsonElement second, params string[] propertyNames)
+        => GetString(first, propertyNames) ?? GetString(second, propertyNames) ?? string.Empty;
 }

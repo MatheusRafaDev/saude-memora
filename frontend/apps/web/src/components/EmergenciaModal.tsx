@@ -3,6 +3,17 @@ import { createPortal } from 'react-dom';
 import { X, ShieldAlert } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { customFetch } from '@workspace/api-client-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface EmergenciaModalProps {
   open: boolean;
@@ -14,7 +25,9 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
   const [status, setStatus] = useState<{ possuiToken: boolean; expiraEm: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!open) return;
@@ -40,19 +53,38 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
   const url = token ? `${window.location.origin}/emergencia/${token}` : '';
 
   const handleGenerate = async () => {
-    if (status?.possuiToken) {
-      if (!window.confirm('Gerar um novo link invalidará o anterior. Deseja continuar?')) return;
-    }
-    
     try {
       setGenerating(true);
       const res = await customFetch<{ token: string; expiraEm: string | null }>('/api/pacientes/me/emergencia', { method: 'POST' });
       setToken(res.token);
       setStatus({ possuiToken: true, expiraEm: res.expiraEm });
+      setConfirmRegenerateOpen(false);
     } catch (err) {
       setError('Erro ao gerar link.');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const requestGenerate = () => {
+    if (status?.possuiToken) {
+      setConfirmRegenerateOpen(true);
+      return;
+    }
+
+    void handleGenerate();
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: 'Link copiado', description: 'O link de emergência foi copiado.' });
+    } catch {
+      toast({
+        title: 'Não foi possível copiar o link',
+        description: 'Verifique as permissões do navegador e tente novamente.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -93,8 +125,8 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
               Salve este QR Code. Por segurança, o link original não pode ser recuperado novamente depois de fechar esta tela.
             </p>
             <div className="mt-6 flex flex-col items-center gap-3 w-full">
-              <button 
-                onClick={() => { navigator.clipboard.writeText(url); alert('Link copiado!'); }}
+              <button
+                onClick={() => void handleCopyLink()}
                 className="px-6 py-2 bg-muted hover:bg-muted/80 text-foreground font-bold rounded-lg transition-colors w-full md:w-auto"
               >
                 Copiar Link
@@ -126,8 +158,8 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
               </div>
             )}
             
-            <button 
-              onClick={handleGenerate} 
+            <button
+              onClick={requestGenerate}
               disabled={generating}
               className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full"
             >
@@ -136,6 +168,29 @@ export function EmergenciaModal({ open, onClose }: EmergenciaModalProps) {
           </div>
         )}
       </div>
+      <AlertDialog open={confirmRegenerateOpen} onOpenChange={setConfirmRegenerateOpen}>
+        <AlertDialogContent className="z-[100001]" onClick={(event) => event.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar novo link de emergência?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O link atual será invalidado e não poderá ser recuperado. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={generating}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleGenerate();
+              }}
+              disabled={generating}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {generating ? 'Gerando...' : 'Gerar novo link'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>,
     document.body
   );

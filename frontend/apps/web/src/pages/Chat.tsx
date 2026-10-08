@@ -99,10 +99,6 @@ export default function Chat() {
     <section className="page-enter mx-auto flex w-full max-w-5xl flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary/70">
-            <Sparkles size={14} />
-            Assistente pessoal
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Converse com seu histórico</h1>
           <p className="mt-1.5 max-w-xl text-sm leading-6 text-muted-foreground">
             Encontre exames, medicamentos e outras informações salvas na sua jornada de saúde.
@@ -118,7 +114,7 @@ export default function Chat() {
               <Bot size={22} strokeWidth={1.8} />
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-bold text-foreground sm:text-base">Consulta do seu histórico</h2>
+              <h2 className="truncate text-sm font-bold text-foreground sm:text-base">Mémora</h2>
             </div>
           </div>
         </header>

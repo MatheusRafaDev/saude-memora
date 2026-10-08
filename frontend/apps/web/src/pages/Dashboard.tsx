@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Link } from "wouter";
 import {
   ChevronRight,
@@ -37,20 +38,6 @@ import { triggerUploadModal } from "@/components/UploadModal";
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
   const [isCarteirinhaZoomOpen, setIsCarteirinhaZoomOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isCarteirinhaOpen && !isCarteirinhaZoomOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (isCarteirinhaZoomOpen) setIsCarteirinhaZoomOpen(false);
-        else setIsCarteirinhaOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCarteirinhaOpen, isCarteirinhaZoomOpen]);
 
   const { data: profile, isLoading: profileLoading } = useGetApiPacientesMe();
   const { data: documentsRaw, isLoading: docsLoading } = useGetApiDocuments();
@@ -103,65 +90,48 @@ export default function Dashboard() {
   const recentDocs = docs.slice(0, 4);
 
   // — Relatórios para o médico —
-  const medicacoesCount: Record<string, number> = {};
-  const examesCountMap: Record<string, number> = {};
+  const processedDocs = docs.filter((doc: any) => doc.status === "pronto");
+  const prescriptions = processedDocs.filter((doc: any) =>
+    (doc.tipo || "").toLowerCase().includes("receita"),
+  );
+  const medicationCounts = new Map<string, { nome: string; count: number }>();
+  const examCounts = new Map<string, { nome: string; count: number }>();
 
-  docs.forEach((doc: any) => {
-    if (doc.medicamentos && Array.isArray(doc.medicamentos)) {
-      doc.medicamentos.forEach((m: any) => {
-        if (m.nome) {
-          const key = m.nome.trim().toLowerCase();
-          medicacoesCount[key] = (medicacoesCount[key] || 0) + 1;
-        }
-      });
-    }
+  prescriptions.forEach((doc: any) => {
+    const medications = Array.isArray(doc.medicamentos) ? doc.medicamentos : [];
+    const uniqueMedicationNames = new Map<string, string>();
+    medications.forEach((medication: any) => {
+      const name = typeof medication.nome === "string" ? medication.nome.trim() : "";
+      if (name) uniqueMedicationNames.set(name.toLocaleLowerCase(), name);
+    });
+    uniqueMedicationNames.forEach((name, key) => {
+      const current = medicationCounts.get(key);
+      medicationCounts.set(key, { nome: current?.nome ?? name, count: (current?.count ?? 0) + 1 });
+    });
 
-    const tipo = (doc.tipoIdentificado || doc.tipo || "").toLowerCase();
-    if (tipo.includes("exame") || tipo.includes("laudo")) {
-      const titulo = doc.titulo || doc.nomeExame;
-      if (titulo) {
-        const key = titulo.trim().toLowerCase();
-        examesCountMap[key] = (examesCountMap[key] || 0) + 1;
-      }
-    }
+    const examResults = Array.isArray(doc.resultadosExame) ? doc.resultadosExame : [];
+    const isExamDocument = (doc.tipo || "").toLowerCase().includes("exame") ||
+      Boolean(doc.nomeExame || doc.tipoExame || examResults.length);
+    if (!isExamDocument) return;
+
+    const examName = [doc.tipoExame, doc.nomeExame, doc.titulo]
+      .find((value: unknown) => typeof value === "string" && value.trim())?.trim();
+    if (!examName) return;
+
+    const key = examName.toLocaleLowerCase();
+    const current = examCounts.get(key);
+    examCounts.set(key, { nome: current?.nome ?? examName, count: (current?.count ?? 0) + 1 });
   });
 
-  const topMedicacoes = Object.entries(medicacoesCount)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([key, count]) => {
-      let originalName = key;
-      for (const d of docs) {
-        if (d.medicamentos) {
-          const match = d.medicamentos.find(
-            (m: any) => m.nome?.trim().toLowerCase() === key,
-          );
-          if (match) {
-            originalName = match.nome;
-            break;
-          }
-        }
-      }
-      return { nome: originalName, count };
-    });
-
-  const topExames = Object.entries(examesCountMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([key, count]) => {
-      let originalName = key;
-      for (const d of docs) {
-        const tipo = (d.tipoIdentificado || d.tipo || "").toLowerCase();
-        if (tipo.includes("exame") || tipo.includes("laudo")) {
-          const t = d.titulo || d.nomeExame;
-          if (t?.trim().toLowerCase() === key) {
-            originalName = t;
-            break;
-          }
-        }
-      }
-      return { nome: originalName, count };
-    });
+  const topMedicacoes = [...medicationCounts.values()]
+    .sort((a, b) => b.count - a.count || a.nome.localeCompare(b.nome, "pt-BR"))
+    .slice(0, 5);
+  const topExames = [...examCounts.values()]
+    .sort((a, b) => b.count - a.count || a.nome.localeCompare(b.nome, "pt-BR"))
+    .slice(0, 5);
+  const totalExames = [...examCounts.values()].reduce((total, exam) => total + exam.count, 0);
+  const highestMedicationCount = topMedicacoes[0]?.count ?? 1;
+  const highestExamCount = topExames[0]?.count ?? 1;
 
   // — Alertas FASE 4 —
   const alertasAtivos = docs
@@ -639,192 +609,251 @@ export default function Dashboard() {
       </div>
 
       {/* ── 4. Relatórios e Estatísticas (Para o Médico) ── */}
-      {(topMedicacoes.length > 0 || topExames.length > 0) && (
-        <section className="rounded-xl border border-border/60 bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0f172a] text-white">
+      <section className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-xs">
+          <div className="flex flex-col gap-3 bg-[#0f172a] px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <BarChart3 size={15} className="text-blue-400" />
-              <span className="text-sm font-bold">
-                Relatórios e Estatísticas
-              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-400/10 text-blue-300">
+                <BarChart3 size={17} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold">Resumo para sua consulta</h2>
+                <p className="mt-0.5 text-[11px] text-slate-300">Informações extraídas do seu histórico de saúde</p>
+              </div>
             </div>
-            <span className="text-[10px] font-semibold text-blue-200 uppercase tracking-wider">
-              Apoio Médico
-            </span>
+            <Link
+              href="/documentos"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 self-start rounded-lg border border-white/15 px-3 text-xs font-semibold text-white/90 transition-colors hover:bg-white/10 sm:self-auto"
+            >
+              Ver documentos <ChevronRight size={14} />
+            </Link>
           </div>
-          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/50">
-            {/* Top Medicamentos */}
-            <div className="p-5">
-              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-4">
-                <Pill size={12} className="text-emerald-500" /> Remédios Mais
-                Frequentes
-              </h3>
+          <div className="grid grid-cols-2 gap-3 border-b border-border/50 bg-muted/10 p-4 sm:grid-cols-4 sm:p-5">
+            {[
+              { label: "Documentos analisados", value: processedDocs.length, icon: FileText, color: "text-primary bg-primary/10" },
+              { label: "Receitas", value: prescriptions.length, icon: Pill, color: "text-emerald-700 bg-emerald-500/10" },
+              { label: "Exames registrados", value: totalExames, icon: FlaskConical, color: "text-blue-700 bg-blue-500/10" },
+              { label: "Remédios contínuos informados", value: continuousMedications.length, icon: Heart, color: "text-rose-700 bg-rose-500/10" },
+            ].map(({ label, value, icon: Icon, color }) => (
+              <div key={label} className="min-w-0 rounded-xl border border-border/60 bg-card p-3 sm:p-4">
+                <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
+                  <Icon size={15} />
+                </div>
+                <p className="text-2xl font-bold leading-none text-foreground">{value}</p>
+                <p className="mt-1.5 text-[10px] font-medium leading-4 text-muted-foreground sm:text-xs">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid divide-y divide-border/50 md:grid-cols-2 md:divide-x md:divide-y-0">
+            <div className="p-4 sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
+                  <Pill size={15} className="text-emerald-600" /> Medicamentos nas receitas
+                </h3>
+                <span className="shrink-0 text-[10px] text-muted-foreground">Mais recorrentes</span>
+              </div>
               {topMedicacoes.length > 0 ? (
-                <div className="space-y-3">
-                  {topMedicacoes.map((med, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-foreground truncate pr-4">
-                        {med.nome}
-                      </span>
-                      <span className="inline-flex items-center justify-center rounded-full bg-emerald-50 text-emerald-700 px-2.5 py-0.5 text-xs font-bold border border-emerald-200">
-                        {med.count}x
-                      </span>
+                <div className="space-y-4">
+                  {topMedicacoes.map((med) => (
+                    <div key={med.nome} className="space-y-1.5">
+                      <div className="flex min-w-0 items-center justify-between gap-3">
+                        <span className="truncate text-xs font-semibold text-foreground">{med.nome}</span>
+                        <span className="shrink-0 text-[10px] font-bold text-emerald-700">
+                          {med.count} {med.count === 1 ? "receita" : "receitas"}
+                        </span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-emerald-500 transition-[width] duration-500"
+                          style={{ width: `${Math.max(12, (med.count / highestMedicationCount) * 100)}%` }}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Nenhum medicamento registrado.
+                <p className="rounded-xl border border-dashed border-border px-3 py-5 text-center text-xs text-muted-foreground">
+                  Ainda não há medicamentos identificados em receitas analisadas.
                 </p>
               )}
             </div>
 
-            {/* Top Exames */}
-            <div className="p-5">
-              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-4">
-                <FlaskConical size={12} className="text-blue-500" /> Exames Mais
-                Realizados
-              </h3>
+            <div className="p-4 sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
+                  <FlaskConical size={15} className="text-blue-600" /> Exames mais registrados
+                </h3>
+                <span className="shrink-0 text-[10px] text-muted-foreground">Por documento</span>
+              </div>
               {topExames.length > 0 ? (
-                <div className="space-y-3">
-                  {topExames.map((exame, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-foreground truncate pr-4">
-                        {exame.nome}
-                      </span>
-                      <span className="inline-flex items-center justify-center rounded-full bg-blue-50 text-blue-700 px-2.5 py-0.5 text-xs font-bold border border-blue-200">
-                        {exame.count}x
-                      </span>
+                <div className="space-y-4">
+                  {topExames.map((exam) => (
+                    <div key={exam.nome} className="space-y-1.5">
+                      <div className="flex min-w-0 items-center justify-between gap-3">
+                        <span className="truncate text-xs font-semibold text-foreground">{exam.nome}</span>
+                        <span className="shrink-0 text-[10px] font-bold text-blue-700">
+                          {exam.count} {exam.count === 1 ? "registro" : "registros"}
+                        </span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-blue-500 transition-[width] duration-500"
+                          style={{ width: `${Math.max(12, (exam.count / highestExamCount) * 100)}%` }}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Nenhum exame registrado.
+                <p className="rounded-xl border border-dashed border-border px-3 py-5 text-center text-xs text-muted-foreground">
+                  Ainda não há exames identificados em documentos analisados.
                 </p>
               )}
             </div>
           </div>
-        </section>
-      )}
+
+          <div className="grid gap-px border-t border-border/50 bg-border/50 md:grid-cols-3">
+            {[
+              { label: "Medicação contínua informada", items: continuousMedications, empty: "Nenhum medicamento contínuo informado.", dotColor: "bg-emerald-500" },
+              { label: "Alergias registradas", items: allergies, empty: "Nenhuma alergia registrada.", dotColor: "bg-rose-500" },
+              { label: "Condições registradas", items: allConditions, empty: "Nenhuma condição registrada.", dotColor: "bg-amber-500" },
+            ].map(({ label, items, empty, dotColor }) => (
+              <div key={label} className="min-w-0 bg-card p-4 sm:p-5">
+                <h3 className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+                  {label}
+                </h3>
+                {items.length ? (
+                  <ul className="space-y-2">
+                    {items.slice(0, 4).map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-xs font-medium leading-5 text-foreground">
+                        <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${dotColor}`} />
+                        <span className="break-words">{item}</span>
+                      </li>
+                    ))}
+                    {items.length > 4 && (
+                      <li className="text-[10px] font-semibold text-muted-foreground">+{items.length - 4} outros</li>
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{empty}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="px-4 py-3 text-[10px] leading-4 text-muted-foreground sm:px-5">
+            Frequências calculadas pelos documentos analisados; uma receita não confirma que o medicamento foi utilizado. Confira os dados com o paciente.
+          </p>
+      </section>
 
       {/* ── Modal da Carteirinha ── */}
-      {isCarteirinhaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6">
-          <button
-            type="button"
-            aria-label="Fechar carteirinha"
-            className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
-            onClick={() => setIsCarteirinhaOpen(false)}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="insurance-card-title"
-            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl sm:max-h-[calc(100dvh-3rem)]"
-          >
-            {/* Header */}
-            <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-white shadow-md sm:px-6 sm:py-4">
-              <div>
-                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/60">
-                  Visão Geral de Saúde
-                </p>
-                <h2 id="insurance-card-title" className="flex items-center gap-2 text-base font-bold sm:text-lg">
-                  <CreditCard size={18} className="text-white" />
-                  Sua Carteirinha
-                </h2>
-              </div>
+      <DialogPrimitive.Root
+        open={isCarteirinhaOpen}
+        onOpenChange={(open) => {
+          setIsCarteirinhaOpen(open);
+          if (!open) setIsCarteirinhaZoomOpen(false);
+        }}
+      >
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[99999] glass-modal page-enter" />
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[100000] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[500px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-border bg-card p-5 shadow-2xl outline-none sm:p-6 md:p-8">
+            <DialogPrimitive.Title className="sr-only">Sua Carteirinha</DialogPrimitive.Title>
+            <DialogPrimitive.Description className="sr-only">
+              Informações do seu convênio ou plano de saúde.
+            </DialogPrimitive.Description>
+
+            <DialogPrimitive.Close asChild>
               <button
                 type="button"
-                onClick={() => setIsCarteirinhaOpen(false)}
                 aria-label="Fechar carteirinha"
-                className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10"
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:right-5 sm:top-5"
               >
                 <X size={18} />
               </button>
+            </DialogPrimitive.Close>
+
+            <div className="mb-6 flex flex-col items-center text-center">
+              <CreditCard className="mb-2 h-10 w-10 text-primary" />
+              <h2 className="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
+                Sua Carteirinha
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Informações do seu convênio ou plano de saúde.
+              </p>
             </div>
 
-            <div className="space-y-4 overflow-y-auto bg-muted/10 p-3 sm:space-y-5 sm:p-5">
-              {/* Imagem da carteirinha */}
+            <div className="space-y-4">
               {user.urlCarteirinha ? (
                 <button
                   type="button"
                   onClick={() => setIsCarteirinhaZoomOpen(true)}
                   aria-label="Ampliar imagem da carteirinha"
-                  className="group relative flex w-full items-center justify-center overflow-hidden rounded-xl border-2 border-primary/20 bg-slate-100 p-2 shadow-inner focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 sm:p-3"
+                  className="group relative flex w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted/40 p-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 sm:p-3"
                 >
                   <img
                     src={user.urlCarteirinha}
                     alt="Imagem da carteirinha do plano de saúde"
-                    className="max-h-[min(52dvh,560px)] w-full object-contain"
+                    className="max-h-[min(48dvh,520px)] w-full object-contain"
                   />
                   <span className="absolute bottom-3 rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-semibold text-white opacity-100 shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                     Toque para ampliar
                   </span>
                 </button>
               ) : (
-                <div className="rounded-xl border border-dashed border-border/80 bg-background flex flex-col items-center justify-center py-8 text-center px-4">
-                  <CreditCard
-                    size={32}
-                    className="text-muted-foreground/50 mb-2"
-                  />
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    Nenhuma imagem adicionada
-                  </p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
+                  <CreditCard size={32} className="mb-2 text-muted-foreground/50" />
+                  <p className="text-sm font-semibold text-muted-foreground">Nenhuma imagem adicionada</p>
+                  <p className="mt-1 text-xs text-muted-foreground/70">
                     Vá em Perfil para adicionar a foto da sua carteirinha.
                   </p>
                 </div>
               )}
 
-              {/* Infos em formato de cards */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex flex-col shadow-xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 mb-1">
+                <div className="flex flex-col rounded-xl border border-primary/10 bg-primary/5 p-4">
+                  <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-primary/70">
                     Convênio / Plano de Saúde
                   </span>
-                  <span className="text-sm font-bold text-foreground">
+                  <span className="break-words text-sm font-bold text-foreground">
                     {user.planoSaude || "Não informado"}
                   </span>
                 </div>
-                <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex flex-col shadow-xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 mb-1">
+                <div className="flex flex-col rounded-xl border border-primary/10 bg-primary/5 p-4">
+                  <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-primary/70">
                     Número da Carteirinha
                   </span>
-                  <span className="text-sm font-mono font-bold text-foreground">
+                  <span className="break-all text-sm font-mono font-bold text-foreground">
                     {user.numeroCarteirinha || "Não informado"}
                   </span>
                 </div>
               </div>
             </div>
-          </div>
 
-          {isCarteirinhaZoomOpen && user.urlCarteirinha && (
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Imagem ampliada da carteirinha"
-              className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-3 sm:p-8"
-              onClick={() => setIsCarteirinhaZoomOpen(false)}
-            >
-              <button
-                type="button"
-                aria-label="Fechar imagem ampliada"
-                onClick={() => setIsCarteirinhaZoomOpen(false)}
-                className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-5 sm:top-5"
-              >
-                <X size={22} />
-              </button>
-              <img
-                src={user.urlCarteirinha}
-                alt="Carteirinha ampliada"
-                className="max-h-full max-w-full object-contain"
-                onClick={(event) => event.stopPropagation()}
-              />
-            </div>
-          )}
-        </div>
-      )}
+            <DialogPrimitive.Root open={isCarteirinhaZoomOpen} onOpenChange={setIsCarteirinhaZoomOpen}>
+              <DialogPrimitive.Portal>
+                <DialogPrimitive.Overlay className="fixed inset-0 z-[100001] bg-black/95" />
+                <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[100002] flex max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[1200px] -translate-x-1/2 -translate-y-1/2 items-center justify-center p-3 outline-none sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100%-3rem)] sm:p-8">
+                  <DialogPrimitive.Title className="sr-only">Imagem ampliada da carteirinha</DialogPrimitive.Title>
+                  <DialogPrimitive.Close asChild>
+                    <button
+                      type="button"
+                      aria-label="Fechar imagem ampliada"
+                      className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-5 sm:top-5"
+                    >
+                      <X size={22} />
+                    </button>
+                  </DialogPrimitive.Close>
+                  <img
+                    src={user.urlCarteirinha}
+                    alt="Carteirinha ampliada"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </DialogPrimitive.Content>
+              </DialogPrimitive.Portal>
+            </DialogPrimitive.Root>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
     </div>
   );
 }

@@ -163,6 +163,8 @@ public class DocumentProcessingWorker : BackgroundService
             doc.Resumo = extractedData.Resumo;
             doc.Diagnostico = extractedData.Diagnostico;
             doc.Crm = extractedData.Crm;
+            doc.Cid = extractedData.Cid;
+            doc.Cnes = extractedData.Cnes;
             doc.NomeExame = extractedData.NomeExame;
             doc.TipoExame = extractedData.TipoExame;
             doc.Resultado = extractedData.Resultado;
@@ -266,6 +268,8 @@ public class DocumentProcessingWorker : BackgroundService
                 if (string.IsNullOrEmpty(persistedDoc.Resumo) || persistedDoc.Resumo == doc.Resumo) persistedDoc.Resumo = doc.Resumo;
                 if (string.IsNullOrEmpty(persistedDoc.Diagnostico) || persistedDoc.Diagnostico == doc.Diagnostico) persistedDoc.Diagnostico = doc.Diagnostico;
                 if (string.IsNullOrEmpty(persistedDoc.Crm) || persistedDoc.Crm == doc.Crm) persistedDoc.Crm = doc.Crm;
+                if (string.IsNullOrEmpty(persistedDoc.Cid) || persistedDoc.Cid == doc.Cid) persistedDoc.Cid = doc.Cid;
+                if (string.IsNullOrEmpty(persistedDoc.Cnes) || persistedDoc.Cnes == doc.Cnes) persistedDoc.Cnes = doc.Cnes;
                 if (string.IsNullOrEmpty(persistedDoc.NomeExame) || persistedDoc.NomeExame == doc.NomeExame) persistedDoc.NomeExame = doc.NomeExame;
                 if (string.IsNullOrEmpty(persistedDoc.TipoExame) || persistedDoc.TipoExame == doc.TipoExame) persistedDoc.TipoExame = doc.TipoExame;
                 if (string.IsNullOrEmpty(persistedDoc.Resultado) || persistedDoc.Resultado == doc.Resultado) persistedDoc.Resultado = doc.Resultado;

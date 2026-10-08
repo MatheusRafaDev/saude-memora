@@ -55,6 +55,8 @@ public class DocumentoExtraidoDto
     public string Resumo { get; set; } = string.Empty;
     public string Diagnostico { get; set; } = string.Empty;
     public string Crm { get; set; } = string.Empty;
+    public string Cid { get; set; } = string.Empty;
+    public string Cnes { get; set; } = string.Empty;
     public string NomeExame { get; set; } = string.Empty;
     public string TipoExame { get; set; } = string.Empty;
     public string Resultado { get; set; } = string.Empty;
