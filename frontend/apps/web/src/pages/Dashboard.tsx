@@ -33,7 +33,6 @@ import {
   useGetApiFichaMedicaMe,
 } from "@workspace/api-client-react";
 import { triggerUploadModal } from "@/components/UploadModal";
-import Evolucao from "@/components/Evolucao";
 
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
@@ -656,9 +655,6 @@ export default function Dashboard() {
           </div>
         </section>
       )}
-
-      {/* ── Evolução (Gráficos de Exames) ── */}
-      <Evolucao />
 
       {/* ── Modal da Carteirinha ── */}
       {isCarteirinhaOpen && (
