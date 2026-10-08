@@ -53,6 +53,30 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>();
+
+var bularioOptions = builder.Configuration.GetSection(BularioApiOptions.SectionName).Get<BularioApiOptions>()
+    ?? new BularioApiOptions();
+
+bularioOptions.BaseUrl = Environment.GetEnvironmentVariable("BULARIO_API_BASE_URL")
+    ?? bularioOptions.BaseUrl;
+bularioOptions.PageSize = int.TryParse(Environment.GetEnvironmentVariable("BULARIO_API_PAGE_SIZE"), out var pageSize)
+    ? pageSize
+    : bularioOptions.PageSize;
+bularioOptions.RequestTimeoutSeconds = int.TryParse(Environment.GetEnvironmentVariable("BULARIO_API_TIMEOUT_SECONDS"), out var timeoutSeconds)
+    ? timeoutSeconds
+    : bularioOptions.RequestTimeoutSeconds;
+
+builder.Services.AddSingleton(bularioOptions);
+builder.Services.AddHttpClient<IMedicamentoApiService, MedicamentoApiService>((serviceProvider, client) =>
+{
+    client.BaseAddress = new Uri(bularioOptions.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(bularioOptions.RequestTimeoutSeconds);
+    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Guest");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36");
+    client.DefaultRequestHeaders.Referrer = new Uri("https://consultas.anvisa.gov.br/");
+});
+
 builder.Services.AddHostedService<DocumentProcessingWorker>();
 builder.Services.AddHostedService<AccountCleanupWorker>();
 builder.Services.AddHostedService<KeepAliveWorker>();
@@ -368,6 +392,7 @@ app.MapConsentimentoEndpoints();
 app.MapReprocessamentoEndpoints();
 app.MapRevisaoEndpoints();
 app.MapAlertaEndpoints();
+app.MapMedicamentoEndpoints();
 app.MapExamesEndpoints();
 app.MapEmergenciaEndpoints();
 app.MapChatEndpoints();

@@ -27,6 +27,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [showTranscriptionModal, setShowTranscriptionModal] = useState(false);
   const [showFullScreenModal, setShowFullScreenModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [descriptions, setDescriptions] = useState<Record<number, { nome: string; descricao: string; fonte: string }>>({});
+  const [loadingDescriptions, setLoadingDescriptions] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -51,6 +53,36 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     }
   }, [docRaw]);
 
+  useEffect(() => {
+    const medicamentos = (docRaw as any)?.medicamentos ?? [];
+    if (!medicamentos.length) {
+      setDescriptions({});
+      setLoadingDescriptions({});
+      return;
+    }
+
+    setDescriptions({});
+    setLoadingDescriptions(Object.fromEntries(medicamentos.map((_: any, index: number) => [index, true])));
+
+    const consultar = async () => {
+      const resultados = await Promise.all(medicamentos.map(async (medicine: any, index: number) => {
+        try {
+          const response = await customFetch(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
+          const data = await response.json();
+          return [index, data] as const;
+        } catch {
+          return [index, null] as const;
+        }
+      }));
+
+      const nextDescriptions = Object.fromEntries(resultados.filter(([, data]) => data?.descricao).map(([index, data]) => [index, data]));
+      setDescriptions(nextDescriptions);
+      setLoadingDescriptions({});
+    };
+
+    void consultar();
+  }, [docRaw]);
+
   const handleConfirmDelete = () => {
     deleteMutation.mutate({ id: id || '' }, {
       onSuccess: () => {
@@ -67,6 +99,21 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       toast({ description: 'Alerta dispensado.' });
     } catch(e) {
       toast({ description: 'Erro ao dispensar alerta.', variant: 'destructive' });
+    }
+  };
+
+  const handleConsultarDescricao = async (medicine: any, index: number) => {
+    setLoadingDescriptions((current) => ({ ...current, [index]: true }));
+
+    try {
+      const response = await customFetch(`/api/medicamentos/${encodeURIComponent(medicine.nome)}/descricao`);
+      const data = await response.json();
+      setDescriptions((current) => ({ ...current, [index]: data }));
+    } catch {
+      setDescriptions((current) => ({ ...current, [index]: { nome: medicine.nome, descricao: '', fonte: 'Bulario' } }));
+      toast({ description: 'Não foi possível consultar a descrição neste momento.', variant: 'destructive' });
+    } finally {
+      setLoadingDescriptions((current) => ({ ...current, [index]: false }));
     }
   };
 
@@ -526,17 +573,36 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 </span>
               </div>
               <div className="mt-6 space-y-3">
-                {doc.medicamentos.map((medicine: any, idx: number) => (
-                  <div key={medicine.nome || idx} className="flex items-center justify-between rounded-2xl border border-border/40 bg-muted/30 p-4 transition-colors hover:bg-muted/60">
-                    <div>
-                      <p className="text-sm font-extrabold text-foreground">{medicine.nome}</p>
-                      <p className="mt-1 text-xs font-medium text-muted-foreground">
-                        {medicine.dosagem} {medicine.horario && `• ${medicine.horario}`}
-                      </p>
+                {doc.medicamentos.map((medicine: any, idx: number) => {
+                  const description = descriptions[idx];
+                  return (
+                    <div key={medicine.nome || idx} className="rounded-2xl border border-border/40 bg-muted/30 p-4 transition-colors hover:bg-muted/60">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-extrabold text-foreground">{medicine.nome}</p>
+                          <p className="mt-1 text-xs font-medium text-muted-foreground">
+                            {medicine.dosagem} {medicine.horario && `• ${medicine.horario}`}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleConsultarDescricao(medicine, idx)}
+                          disabled={loadingDescriptions[idx]}
+                          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-[11px] font-bold text-primary transition-colors hover:bg-primary/20 disabled:opacity-60"
+                        >
+                          {loadingDescriptions[idx] ? 'Consultando…' : description?.descricao ? 'Atualizado' : 'Consultar'}
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                      {description?.descricao && (
+                        <div className="mt-3 border-t border-border/50 pt-3">
+                          <p className="text-xs leading-5 text-muted-foreground">{description.descricao}</p>
+                          <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Fonte: {description.fonte}</p>
+                        </div>
+                      )}
                     </div>
-                    <ChevronRight size={18} className="text-muted-foreground/50" />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}
@@ -785,12 +851,39 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <X size={24} />
             </button>
           </div>
-          <div className="flex-1 relative w-full h-full flex items-center justify-center p-4">
-            <img 
-              src={doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem} 
-              alt="Documento em tela cheia" 
-              className="max-w-full max-h-full object-contain" 
-            />
+          <div className="grid flex-1 min-h-0 w-full md:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="relative flex min-h-0 items-center justify-center overflow-hidden p-5">
+              <img
+                src={doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem}
+                alt="Documento em tela cheia"
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+            <aside className="min-h-0 overflow-y-auto border-t border-white/10 bg-white/5 p-5 text-white md:border-l md:border-t-0">
+              <div className="flex items-center gap-2 text-sm font-extrabold">
+                <Pill size={17} className="text-amber-300" />
+                Informações do medicamento
+              </div>
+              <p className="mt-2 text-xs leading-5 text-white/55">Consultadas automaticamente ao abrir o documento.</p>
+              <div className="mt-5 space-y-3">
+                {(doc.medicamentos ?? []).map((medicine: any, index: number) => {
+                  const description = descriptions[index];
+                  return (
+                    <div key={medicine.nome || index} className="rounded-2xl border border-white/10 bg-white/10 p-4">
+                      <p className="text-sm font-extrabold">{medicine.nome}</p>
+                      <p className="mt-1 text-xs text-white/55">
+                        {medicine.dosagem} {medicine.horario && `• ${medicine.horario}`}
+                      </p>
+                      {description?.descricao ? (
+                        <p className="mt-3 text-xs leading-5 text-white/80">{description.descricao}</p>
+                      ) : (
+                        <p className="mt-3 text-xs italic text-white/40">Informação não disponível na API.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </aside>
           </div>
         </AlertDialogContent>
       </AlertDialog>
