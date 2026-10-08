@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
-import { createPortal } from 'react-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Check, CircleUserRound, HeartHandshake, Save, ShieldCheck, AlertTriangle, CreditCard, ImagePlus, LoaderCircle, Trash2, Camera, ZoomIn, X } from 'lucide-react';
 import { useGetApiPacientesMe, usePatchApiPacientesMePerfil, useDeleteApiPacientesMe, customFetch } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useConsentimento, useSaveConsentimento, useRevokeConsentimento } from '../hooks/useConsentimento';
+import { LegalDocumentDialog, type LegalDocument } from '@/components/LegalDocumentDialog';
 
 function formatPhoneNumber(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -53,6 +54,7 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [legalDocument, setLegalDocument] = useState<LegalDocument | null>(null);
 
 
   useEffect(() => {
@@ -343,8 +345,12 @@ export default function Profile() {
         </div>
       </div>
       <div className="mt-4 pt-4 border-t border-border flex gap-4 text-xs">
-        <a href="/termos" target="_blank" className="text-blue-500 hover:underline font-medium">Ler Termos de Uso</a>
-        <a href="/privacidade" target="_blank" className="text-blue-500 hover:underline font-medium">Política de Privacidade</a>
+        <button type="button" onClick={() => setLegalDocument('terms')} className="text-blue-700 hover:underline font-medium">
+          Ler Termos de Uso
+        </button>
+        <button type="button" onClick={() => setLegalDocument('privacy')} className="text-blue-700 hover:underline font-medium">
+          Política de Privacidade
+        </button>
       </div>
     </section>
 
@@ -368,15 +374,64 @@ export default function Profile() {
       </div>
     </section>
 
-    {zoomCarteirinha && form.urlCarteirinha && createPortal(
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" onClick={() => setZoomCarteirinha(false)}>
-        <button type="button" onClick={() => setZoomCarteirinha(false)} className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer">
-          <X size={24} />
-        </button>
-        <img src={form.urlCarteirinha} alt="Zoom Carteirinha" className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
-      </div>,
-      document.body
-    )}
+    <LegalDocumentDialog
+      document={legalDocument ?? 'terms'}
+      open={legalDocument !== null}
+      onOpenChange={(open) => {
+        if (!open) setLegalDocument(null);
+      }}
+    />
+
+    <DialogPrimitive.Root open={zoomCarteirinha && Boolean(form.urlCarteirinha)} onOpenChange={setZoomCarteirinha}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[9999] bg-slate-950/55 backdrop-blur-[2px]" />
+        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[10000] flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl outline-none sm:max-h-[calc(100dvh-3rem)]">
+          <DialogPrimitive.Title className="sr-only">Carteirinha do plano de saúde</DialogPrimitive.Title>
+          <DialogPrimitive.Description className="sr-only">
+            Imagem da carteirinha de {form.planoSaude || 'seu plano de saúde'}.
+          </DialogPrimitive.Description>
+          <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 sm:px-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/8 text-primary">
+                <CreditCard size={18} />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Carteirinha do convênio</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">{form.planoSaude || 'Imagem da carteirinha'}</p>
+              </div>
+            </div>
+            <DialogPrimitive.Close asChild>
+              <button
+                type="button"
+                aria-label="Fechar carteirinha"
+                className="flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </DialogPrimitive.Close>
+          </header>
+          <div className="flex min-h-0 items-center justify-center overflow-auto bg-slate-50 p-4 sm:p-8">
+            <img
+              src={form.urlCarteirinha}
+              alt="Carteirinha do plano de saúde"
+              className="max-h-[min(68dvh,720px)] max-w-full object-contain"
+            />
+          </div>
+          {(form.planoSaude || form.numeroCarteirinha) && (
+            <div className="grid shrink-0 gap-3 border-t border-border px-4 py-3 sm:grid-cols-2 sm:px-5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Plano de saúde</p>
+                <p className="mt-1 break-words text-xs font-medium text-foreground">{form.planoSaude || 'Não informado'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Número da carteirinha</p>
+                <p className="mt-1 break-all font-mono text-xs font-medium text-foreground">{form.numeroCarteirinha || 'Não informado'}</p>
+              </div>
+            </div>
+          )}
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   </div>;
 }
 

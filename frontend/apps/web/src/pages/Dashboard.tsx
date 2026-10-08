@@ -755,84 +755,86 @@ export default function Dashboard() {
         }}
       >
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[99999] glass-modal page-enter" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[100000] max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[500px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-border bg-card p-5 shadow-2xl outline-none sm:p-6 md:p-8">
-            <DialogPrimitive.Title className="sr-only">Sua Carteirinha</DialogPrimitive.Title>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[99999] bg-slate-950/45 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[100000] flex max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[760px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl outline-none sm:max-h-[calc(100dvh-3rem)]">
+            <DialogPrimitive.Title className="sr-only">Sua carteirinha do plano de saúde</DialogPrimitive.Title>
             <DialogPrimitive.Description className="sr-only">
-              Informações do seu convênio ou plano de saúde.
+              Imagem e informações do seu convênio ou plano de saúde.
             </DialogPrimitive.Description>
 
-            <DialogPrimitive.Close asChild>
-              <button
-                type="button"
-                aria-label="Fechar carteirinha"
-                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:right-5 sm:top-5"
-              >
-                <X size={18} />
-              </button>
-            </DialogPrimitive.Close>
-
-            <div className="mb-6 flex flex-col items-center text-center">
-              <CreditCard className="mb-2 h-10 w-10 text-primary" />
-              <h2 className="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
-                Sua Carteirinha
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Informações do seu convênio ou plano de saúde.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {user.urlCarteirinha ? (
-                <button
-                  type="button"
-                  onClick={() => setIsCarteirinhaZoomOpen(true)}
-                  aria-label="Ampliar imagem da carteirinha"
-                  className="group relative flex w-full items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted/40 p-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 sm:p-3"
-                >
-                  <img
-                    src={user.urlCarteirinha}
-                    alt="Imagem da carteirinha do plano de saúde"
-                    className="max-h-[min(48dvh,520px)] w-full object-contain"
-                  />
-                  <span className="absolute bottom-3 rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-semibold text-white opacity-100 shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                    Toque para ampliar
-                  </span>
-                </button>
-              ) : (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
-                  <CreditCard size={32} className="mb-2 text-muted-foreground/50" />
-                  <p className="text-sm font-semibold text-muted-foreground">Nenhuma imagem adicionada</p>
-                  <p className="mt-1 text-xs text-muted-foreground/70">
-                    Vá em Perfil para adicionar a foto da sua carteirinha.
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="flex flex-col rounded-xl border border-primary/10 bg-primary/5 p-4">
-                  <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-primary/70">
-                    Convênio / Plano de Saúde
-                  </span>
-                  <span className="break-words text-sm font-bold text-foreground">
-                    {user.planoSaude || "Não informado"}
-                  </span>
-                </div>
-                <div className="flex flex-col rounded-xl border border-primary/10 bg-primary/5 p-4">
-                  <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-primary/70">
-                    Número da Carteirinha
-                  </span>
-                  <span className="break-all text-sm font-mono font-bold text-foreground">
-                    {user.numeroCarteirinha || "Não informado"}
-                  </span>
+            <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3.5 sm:px-6">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/8 text-primary">
+                  <CreditCard size={20} />
+                </span>
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">Carteirinha do convênio</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Imagem e dados do plano</p>
                 </div>
               </div>
+              <DialogPrimitive.Close asChild>
+                <button
+                  type="button"
+                  aria-label="Fechar carteirinha"
+                  className="flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X size={18} />
+                </button>
+              </DialogPrimitive.Close>
+            </header>
+
+            <div className="grid min-h-0 gap-5 overflow-y-auto p-4 sm:p-6 md:grid-cols-[1.25fr_0.75fr] md:gap-6">
+              <section aria-label="Imagem da carteirinha">
+                {user.urlCarteirinha ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsCarteirinhaZoomOpen(true)}
+                      aria-label="Ampliar imagem da carteirinha"
+                      className="flex h-[min(52dvh,440px)] w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-slate-50 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5"
+                    >
+                      <img
+                        src={user.urlCarteirinha}
+                        alt="Imagem da carteirinha do plano de saúde"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </button>
+                    <p className="mt-2 text-center text-xs text-muted-foreground">Selecione a imagem para ampliar</p>
+                  </>
+                ) : (
+                  <div className="flex h-52 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-5 text-center md:h-[min(52dvh,440px)]">
+                    <CreditCard size={28} className="mb-3 text-muted-foreground/60" />
+                    <p className="text-sm font-medium text-foreground">Nenhuma imagem adicionada</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      Você pode adicionar a foto da carteirinha na página Perfil.
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              <section aria-label="Dados do convênio" className="md:border-l md:border-border md:pl-6">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dados do convênio</h3>
+                <dl className="mt-3 divide-y divide-border rounded-lg border border-border">
+                  <div className="px-3.5 py-3">
+                    <dt className="text-[11px] text-muted-foreground">Plano de saúde</dt>
+                    <dd className="mt-1 break-words text-sm font-medium text-foreground">
+                      {user.planoSaude || "Não informado"}
+                    </dd>
+                  </div>
+                  <div className="px-3.5 py-3">
+                    <dt className="text-[11px] text-muted-foreground">Número da carteirinha</dt>
+                    <dd className="mt-1 break-all font-mono text-sm font-medium text-foreground">
+                      {user.numeroCarteirinha || "Não informado"}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
             </div>
 
             <DialogPrimitive.Root open={isCarteirinhaZoomOpen} onOpenChange={setIsCarteirinhaZoomOpen}>
               <DialogPrimitive.Portal>
-                <DialogPrimitive.Overlay className="fixed inset-0 z-[100001] bg-black/95" />
-                <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[100002] flex max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[1200px] -translate-x-1/2 -translate-y-1/2 items-center justify-center p-3 outline-none sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100%-3rem)] sm:p-8">
+                <DialogPrimitive.Overlay className="fixed inset-0 z-[100001] bg-slate-950/80" />
+                <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-[100002] flex max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-[1100px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-lg border border-white/10 bg-slate-950 p-3 outline-none sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100%-3rem)] sm:p-6">
                   <DialogPrimitive.Title className="sr-only">Imagem ampliada da carteirinha</DialogPrimitive.Title>
                   <DialogPrimitive.Close asChild>
                     <button

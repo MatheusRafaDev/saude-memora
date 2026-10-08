@@ -3,6 +3,7 @@ import { useConsentimento, useSaveConsentimento } from '../hooks/useConsentiment
 import { useGetApiPacientesMe } from '@workspace/api-client-react';
 import { Button } from './ui/button';
 import { Shield } from 'lucide-react';
+import { LegalDocumentDialog, type LegalDocument } from '@/components/LegalDocumentDialog';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ export function ConsentModal() {
   const { data, isLoading } = useConsentimento();
   const saveConsent = useSaveConsentimento();
   const [open, setOpen] = useState(false);
+  const [legalDocument, setLegalDocument] = useState<LegalDocument | null>(null);
 
   useEffect(() => {
     if (!user || isLoading) return;
@@ -53,8 +55,16 @@ export function ConsentModal() {
           </DialogDescription>
         </DialogHeader>
         
-        <div className="text-sm text-muted-foreground my-2 text-center">
-          Você pode ler nossos <a href="/termos" target="_blank" className="text-blue-500 underline">Termos de Uso</a> e nossa <a href="/privacidade" target="_blank" className="text-blue-500 underline">Política de Privacidade</a> para mais detalhes.
+        <div className="my-2 text-center text-sm text-muted-foreground">
+          Você pode ler nossos{' '}
+          <button type="button" onClick={() => setLegalDocument('terms')} className="text-blue-700 underline">
+            Termos de Uso
+          </button>
+          {' '}e nossa{' '}
+          <button type="button" onClick={() => setLegalDocument('privacy')} className="text-blue-700 underline">
+            Política de Privacidade
+          </button>
+          {' '}para mais detalhes.
         </div>
 
         <DialogFooter className="flex-col space-y-2 sm:space-x-0">
@@ -75,6 +85,13 @@ export function ConsentModal() {
           </Button>
         </DialogFooter>
       </DialogContent>
+      <LegalDocumentDialog
+        document={legalDocument ?? 'terms'}
+        open={legalDocument !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setLegalDocument(null);
+        }}
+      />
     </Dialog>
   );
 }
