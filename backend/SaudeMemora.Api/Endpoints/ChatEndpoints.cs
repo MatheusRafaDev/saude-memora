@@ -34,6 +34,22 @@ public static class ChatEndpoints
             if (req.Message.Length > 1000)
                 return Results.BadRequest(new { error = "A pergunta deve ter no máximo 1000 caracteres." });
 
+            var groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY")
+                ?? config["GROQ_API_KEY"]
+                ?? config["Groq:ApiKey"]
+                ?? string.Empty;
+            const string groqModel = "llama-3.3-70b-versatile";
+            const string groqBaseUrl = "https://api.groq.com/openai/v1/";
+
+            if (string.IsNullOrWhiteSpace(groqApiKey))
+            {
+                app.Logger.LogError("GROQ_API_KEY não está configurada.");
+                return Results.Problem(
+                    title: "Serviço de IA indisponível",
+                    detail: "A chave do Groq não está configurada no servidor.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
             var paciente = await pacienteRepo.GetByIdAsync(userId);
             if (paciente?.ConsentimentoIa?.Aceito != true)
                 return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
@@ -112,13 +128,6 @@ INSTRUÇÕES DE RESPOSTA:
 - Responda como apoio ao paciente/usuário, sem substituir atendimento médico.
 - Adicione no final da mensagem: 'Aviso: Esta resposta é gerada por IA e não substitui orientação médica.'
 ";
-
-            var groqApiKey = config["Groq:ApiKey"] ?? string.Empty;
-            var groqModel = config["Groq:Model"] ?? "llama-3.3-70b-versatile";
-            var groqBaseUrl = config["Groq:BaseUrl"] ?? "https://api.groq.com/openai/v1/";
-
-            if (string.IsNullOrWhiteSpace(groqApiKey))
-                return Results.Problem("API Key do Groq não configurada. Configure Groq:ApiKey no appsettings ou em configuração fixa da aplicação.");
 
             var requestBody = new
             {
