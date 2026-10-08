@@ -61,7 +61,7 @@ public static class MedicamentoCatalogoEndpoints
     }
 }
 
-public sealed class ImportacaoCatalogoFilter : IEndpointFilter
+public class ImportacaoCatalogoFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
