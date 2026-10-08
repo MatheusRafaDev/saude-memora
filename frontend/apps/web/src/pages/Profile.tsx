@@ -26,7 +26,7 @@ export default function Profile() {
   const { data: consentData } = useConsentimento();
   const revokeConsent = useRevokeConsentimento();
   const saveConsent = useSaveConsentimento();
-  const { signOut } = useAuth();
+  const { signOut, isSigningOut } = useAuth();
   const [zoomCarteirinha, setZoomCarteirinha] = useState(false);
 
   const [form, setForm] = useState({
@@ -75,8 +75,8 @@ export default function Profile() {
   }, [profileRaw]);
 
   const set = (key: keyof typeof form, value: string | boolean) => setForm((old) => ({ ...old, [key]: value }));
-  
-  const save = async (event: FormEvent) => { 
+
+  const save = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
     setSaved(false);
@@ -93,7 +93,7 @@ export default function Profile() {
         } as any
       });
 
-      setSaved(true); 
+      setSaved(true);
       await refetch();
       window.setTimeout(() => setSaved(false), 2400);
     } catch (err: any) {
@@ -106,14 +106,13 @@ export default function Profile() {
       setError('Por favor, digite sua senha para confirmar.');
       return;
     }
-    
+
     try {
       await customFetch('/api/pacientes/me', {
         method: 'DELETE',
         body: JSON.stringify({ senha: deletePassword }) as any
       });
-      signOut();
-      window.location.href = '/entrar';
+      await signOut();
     } catch (err: any) {
       setError(err?.data?.message || err?.message || 'Erro ao deletar a conta.');
       setShowDeleteConfirm(false);
@@ -141,15 +140,15 @@ export default function Profile() {
         method: 'POST',
         body: formData as any
       }) as any;
-      
+
       const extracted = {
         plano: res.planoSaude || '',
         numero: res.numeroCarteirinha || ''
       };
       setCardExtracted(extracted);
-      
-      setForm(prev => ({ 
-        ...prev, 
+
+      setForm(prev => ({
+        ...prev,
         urlCarteirinha: res.url,
         planoSaude: res.planoSaude || prev.planoSaude,
         numeroCarteirinha: res.numeroCarteirinha || prev.numeroCarteirinha
@@ -159,7 +158,7 @@ export default function Profile() {
       const aiFound = [];
       if (extracted.plano) aiFound.push(`Plano: ${extracted.plano}`);
       if (extracted.numero) aiFound.push(`Nº: ${extracted.numero}`);
-      toast({ 
+      toast({
         description: aiFound.length
           ? `✓ Carteirinha lida pela IA! ${aiFound.join(' · ')}`
           : '✓ Carteirinha salva. Preencha o plano e número manualmente se necessário.'
@@ -235,7 +234,7 @@ export default function Profile() {
             <Field label="Nome do Plano de Saúde" value={form.planoSaude} onChange={(v) => set('planoSaude', v)} id="plano-saude" />
             <Field label="Número da Carteirinha" value={form.numeroCarteirinha} onChange={(v) => set('numeroCarteirinha', v)} id="num-carteirinha" />
           </div>
-          
+
           <div>
             <span className="mb-2 block text-[11px] font-bold">Foto da Carteirinha</span>
             {form.urlCarteirinha ? (
@@ -318,7 +317,7 @@ export default function Profile() {
           <h2 className="text-base font-extrabold flex items-center gap-2">Sessão</h2>
           <p className="mt-1 text-xs text-muted-foreground">Sair com segurança do seu espaço no Saúde Memora.</p>
         </div>
-        <button type="button" onClick={() => { signOut(); window.location.href = '/'; }} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors cursor-pointer">Sair da conta</button>
+        <button type="button" onClick={() => { void signOut(); }} disabled={isSigningOut} className="rounded-xl px-4 py-2.5 text-xs font-bold border border-border bg-background hover:bg-muted transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-60">{isSigningOut ? 'Saindo...' : 'Sair da conta'}</button>
       </div>
     </section>
 

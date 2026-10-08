@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import {
   ChevronRight,
@@ -36,6 +36,21 @@ import { triggerUploadModal } from "@/components/UploadModal";
 
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
+  const [isCarteirinhaZoomOpen, setIsCarteirinhaZoomOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isCarteirinhaOpen && !isCarteirinhaZoomOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (isCarteirinhaZoomOpen) setIsCarteirinhaZoomOpen(false);
+        else setIsCarteirinhaOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isCarteirinhaOpen, isCarteirinhaZoomOpen]);
 
   const { data: profile, isLoading: profileLoading } = useGetApiPacientesMe();
   const { data: documentsRaw, isLoading: docsLoading } = useGetApiDocuments();
@@ -695,42 +710,58 @@ export default function Dashboard() {
 
       {/* ── Modal da Carteirinha ── */}
       {isCarteirinhaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6">
+          <button
+            type="button"
+            aria-label="Fechar carteirinha"
+            className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm"
             onClick={() => setIsCarteirinhaOpen(false)}
           />
-          <div className="relative w-full max-w-md rounded-2xl bg-card shadow-2xl overflow-hidden flex flex-col max-h-full border border-border/50">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="insurance-card-title"
+            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl sm:max-h-[calc(100dvh-3rem)]"
+          >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 bg-primary text-white shadow-md">
+            <div className="flex shrink-0 items-center justify-between bg-primary px-4 py-3 text-white shadow-md sm:px-6 sm:py-4">
               <div>
-                <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wider mb-0.5">
+                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/60">
                   Visão Geral de Saúde
                 </p>
-                <h2 className="text-lg font-bold flex items-center gap-2">
+                <h2 id="insurance-card-title" className="flex items-center gap-2 text-base font-bold sm:text-lg">
                   <CreditCard size={18} className="text-white" />
                   Sua Carteirinha
                 </h2>
               </div>
               <button
+                type="button"
                 onClick={() => setIsCarteirinhaOpen(false)}
-                className="rounded-full p-2 hover:bg-white/10 text-white/80 transition-colors"
+                aria-label="Fechar carteirinha"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-5 bg-muted/10">
+            <div className="space-y-4 overflow-y-auto bg-muted/10 p-3 sm:space-y-5 sm:p-5">
               {/* Imagem da carteirinha */}
               {user.urlCarteirinha ? (
-                <div className="rounded-xl overflow-hidden border-2 border-primary/20 bg-black/5 flex items-center justify-center shadow-inner relative group">
+                <button
+                  type="button"
+                  onClick={() => setIsCarteirinhaZoomOpen(true)}
+                  aria-label="Ampliar imagem da carteirinha"
+                  className="group relative flex w-full items-center justify-center overflow-hidden rounded-xl border-2 border-primary/20 bg-slate-100 p-2 shadow-inner focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 sm:p-3"
+                >
                   <img
                     src={user.urlCarteirinha}
-                    alt="Carteirinha"
-                    className="max-h-[250px] w-full object-contain p-2"
+                    alt="Imagem da carteirinha do plano de saúde"
+                    className="max-h-[min(52dvh,560px)] w-full object-contain"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
-                </div>
+                  <span className="absolute bottom-3 rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-semibold text-white opacity-100 shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                    Toque para ampliar
+                  </span>
+                </button>
               ) : (
                 <div className="rounded-xl border border-dashed border-border/80 bg-background flex flex-col items-center justify-center py-8 text-center px-4">
                   <CreditCard
@@ -747,7 +778,7 @@ export default function Dashboard() {
               )}
 
               {/* Infos em formato de cards */}
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex flex-col shadow-xs">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-primary/70 mb-1">
                     Convênio / Plano de Saúde
@@ -766,16 +797,32 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-
-            <div className="p-4 border-t border-border bg-card">
-              <Link
-                href="/perfil"
-                className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-all active:scale-[.98]"
-              >
-                Editar no Perfil
-              </Link>
-            </div>
           </div>
+
+          {isCarteirinhaZoomOpen && user.urlCarteirinha && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Imagem ampliada da carteirinha"
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-3 sm:p-8"
+              onClick={() => setIsCarteirinhaZoomOpen(false)}
+            >
+              <button
+                type="button"
+                aria-label="Fechar imagem ampliada"
+                onClick={() => setIsCarteirinhaZoomOpen(false)}
+                className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 sm:right-5 sm:top-5"
+              >
+                <X size={22} />
+              </button>
+              <img
+                src={user.urlCarteirinha}
+                alt="Carteirinha ampliada"
+                className="max-h-full max-w-full object-contain"
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

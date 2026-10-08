@@ -35,9 +35,10 @@ import {
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error: any) => {
+    onError: (error: any, query) => {
       if (
-        error?.status === 401 || error?.response?.status === 401
+        (error?.status === 401 || error?.response?.status === 401) &&
+        query.meta?.skipUnauthorizedRedirect !== true
       ) {
         window.location.href = '/entrar';
       }
@@ -53,7 +54,8 @@ function HomeRoute() {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
       staleTime: 5 * 60 * 1000,
-      enabled: true
+      enabled: true,
+      meta: { skipUnauthorizedRedirect: true }
     }
   });
   const [, setLocation] = useLocation();
@@ -173,7 +175,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (isError) {
-    // queryCache onError vai redirecionar para /entrar e limpar o token
+    // A página inicial é pública; uma sessão ausente não deve redirecionar ao login.
     return null;
   }
   
@@ -226,4 +228,3 @@ function App() {
 }
 
 export default App;
-

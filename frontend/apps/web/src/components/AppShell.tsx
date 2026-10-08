@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showEmergenciaModal, setShowEmergenciaModal] = useState(false);
-  const { signOut } = useAuth();
+  const { signOut, isSigningOut } = useAuth();
   const { data: profileRaw } = useGetApiPacientesMe();
   const { data: fichaRaw, isLoading: isFichaLoading } = useGetApiFichaMedicaMe();
   const profile = (profileRaw as unknown as any) || { nome: 'Usuário', email: '' };
@@ -196,12 +196,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </>
                         )}
                         <button
-                          onClick={() => { signOut(); window.location.href = '/'; }}
+                          onClick={() => { void signOut(); }}
+                          disabled={isSigningOut}
                           data-testid="button-signout"
-                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-destructive hover:bg-destructive/8 transition-colors"
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-destructive hover:bg-destructive/8 transition-colors disabled:cursor-wait disabled:opacity-60"
                         >
                           <LogOut size={14} />
-                          Sair da conta
+                          {isSigningOut ? 'Saindo...' : 'Sair da conta'}
                         </button>
                       </div>
                     </div>
