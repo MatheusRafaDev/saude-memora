@@ -112,14 +112,35 @@ INSTRUÇÕES DE RESPOSTA:
             var response = await httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                return Results.Problem("Erro ao gerar resposta da IA.");
+                app.Logger.LogWarning(
+                    "A API do Gemini retornou {StatusCode} ao processar a consulta do paciente.",
+                    (int)response.StatusCode);
+                return Results.Json(new
+                {
+                    title = "Serviço de IA indisponível",
+                    detail = "Não foi possível gerar a resposta. Tente novamente mais tarde."
+                }, statusCode: StatusCodes.Status503ServiceUnavailable);
             }
 
-            var responseContent = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(responseContent);
-            var reply = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+            try
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseContent);
+                var reply = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+                if (string.IsNullOrWhiteSpace(reply))
+                    throw new InvalidOperationException("A resposta da IA estava vazia.");
 
-            return Results.Ok(new { response = reply });
+                return Results.Ok(new { response = reply });
+            }
+            catch (Exception ex)
+            {
+                app.Logger.LogWarning(ex, "A resposta da API do Gemini não tinha o formato esperado.");
+                return Results.Json(new
+                {
+                    title = "Resposta da IA inválida",
+                    detail = "O serviço de IA respondeu com um formato inesperado. Tente novamente."
+                }, statusCode: StatusCodes.Status502BadGateway);
+            }
         }).RequireAuthorization().RequireRateLimiting("chat");
     }
 }

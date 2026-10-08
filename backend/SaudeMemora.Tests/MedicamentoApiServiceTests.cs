@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
+using SaudeMemora.Application.Interfaces;
+using SaudeMemora.Domain.Entities;
 using SaudeMemora.Infrastructure.Services;
 
 namespace SaudeMemora.Tests;
@@ -68,6 +70,36 @@ public class MedicamentoApiServiceTests
         Assert.Null(await service.BuscarDescricaoAsync("Medicamento inexistente"));
     }
 
+    [Fact]
+    public async Task BuscarDescricaoAsync_RespostaVazia_UsaCatalogoOficial()
+    {
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"content\":[]}", Encoding.UTF8, "application/json")
+        });
+        var repository = new InMemoryMedicamentoCatalogoRepository(new MedicamentoCatalogo
+        {
+            Id = "1",
+            ProcessoAnvisa = "25351679903201454",
+            Nome = "DIPIRONA",
+            NomeNormalizado = "dipirona",
+            Descricao = "Medicamento para o tratamento de alergias",
+            ImportadoEm = DateTime.UtcNow
+        });
+        var service = new MedicamentoApiService(
+            new HttpClient(handler) { BaseAddress = new Uri("https://consultas.anvisa.gov.br/") },
+            new BularioApiOptions { BaseUrl = "https://consultas.anvisa.gov.br/" },
+            NullLogger<MedicamentoApiService>.Instance,
+            repository);
+
+        var result = await service.BuscarDescricaoAsync("dipirona");
+
+        Assert.NotNull(result);
+        Assert.Equal("DIPIRONA", result.Nome);
+        Assert.Equal("Medicamento para o tratamento de alergias", result.Descricao);
+        Assert.Equal("CATALOGO-OFICIAL", result.Fonte);
+    }
+
     private sealed class StubHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
@@ -76,5 +108,18 @@ public class MedicamentoApiServiceTests
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             => Task.FromResult(_handler(request));
+    }
+
+    private sealed class InMemoryMedicamentoCatalogoRepository : IMedicamentoCatalogoRepository
+    {
+        private readonly MedicamentoCatalogo _medicamento;
+
+        public InMemoryMedicamentoCatalogoRepository(MedicamentoCatalogo medicamento) => _medicamento = medicamento;
+
+        public Task EnsureIndexesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task ReplaceAllAsync(IEnumerable<MedicamentoCatalogo> medicamentos, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<MedicamentoCatalogo>> BuscarAsync(string query, int limit, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<MedicamentoCatalogo>>(new[] { _medicamento });
+        public Task<long> ContarAsync(CancellationToken cancellationToken = default) => Task.FromResult(1L);
     }
 }
