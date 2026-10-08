@@ -302,7 +302,7 @@ export default function Dashboard() {
               Editar
             </Link>
           </div>
-          <div className="px-5 py-4 space-y-3">
+          <div className="space-y-4 px-5 py-5">
             {/* Name */}
             <div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -406,7 +406,7 @@ export default function Dashboard() {
               Preencher
             </Link>
           </div>
-          <div className="px-5 py-4 space-y-4">
+          <div className="space-y-5 px-5 py-5">
             {/* Alergias */}
             <div>
               <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
@@ -542,7 +542,7 @@ export default function Dashboard() {
               Ver todos
             </Link>
           </div>
-          <div className="px-5 py-4">
+          <div className="px-5 py-5">
             {/* Recent docs */}
             {docs.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
@@ -649,20 +649,20 @@ export default function Dashboard() {
             </div>
             <Link
               href="/documentos"
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 self-start rounded-lg border border-white/15 px-3 text-xs font-semibold text-white/90 transition-colors hover:bg-white/10 sm:self-auto"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 self-start rounded-xl border border-border bg-white px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted sm:self-auto"
             >
               Ver documentos <ChevronRight size={14} />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 border-b border-border/50 bg-muted/10 p-4 sm:grid-cols-4 sm:p-5">
+          <div className="grid grid-cols-2 gap-3 border-b border-border/70 bg-slate-50/60 p-4 sm:grid-cols-4 sm:p-5">
             {[
               { label: "Documentos analisados", value: processedDocs.length, icon: FileText, color: "text-primary bg-primary/10" },
               { label: "Receitas", value: prescriptions.length, icon: Pill, color: "text-emerald-700 bg-emerald-500/10" },
               { label: "Exames registrados", value: totalExames, icon: FlaskConical, color: "text-blue-700 bg-blue-500/10" },
               { label: "Remédios contínuos informados", value: continuousMedications.length, icon: Heart, color: "text-rose-700 bg-rose-500/10" },
             ].map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className="min-w-0 rounded-xl border border-border/60 bg-card p-3 sm:p-4">
-                <div className={`mb-3 flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
+              <div key={label} className="min-w-0 rounded-2xl border border-border/80 bg-white p-3.5 shadow-sm sm:p-4">
+                <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
                   <Icon size={15} />
                 </div>
                 <p className="text-2xl font-bold leading-none text-foreground">{value}</p>
@@ -739,13 +739,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid gap-px border-t border-border/50 bg-border/50 md:grid-cols-3">
+          <div className="grid gap-px border-t border-border/70 bg-border/70 md:grid-cols-3">
             {[
               { label: "Medicação contínua informada", items: continuousMedications, empty: "Nenhum medicamento contínuo informado.", dotColor: "bg-emerald-500" },
               { label: "Alergias registradas", items: allergies, empty: "Nenhuma alergia registrada.", dotColor: "bg-rose-500" },
               { label: "Condições registradas", items: allConditions, empty: "Nenhuma condição registrada.", dotColor: "bg-amber-500" },
             ].map(({ label, items, empty, dotColor }) => (
-              <div key={label} className="min-w-0 bg-card p-4 sm:p-5">
+              <div key={label} className="min-w-0 bg-white p-4 sm:p-5">
                 <h3 className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   <span className={`h-2 w-2 rounded-full ${dotColor}`} />
                   {label}
