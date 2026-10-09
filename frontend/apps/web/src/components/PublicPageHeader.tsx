@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 export function PublicPageHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [location] = useLocation();
+  const navigation = [
+    { href: '/', label: 'Início' },
+    { href: '/recursos', label: 'Recursos' },
+    { href: '/sobre', label: 'Sobre' },
+  ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur">
@@ -15,9 +21,19 @@ export function PublicPageHeader() {
           </span>
         </Link>
         <nav aria-label="Navegação principal" className="hidden items-center gap-8 md:flex">
-          <Link href="/" className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-primary">Início</Link>
-          <Link href="/recursos" className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-primary">Recursos</Link>
-          <Link href="/sobre" className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-primary">Sobre</Link>
+          {navigation.map(({ href, label }) => {
+            const isCurrent = location === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={isCurrent ? 'page' : undefined}
+                className={`relative py-2 text-[13px] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-primary after:transition-transform ${isCurrent ? 'text-primary after:scale-x-100' : 'text-muted-foreground after:scale-x-0 hover:text-primary hover:after:scale-x-100'}`}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="hidden items-center gap-2 md:flex">
           <Link href="/entrar" className="rounded-md px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted">
@@ -40,9 +56,20 @@ export function PublicPageHeader() {
       {mobileMenuOpen && (
         <nav aria-label="Navegação móvel" className="border-t border-border bg-background px-4 py-3 md:hidden">
           <div className="mx-auto flex max-w-6xl flex-col gap-1">
-            <Link href="/" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted">Início</Link>
-            <Link href="/recursos" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted">Recursos</Link>
-            <Link href="/sobre" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted">Sobre</Link>
+            {navigation.map(({ href, label }) => {
+              const isCurrent = location === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-current={isCurrent ? 'page' : undefined}
+                  className={`rounded-md px-3 py-3 text-sm font-medium transition-colors ${isCurrent ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3">
               <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md border border-border px-3 py-3 text-center text-sm font-semibold text-foreground">Entrar</Link>
               <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md bg-primary px-3 py-3 text-center text-sm font-semibold text-primary-foreground">Criar conta</Link>

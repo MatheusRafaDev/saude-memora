@@ -137,11 +137,11 @@ export default function Home() {
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_18%_15%,rgba(28,84,135,0.09),transparent_38%),radial-gradient(ellipse_at_88%_40%,rgba(20,125,128,0.08),transparent_34%)]" />
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 md:grid-cols-[0.92fr_1.08fr] md:gap-10 md:py-24 lg:gap-16">
             <div className="page-enter">
-              <span className="home-logo-arrival mb-6 inline-flex">
+              <span className="home-logo-arrival mb-6 flex h-36 w-36 items-center justify-center sm:h-44 sm:w-44">
                 <img
                   src="/logo.png"
                   alt="Logo SaúdeMemora"
-                  className="brand-logo-animated h-32 w-32 object-contain sm:h-40 sm:w-40"
+                  className="brand-logo-animated block h-full w-full object-contain"
                 />
               </span>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm">
@@ -206,41 +206,43 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border bg-muted/40">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 md:flex-row md:items-center md:justify-between">
-          <div>
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-7 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-8">
+          <div className="min-w-0">
             <Brand />
             <p className="mt-2 text-xs text-muted-foreground">Organização e acesso às suas informações de saúde.</p>
             <p className="mt-1 text-xs text-muted-foreground">Criado por Matheus Rafael.</p>
           </div>
-          <nav aria-label="Links institucionais" className="flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
+          <nav aria-label="Links institucionais" className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-muted-foreground md:justify-center">
             <Link href="/recursos" className="hover:text-primary">Recursos</Link>
             <Link href="/sobre" className="hover:text-primary">Sobre</Link>
-            <button type="button" onClick={() => setLegalDocument('privacy')} className="min-h-11 text-left transition-colors hover:text-primary">
+            <button type="button" onClick={() => setLegalDocument('privacy')} className="min-h-11 transition-colors hover:text-primary">
               Privacidade
             </button>
-            <button type="button" onClick={() => setLegalDocument('terms')} className="min-h-11 text-left transition-colors hover:text-primary">
+            <button type="button" onClick={() => setLegalDocument('terms')} className="min-h-11 transition-colors hover:text-primary">
               Termos de uso
             </button>
           </nav>
-          <div className="flex items-center gap-4">
-            <a
-              href="https://www.linkedin.com/in/matheus-rafael-50a676219/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="LinkedIn de Matheus Rafael"
-              className="text-muted-foreground transition-colors hover:text-primary"
-            >
-              <Linkedin size={17} />
-            </a>
-            <a
-              href="https://github.com/MatheusRafaDev"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="GitHub de Matheus Rafael"
-              className="text-muted-foreground transition-colors hover:text-primary"
-            >
-              <Github size={17} />
-            </a>
+          <div className="flex flex-wrap items-center gap-4 md:justify-end">
+            <div className="flex items-center gap-4">
+              <a
+                href="https://www.linkedin.com/in/matheus-rafael-50a676219/"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="LinkedIn de Matheus Rafael"
+                className="text-muted-foreground transition-colors hover:text-primary"
+              >
+                <Linkedin size={17} />
+              </a>
+              <a
+                href="https://github.com/MatheusRafaDev"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="GitHub de Matheus Rafael"
+                className="text-muted-foreground transition-colors hover:text-primary"
+              >
+                <Github size={17} />
+              </a>
+            </div>
             <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} SaúdeMemora</p>
           </div>
         </div>
