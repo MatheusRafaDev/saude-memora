@@ -17,6 +17,7 @@ public class DocumentProcessingService : IOcrAiService
     private readonly HttpClient _httpClient;
     private readonly string? _ocrSpaceApiKey;
     private readonly string? _geminiApiKey;
+    private readonly string? _groqApiKey;
 
     private readonly ILogger<DocumentProcessingService> _logger;
 
@@ -25,6 +26,7 @@ public class DocumentProcessingService : IOcrAiService
         _httpClient = httpClient;
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
+        _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
 
         _logger = logger;
     }
@@ -349,7 +351,65 @@ public class DocumentProcessingService : IOcrAiService
         {
             var err = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
-            throw new Exception($"Gemini HTTP {response.StatusCode}: {err}");
+            
+            if (!string.IsNullOrWhiteSpace(_groqApiKey))
+            {
+                _logger.LogInformation("Tentando extração estruturada via fallback Groq.");
+                try 
+                {
+                    var groqApiUrl = "https://api.groq.com/openai/v1/chat/completions";
+                    var groqPayload = new
+                    {
+                        model = "llama3-8b-8192",
+                        messages = new[] { new { role = "user", content = prompt } },
+                        temperature = 0.0,
+                        response_format = new { type = "json_object" }
+                    };
+                    
+                    var groqRequest = new HttpRequestMessage(HttpMethod.Post, groqApiUrl);
+                    groqRequest.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
+                    groqRequest.Content = JsonContent.Create(groqPayload);
+                    
+                    var groqResponse = await _httpClient.SendAsync(groqRequest, cancellationToken);
+                    if (groqResponse.IsSuccessStatusCode)
+                    {
+                        var groqJson = await groqResponse.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                        var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+                        jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
+                        
+                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        options.Converters.Add(new FlexibleBooleanConverter());
+                        var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+                        dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
+                        _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq.");
+                        return dto;
+                    }
+                    else 
+                    {
+                        var groqErr = await groqResponse.Content.ReadAsStringAsync(cancellationToken);
+                        _logger.LogError("Groq falhou no fallback. HTTP {StatusCode}: {Error}", groqResponse.StatusCode, groqErr);
+                    }
+                } 
+                catch (Exception groqEx) 
+                {
+                    _logger.LogError(groqEx, "Erro na chamada do Groq.");
+                }
+            }
+            
+            _logger.LogWarning("Retornando fallback básico devido à falha da API.");
+            var fallbackDto = ParseFallback(unifiedText);
+            fallbackDto.RevisaoPendente = true;
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || err.Contains("Quota exceeded") || err.Contains("RESOURCE_EXHAUSTED"))
+            {
+                fallbackDto.Resumo = "Aviso: A API de inteligência artificial está com alto volume de uso/esgotada no momento. Os dados abaixo foram extraídos apenas via OCR.";
+            }
+            else
+            {
+                fallbackDto.Resumo = "Aviso: Falha na extração de IA. Os dados abaixo foram extraídos apenas via OCR.";
+            }
+            
+            return fallbackDto;
         }
     }
 
