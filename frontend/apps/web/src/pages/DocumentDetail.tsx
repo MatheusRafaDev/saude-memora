@@ -34,11 +34,21 @@ function getDocumentCode(doc: any, field: 'cid' | 'cnes'): string {
   const structuredValue = (Array.isArray(doc.conteudoIndentado) ? doc.conteudoIndentado : []).find((item: any) =>
     item.tipo === 'keyvalue' && keyPattern.test(item.chave || '')
   )?.valor;
-  if (structuredValue) return structuredValue;
+  if (structuredValue) {
+    if (field === 'cid') return structuredValue;
+    const cnes = structuredValue.replace(/\D/g, '');
+    if (cnes.length === 7) return cnes;
+  }
 
-  const textPattern = field === 'cid'
-    ? /\bCID(?:[\s-]?10)?\s*[:\-]?\s*([A-Z]\d{2}(?:\.\d{1,2})?)/im
-    : /\bCNES\s*[:\-]?\s*(\d{7})\b/i;
+  if (field === 'cnes') {
+    const cnesMatch = doc.textoExtraido?.match(
+      /(?:\bCNES\b|Cadastro\s+Nacional\s+de\s+Estabelecimentos\s+de\s+Sa[uú]de)\s*(?:n[º°o.]?\s*)?[:#-]?\s*((?:\d[\s.-]*){6}\d)(?!\d)/i
+    );
+    const cnes = cnesMatch?.[1].replace(/\D/g, '');
+    return cnes?.length === 7 ? cnes : '';
+  }
+
+  const textPattern = /\bCID(?:[\s-]?10)?\s*[:\-]?\s*([A-Z]\d{2}(?:\.\d{1,2})?)/im;
   return doc.textoExtraido?.match(textPattern)?.[1] || '';
 }
 

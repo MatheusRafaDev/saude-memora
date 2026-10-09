@@ -43,7 +43,7 @@ NÃO INCLUA NENHUM RACIOCÍNIO. NÃO INCLUA INTRODUÇÕES, CONCLUSÕES OU EXPLIC
   ""resumo"": ""string"",
   ""diagnostico"": ""string"",
   ""cid"": ""string (código CID-10 exatamente como aparece no documento; vazio se não constar)"",
-  ""cnes"": ""string (número CNES do estabelecimento exatamente como aparece no documento; vazio se não constar)"",
+  ""cnes"": ""string (código CNES de 7 dígitos do estabelecimento; procure explicitamente por CNES no cabeçalho/rodapé ou junto aos dados da instituição. Retorne somente o código que estiver identificado como CNES; vazio se não constar. Não confunda com CRM, CNPJ, telefone ou outros números)"",
   ""textoFormatado"": ""string"",
   ""medicamentos"": [{ ""nome"": ""string"", ""dosagem"": ""string"", ""horario"": ""string"" }],
   ""conteudoIndentado"": [{ ""tipo"": ""string (header|keyvalue|bullet|text)"", ""texto"": ""string"", ""chave"": ""string"", ""valor"": ""string"" }],

@@ -295,7 +295,11 @@ public class DocumentProcessingService : IOcrAiService
             prompt = string.Format(AiPrompts.GenericoPrompt, documentType, unifiedText, AiPrompts.JsonSchema);
         }
 
-        return await FallbackToGeminiAsync(unifiedText, prompt, cancellationToken);
+        var extractedData = await FallbackToGeminiAsync(unifiedText, prompt, cancellationToken);
+        if (string.IsNullOrWhiteSpace(extractedData.Cnes))
+            extractedData.Cnes = CnesCodeExtractor.Extract(unifiedText);
+
+        return extractedData;
     }
 
 
