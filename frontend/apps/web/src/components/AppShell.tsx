@@ -15,6 +15,23 @@ const navItems = [
   { href: '/chat',       label: 'Chat IA',        icon: MessageSquare },
 ];
 
+function preloadRoute(href: string) {
+  switch (href) {
+    case '/visao-geral':
+      void import('@/pages/Dashboard');
+      break;
+    case '/documentos':
+      void import('@/pages/Documents');
+      break;
+    case '/anamnese':
+      void import('@/pages/Record');
+      break;
+    case '/chat':
+      void import('@/pages/Chat');
+      break;
+  }
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -85,6 +102,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     key={href}
                     href={href}
+                    onMouseEnter={() => preloadRoute(href)}
+                    onFocus={() => preloadRoute(href)}
                     data-testid={`link-nav-${href.slice(1)}`}
                     aria-current={isActive ? 'page' : undefined}
                     className={`
@@ -223,6 +242,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 pb-24 md:px-8 md:py-8"
+      >
+        {children}
+      </main>
 
       {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}
       {!isAnamnesePending && (
@@ -234,6 +260,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   key={href}
                   href={href}
+                  onTouchStart={() => preloadRoute(href)}
+                  onFocus={() => preloadRoute(href)}
                   aria-current={isActive ? 'page' : undefined}
                   className={`
                     flex flex-col items-center justify-center gap-1 w-full h-full

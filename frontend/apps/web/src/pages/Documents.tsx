@@ -39,7 +39,7 @@ const STATUS_OPTIONS = [
 export default function Documents() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { data: documentsRaw, isLoading, refetch } = useGetApiDocuments();
+  const { data: documentsRaw, isLoading, isFetching, refetch } = useGetApiDocuments();
   const deleteMutation = useDeleteApiDocumentsId();
   const rawDocuments = (documentsRaw as unknown as any[]) || [];
   
@@ -59,14 +59,21 @@ export default function Documents() {
   };
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (hasProcessing) {
-      timer = setInterval(() => refetch(), 2000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
+    if (!hasProcessing) return;
+
+    const refresh = () => {
+      if (document.visibilityState === 'visible' && !isFetching) {
+        void refetch();
+      }
     };
-  }, [hasProcessing, refetch]);
+    const timer = window.setInterval(refresh, 5000);
+    document.addEventListener('visibilitychange', refresh);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [hasProcessing, isFetching, refetch]);
 
   useEffect(() => {
     const handler = () => refetch();

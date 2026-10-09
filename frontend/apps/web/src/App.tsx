@@ -66,6 +66,17 @@ function PageLoading() {
   );
 }
 
+function ProtectedPageLoading() {
+  return (
+    <div className="flex min-h-[45vh] items-center justify-center" aria-busy="true" aria-live="polite">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-card/80 px-4 py-3 text-sm font-medium text-muted-foreground shadow-sm">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary" aria-hidden="true" />
+        Abrindo página…
+      </div>
+    </div>
+  );
+}
+
 function getHttpStatus(error: unknown): number | undefined {
   if (typeof error !== 'object' || error === null) {
     return undefined;
@@ -259,7 +270,11 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return null;
   }
   
-  return <AppPage>{children}</AppPage>;
+  return (
+    <AppPage>
+      <Suspense fallback={<ProtectedPageLoading />}>{children}</Suspense>
+    </AppPage>
+  );
 }
 
 function AppPage({ children }: { children: ReactNode }) { return <AppShell>{children}</AppShell>; }
