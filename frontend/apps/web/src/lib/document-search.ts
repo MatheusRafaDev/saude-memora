@@ -5,8 +5,8 @@ export interface DocumentSearchFilters {
   category: string;
   period: string;
   status: string;
-  dateFrom: string;
-  dateTo: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 function normalizeText(value: string) {

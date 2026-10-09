@@ -687,15 +687,15 @@ export default function Documents() {
                             <input
                               type="checkbox"
                               className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-primary cursor-pointer"
-                              checked={selectedDocs.size > 0 && processingDocs.every(d => selectedDocs.has(d.id))}
+                              checked={selectedDocs.size > 0 && processingDocs.every((d: any) => selectedDocs.has(d.id))}
                               onChange={(e) => {
-                                const allSelected = processingDocs.every(d => selectedDocs.has(d.id));
+                                const allSelected = processingDocs.every((d: any) => selectedDocs.has(d.id));
                                 setSelectedDocs(prev => {
                                   const next = new Set(prev);
                                   if (allSelected) {
-                                    processingDocs.forEach(d => next.delete(d.id));
+                                    processingDocs.forEach((d: any) => next.delete(d.id));
                                   } else {
-                                    processingDocs.forEach(d => next.add(d.id));
+                                    processingDocs.forEach((d: any) => next.add(d.id));
                                   }
                                   return next;
                                 });
@@ -734,15 +734,15 @@ export default function Documents() {
                             <input
                               type="checkbox"
                               className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-primary cursor-pointer"
-                              checked={selectedDocs.size > 0 && readyDocs.every(d => selectedDocs.has(d.id))}
+                              checked={selectedDocs.size > 0 && readyDocs.every((d: any) => selectedDocs.has(d.id))}
                               onChange={(e) => {
-                                const allSelected = readyDocs.every(d => selectedDocs.has(d.id));
+                                const allSelected = readyDocs.every((d: any) => selectedDocs.has(d.id));
                                 setSelectedDocs(prev => {
                                   const next = new Set(prev);
                                   if (allSelected) {
-                                    readyDocs.forEach(d => next.delete(d.id));
+                                    readyDocs.forEach((d: any) => next.delete(d.id));
                                   } else {
-                                    readyDocs.forEach(d => next.add(d.id));
+                                    readyDocs.forEach((d: any) => next.add(d.id));
                                   }
                                   return next;
                                 });
