@@ -225,7 +225,10 @@
 
 .brand-logo img {
   display: block;
-  animation: brand-logo-glow 2.2s ease-in-out infinite;
+}
+.brand-logo-animated {
+  display: block;
+  animation: brand-logo-breathe 3.2s ease-in-out infinite, brand-logo-glow 2.2s ease-in-out infinite;
 }
 
 /* Animations */
@@ -296,7 +299,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-logo-arrival { animation: none; }
+  .home-logo-arrival, .brand-logo-animated { animation: none; }
 }
 
 /* Inputs */

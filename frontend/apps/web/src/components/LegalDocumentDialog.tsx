@@ -27,7 +27,7 @@ const documents = {
       {
         title: '3. Responsabilidade',
         paragraphs: [
-          'Os dados extraídos pela IA podem conter imprecisões. É de responsabilidade do usuário verificar as informações extraídas e validar com seu médico. O SaúdeMemora não fornece diagnósticos médicos, apenas organiza seu histórico de saúde.',
+          'Os dados extraídos pela IA podem conter imprecisões. Confira as informações e valide-as com seu médico. O SaúdeMemora organiza seu histórico, não faz diagnósticos e não substitui avaliação médica ou atendimento de emergência.',
         ],
       },
     ],
@@ -36,22 +36,21 @@ const documents = {
     title: 'Política de Privacidade',
     sections: [
       {
-        title: '1. Coleta de Dados',
+        title: '1. Dados e processamento',
         paragraphs: [
-          'Coletamos apenas os dados necessários para o funcionamento do seu prontuário eletrônico: informações de perfil que você nos fornece e imagens de exames/receitas que você decide enviar para processamento.',
+          'Guardamos os dados de perfil e os documentos de saúde que você escolhe adicionar. Para leitura automática, arquivos podem ser encaminhados a serviços externos de OCR e inteligência artificial, como OCR.space, Google Gemini e Groq. O processamento por IA requer seu consentimento; revogá-lo impede novos processamentos, mas não apaga o que já foi salvo.',
         ],
       },
       {
-        title: '2. Processamento com IA',
+        title: '2. Armazenamento e exclusão',
         paragraphs: [
-          'Para oferecer a extração automática de dados, utilizamos serviços de IA (como Groq, Gemini). Apenas processamos seus arquivos caso você tenha dado o consentimento explícito em nossa plataforma. Caso o consentimento seja revogado, novos arquivos não serão processados.',
-          'Documentos identificados como não relacionados à saúde são descartados imediatamente e não são armazenados em nossos servidores ou na nuvem (Cloudinary).',
+          'As imagens originais são armazenadas no Cloudinary em modo autenticado; os dados extraídos, como texto e resumo, ficam no banco de dados da plataforma. Você pode apagar documentos na lista de documentos ou solicitar a exclusão da conta, confirmando sua senha, em Perfil. A exclusão da conta é agendada e pode levar algum tempo para ser concluída.',
         ],
       },
       {
-        title: '3. Armazenamento e Exclusão',
+        title: '3. Uso responsável',
         paragraphs: [
-          'Os dados são armazenados de forma criptografada sempre que possível. Você pode solicitar a exclusão da sua conta e de todos os seus dados a qualquer momento através da área "Perfil" do aplicativo.',
+          'A extração automática pode conter erros. Confira as informações antes de usá-las. O SaúdeMemora organiza informações e não substitui avaliação médica nem atendimento de emergência.',
         ],
       },
     ],

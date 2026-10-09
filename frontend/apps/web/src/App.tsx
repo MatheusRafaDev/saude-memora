@@ -18,6 +18,7 @@ import Chat from '@/pages/Chat';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
 import Sobre from '@/pages/Sobre';
+import Recursos from '@/pages/Recursos';
 
 import { AppShell } from '@/components/AppShell';
 import {
@@ -205,6 +206,7 @@ function Router() {
         <Route path="/termos" component={Termos} />
         <Route path="/privacidade" component={Privacidade} />
         <Route path="/sobre" component={Sobre} />
+        <Route path="/recursos" component={Recursos} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>

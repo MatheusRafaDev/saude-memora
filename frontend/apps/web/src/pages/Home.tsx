@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from 'react';
+import { useState } from 'react';
 import {
   Activity,
   ArrowUpRight,
@@ -8,13 +8,13 @@ import {
   Github,
   Heart,
   Linkedin,
-  Menu,
   Pill,
   ShieldCheck,
   Sparkles,
-  X,
 } from 'lucide-react';
 import { Link } from 'wouter';
+import { LegalDocumentDialog, type LegalDocument } from '@/components/LegalDocumentDialog';
+import { PublicPageHeader } from '@/components/PublicPageHeader';
 
 const resources = [
   {
@@ -39,15 +39,10 @@ const resources = [
   },
 ];
 
-const navigation = [
-  { href: '/', label: 'Início' },
-  { href: '#recursos', label: 'Recursos' },
-];
-
-function Brand({ animate = false }: { animate?: boolean }) {
+function Brand() {
   return (
     <Link href="/" className="flex w-fit items-center gap-2.5" aria-label="SaúdeMemora — início">
-      <img src="/logo.png" alt="" className={`h-9 w-9 object-contain${animate ? ' home-logo-arrival' : ''}`} />
+      <img src="/logo.png" alt="" className="brand-logo-animated h-9 w-9 object-contain" />
       <span className="text-[15px] font-bold tracking-tight text-foreground">
         Saúde<span className="text-accent">Memora</span>
       </span>
@@ -65,7 +60,7 @@ function ProductPreview() {
       <div className="relative overflow-hidden rounded-[1.75rem] border border-border/80 bg-white shadow-[0_32px_90px_-38px_rgba(25,48,83,0.35)]">
         <div className="flex min-h-14 items-center justify-between border-b border-border/70 bg-white/90 px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="" className="h-7 w-7 object-contain" />
+            <img src="/logo.png" alt="" className="brand-logo-animated h-7 w-7 object-contain" />
             <span className="text-xs font-bold text-foreground">SaúdeMemora</span>
           </div>
           <span className="rounded-full bg-secondary px-3 py-1 text-[10px] font-semibold text-primary">Prévia ilustrativa</span>
@@ -131,86 +126,24 @@ function ProductPreview() {
 }
 
 export default function Home() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const navigateToSection = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (!href.startsWith('#')) return;
-    event.preventDefault();
-    const section = document.getElementById(href.slice(1));
-    if (!section) return;
-    window.history.replaceState(null, '', href);
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  const [legalDocument, setLegalDocument] = useState<LegalDocument | null>(null);
 
   return (
     <div className="min-h-[100dvh] bg-background font-sans text-foreground">
-      <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Brand animate />
-
-          <nav aria-label="Navegação principal" className="hidden items-center gap-8 md:flex">
-            {navigation.map(({ href, label }) => (
-              <a key={label} href={href} onClick={(event) => navigateToSection(event, href)} className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-primary">
-                {label}
-              </a>
-            ))}
-            <Link href="/sobre" className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-primary">Sobre</Link>
-          </nav>
-
-          <div className="hidden items-center gap-2 md:flex">
-            <Link href="/entrar" className="rounded-md px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted">
-              Entrar
-            </Link>
-            <Link href="/entrar" className="rounded-md bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-              Criar conta
-            </Link>
-          </div>
-
-          <button
-            type="button"
-            aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-            aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            className="flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-muted md:hidden"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-
-        {mobileMenuOpen && (
-          <nav aria-label="Navegação móvel" className="border-t border-border bg-background px-4 py-3 md:hidden">
-            <div className="mx-auto flex max-w-6xl flex-col gap-1">
-              {navigation.map(({ href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  onClick={(event) => {
-                    setMobileMenuOpen(false);
-                    navigateToSection(event, href);
-                  }}
-                  className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-                >
-                  {label}
-                </a>
-              ))}
-              <Link href="/sobre" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted">Sobre</Link>
-              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3">
-                <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md border border-border px-3 py-2.5 text-center text-sm font-semibold text-foreground">
-                  Entrar
-                </Link>
-                <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md bg-primary px-3 py-2.5 text-center text-sm font-semibold text-primary-foreground">
-                  Criar conta
-                </Link>
-              </div>
-            </div>
-          </nav>
-        )}
-      </header>
+      <PublicPageHeader />
 
       <main>
         <section className="relative isolate overflow-hidden">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_18%_15%,rgba(28,84,135,0.09),transparent_38%),radial-gradient(ellipse_at_88%_40%,rgba(20,125,128,0.08),transparent_34%)]" />
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 md:grid-cols-[0.92fr_1.08fr] md:gap-10 md:py-24 lg:gap-16">
             <div className="page-enter">
+              <span className="home-logo-arrival mb-6 inline-flex">
+                <img
+                  src="/logo.png"
+                  alt="Logo SaúdeMemora"
+                  className="brand-logo-animated h-32 w-32 object-contain sm:h-40 sm:w-40"
+                />
+              </span>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm">
                 <Heart size={13} className="fill-accent/15 text-accent" />
                 Seu histórico de saúde, mais organizado
@@ -225,9 +158,9 @@ export default function Home() {
                 <Link href="/entrar" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90">
                   Acessar plataforma <ArrowRight size={16} />
                 </Link>
-                <a href="#recursos" onClick={(event) => navigateToSection(event, '#recursos')} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-white/75 px-5 text-sm font-semibold text-foreground transition-colors hover:bg-white">
+                <Link href="/recursos" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-white/75 px-5 text-sm font-semibold text-foreground transition-colors hover:bg-white">
                   Conhecer os recursos
-                </a>
+                </Link>
               </div>
               <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[11px] font-medium text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} className="text-accent" /> Espaço pessoal</span>
@@ -280,10 +213,14 @@ export default function Home() {
             <p className="mt-1 text-xs text-muted-foreground">Criado por Matheus Rafael.</p>
           </div>
           <nav aria-label="Links institucionais" className="flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-muted-foreground">
-            <a href="#recursos" onClick={(event) => navigateToSection(event, '#recursos')} className="hover:text-primary">Recursos</a>
+            <Link href="/recursos" className="hover:text-primary">Recursos</Link>
             <Link href="/sobre" className="hover:text-primary">Sobre</Link>
-            <Link href="/privacidade" className="hover:text-primary">Privacidade</Link>
-            <Link href="/termos" className="hover:text-primary">Termos de uso</Link>
+            <button type="button" onClick={() => setLegalDocument('privacy')} className="min-h-11 text-left transition-colors hover:text-primary">
+              Privacidade
+            </button>
+            <button type="button" onClick={() => setLegalDocument('terms')} className="min-h-11 text-left transition-colors hover:text-primary">
+              Termos de uso
+            </button>
           </nav>
           <div className="flex items-center gap-4">
             <a
@@ -308,6 +245,13 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      <LegalDocumentDialog
+        document={legalDocument ?? 'privacy'}
+        open={legalDocument !== null}
+        onOpenChange={(open) => {
+          if (!open) setLegalDocument(null);
+        }}
+      />
     </div>
   );
 }
