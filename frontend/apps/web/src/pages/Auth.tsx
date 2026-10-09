@@ -28,7 +28,6 @@ export default function Auth() {
     try {
       if (mode === 'login') {
         await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
-        setMessage('Acesso confirmado. Bem-vindo de volta.');
         setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
       } else {
         await registerMutation.mutateAsync({
