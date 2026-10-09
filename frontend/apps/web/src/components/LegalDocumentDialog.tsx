@@ -73,7 +73,10 @@ export function LegalDocumentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85dvh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-border bg-background p-0 shadow-2xl sm:max-w-2xl">
+      <DialogContent
+        overlayClassName="legal-document-overlay bg-slate-950/35 backdrop-blur-sm duration-300"
+        className="legal-document-dialog flex max-h-[85dvh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-border bg-background p-0 shadow-2xl sm:max-w-2xl"
+      >
         <DialogHeader className="border-b border-border bg-muted/30 px-6 py-5 pr-14 text-left sm:px-8 sm:py-6">
           <DialogTitle className="text-xl leading-tight">{content.title}</DialogTitle>
           <DialogDescription>
@@ -83,7 +86,7 @@ export function LegalDocumentDialog({
         <div className="overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
           <div className="space-y-7 text-sm leading-7 text-muted-foreground">
             {content.sections.map((section) => (
-              <section key={section.title}>
+              <section key={section.title} className="legal-document-section">
                 <h3 className="mb-2 font-semibold leading-6 text-foreground">{section.title}</h3>
                 {section.paragraphs.map((paragraph) => (
                   <p key={paragraph} className="mt-2">{paragraph}</p>
