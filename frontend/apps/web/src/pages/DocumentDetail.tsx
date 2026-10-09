@@ -31,7 +31,7 @@ type MedicamentoDescricao = {
 
 function getDocumentCode(doc: any, field: 'cid' | 'cnes'): string {
   const keyPattern = field === 'cid' ? /\bcid(?:[\s-]?10)?\b/i : /\bcnes\b/i;
-  const structuredValue = doc.conteudoIndentado?.find((item: any) =>
+  const structuredValue = (Array.isArray(doc.conteudoIndentado) ? doc.conteudoIndentado : []).find((item: any) =>
     item.tipo === 'keyvalue' && keyPattern.test(item.chave || '')
   )?.valor;
   if (structuredValue) return structuredValue;
@@ -58,7 +58,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<any>({ resultadosExame: [] });
   const [isSaving, setIsSaving] = useState(false);
   const [isRawTextOpen, setIsRawTextOpen] = useState(false);
   const [showTranscriptionModal, setShowTranscriptionModal] = useState(false);
@@ -88,7 +88,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         crm: doc.crm || '',
         cid: doc.cid || getDocumentCode(doc, 'cid'),
         cnes: doc.cnes || getDocumentCode(doc, 'cnes'),
-        resultadosExame: doc.resultadosExame ? JSON.parse(JSON.stringify(doc.resultadosExame)) : [],
+        resultadosExame: Array.isArray(doc.resultadosExame)
+          ? JSON.parse(JSON.stringify(doc.resultadosExame))
+          : [],
       });
     }
   }, [docRaw]);
@@ -230,6 +232,14 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   }
 
   const doc = docRaw as unknown as any;
+  const medicamentos = Array.isArray(doc.medicamentos) ? doc.medicamentos : [];
+  const alertas = Array.isArray(doc.alertas) ? doc.alertas : [];
+  const urlImagens = Array.isArray(doc.urlImagens) ? doc.urlImagens : [];
+  const conteudoIndentado = Array.isArray(doc.conteudoIndentado) ? doc.conteudoIndentado : [];
+  const camposBaixaConfianca = Array.isArray(doc.camposBaixaConfianca) ? doc.camposBaixaConfianca : [];
+  const resultadosExame = Array.isArray(isEditing ? formData.resultadosExame : doc.resultadosExame)
+    ? (isEditing ? formData.resultadosExame : doc.resultadosExame)
+    : [];
   const cid = doc.cid || getDocumentCode(doc, 'cid');
   const cnes = doc.cnes || getDocumentCode(doc, 'cnes');
   const date = new Date(doc.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -291,8 +301,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <p className="text-xs font-semibold text-amber-700/70 dark:text-amber-500/70 mt-0.5">
                 {isEditing
                   ? 'Salve suas alterações para depois confirmar que conferiu as informações.'
-                  : (doc.camposBaixaConfianca || []).length > 0
-                    ? `A extração pode estar imprecisa nestes campos: ${doc.camposBaixaConfianca.join(', ')}`
+                  : camposBaixaConfianca.length > 0
+                    ? `A extração pode estar imprecisa nestes campos: ${camposBaixaConfianca.join(', ')}`
                     : 'Confira se as informações correspondem ao documento original.'}
               </p>
             </div>
@@ -320,12 +330,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       )}
 
       {/* Alertas FASE 4 */}
-      {doc.alertas && doc.alertas.filter((a: any) => !a.dispensado).length > 0 && (
+      {alertas.filter((a: any) => !a.dispensado).length > 0 && (
         <div className="flex flex-col gap-3">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">
             <AlertTriangle size={12} className="inline mr-1" /> Avisos Médicos Importantes
           </p>
-          {doc.alertas.filter((a: any) => !a.dispensado).map((alerta: any) => (
+          {alertas.filter((a: any) => !a.dispensado).map((alerta: any) => (
             <div key={alerta.id} className={`border rounded-xl p-4 flex flex-col gap-2 relative shadow-sm
               ${alerta.severidade === 'alta' ? 'bg-red-500/10 border-red-500/20' : 
                 alerta.severidade === 'moderada' ? 'bg-amber-500/10 border-amber-500/20' : 
@@ -457,7 +467,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <span className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground font-bold flex items-center gap-2">
                 <FileText size={14} /> Documento Original
               </span>
-              {(doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem) && (
+              {(urlImagens.length > 0 ? urlImagens[currentImageIndex] : doc.urlImagem) && (
                 <button onClick={() => setShowFullScreenModal(true)} className="rounded-xl bg-card border border-border/50 px-4 py-2 text-[10px] font-bold text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer">
                   Tela Cheia
                 </button>
@@ -465,28 +475,28 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             </div>
             
             <div className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white p-3 border border-border/30 h-[600px] max-h-[70vh]">
-              {doc.urlImagens?.length > 0 ? (
+              {urlImagens.length > 0 ? (
                 <div className="relative w-full h-full flex items-center justify-center group">
-                  <img src={doc.urlImagens[currentImageIndex]} alt={`Documento ${currentImageIndex + 1}`} className="max-w-full max-h-full object-contain rounded-lg border border-border/20 shadow-sm" />
+                  <img src={urlImagens[currentImageIndex]} alt={`Documento ${currentImageIndex + 1}`} className="max-w-full max-h-full object-contain rounded-lg border border-border/20 shadow-sm" />
                   
-                  {doc.urlImagens.length > 1 && (
+                  {urlImagens.length > 1 && (
                     <>
                       <button 
                         type="button" 
-                        onClick={() => setCurrentImageIndex(prev => prev === 0 ? doc.urlImagens.length - 1 : prev - 1)}
+                        onClick={() => setCurrentImageIndex(prev => prev === 0 ? urlImagens.length - 1 : prev - 1)}
                         className="absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-primary shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-110 opacity-0 group-hover:opacity-100"
                       >
                         <ChevronLeft size={24} />
                       </button>
                       <button 
                         type="button" 
-                        onClick={() => setCurrentImageIndex(prev => prev === doc.urlImagens.length - 1 ? 0 : prev + 1)}
+                        onClick={() => setCurrentImageIndex(prev => prev === urlImagens.length - 1 ? 0 : prev + 1)}
                         className="absolute right-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-primary shadow-lg backdrop-blur-md transition-all hover:bg-white hover:scale-110 opacity-0 group-hover:opacity-100"
                       >
                         <ChevronRight size={24} />
                       </button>
                       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm">
-                        {doc.urlImagens.map((_: any, i: number) => (
+                        {urlImagens.map((_: any, i: number) => (
                           <button key={i} type="button" onClick={() => setCurrentImageIndex(i)} className={`h-2 rounded-full transition-all ${i === currentImageIndex ? 'w-4 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`} />
                         ))}
                       </div>
@@ -553,7 +563,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           {/* Extracted Structured Fields */}
           {(() => {
             const kvFields: { chave: string; valor: string; name?: string }[] = [];
-            (doc.conteudoIndentado || []).forEach((item: any) => {
+            conteudoIndentado.forEach((item: any) => {
               if (item.tipo === 'keyvalue' && item.chave && item.valor) {
                 kvFields.push({ chave: item.chave.replace(/:$/, ''), valor: item.valor });
               }
@@ -656,7 +666,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           })()}
 
           {/* Extracted Medicines */}
-          {!isEditing && doc.medicamentos?.length > 0 && (
+          {!isEditing && medicamentos.length > 0 && (
             <section className="rounded-3xl border border-border/60 bg-card p-6 shadow-sm transition-all hover:shadow-md">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -666,11 +676,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   <h2 className="text-base font-bold text-foreground">Medicamentos</h2>
                 </div>
                 <span className="font-mono text-xs font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">
-                  {(doc.medicamentos?.length || 0).toString().padStart(2, '0')}
+                  {medicamentos.length.toString().padStart(2, '0')}
                 </span>
               </div>
               <div className="mt-6 space-y-3">
-                {doc.medicamentos.map((medicine: any, idx: number) => {
+                {medicamentos.map((medicine: any, idx: number) => {
                   const description = descriptions[idx];
                   const descriptionError = descriptionErrors[idx];
                   const details = [
@@ -776,7 +786,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 </tr>
               </thead>
               <tbody>
-                {(isEditing ? formData.resultadosExame : doc.resultadosExame).map((res: any, idx: number) => (
+                {resultadosExame.map((res: any, idx: number) => (
                   <tr key={idx} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="py-3 px-2">
                       {isEditing ? (
@@ -994,7 +1004,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           <div className="grid flex-1 min-h-0 w-full md:grid-cols-[minmax(0,1fr)_360px]">
             <div className="relative flex min-h-0 items-center justify-center overflow-hidden p-5">
               <img
-                src={doc.urlImagens?.length > 0 ? doc.urlImagens[currentImageIndex] : doc.urlImagem}
+                src={urlImagens.length > 0 ? urlImagens[currentImageIndex] : doc.urlImagem}
                 alt="Documento em tela cheia"
                 className="max-w-full max-h-full object-contain"
               />
@@ -1006,7 +1016,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </div>
               <p className="mt-2 text-xs leading-5 text-white/55">Consultadas automaticamente ao abrir o documento.</p>
               <div className="mt-5 space-y-3">
-                {(doc.medicamentos ?? []).map((medicine: any, index: number) => {
+                {medicamentos.map((medicine: any, index: number) => {
                   const description = descriptions[index];
                   const descriptionError = descriptionErrors[index];
                   const details = [

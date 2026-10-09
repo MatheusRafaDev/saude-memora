@@ -1242,10 +1242,10 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         diagnostico = d.Diagnostico,
         cid = d.Cid,
         cnes = d.Cnes,
-        medicamentos = d.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
+        medicamentos = (d.Medicamentos ?? new()).Select(m => new { m.Nome, m.Dosagem, m.Horario }),
         nomeExame = d.NomeExame,
         tipoExame = d.TipoExame,
-        resultadosExame = d.ResultadosExame.Select(r => new { r.Nome, r.NomeNormalizado }),
+        resultadosExame = (d.ResultadosExame ?? new()).Select(r => new { r.Nome, r.NomeNormalizado }),
         urlImagens = d.IdPublicos != null ? d.IdPublicos
             .Select(idPublico => storage.GetSignedUrl(idPublico) ?? string.Empty)
             .Where(url => !string.IsNullOrWhiteSpace(url))
@@ -1254,7 +1254,7 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         errorMessage = d.ErrorMessage,
         criadoEm = d.CriadoEm,
         revisaoPendente = d.RevisaoPendente,
-        alertas = d.Alertas,
+        alertas = d.Alertas ?? new(),
         revisadoEm = d.RevisadoEm
     }).OrderByDescending(d => d.criadoEm).ToList();
 
@@ -1338,7 +1338,7 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         diagnostico = doc.Diagnostico,
         cid = doc.Cid,
         cnes = doc.Cnes,
-        medicamentos = doc.Medicamentos.Select(m => new { m.Nome, m.Dosagem, m.Horario }),
+        medicamentos = (doc.Medicamentos ?? new()).Select(m => new { m.Nome, m.Dosagem, m.Horario }),
         nomeExame = doc.NomeExame,
         tipoExame = doc.TipoExame,
         resultado = doc.Resultado,
@@ -1352,14 +1352,14 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
             .Where(url => !string.IsNullOrWhiteSpace(url))
             .ToList() : new List<string>(),
         textoExtraido = doc.TextoExtraido,
-        conteudoIndentado = doc.ConteudoIndentado,
-        resultadosExame = doc.ResultadosExame,
+        conteudoIndentado = doc.ConteudoIndentado ?? new(),
+        resultadosExame = doc.ResultadosExame ?? new(),
         revisaoPendente = doc.RevisaoPendente,
-        camposBaixaConfianca = doc.CamposBaixaConfianca,
+        camposBaixaConfianca = doc.CamposBaixaConfianca ?? new(),
         progress = doc.Progress,
         errorMessage = doc.ErrorMessage,
         criadoEm = doc.CriadoEm,
-        alertas = doc.Alertas,
+        alertas = doc.Alertas ?? new(),
         revisadoEm = doc.RevisadoEm
     });
 }).RequireAuthorization();
