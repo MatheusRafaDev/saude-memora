@@ -1,18 +1,21 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, CalendarDays, SlidersHorizontal, RefreshCcw, LoaderCircle, ShieldAlert, Check, FlaskConical, Pill, Stethoscope, ArrowRight, FileStack, AlertTriangle } from 'lucide-react';
+import { ChevronRight, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, RefreshCcw, LoaderCircle, ShieldAlert, Check, FlaskConical, Pill, Stethoscope, ArrowRight, FileStack, AlertTriangle, Syringe } from 'lucide-react';
 import { customFetch, useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { triggerUploadModal } from '@/components/UploadModal';
+import { filterDocuments } from '@/lib/document-search';
 
 const CATEGORY_OPTIONS = [
   { value: 'all', label: 'Todos os tipos', icon: FileStack },
   { value: 'exame', label: 'Exames', icon: FlaskConical },
   { value: 'receita', label: 'Receitas', icon: Pill },
-  { value: 'laudo', label: 'Laudos/Relatórios', icon: Stethoscope },
-  { value: 'atestado', label: 'Atestados/Vacinas', icon: ShieldAlert },
+  { value: 'laudo', label: 'Laudos', icon: Stethoscope },
+  { value: 'relatorio', label: 'Relatórios', icon: FileText },
+  { value: 'atestado', label: 'Atestados', icon: ShieldAlert },
+  { value: 'vacina', label: 'Vacinas', icon: Syringe },
   { value: 'encaminhamento', label: 'Encaminhamentos', icon: ArrowRight },
   { value: 'outro', label: 'Outros', icon: FileText },
 ];
@@ -22,6 +25,15 @@ const PERIOD_OPTIONS = [
   { value: '30days', label: 'Últimos 30 dias' },
   { value: '6months', label: 'Últimos 6 meses' },
   { value: 'thisyear', label: 'Este ano' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'Todos os status' },
+  { value: 'processing', label: 'Em processamento' },
+  { value: 'review', label: 'Precisa de revisão' },
+  { value: 'ready', label: 'Pronto' },
+  { value: 'failed', label: 'Com erro' },
+  { value: 'rejected', label: 'Não reconhecido' },
 ];
 
 export default function Documents() {
@@ -65,6 +77,9 @@ export default function Documents() {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
 
   const handleReprocess = async (documentId: string) => {
@@ -114,45 +129,27 @@ export default function Documents() {
   };
   
   const filtered = useMemo(() => {
-    const now = new Date().getTime();
-    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-    const sixMonthsAgo = now - 180 * 24 * 60 * 60 * 1000;
-    const startOfYear = new Date(new Date().getFullYear(), 0, 1).getTime();
-
-    return documents.filter((doc) => {
-      // 1. Text Search Filter
-      const fullText = `${doc.titulo} ${doc.medico} ${doc.clinica} ${doc.tipo} ${doc.resumo}`.toLowerCase();
-      const matchesSearch = fullText.includes(query.toLowerCase());
-
-      // 2. Category / Type Filter
-      const docTypeLower = (doc.tipo || '').toLowerCase();
-      let matchesCategory = true;
-      if (selectedCategory !== 'all') {
-        matchesCategory = docTypeLower.includes(selectedCategory.toLowerCase());
-      }
-
-      // 3. Period Filter
-      let matchesPeriod = true;
-      const docDate = new Date(doc.criadoEm || doc.data).getTime();
-      if (selectedPeriod === '30days') {
-        matchesPeriod = docDate >= thirtyDaysAgo;
-      } else if (selectedPeriod === '6months') {
-        matchesPeriod = docDate >= sixMonthsAgo;
-      } else if (selectedPeriod === 'thisyear') {
-        matchesPeriod = docDate >= startOfYear;
-      }
-
-      return matchesSearch && matchesCategory && matchesPeriod;
+    return filterDocuments(documents, {
+      query,
+      category: selectedCategory,
+      period: selectedPeriod,
+      status: selectedStatus,
+      dateFrom,
+      dateTo,
     });
-  }, [documents, query, selectedCategory, selectedPeriod]);
+  }, [documents, query, selectedCategory, selectedPeriod, selectedStatus, dateFrom, dateTo]);
 
   const clearAllFilters = () => {
     setQuery('');
     setSelectedCategory('all');
     setSelectedPeriod('all');
+    setSelectedStatus('all');
+    setDateFrom('');
+    setDateTo('');
   };
 
-  const hasActiveFilters = query || selectedCategory !== 'all' || selectedPeriod !== 'all';
+  const hasActiveFilters = query || selectedCategory !== 'all' || selectedPeriod !== 'all'
+    || selectedStatus !== 'all' || dateFrom || dateTo;
 
   if (isLoading) {
     return (
@@ -182,16 +179,19 @@ export default function Documents() {
         </div>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => refetch()}
+            aria-label="Recarregar documentos"
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer border border-border"
             title="Recarregar documentos"
           >
             <RefreshCcw size={16} />
           </button>
           <button
+            type="button"
             onClick={() => triggerUploadModal()}
             data-testid="button-documents-upload"
-            className="flex w-fit items-center gap-2 rounded-xl bg-primary px-4 py-3 text-xs font-bold text-primary-foreground hover:-translate-y-0.5 hover:shadow-lg transition-all cursor-pointer"
+            className="flex min-h-11 w-fit items-center gap-2 rounded-xl bg-primary px-4 py-3 text-xs font-bold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-lg"
           >
             <Plus size={16} /> Adicionar Documento
           </button>
@@ -199,16 +199,17 @@ export default function Documents() {
       </section>
 
       {/* Advanced Filter Section */}
-      <section className="rounded-2xl border border-border bg-card p-4 md:p-5 space-y-4">
+      <section aria-label="Filtros de documentos" className="rounded-2xl border border-border bg-card p-4 md:p-5 space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           {/* Search Input */}
           <div className="relative flex-1">
             <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
+              aria-label="Pesquisar nos documentos por título ou conteúdo"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               data-testid="input-document-search"
-              placeholder="Pesquisar por nome do documento, tipo, médico ou clínica..."
+              placeholder="Pesquisar por título ou conteúdo do documento..."
               className="h-11 w-full rounded-xl border border-input bg-background pl-11 pr-10 text-sm outline-none focus:ring-4 focus:ring-accent/10"
             />
             {query && (
@@ -216,17 +217,17 @@ export default function Documents() {
                 onClick={() => setQuery('')}
                 aria-label="Limpar busca"
                 data-testid="button-clear-document-search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-primary"
+                className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-primary"
               >
                 <X size={15} />
               </button>
             )}
           </div>
 
-          {/* Date Period Filter Dropdown */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <select
+                aria-label="Filtrar por período"
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="h-11 rounded-xl border border-input bg-background px-4 text-xs font-bold outline-none focus:ring-4 focus:ring-accent/10 cursor-pointer text-foreground"
@@ -237,10 +238,22 @@ export default function Documents() {
               </select>
             </div>
 
+            <select
+              aria-label="Filtrar por status"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="h-11 rounded-xl border border-input bg-background px-4 text-xs font-bold text-foreground outline-none focus:ring-4 focus:ring-accent/10"
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+
             {hasActiveFilters && (
               <button
+                type="button"
                 onClick={clearAllFilters}
-                className="flex items-center gap-1.5 h-11 px-3.5 rounded-xl border border-border bg-muted/60 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="flex h-11 items-center gap-1.5 rounded-xl border border-border bg-muted/60 px-3.5 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 title="Limpar todos os filtros"
               >
                 <X size={14} /> Limpar
@@ -249,24 +262,50 @@ export default function Documents() {
           </div>
         </div>
 
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="flex flex-1 flex-col gap-1 text-xs font-semibold text-foreground">
+            Data a partir de
+            <input
+              type="date"
+              aria-label="Data inicial"
+              value={dateFrom}
+              onChange={(event) => setDateFrom(event.target.value)}
+              className="h-11 rounded-xl border border-input bg-background px-3 text-sm font-normal outline-none focus:ring-4 focus:ring-accent/10"
+            />
+          </label>
+          <label className="flex flex-1 flex-col gap-1 text-xs font-semibold text-foreground">
+            Até
+            <input
+              type="date"
+              aria-label="Data final"
+              value={dateTo}
+              onChange={(event) => setDateTo(event.target.value)}
+              className="h-11 rounded-xl border border-input bg-background px-3 text-sm font-normal outline-none focus:ring-4 focus:ring-accent/10"
+            />
+          </label>
+        </div>
+
         {/* Category Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-1 scrollbar-none">
-          <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground shrink-0 pr-1">
+          <span id="document-category-filter-label" className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground shrink-0 pr-1">
             <Filter size={14} className="text-accent" /> Categoria:
           </span>
           {CATEGORY_OPTIONS.map((cat) => {
             const Icon = cat.icon;
             return (
               <button
+                type="button"
                 key={cat.value}
+                aria-pressed={selectedCategory === cat.value}
+                aria-labelledby={`document-category-filter-label document-category-${cat.value}`}
                 onClick={() => setSelectedCategory(cat.value)}
-                className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                className={`flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 text-xs font-bold transition-all cursor-pointer ${
                   selectedCategory === cat.value
                     ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                {Icon && <Icon size={14} />} {cat.label}
+                {Icon && <Icon size={14} aria-hidden="true" />} <span id={`document-category-${cat.value}`}>{cat.label}</span>
               </button>
             );
           })}
@@ -275,7 +314,7 @@ export default function Documents() {
 
       {/* Table Header Info */}
       <div className="flex items-center justify-between px-1">
-        <p className="text-xs font-semibold text-muted-foreground">
+        <p aria-live="polite" className="text-sm font-semibold text-muted-foreground">
           Exibindo <span className="font-mono text-foreground font-bold">{filtered.length}</span> de <span className="font-mono text-foreground font-bold">{documents.length}</span> documentos
         </p>
       </div>
@@ -307,13 +346,13 @@ export default function Documents() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  <th className="py-3 px-3">Título do Documento</th>
-                  <th className="py-3 px-3">Tipo</th>
-                  <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Médico / Clínica</th>
-                  <th className="py-3 px-3">Data do Registro</th>
-                  <th className="py-3 px-3">Resumo / Diagnóstico</th>
-                  <th className="py-3 px-3 text-right">Ações</th>
+                  <th scope="col" className="py-3 px-3">Título do Documento</th>
+                  <th scope="col" className="py-3 px-3">Tipo</th>
+                  <th scope="col" className="py-3 px-3">Status</th>
+                  <th scope="col" className="py-3 px-3">Médico / Clínica</th>
+                  <th scope="col" className="py-3 px-3">Data do Registro</th>
+                  <th scope="col" className="py-3 px-3">Resumo / Diagnóstico</th>
+                  <th scope="col" className="py-3 px-3 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 text-xs">
@@ -339,7 +378,7 @@ export default function Documents() {
                     </td>
                     <td className="py-3.5 px-3">
                       {doc.status === 'pending' || doc.status === 'processing' ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-500">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-800">
                           <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Na fila'}
                         </span>
                       ) : doc.status === 'failed' ? (
@@ -347,15 +386,15 @@ export default function Documents() {
                            <ShieldAlert size={10} /> Erro
                         </span>
                       ) : doc.status === 'rejeitado' ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
                            <ShieldAlert size={10} /> Não reconhecido
                         </span>
                       ) : doc.revisaoPendente ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
                            <AlertTriangle size={10} /> Revisar
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-500">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-800">
                            <Check size={10} /> Pronto
                         </span>
                       )}
@@ -396,15 +435,15 @@ export default function Documents() {
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+                            <button type="button" aria-label={`Mais ações para ${doc.titulo || 'documento'}`} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground">
                               <MoreVertical size={15} />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
+                            <DropdownMenuItem className="min-h-11 text-sm font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
                               <Pencil size={14} className="mr-2" /> Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
+                            <DropdownMenuItem className="min-h-11 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
                               <Trash2 size={14} className="mr-2" /> Apagar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -435,27 +474,27 @@ export default function Documents() {
                       )}
                       
                     <div className="flex flex-wrap gap-2 mt-1.5 items-center">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-accent">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-extrabold uppercase text-accent">
                         {doc.tipo || 'Documento'}
                       </span>
                       {doc.status === 'pending' || doc.status === 'processing' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-blue-500">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-blue-800">
                           <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Na fila'}
                         </span>
                       ) : doc.status === 'failed' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-destructive">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
                            <ShieldAlert size={10} /> Erro
                         </span>
                       ) : doc.status === 'rejeitado' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
                            <ShieldAlert size={10} /> Não reconhecido
                         </span>
                       ) : doc.revisaoPendente ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-amber-600 dark:text-amber-500">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
                            <AlertTriangle size={10} /> Revisar
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[9px] font-extrabold uppercase text-emerald-500">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-emerald-800">
                            <Check size={10} /> Pronto
                         </span>
                       )}
@@ -464,15 +503,15 @@ export default function Documents() {
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="-mt-1 -mr-1 rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+                      <button type="button" aria-label={`Mais ações para ${doc.titulo || 'documento'}`} className="-mr-1 -mt-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground">
                         <MoreVertical size={16} />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem className="text-xs font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
+                      <DropdownMenuItem className="min-h-11 text-sm font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
                         <Pencil size={14} className="mr-2" /> Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
+                      <DropdownMenuItem className="min-h-11 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
                         <Trash2 size={14} className="mr-2" /> Apagar
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -498,7 +537,7 @@ export default function Documents() {
                         type="button"
                         onClick={() => handleReprocess(doc.id)}
                         disabled={reprocessingIds.has(doc.id)}
-                        className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                        className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
                       >
                         <RefreshCcw size={13} className={reprocessingIds.has(doc.id) ? 'animate-spin' : ''} />
                         Tentar novamente agora

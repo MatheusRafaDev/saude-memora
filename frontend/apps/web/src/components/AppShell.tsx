@@ -47,6 +47,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-noise min-h-[100dvh] bg-background flex flex-col">
+      <a
+        href="#main-content"
+        className="absolute left-4 top-2 z-[60] -translate-y-20 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground focus:translate-y-0"
+      >
+        Pular para o conteúdo
+      </a>
 
       {/* ── Top Navigation Bar ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 w-full glass-header border-b border-white/5">
@@ -72,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="h-5 w-px bg-border/50 hidden md:block" />
 
             {/* Nav items (Desktop only) */}
-            <nav className="hidden md:flex items-center justify-center gap-1 flex-1">
+            <nav aria-label="Navegação principal" className="hidden md:flex items-center justify-center gap-1 flex-1">
               {!isAnamnesePending && navItems.map(({ href, label, icon: Icon }) => {
                 const isActive = active === href;
                 return (
@@ -80,8 +86,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                     key={href}
                     href={href}
                     data-testid={`link-nav-${href.slice(1)}`}
+                    aria-current={isActive ? 'page' : undefined}
                     className={`
-                      relative flex items-center gap-2 rounded-xl px-3 py-2
+                      relative flex min-h-11 items-center gap-2 rounded-xl px-3 py-2
                       text-[13px] font-medium transition-all duration-200 whitespace-nowrap
                       ${isActive
                         ? 'bg-primary/8 text-primary'
@@ -119,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button
                 onClick={triggerUploadModal}
                 className="
-                  flex items-center gap-2 rounded-xl
+                  flex min-h-11 items-center gap-2 rounded-xl
                   bg-accent px-3.5 py-2
                   text-[12px] font-semibold text-white
                   shadow-md shadow-accent/25
@@ -139,8 +146,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen((v) => !v)}
+                  aria-expanded={userMenuOpen}
+                  aria-label="Abrir menu da conta"
                   data-testid="button-user-menu"
-                  className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-muted transition-colors"
+                  className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted"
                 >
                   <div
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
@@ -181,14 +190,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                         <>
                           <button
                             onClick={() => navigate('/perfil')}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground hover:bg-muted transition-colors"
+                            className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground transition-colors hover:bg-muted"
                           >
                             <UserRound size={14} />
                             Meu perfil
                           </button>
                           <button
                             onClick={() => { setShowEmergenciaModal(true); setUserMenuOpen(false); }}
-                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-600 dark:text-red-500 hover:bg-muted transition-colors"
+                            className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-600 transition-colors hover:bg-muted dark:text-red-500"
                           >
                             <ShieldCheck size={14} />
                             Emergência
@@ -199,7 +208,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           onClick={() => { void signOut(); }}
                           disabled={isSigningOut}
                           data-testid="button-signout"
-                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-destructive hover:bg-destructive/8 transition-colors disabled:cursor-wait disabled:opacity-60"
+                          className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-destructive transition-colors hover:bg-destructive/8 disabled:cursor-wait disabled:opacity-60"
                         >
                           <LogOut size={14} />
                           {isSigningOut ? 'Saindo...' : 'Sair da conta'}
@@ -215,20 +224,24 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* ── Main content ───────────────────────────────────────────────── */}
-      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10 bg-[radial-gradient(circle_at_top,_rgba(58,108,255,0.08),transparent_35%)]">
+      <main id="main-content" tabIndex={-1} className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10 bg-[radial-gradient(circle_at_top,_rgba(58,108,255,0.08),transparent_35%)]">
+        <aside aria-label="Limites da plataforma" className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+          O SaúdeMemora organiza informações e pode cometer erros. Não faz diagnósticos nem substitui avaliação médica ou atendimento de emergência. Em uma emergência no Brasil, ligue 192 (SAMU) ou procure um serviço de urgência.
+        </aside>
         {children}
       </main>
 
       {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}
       {!isAnamnesePending && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/90 backdrop-blur-md border-t border-border pb-[env(safe-area-inset-bottom)]">
-          <nav className="flex h-16 items-center justify-around px-2">
+          <nav aria-label="Navegação principal" className="flex h-16 items-center justify-around px-2">
             {navItems.map(({ href, label, icon: Icon }) => {
               const isActive = active === href;
               return (
                 <Link
                   key={href}
                   href={href}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`
                     flex flex-col items-center justify-center gap-1 w-full h-full
                     transition-colors duration-200

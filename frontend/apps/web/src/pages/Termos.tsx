@@ -35,7 +35,9 @@ export default function Termos() {
           <p>
             Os dados extraídos pela IA podem conter imprecisões. É de responsabilidade do usuário
             verificar as informações extraídas e validar com seu médico. O SaúdeMemora não fornece
-            diagnósticos médicos, apenas organiza seu histórico de saúde.
+            diagnósticos médicos, apenas organiza seu histórico de saúde. A plataforma não substitui
+            avaliação médica nem deve ser usada para decisões de emergência; nesses casos, procure
+            atendimento de urgência.
           </p>
         </div>
       </main>
