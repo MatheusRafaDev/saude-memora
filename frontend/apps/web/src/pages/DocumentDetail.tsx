@@ -15,6 +15,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { CatalogAutocomplete } from '@/components/CatalogAutocomplete';
 
 type MedicamentoDescricao = {
   nome: string;
@@ -617,25 +618,23 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">CID-10</label>
-                      <input
-                        type="text"
-                        name="cid"
-                        value={formData.cid}
-                        onChange={handleChange}
-                        placeholder="Não informado"
-                        className="w-full text-sm font-bold text-foreground bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                      <CatalogAutocomplete
+                        label="CID-10"
+                        selected={formData.cid ? [formData.cid] : []}
+                        onChange={(items) => setFormData((previous: any) => ({ ...previous, cid: items[0] ?? '' }))}
+                        sourceOptions={[{ value: 'cid10', label: 'CID-10' }]}
+                        allowCustomEntry
+                        selectCodeOnly
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">CNES do estabelecimento</label>
-                      <input
-                        type="text"
-                        name="cnes"
-                        value={formData.cnes}
-                        onChange={handleChange}
-                        placeholder="Não informado"
-                        className="w-full text-sm font-bold text-foreground bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors"
+                      <CatalogAutocomplete
+                        label="CNES do estabelecimento"
+                        selected={formData.cnes ? [formData.cnes] : []}
+                        onChange={(items) => setFormData((previous: any) => ({ ...previous, cnes: items[0] ?? '' }))}
+                        sourceOptions={[{ value: 'cnes', label: 'CNES' }]}
+                        allowCustomEntry
+                        selectCodeOnly
                       />
                     </div>
                   </div>

@@ -410,10 +410,67 @@ _ = Task.Run(async () =>
 
     try
     {
+        using var scope = app.Services.CreateScope();
+        var catalogRepository = scope.ServiceProvider.GetRequiredService<ICid10CatalogoRepository>();
+        if (await catalogRepository.ContarAsync(token) == 0)
+        {
+            var catalogPath = Environment.GetEnvironmentVariable("CID10_CATALOG_PATH")
+                ?? Path.Combine(app.Environment.ContentRootPath, "Data", "CID-10-SUBCATEGORIAS.CSV");
+            if (!File.Exists(catalogPath))
+            {
+                app.Logger.LogError("[CID-10] Arquivo do catálogo não encontrado em {CatalogPath}.", catalogPath);
+            }
+            else
+            {
+                await using var catalogStream = File.OpenRead(catalogPath);
+                var catalogService = scope.ServiceProvider.GetRequiredService<ICid10CatalogoService>();
+                var importResult = await catalogService.ImportarAsync(catalogStream, token);
+                app.Logger.LogInformation(
+                    "[CID-10] Catálogo inicializado: {Imported} registros importados, {Invalid} inválidos e {Duplicates} duplicados.",
+                    importResult.RegistrosImportados,
+                    importResult.RegistrosInvalidos,
+                    importResult.RegistrosDuplicados);
+            }
+        }
+    }
+    catch (Exception ex) { app.Logger.LogError(ex, "[CID-10] Falha ao inicializar o catálogo"); }
+
+    try
+    {
         var cnesRepository = app.Services.GetRequiredService<ICnesCatalogoRepository>();
         await cnesRepository.EnsureIndexesAsync(token);
     }
     catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção CnesCatalogo"); }
+
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var catalogRepository = scope.ServiceProvider.GetRequiredService<ICnesCatalogoRepository>();
+        if (await catalogRepository.ContarAsync(token) == 0)
+        {
+            var catalogPath = Environment.GetEnvironmentVariable("CNES_CATALOG_PATH");
+            if (string.IsNullOrWhiteSpace(catalogPath))
+            {
+                app.Logger.LogWarning("[CNES] Catálogo vazio. Configure CNES_CATALOG_PATH ou importe a base pelo endpoint protegido.");
+            }
+            else if (!File.Exists(catalogPath))
+            {
+                app.Logger.LogError("[CNES] Arquivo do catálogo não encontrado em {CatalogPath}.", catalogPath);
+            }
+            else
+            {
+                await using var catalogStream = File.OpenRead(catalogPath);
+                var catalogService = scope.ServiceProvider.GetRequiredService<ICnesCatalogoService>();
+                var importResult = await catalogService.ImportarAsync(catalogStream, token);
+                app.Logger.LogInformation(
+                    "[CNES] Catálogo inicializado: {Imported} registros importados, {Invalid} inválidos e {Duplicates} duplicados.",
+                    importResult.RegistrosImportados,
+                    importResult.RegistrosInvalidos,
+                    importResult.RegistrosDuplicados);
+            }
+        }
+    }
+    catch (Exception ex) { app.Logger.LogError(ex, "[CNES] Falha ao inicializar o catálogo"); }
     
     try
     {

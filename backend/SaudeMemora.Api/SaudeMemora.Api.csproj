@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <Content Include="..\data\anvisa\medicamentos.csv" Link="Data\medicamentos.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\CID\CID-10-SUBCATEGORIAS.CSV" Link="Data\CID-10-SUBCATEGORIAS.CSV" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

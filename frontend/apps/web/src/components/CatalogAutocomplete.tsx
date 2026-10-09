@@ -58,12 +58,14 @@ export function CatalogAutocomplete({
   onChange,
   sourceOptions = SOURCES,
   allowCustomEntry = false,
+  selectCodeOnly = false,
 }: {
   label: string;
   selected: string[];
   onChange: (items: string[]) => void;
   sourceOptions?: { value: CatalogSource; label: string }[];
   allowCustomEntry?: boolean;
+  selectCodeOnly?: boolean;
 }) {
   const [source, setSource] = useState<CatalogSource>(sourceOptions[0]?.value ?? 'medicamentos');
   const [query, setQuery] = useState('');
@@ -112,7 +114,9 @@ export function CatalogAutocomplete({
   }, [query, source]);
 
   const addItem = (item: CatalogItem) => {
-    const value = getItemValue(item, source);
+    const value = selectCodeOnly && source !== 'medicamentos'
+      ? item.codigo ?? getItemValue(item, source)
+      : getItemValue(item, source);
     if (value && !selected.some((item) => item.toLocaleLowerCase() === value.toLocaleLowerCase())) {
       onChange([...selected, value]);
     }
@@ -192,7 +196,7 @@ export function CatalogAutocomplete({
               ) : !allowCustomEntry ? (
                 <div className="px-3 py-3 text-xs text-muted-foreground text-center">Nenhum registro encontrado.</div>
               ) : query.trim().length >= 3 && !loading && !error ? (
-                <div className="px-3 py-2 text-[11px] text-muted-foreground">Ou selecione um medicamento encontrado no catálogo.</div>
+                <div className="px-3 py-2 text-[11px] text-muted-foreground">Ou selecione um registro encontrado no catálogo.</div>
               ) : null}
             </div>
           )}

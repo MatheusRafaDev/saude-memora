@@ -8,21 +8,84 @@ namespace SaudeMemora.Infrastructure.Repositories;
 
 public sealed class Cid10CatalogoRepository : ICid10CatalogoRepository
 {
+    private const int ImportBatchSize = 5_000;
+    private readonly IMongoDatabase _database;
     private readonly IMongoCollection<Cid10Registro> _registros;
 
     public Cid10CatalogoRepository(MongoDbContext context)
     {
+        _database = context.Database;
         _registros = context.Cid10Catalogo;
     }
 
     public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
     {
-        await _registros.Indexes.CreateOneAsync(
+        await EnsureIndexesAsync(_registros, cancellationToken);
+    }
+
+    public async Task ReplaceAllAsync(
+        IAsyncEnumerable<Cid10Registro> registros,
+        CancellationToken cancellationToken = default)
+    {
+        var temporaryName = $"Cid10Catalogo_import_{Guid.NewGuid():N}";
+        var staging = _database.GetCollection<Cid10Registro>(temporaryName);
+        var batch = new List<Cid10Registro>(ImportBatchSize);
+        var collectionCreated = false;
+        var renamed = false;
+
+        try
+        {
+            await foreach (var registro in registros.WithCancellation(cancellationToken))
+            {
+                batch.Add(registro);
+                if (batch.Count == ImportBatchSize)
+                {
+                    await staging.InsertManyAsync(batch, cancellationToken: cancellationToken);
+                    collectionCreated = true;
+                    batch.Clear();
+                }
+            }
+
+            if (batch.Count > 0)
+            {
+                await staging.InsertManyAsync(batch, cancellationToken: cancellationToken);
+                collectionCreated = true;
+            }
+
+            if (!collectionCreated)
+            {
+                throw new InvalidDataException("O arquivo não contém registros válidos; o catálogo atual foi mantido.");
+            }
+
+            await EnsureIndexesAsync(staging, cancellationToken);
+            await _database.RenameCollectionAsync(
+                temporaryName,
+                _registros.CollectionNamespace.CollectionName,
+                new RenameCollectionOptions { DropTarget = true },
+                cancellationToken);
+            renamed = true;
+        }
+        catch
+        {
+            if (collectionCreated && !renamed)
+            {
+                await _database.DropCollectionAsync(temporaryName, CancellationToken.None);
+            }
+
+            throw;
+        }
+    }
+
+    private static async Task EnsureIndexesAsync(
+        IMongoCollection<Cid10Registro> collection,
+        CancellationToken cancellationToken)
+    {
+        await collection.Indexes.CreateOneAsync(
             new CreateIndexModel<Cid10Registro>(
                 Builders<Cid10Registro>.IndexKeys.Ascending(r => r.CodigoNormalizado),
                 new CreateIndexOptions { Name = "ix_cid10_codigo" }),
             cancellationToken: cancellationToken);
-        await _registros.Indexes.CreateOneAsync(
+        await collection.Indexes.CreateOneAsync(
             new CreateIndexModel<Cid10Registro>(
                 Builders<Cid10Registro>.IndexKeys.Ascending(r => r.DescricaoNormalizada),
                 new CreateIndexOptions { Name = "ix_cid10_descricao" }),
