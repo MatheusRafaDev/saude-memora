@@ -48,18 +48,15 @@ Com o **SaúdeMemora**, o usuário pode:
 - **Busca Rápida**: Documentos recentes estruturados em tabela.
 
 **4. Arquivo de Documentos**
-- Tabela com filtros combinados: Filtre simultaneamente por Categoria (Exames, Laudos, etc) e Período (Últimos 30 dias, 6 meses, etc).
-- **Busca Textual**: Pesquise pelo nome do médico, clínica ou palavras no resumo gerado pela IA.
-- **Pesquisa e organização**: Busca por título e conteúdo extraído, com filtros para tipo, status e período.
+- Filtros combinados para tipo, status e período.
+- Busca por título, nome do médico, clínica e conteúdo extraído.
 
 **5. Ficha Médica (Anamnese)**
-- Cadastro detalhado de histórico familiar, cirurgias, doador de órgãos, tipo sanguíneo, hábitos e cirurgias.
+- Cadastro detalhado de histórico familiar, cirurgias, doador de órgãos, tipo sanguíneo e hábitos.
 - Bloqueio inteligente: Novos usuários são convidados a preencher a anamnese para popular os alertas do sistema.
 
 **6. Experiência de Usuário (UX)**
-- Tema noturno moderno e responsivo.
-- Navegação fluida com transições `page-enter`.
-- Sistema de toast notifications avançado para mostrar em tempo real o que a IA conseguiu extrair dos documentos (Ex: `✓ Lido pela IA! Plano: Bradesco · Nº: 123456`).
+- Interface responsiva, suporte a tema noturno e avisos para acompanhar o processamento e corrigir os dados extraídos.
 
 ---
 
@@ -98,20 +95,21 @@ O Compose da raiz é para desenvolvimento local: contém segredos de exemplo, co
 
 ## 🏭 Implantação em ambiente real
 
-Este repositório não fornece um Compose de produção, proxy TLS ou provisionamento gerenciado. Para publicar a aplicação, configure esses componentes no ambiente de hospedagem e, antes de aceitar dados reais:
+Este repositório não fornece infraestrutura de produção pronta, proxy TLS ou provisionamento gerenciado. O endereço público acima é a demonstração publicada; a disponibilidade, integração com serviços externos e configuração de dados dessa instância dependem do ambiente implantado. Para publicar sua própria instância, faça o deploy do backend e do frontend separadamente ou integre-os na sua plataforma:
 
-1. Use MongoDB e Redis gerenciados ou protegidos em rede privada; habilite autenticação, TLS, controle de acesso e backups testados do MongoDB.
-2. Gere um `JWT_SECRET_KEY` aleatório e exclusivo com no mínimo 32 caracteres. Guarde-o, junto com tokens e chaves de serviços, em um gerenciador de segredos; não os coloque no Git ou em imagens.
-3. Publique a API atrás de HTTPS. Defina `COOKIE_SECURE=true`, `COOKIE_SAME_SITE` conforme o domínio e os fluxos de autenticação, `FRONTEND_URL` e `CORS_ALLOWED_ORIGINS` com os domínios exatos da implantação. Configure `TRUSTED_PROXIES` apenas para os endereços dos proxies confiáveis.
-4. Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` se os arquivos forem armazenados no Cloudinary. Configure `GEMINI_API_KEY` e `OCR_SPACE_API_KEY` para habilitar os serviços de extração e `BREVO_API_KEY` para envio de e-mail de redefinição de senha.
-5. Ajuste limite de upload e timeout do proxy/API em conjunto. O endpoint de documentos aceita até 10 MB; um proxy como Nginx deve permitir pelo menos esse limite.
-6. Defina política de retenção, exclusão e resposta a incidentes. Avalie contratos, localização e tratamento de dados dos provedores externos antes de processar informações de saúde reais.
+1. **API:** publique `backend/SaudeMemora.Api` em um serviço .NET 9. Use `ASPNETCORE_ENVIRONMENT=Production` e mantenha MongoDB e Redis privados, com autenticação, TLS, controle de acesso e backups do MongoDB testados.
+2. **Frontend:** construa a aplicação em `frontend` com `pnpm install --frozen-lockfile` e `pnpm --filter @workspace/saudememora run build`. Configure `VITE_API_URL` para a URL HTTPS pública da API antes de compilar; essa variável é incorporada ao bundle. Publique o conteúdo de `frontend/apps/web/dist` num host de site estático ou CDN.
+3. **Domínios e cookies:** configure `FRONTEND_URL` e `CORS_ALLOWED_ORIGINS` com as origens exatas do site, sem curingas. Publique a API atrás de HTTPS e defina `COOKIE_SECURE=true`; escolha `COOKIE_SAME_SITE` compatível com os domínios do frontend e API. Se houver proxy reverso, configure `TRUSTED_PROXIES` somente com os endereços/IPs confiáveis.
+4. **Segredos:** crie um `JWT_SECRET_KEY` aleatório, exclusivo e com no mínimo 32 caracteres. Injete-o e todas as chaves por um gerenciador de segredos ou mecanismo seguro do host; nunca use os valores de exemplo do Compose ou comite credenciais.
+5. **Serviços externos:** configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` para armazenamento de arquivos; `GEMINI_API_KEY` e `OCR_SPACE_API_KEY` para as etapas correspondentes de OCR/IA; e `BREVO_API_KEY` para e-mails de redefinição de senha. Teste cada integração no ambiente de homologação.
+6. **Limites e operação:** alinhe limite de upload e timeout do proxy e da API; o endpoint de documentos aceita arquivos de até 10 MB. Configure logs sem conteúdo clínico, alertas, monitoramento de dependências, plano de rollback e processo de resposta a incidentes. O endpoint `/api/ping` verifica a aplicação, não substitui monitoramento de MongoDB, Redis ou provedores externos.
+7. **Antes de abrir ao público:** teste cadastro, login, recuperação de senha, consentimento, upload/processamento, retry, exclusão de documento/conta e restauração de backup em homologação. Defina responsáveis por suporte e operação.
 
 ### Catálogos CID-10 e CNES
 
-- Quando a coleção estiver vazia, a API importa automaticamente o arquivo CID-10 de subcategorias incluído na publicação. `CID10_CATALOG_PATH` permite apontar para outro CSV compatível.
+- Quando a coleção estiver vazia, a API importa automaticamente o arquivo CID-10 de subcategorias incluído na publicação. `CID10_CATALOG_PATH` pode apontar para outro CSV compatível com colunas de código e descrição.
 - O projeto não distribui a base oficial CNES. Para inicialização automática, disponibilize o arquivo oficial CSV/XML dentro do ambiente da API e configure `CNES_CATALOG_PATH`. O CSV aceita colunas `CO_CNES`, `NO_RAZAO_SOCIAL` e, opcionalmente, `DS_ATIVIDADE`; o XML usa esses mesmos campos oficiais. Sem essa configuração, o catálogo CNES fica vazio até uma importação manual.
-- A importação manual dos catálogos exige usuário autenticado e o segredo `CATALOGO_IMPORT_TOKEN`. Envie o arquivo no campo multipart `file` e o segredo no cabeçalho `X-Import-Token` para `POST /api/catalogo-cid10/importar` ou `POST /api/catalogo-cnes/importar`. Mantenha esse segredo restrito a operadores e rotacione-o se houver exposição.
+- A importação manual dos catálogos exige uma sessão de usuário autenticada **e** o segredo `CATALOGO_IMPORT_TOKEN`. Envie o arquivo no campo multipart `file` e o segredo no cabeçalho `X-Import-Token` para `POST /api/catalogo-cid10/importar` ou `POST /api/catalogo-cnes/importar`. Sem o segredo configurado, a importação manual fica indisponível. Restrinja o segredo a operadores e rotacione-o se houver exposição.
 - Uma importação só substitui os dados atuais depois que o arquivo for processado com sucesso e contiver registros válidos. Use arquivos oficiais atualizados e verifique os totais retornados pela API.
 
 ### Configuração de ambiente
@@ -122,15 +120,17 @@ Consulte [`backend/.env.example`](./backend/.env.example) para variáveis da API
 
 O SaúdeMemora organiza documentos e informações fornecidas pelo usuário. Não é um serviço de diagnóstico ou aconselhamento médico, não substitui avaliação profissional e não deve ser usado para decisões clínicas ou emergências. Em uma emergência, procure os serviços de emergência locais.
 
-Arquivos e dados de saúde são sensíveis. OCR, IA, banco e armazenamento podem envolver provedores externos conforme a configuração implantada. Antes de usar com pessoas reais, informe os usuários sobre os fornecedores e o tratamento efetivamente habilitados, obtenha as autorizações necessárias e valide os requisitos legais e de segurança aplicáveis. Não use dados reais em desenvolvimento ou demonstrações.
+Arquivos e dados de saúde são sensíveis. Conforme as integrações habilitadas, o processamento pode envolver Cloudinary para arquivos, OCR.Space/Groq para OCR, Google Gemini para interpretação e Brevo para e-mail. MongoDB guarda os dados estruturados. Confirme os fluxos, contratos, localização e políticas de retenção dos fornecedores da sua implantação; atualize os avisos de privacidade/consentimento com a configuração real e valide requisitos legais e de segurança aplicáveis antes do uso. A aplicação não é, por si só, certificação de conformidade legal ou clínica. Não use dados reais em desenvolvimento ou demonstrações.
 
 ---
 
 ## ✅ Verificações
 
+O backend de produção é `net9.0`; o projeto de testes atualmente mira `net10.0`, então use SDK .NET 10 para executar a suíte completa.
+
 ```powershell
 dotnet test backend\SaudeMemora.Tests\SaudeMemora.Tests.csproj
-cd frontend\apps\web
+cd frontend
 pnpm run typecheck
-pnpm run build
+pnpm --filter @workspace/saudememora run build
 ```
