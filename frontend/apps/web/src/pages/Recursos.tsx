@@ -11,6 +11,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
 
 const resources = [
   {
@@ -110,6 +111,7 @@ export default function Recursos() {
           </Link>
         </section>
       </main>
+      <PublicPageFooter />
     </div>
   );
 }

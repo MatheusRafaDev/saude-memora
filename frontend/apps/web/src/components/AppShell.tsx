@@ -223,13 +223,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* ── Main content ───────────────────────────────────────────────── */}
-      <main id="main-content" tabIndex={-1} className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-10 bg-[radial-gradient(circle_at_top,_rgba(58,108,255,0.08),transparent_35%)]">
-        <aside aria-label="Limites da plataforma" className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-          O SaúdeMemora organiza informações e pode cometer erros. Não faz diagnósticos nem substitui avaliação médica ou atendimento de emergência. Em uma emergência no Brasil, ligue 192 (SAMU) ou procure um serviço de urgência.
-        </aside>
-        {children}
-      </main>
 
       {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}
       {!isAnamnesePending && (

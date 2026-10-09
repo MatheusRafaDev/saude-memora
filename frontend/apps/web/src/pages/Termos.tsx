@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
 
 export default function Termos() {
   return (
@@ -41,6 +42,7 @@ export default function Termos() {
           </p>
         </div>
       </main>
+      <PublicPageFooter />
     </div>
   );
 }

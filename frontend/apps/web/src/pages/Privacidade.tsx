@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { ArrowLeft, FileText, ShieldCheck, Trash2 } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
 
 export default function Privacidade() {
   return (
@@ -72,6 +73,7 @@ export default function Privacidade() {
           </p>
         </div>
       </main>
+      <PublicPageFooter />
     </div>
   );
 }

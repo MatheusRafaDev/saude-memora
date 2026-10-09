@@ -146,10 +146,6 @@ export default function ResetPassword() {
             </Link>
           </div>
 
-          <p className="mt-8 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground/60">
-            <ShieldCheck size={12} className="text-accent/60" />
-            Seus dados são tratados com cuidado e privacidade.
-          </p>
         </div>
       </section>
     </div>

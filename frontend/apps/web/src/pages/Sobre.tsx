@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
-import { ArrowLeft, ArrowRight, Github, HeartPulse, Linkedin, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Github, HeartPulse, Linkedin, ShieldCheck, Sparkles } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
+import { PublicPageFooter } from '@/components/PublicPageFooter';
 
 const principles = [
   {
@@ -28,9 +29,6 @@ export default function Sobre() {
         <section className="relative isolate overflow-hidden border-b border-border/70">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_20%_10%,rgba(28,84,135,0.1),transparent_42%),radial-gradient(ellipse_at_90%_50%,rgba(20,125,128,0.08),transparent_35%)]" />
           <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20">
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-              <ArrowLeft size={16} /> Voltar ao início
-            </Link>
             <div className="mt-10 max-w-3xl">
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-primary">
                 <HeartPulse size={14} className="text-accent" /> Sobre o SaúdeMemora
@@ -113,6 +111,7 @@ export default function Sobre() {
           </Link>
         </section>
       </main>
+      <PublicPageFooter />
     </div>
   );
 }
