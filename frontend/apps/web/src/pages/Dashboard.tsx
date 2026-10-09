@@ -262,6 +262,19 @@ export default function Dashboard() {
                 {allergies.length} alergia{allergies.length > 1 ? "s" : ""}
               </span>
             )}
+            {allConditions.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-800">
+                <Activity size={12} /> {allConditions.length} {allConditions.length === 1 ? "condição" : "condições"}
+              </span>
+            )}
+            {continuousMedications.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+                <Pill size={12} /> {continuousMedications.length} medicamento{continuousMedications.length > 1 ? "s" : ""} contínuo{continuousMedications.length > 1 ? "s" : ""}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/80 px-3 py-1.5 text-xs font-semibold text-foreground">
+              <FileText size={12} className="text-primary" /> {docs.length} documento{docs.length !== 1 ? "s" : ""}
+            </span>
             {donor && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
                 <Shield size={12} /> Doador de
