@@ -26,7 +26,7 @@ public static class CatalogoCsvReader
         var field = new StringBuilder();
         var inQuotes = false;
         var line = 1;
-        var buffer = new char[1];
+        var buffer = new char[32768];
 
         while (true)
         {
@@ -36,76 +36,79 @@ public static class CatalogoCsvReader
                 break;
             }
 
-            var value = buffer[0];
-            if (value == '\r')
+            for (int i = 0; i < charactersRead; i++)
             {
-                var nextCharacter = reader.Peek();
-                if (nextCharacter == '\n')
+                var value = buffer[i];
+                if (value == '\r')
                 {
-                    reader.Read();
+                    var nextCharacter = i + 1 < charactersRead ? buffer[i + 1] : reader.Peek();
+                    if (nextCharacter == '\n')
+                    {
+                        if (i + 1 < charactersRead) i++; else reader.Read();
+                    }
+
+                    if (inQuotes)
+                    {
+                        field.Append('\r');
+                        if (nextCharacter == '\n') field.Append('\n');
+                    }
+                    else
+                    {
+                        record.Add(field.ToString());
+                        field.Clear();
+                        yield return record.ToArray();
+                        record.Clear();
+                    }
+
+                    line++;
+                    continue;
                 }
 
-                if (inQuotes)
+                if (value == '\n')
                 {
-                    field.Append('\r');
-                    if (nextCharacter == '\n') field.Append('\n');
+                    if (inQuotes)
+                    {
+                        field.Append('\n');
+                    }
+                    else
+                    {
+                        record.Add(field.ToString());
+                        field.Clear();
+                        yield return record.ToArray();
+                        record.Clear();
+                    }
+
+                    line++;
+                    continue;
                 }
-                else
+
+                if (value == '"')
+                {
+                    if (inQuotes && field.Length > 0 && field[^1] == '"')
+                    {
+                        field.Length--;
+                    }
+                    else if (inQuotes || field.Length == 0)
+                    {
+                        inQuotes = !inQuotes;
+                    }
+                    else
+                    {
+                        field.Append(value);
+                    }
+
+                    continue;
+                }
+
+                if (value == ';' && !inQuotes)
                 {
                     record.Add(field.ToString());
                     field.Clear();
-                    yield return record.ToArray();
-                    record.Clear();
-                }
-
-                line++;
-                continue;
-            }
-
-            if (value == '\n')
-            {
-                if (inQuotes)
-                {
-                    field.Append('\n');
-                }
-                else
-                {
-                    record.Add(field.ToString());
-                    field.Clear();
-                    yield return record.ToArray();
-                    record.Clear();
-                }
-
-                line++;
-                continue;
-            }
-
-            if (value == '"')
-            {
-                if (inQuotes && field.Length > 0 && field[^1] == '"')
-                {
-                    field.Length--;
-                }
-                else if (inQuotes || field.Length == 0)
-                {
-                    inQuotes = !inQuotes;
                 }
                 else
                 {
                     field.Append(value);
                 }
-
-                continue;
-            }
-
-            if (value == ';' && !inQuotes)
-            {
-                record.Add(field.ToString());
-                field.Clear();
-            }
-            else
-            {
-                field.Append(value);
             }
         }
 
