@@ -1,25 +1,9 @@
-import { type ReactNode, useEffect } from 'react';
+import { lazy, Suspense, type ReactNode, useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
-import Auth from '@/pages/Auth';
-import ResetPassword from '@/pages/ResetPassword';
-import Home from '@/pages/Home';
-import Dashboard from '@/pages/Dashboard';
-import Documents from '@/pages/Documents';
-import Upload from '@/pages/Upload';
-import DocumentDetail from '@/pages/DocumentDetail';
-import Record from '@/pages/Record';
-import Profile from '@/pages/Profile';
-import Emergencia from '@/pages/Emergencia';
-import Chat from '@/pages/Chat';
-import Termos from '@/pages/Termos';
-import Privacidade from '@/pages/Privacidade';
-import Sobre from '@/pages/Sobre';
-import Recursos from '@/pages/Recursos';
-
 import { AppShell } from '@/components/AppShell';
 import {
   Route,
@@ -27,7 +11,6 @@ import {
   useLocation,
   Router as WouterRouter,
 } from 'wouter';
-
 import { QueryCache } from '@tanstack/react-query';
 import {
   customFetch,
@@ -35,7 +18,28 @@ import {
   getGetApiPacientesMeQueryKey,
 } from '@workspace/api-client-react';
 
+const Auth = lazy(() => import('@/pages/Auth'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const Home = lazy(() => import('@/pages/Home'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Documents = lazy(() => import('@/pages/Documents'));
+const Upload = lazy(() => import('@/pages/Upload'));
+const DocumentDetail = lazy(() => import('@/pages/DocumentDetail'));
+const Record = lazy(() => import('@/pages/Record'));
+const Profile = lazy(() => import('@/pages/Profile'));
+const Emergencia = lazy(() => import('@/pages/Emergencia'));
+const Chat = lazy(() => import('@/pages/Chat'));
+const Termos = lazy(() => import('@/pages/Termos'));
+const Privacidade = lazy(() => import('@/pages/Privacidade'));
+const Sobre = lazy(() => import('@/pages/Sobre'));
+const Recursos = lazy(() => import('@/pages/Recursos'));
+
 const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,
+    },
+  },
   queryCache: new QueryCache({
     onError: (error: any, query) => {
       if (
@@ -49,9 +53,127 @@ const queryClient = new QueryClient({
 });
 
 const SESSION_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+const SESSION_REFRESH_RETRY_MS = 30 * 1000;
+
+function PageLoading() {
+  return (
+    <main className="flex min-h-[60vh] items-center justify-center bg-background px-4" aria-busy="true" aria-live="polite">
+      <div className="flex items-center gap-3 text-sm font-medium text-muted-foreground">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary/25 border-t-primary" aria-hidden="true" />
+        Carregando página…
+      </div>
+    </main>
+  );
+}
+
+function getHttpStatus(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined;
+  }
+
+  if ('status' in error && typeof error.status === 'number') {
+    return error.status;
+  }
+
+  if (
+    'response' in error &&
+    typeof error.response === 'object' &&
+    error.response !== null &&
+    'status' in error.response &&
+    typeof error.response.status === 'number'
+  ) {
+    return error.response.status;
+  }
+
+  return undefined;
+}
+
+function SessionKeepAlive() {
+  const [location, setLocation] = useLocation();
+  const isProtectedRoute = [
+    '/visao-geral',
+    '/documentos',
+    '/enviar',
+    '/anamnese',
+    '/perfil',
+    '/chat',
+  ].some((path) => location === path || location.startsWith(`${path}/`));
+
+  const lastRefreshAt = useRef(0);
+  const refreshInProgress = useRef(false);
+
+  useEffect(() => {
+    if (!isProtectedRoute) {
+      return;
+    }
+
+    lastRefreshAt.current = Date.now();
+    let retryTimer: number | undefined;
+
+    const refreshSession = async () => {
+      if (
+        refreshInProgress.current ||
+        Date.now() - lastRefreshAt.current < SESSION_REFRESH_INTERVAL_MS
+      ) {
+        return;
+      }
+
+      refreshInProgress.current = true;
+      try {
+        await customFetch('/api/auth/refresh', { method: 'POST' });
+        lastRefreshAt.current = Date.now();
+        if (retryTimer !== undefined) {
+          window.clearTimeout(retryTimer);
+          retryTimer = undefined;
+        }
+      } catch (error) {
+        if (getHttpStatus(error) === 401) {
+          setLocation('/entrar');
+          return;
+        }
+
+        const status = getHttpStatus(error);
+        console.warn(
+          `A renovação da sessão falhou${status ? ` (HTTP ${status})` : ''}; uma nova tentativa será feita.`,
+        );
+        if (retryTimer === undefined) {
+          retryTimer = window.setTimeout(() => {
+            retryTimer = undefined;
+            void refreshSession();
+          }, SESSION_REFRESH_RETRY_MS);
+        }
+      } finally {
+        refreshInProgress.current = false;
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      void refreshSession();
+    }, SESSION_REFRESH_INTERVAL_MS);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [isProtectedRoute, setLocation]);
+
+  return null;
+}
 
 function HomeRoute() {
-  const { isLoading, isError, isSuccess } = useGetApiPacientesMe({
+  const { isSuccess } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
@@ -68,10 +190,7 @@ function HomeRoute() {
     }
   }, [isSuccess, setLocation]);
 
-  if (isLoading) {
-    return null;
-  }
-
+  // Keep the public landing page responsive while checking for an existing session.
   return <Home />;
 }
 
@@ -94,47 +213,6 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
       setLocation('/entrar');
     }
   }, [isError, setLocation]);
-
-  useEffect(() => {
-    if (isLoading || isError) {
-      return;
-    }
-
-    let refreshInProgress = false;
-    const refreshSession = async () => {
-      if (refreshInProgress) {
-        return;
-      }
-
-      refreshInProgress = true;
-      try {
-        await customFetch('/api/auth/refresh', { method: 'POST' });
-      } catch {
-        setLocation('/entrar');
-      } finally {
-        refreshInProgress = false;
-      }
-    };
-
-    const interval = window.setInterval(() => {
-      void refreshSession();
-    }, SESSION_REFRESH_INTERVAL_MS);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        void refreshSession();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
-
-    return () => {
-      window.clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
-    };
-  }, [isError, isLoading, setLocation]);
 
   if (isError) {
     return null;
@@ -188,28 +266,32 @@ function AppPage({ children }: { children: ReactNode }) { return <AppShell>{chil
 
 function Router() {
   return (
-    // Keep a shared shell (sidebar, navbar) outside the boundary so it
-    // survives a page crash.
-    <RoutedErrorBoundary>
-      <Switch>
-        <Route path="/" component={HomeRoute} />
-        <Route path="/entrar" component={Auth} />
-        <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/visao-geral">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>
-        <Route path="/documentos">{() => <ProtectedRoute><Documents /></ProtectedRoute>}</Route>
-        <Route path="/documentos/:id">{(params) => <ProtectedRoute><DocumentDetail id={params.id} /></ProtectedRoute>}</Route>
-        <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
-        <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
-        <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
-        <Route path="/emergencia/:token">{(params) => <Emergencia token={params.token} />}</Route>
-        <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
-        <Route path="/termos" component={Termos} />
-        <Route path="/privacidade" component={Privacidade} />
-        <Route path="/sobre" component={Sobre} />
-        <Route path="/recursos" component={Recursos} />
-        <Route component={NotFound} />
-      </Switch>
-    </RoutedErrorBoundary>
+    <>
+      <SessionKeepAlive />
+      <Suspense fallback={<PageLoading />}>
+        {/* Keep the shared shell outside the boundary so it survives a page crash. */}
+        <RoutedErrorBoundary>
+          <Switch>
+            <Route path="/" component={HomeRoute} />
+            <Route path="/entrar" component={Auth} />
+            <Route path="/reset-password" component={ResetPassword} />
+            <Route path="/visao-geral">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>
+            <Route path="/documentos">{() => <ProtectedRoute><Documents /></ProtectedRoute>}</Route>
+            <Route path="/documentos/:id">{(params) => <ProtectedRoute><DocumentDetail id={params.id} /></ProtectedRoute>}</Route>
+            <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
+            <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
+            <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
+            <Route path="/emergencia/:token">{(params) => <Emergencia token={params.token} />}</Route>
+            <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
+            <Route path="/termos" component={Termos} />
+            <Route path="/privacidade" component={Privacidade} />
+            <Route path="/sobre" component={Sobre} />
+            <Route path="/recursos" component={Recursos} />
+            <Route component={NotFound} />
+          </Switch>
+        </RoutedErrorBoundary>
+      </Suspense>
+    </>
   );
 }
 

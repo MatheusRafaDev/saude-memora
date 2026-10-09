@@ -61,6 +61,25 @@ public class PacienteRepository : IPacienteRepository
         return await _pacientes.Find(p => p.Id == id).FirstOrDefaultAsync();
     }
 
+    public async Task<bool> TryUpdateSecurityStampAsync(string id, string currentStamp, string newStamp)
+    {
+        var filter = Builders<Paciente>.Filter.And(
+            Builders<Paciente>.Filter.Eq(p => p.Id, id),
+            Builders<Paciente>.Filter.Eq(p => p.SecurityStamp, currentStamp),
+            Builders<Paciente>.Filter.Ne(p => p.IsDeleting, true));
+        var result = await _pacientes.UpdateOneAsync(
+            filter,
+            Builders<Paciente>.Update.Set(p => p.SecurityStamp, newStamp));
+
+        if (result.MatchedCount == 0)
+        {
+            return false;
+        }
+
+        await _cache.SafeRemoveAsync($"secstamp_{id}");
+        return true;
+    }
+
     public async Task<Paciente> CreateAsync(Paciente paciente)
     {
         await _pacientes.InsertOneAsync(paciente);

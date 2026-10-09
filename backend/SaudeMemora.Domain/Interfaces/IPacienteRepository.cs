@@ -9,6 +9,7 @@ public interface IPacienteRepository
     Task<Paciente?> GetByEmergenciaTokenAsync(string token);
 
     Task<Paciente?> GetByIdAsync(string id);
+    Task<bool> TryUpdateSecurityStampAsync(string id, string currentStamp, string newStamp);
     Task<Paciente> CreateAsync(Paciente paciente);
     Task UpdateAsync(Paciente paciente);
     Task DeleteAsync(string id);

@@ -73,18 +73,18 @@ export function LegalDocumentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="border-b border-border px-5 py-4 pr-12 text-left sm:px-6">
-          <DialogTitle>{content.title}</DialogTitle>
+      <DialogContent className="flex max-h-[85dvh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-border bg-background p-0 shadow-2xl sm:max-w-2xl">
+        <DialogHeader className="border-b border-border bg-muted/30 px-6 py-5 pr-14 text-left sm:px-8 sm:py-6">
+          <DialogTitle className="text-xl leading-tight">{content.title}</DialogTitle>
           <DialogDescription>
             Última atualização: {new Date().toLocaleDateString('pt-BR')}
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto px-5 py-5 sm:px-6">
-          <div className="space-y-6 text-sm leading-6 text-muted-foreground">
+        <div className="overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
+          <div className="space-y-7 text-sm leading-7 text-muted-foreground">
             {content.sections.map((section) => (
               <section key={section.title}>
-                <h3 className="mb-2 font-semibold text-foreground">{section.title}</h3>
+                <h3 className="mb-2 font-semibold leading-6 text-foreground">{section.title}</h3>
                 {section.paragraphs.map((paragraph) => (
                   <p key={paragraph} className="mt-2">{paragraph}</p>
                 ))}

@@ -206,23 +206,23 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border bg-muted/40">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-7 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-8">
+        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-7 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-8">
           <div className="min-w-0">
             <Brand />
             <p className="mt-2 text-xs text-muted-foreground">Organização e acesso às suas informações de saúde.</p>
             <p className="mt-1 text-xs text-muted-foreground">Criado por Matheus Rafael.</p>
           </div>
-          <nav aria-label="Links institucionais" className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-medium text-muted-foreground md:justify-center">
+          <nav aria-label="Links institucionais" className="grid grid-cols-2 items-center justify-items-start gap-x-6 gap-y-1 text-xs font-medium text-muted-foreground md:flex md:flex-wrap md:justify-center">
             <Link href="/recursos" className="hover:text-primary">Recursos</Link>
             <Link href="/sobre" className="hover:text-primary">Sobre</Link>
-            <button type="button" onClick={() => setLegalDocument('privacy')} className="min-h-11 transition-colors hover:text-primary">
+            <button type="button" onClick={() => setLegalDocument('privacy')} className="min-h-11 text-left transition-colors hover:text-primary">
               Privacidade
             </button>
-            <button type="button" onClick={() => setLegalDocument('terms')} className="min-h-11 transition-colors hover:text-primary">
+            <button type="button" onClick={() => setLegalDocument('terms')} className="min-h-11 text-left transition-colors hover:text-primary">
               Termos de uso
             </button>
           </nav>
-          <div className="flex flex-wrap items-center gap-4 md:justify-end">
+          <div className="flex items-center justify-between gap-4 md:justify-end">
             <div className="flex items-center gap-4">
               <a
                 href="https://www.linkedin.com/in/matheus-rafael-50a676219/"

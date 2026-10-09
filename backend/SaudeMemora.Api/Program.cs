@@ -598,8 +598,25 @@ app.MapPost("/api/auth/refresh", async (ClaimsPrincipal user, IPacienteRepositor
     return Results.Ok(new { User = new { paciente.Id, paciente.Nome, paciente.Email } });
 }).RequireAuthorization().RequireRateLimiting("refresh");
 
-app.MapPost("/api/auth/logout", (HttpContext context) =>
+app.MapPost("/api/auth/logout", async (
+    ClaimsPrincipal user,
+    IPacienteRepository repository,
+    Microsoft.Extensions.Caching.Distributed.IDistributedCache cache,
+    HttpContext context,
+    CancellationToken cancellationToken) =>
 {
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    var stamp = user.FindFirstValue("SecurityStamp");
+    if (user.Identity?.IsAuthenticated == true)
+    {
+        await AuthSessionRevocation.RevokeAsync(
+            userId ?? string.Empty,
+            stamp ?? string.Empty,
+            repository,
+            cache,
+            cancellationToken);
+    }
+
     var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "false", "true", StringComparison.OrdinalIgnoreCase);
     var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? (IsSecureRequest(context) ? "None" : "Lax");
     var sameSiteMode = cookieSameSite switch
