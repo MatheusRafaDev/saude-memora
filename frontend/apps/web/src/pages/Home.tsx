@@ -13,7 +13,7 @@ import {
 import { Link, useLocation } from 'wouter';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
-import { useGetApiPacientesMe } from '@workspace/api-client-react';
+import { useGetApiPacientesMe, getGetApiPacientesMeQueryOptions } from '@workspace/api-client-react';
 
 const resources = [
   {
@@ -116,7 +116,7 @@ function ProductPreview() {
 export default function Home() {
   const [, setLocation] = useLocation();
   const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
-    query: { retry: false }
+    query: { queryKey: getGetApiPacientesMeQueryOptions().queryKey, retry: false }
   });
 
   if (user && !isUserLoading) {
