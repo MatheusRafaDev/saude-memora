@@ -517,7 +517,7 @@ export default function Documents() {
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">arquivo pessoal de saúde</p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-[-.06em] md:text-[40px]">Meus Documentos</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Tabela unificada com todos os seus exames, receitas e relatórios classificados por IA.</p>
+      
         </div>
         <div className="flex gap-2">
           {selectedDocs.size > 0 && (
@@ -651,10 +651,6 @@ export default function Documents() {
 
       {/* Structured Document Table with Portuguese Titles */}
       <section className="rounded-2xl border border-border bg-card p-5 md:p-6 shadow-xs">
-        <div className="flex items-center gap-2 border-b border-border/70 pb-4 mb-4">
-          <Table size={18} className="text-accent" />
-          <h2 className="text-base font-extrabold text-foreground">Tabela Geral de Documentos Médicos</h2>
-        </div>
 
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">

@@ -8,10 +8,12 @@ import {
   Pill,
   ShieldCheck,
   Sparkles,
+  LoaderCircle,
 } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
+import { useGetApiPacientesMe } from '@workspace/api-client-react';
 
 const resources = [
   {
@@ -112,6 +114,23 @@ function ProductPreview() {
 }
 
 export default function Home() {
+  const [, setLocation] = useLocation();
+  const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
+    query: { retry: false }
+  });
+
+  if (user && !isUserLoading) {
+    setLocation('/visao-geral');
+  }
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] bg-background font-sans text-foreground">
       <PublicPageHeader />

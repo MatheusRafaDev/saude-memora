@@ -1,13 +1,21 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
+import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X, LoaderCircle } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
-import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch, getGetApiPacientesMeQueryOptions, getGetApiDocumentsQueryOptions, getGetApiFichaMedicaMeQueryOptions } from '@workspace/api-client-react';
+import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch, getGetApiPacientesMeQueryOptions, getGetApiDocumentsQueryOptions, getGetApiFichaMedicaMeQueryOptions, useGetApiPacientesMe } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function Auth() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
+    query: { retry: false }
+  });
+
+  if (user && !isUserLoading) {
+    setLocation('/visao-geral');
+  }
 
   const loginMutation    = usePostApiAuthLogin();
   const registerMutation = usePostApiAuthRegister();
@@ -21,6 +29,13 @@ export default function Auth() {
   const [forgotEmail, setForgotEmail]         = useState('');
   const [forgotMessage, setForgotMessage]     = useState('');
 
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -29,7 +44,6 @@ export default function Auth() {
 
     try {
       if (mode === 'login') {
-        setMessage('Entrando...');
         await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
         
         setMessage('Carregando seus dados...');
@@ -44,7 +58,6 @@ export default function Auth() {
         await registerMutation.mutateAsync({
           data: { nome: form.name, dataNascimento: form.birthDate, sexo: form.sex, email: form.email, senha: form.password }
         });
-        setMessage('Entrando...');
         await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
         
         setMessage('Preparando sua conta...');

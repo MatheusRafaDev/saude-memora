@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using SaudeMemora.Application.DTOs;
@@ -121,8 +121,16 @@ bool IsSecureRequest(HttpContext context)
     return string.Equals(forwardedProto, "https", StringComparison.OrdinalIgnoreCase);
 }
 
-TimeSpan ParseJwtLifetime(IConfiguration config)
+TimeSpan GetJwtLifetime(IConfiguration config, HttpContext context)
 {
+    var userAgent = context.Request.Headers["User-Agent"].ToString().ToLowerInvariant();
+    bool isMobile = userAgent.Contains("mobi") || userAgent.Contains("android") || userAgent.Contains("iphone") || userAgent.Contains("ipad");
+
+    if (isMobile)
+    {
+        return TimeSpan.FromDays(3650); // 10 years for mobile
+    }
+
     var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN")?.Trim()?.ToLowerInvariant() ?? config["JwtSettings:ExpiresIn"]?.Trim()?.ToLowerInvariant();
     if (string.IsNullOrEmpty(jwtExpiresInStr))
         return TimeSpan.FromDays(7);
@@ -166,7 +174,7 @@ void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
     });
 }
 
-string CreateJwtToken(Paciente paciente, IConfiguration config)
+string CreateJwtToken(Paciente paciente, IConfiguration config, TimeSpan expiresIn)
 {
     var tokenHandler = new JwtSecurityTokenHandler();
     var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? config["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT_SECRET_KEY is missing.");
@@ -184,7 +192,7 @@ string CreateJwtToken(Paciente paciente, IConfiguration config)
             new Claim(ClaimTypes.Name, paciente.Nome),
             new Claim("SecurityStamp", paciente.SecurityStamp ?? string.Empty)
         }),
-        Expires = DateTime.UtcNow.Add(ParseJwtLifetime(config)),
+        Expires = DateTime.UtcNow.Add(expiresIn),
         Issuer = jwtIssuer,
         Audience = jwtAudience,
         SigningCredentials = credentials
@@ -563,8 +571,8 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
         return Results.BadRequest(new[] { "Email ou senha inválidos." });
     }
 
-    var expiresIn = ParseJwtLifetime(config);
-    var jwt = CreateJwtToken(paciente, config);
+    var expiresIn = GetJwtLifetime(config, context);
+    var jwt = CreateJwtToken(paciente, config, expiresIn);
     SetAuthCookie(context, jwt, expiresIn);
 
     return Results.Ok(new {
@@ -592,8 +600,9 @@ app.MapPost("/api/auth/refresh", async (ClaimsPrincipal user, IPacienteRepositor
         return Results.Unauthorized();
     }
 
-    var jwt = CreateJwtToken(paciente, config);
-    SetAuthCookie(context, jwt, ParseJwtLifetime(config));
+    var expiresIn = GetJwtLifetime(config, context);
+    var jwt = CreateJwtToken(paciente, config, expiresIn);
+    SetAuthCookie(context, jwt, expiresIn);
 
     return Results.Ok(new { User = new { paciente.Id, paciente.Nome, paciente.Email } });
 }).RequireAuthorization().RequireRateLimiting("refresh");
