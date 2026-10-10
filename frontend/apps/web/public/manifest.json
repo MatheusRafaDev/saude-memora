@@ -4,8 +4,8 @@
   "description": "Seu histórico médico inteligente e unificado.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d9488",
-  "theme_color": "#0d9488",
+  "background_color": "#1b3a5f",
+  "theme_color": "#1b3a5f",
   "icons": [
     {
       "src": "/logo.png",
