@@ -1,4 +1,4 @@
-﻿# 🏥 SaúdeMemora
+# 🏥 SaúdeMemora
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.0.0-green?style=for-the-badge" />
@@ -70,67 +70,9 @@ Com o **SaúdeMemora**, o usuário pode:
 
 ---
 
-## 🚀 Executar localmente
-
-Requisitos: .NET 9 SDK, Node.js compatível com o workspace, pnpm e Docker Compose.
-
-1. Inicie a API, MongoDB e Redis:
-
-   ```powershell
-   docker compose up --build
-   ```
-
-2. Em outro terminal, instale dependências e inicie o frontend:
-
-   ```powershell
-   cd frontend
-   pnpm install --frozen-lockfile
-   cd apps/web
-   pnpm dev
-   ```
-
-3. Abra `http://localhost:5173`. A API local responde em `http://localhost:8080`.
-
-O Compose da raiz é para desenvolvimento local: contém segredos de exemplo, configura cookies sem `Secure`, executa a API em `Development` e publica portas do MongoDB e Redis. **Não o publique diretamente na internet nem reutilize os valores de exemplo.**
-
-## 🏭 Implantação em ambiente real
-
-Este repositório não fornece infraestrutura de produção pronta, proxy TLS ou provisionamento gerenciado. O endereço público acima é a demonstração publicada; a disponibilidade, integração com serviços externos e configuração de dados dessa instância dependem do ambiente implantado. Para publicar sua própria instância, faça o deploy do backend e do frontend separadamente ou integre-os na sua plataforma:
-
-1. **API:** publique `backend/SaudeMemora.Api` em um serviço .NET 9. Use `ASPNETCORE_ENVIRONMENT=Production` e mantenha MongoDB e Redis privados, com autenticação, TLS, controle de acesso e backups do MongoDB testados.
-2. **Frontend:** construa a aplicação em `frontend` com `pnpm install --frozen-lockfile` e `pnpm --filter @workspace/saudememora run build`. Configure `VITE_API_URL` para a URL HTTPS pública da API antes de compilar; essa variável é incorporada ao bundle. Publique o conteúdo de `frontend/apps/web/dist` num host de site estático ou CDN.
-3. **Domínios e cookies:** configure `FRONTEND_URL` e `CORS_ALLOWED_ORIGINS` com as origens exatas do site, sem curingas. Publique a API atrás de HTTPS e defina `COOKIE_SECURE=true`; escolha `COOKIE_SAME_SITE` compatível com os domínios do frontend e API. Se houver proxy reverso, configure `TRUSTED_PROXIES` somente com os endereços/IPs confiáveis.
-4. **Segredos:** crie um `JWT_SECRET_KEY` aleatório, exclusivo e com no mínimo 32 caracteres. Injete-o e todas as chaves por um gerenciador de segredos ou mecanismo seguro do host; nunca use os valores de exemplo do Compose ou comite credenciais.
-5. **Serviços externos:** configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` para armazenamento de arquivos; `GEMINI_API_KEY` e `OCR_SPACE_API_KEY` para as etapas correspondentes de OCR/IA; e `BREVO_API_KEY` para e-mails de redefinição de senha. Teste cada integração no ambiente de homologação.
-6. **Limites e operação:** alinhe limite de upload e timeout do proxy e da API; o endpoint de documentos aceita arquivos de até 10 MB. Configure logs sem conteúdo clínico, alertas, monitoramento de dependências, plano de rollback e processo de resposta a incidentes. O endpoint `/api/ping` verifica a aplicação, não substitui monitoramento de MongoDB, Redis ou provedores externos.
-7. **Antes de abrir ao público:** teste cadastro, login, recuperação de senha, consentimento, upload/processamento, retry, exclusão de documento/conta e restauração de backup em homologação. Defina responsáveis por suporte e operação.
-
-### Catálogos CID-10 e CNES
-
-- Quando a coleção estiver vazia, a API importa automaticamente o arquivo CID-10 de subcategorias incluído na publicação. `CID10_CATALOG_PATH` pode apontar para outro CSV compatível com colunas de código e descrição.
-- O projeto não distribui a base oficial CNES. Para inicialização automática, disponibilize o arquivo oficial CSV/XML dentro do ambiente da API e configure `CNES_CATALOG_PATH`. O CSV aceita colunas `CO_CNES`, `NO_RAZAO_SOCIAL` e, opcionalmente, `DS_ATIVIDADE`; o XML usa esses mesmos campos oficiais. Sem essa configuração, o catálogo CNES fica vazio até uma importação manual.
-- A importação manual dos catálogos exige uma sessão de usuário autenticada **e** o segredo `CATALOGO_IMPORT_TOKEN`. Envie o arquivo no campo multipart `file` e o segredo no cabeçalho `X-Import-Token` para `POST /api/catalogo-cid10/importar` ou `POST /api/catalogo-cnes/importar`. Sem o segredo configurado, a importação manual fica indisponível. Restrinja o segredo a operadores e rotacione-o se houver exposição.
-- Uma importação só substitui os dados atuais depois que o arquivo for processado com sucesso e contiver registros válidos. Use arquivos oficiais atualizados e verifique os totais retornados pela API.
-
-### Configuração de ambiente
-
-Consulte [`backend/.env.example`](./backend/.env.example) para variáveis da API e [`frontend/.env.example`](./frontend/.env.example) para `VITE_API_URL`. Em produção, injete-as pelo ambiente de hospedagem/gerenciador de segredos, não copie valores de desenvolvimento.
-
 ## ⚕️ Uso responsável e privacidade
 
 O SaúdeMemora organiza documentos e informações fornecidas pelo usuário. Não é um serviço de diagnóstico ou aconselhamento médico, não substitui avaliação profissional e não deve ser usado para decisões clínicas ou emergências. Em uma emergência, procure os serviços de emergência locais.
 
 Arquivos e dados de saúde são sensíveis. Conforme as integrações habilitadas, o processamento pode envolver Cloudinary para arquivos, OCR.Space/Groq para OCR, Google Gemini para interpretação e Brevo para e-mail. MongoDB guarda os dados estruturados. Confirme os fluxos, contratos, localização e políticas de retenção dos fornecedores da sua implantação; atualize os avisos de privacidade/consentimento com a configuração real e valide requisitos legais e de segurança aplicáveis antes do uso. A aplicação não é, por si só, certificação de conformidade legal ou clínica. Não use dados reais em desenvolvimento ou demonstrações.
 
----
-
-## ✅ Verificações
-
-O backend de produção é `net9.0`; o projeto de testes atualmente mira `net10.0`, então use SDK .NET 10 para executar a suíte completa.
-
-```powershell
-dotnet test backend\SaudeMemora.Tests\SaudeMemora.Tests.csproj
-cd frontend
-pnpm run typecheck
-pnpm --filter @workspace/saudememora run build
-```
