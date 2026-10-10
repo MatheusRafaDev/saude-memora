@@ -2,10 +2,12 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
-import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch } from '@workspace/api-client-react';
+import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch, getGetApiPacientesMeQueryOptions, getGetApiDocumentsQueryOptions, getGetApiFichaMedicaMeQueryOptions } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Auth() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const loginMutation    = usePostApiAuthLogin();
   const registerMutation = usePostApiAuthRegister();
@@ -27,15 +29,32 @@ export default function Auth() {
 
     try {
       if (mode === 'login') {
+        setMessage('Entrando...');
         await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
-        setTimeout(() => { window.location.href = '/visao-geral'; }, 450);
+        
+        setMessage('Carregando seus dados...');
+        await Promise.allSettled([
+          queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
+          queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
+          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions())
+        ]);
+        
+        setLocation('/visao-geral');
       } else {
         await registerMutation.mutateAsync({
           data: { nome: form.name, dataNascimento: form.birthDate, sexo: form.sex, email: form.email, senha: form.password }
         });
+        setMessage('Entrando...');
         await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
-        setMessage('Sua conta foi criada. Entrando no painel...');
-        setTimeout(() => { window.location.href = '/visao-geral'; }, 800);
+        
+        setMessage('Preparando sua conta...');
+        await Promise.allSettled([
+          queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
+          queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
+          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions())
+        ]);
+        
+        setLocation('/visao-geral');
       }
     } catch (err: any) {
       if (err.data && Array.isArray(err.data))      setError(err.data.join(', '));
