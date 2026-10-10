@@ -10,7 +10,11 @@ export default function Auth() {
   const queryClient = useQueryClient();
 
   const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
-    query: { queryKey: getGetApiPacientesMeQueryOptions().queryKey, retry: false }
+    query: { 
+      queryKey: getGetApiPacientesMeQueryOptions().queryKey, 
+      retry: false,
+      meta: { skipUnauthorizedRedirect: true }
+    }
   });
 
   if (user && !isUserLoading) {

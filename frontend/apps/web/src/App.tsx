@@ -46,7 +46,9 @@ const queryClient = new QueryClient({
         (error?.status === 401 || error?.response?.status === 401) &&
         query.meta?.skipUnauthorizedRedirect !== true
       ) {
-        window.location.href = '/entrar';
+        if (window.location.pathname !== '/entrar') {
+          window.location.href = '/entrar';
+        }
       }
     }
   })
@@ -213,7 +215,8 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
       staleTime: 5 * 60 * 1000,
-      enabled: true
+      enabled: true,
+      meta: { skipUnauthorizedRedirect: true }
     }
   });
 
