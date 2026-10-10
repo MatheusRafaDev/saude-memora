@@ -135,8 +135,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
               {/* Date badge */}
               {currentDate && (
-                <span className="hidden font-mono text-[10px] text-muted-foreground/60 lg:block capitalize">
-                  {currentDate}
+                <span className="font-mono text-[10px] sm:text-xs text-muted-foreground/80 capitalize mr-1">
+                  {currentDate.replace('.', '')}
                 </span>
               )}
 
@@ -145,9 +145,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button
                 onClick={triggerUploadModal}
                 className="
-                  flex min-h-11 items-center gap-2 rounded-xl
-                  bg-accent px-3.5 py-2
-                  text-[12px] font-semibold text-white
+                  flex min-h-11 items-center gap-1.5 rounded-xl
+                  bg-accent px-3 py-2 sm:px-3.5 sm:gap-2
+                  text-[11px] sm:text-[12px] font-semibold text-white
                   shadow-md shadow-accent/25
                   hover:shadow-lg hover:shadow-accent/30
                   hover:-translate-y-px
@@ -156,8 +156,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 "
                 data-testid="button-add-document"
               >
-                <Plus size={13} strokeWidth={2.5} />
-                <span className="hidden sm:block">Adicionar</span>
+                <Plus size={14} strokeWidth={2.5} />
+                <span>Adicionar</span>
               </button>
               )}
 

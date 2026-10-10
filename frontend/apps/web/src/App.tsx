@@ -59,21 +59,48 @@ const SESSION_REFRESH_RETRY_MS = 30 * 1000;
 
 function PageLoading() {
   return (
-    <main className="flex min-h-[60vh] items-center justify-center bg-background px-4" aria-busy="true" aria-live="polite">
-      <div className="flex items-center gap-3 text-sm font-medium text-muted-foreground">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary/25 border-t-primary" aria-hidden="true" />
-        Carregando página…
-      </div>
-    </main>
+    <div className="min-h-screen flex flex-col bg-background" aria-busy="true" aria-live="polite">
+      {/* Skeleton Header */}
+      <header className="sticky top-0 z-40 w-full glass-header border-b border-white/5">
+        <div className="mx-auto max-w-[1440px] px-4 md:px-8">
+          <div className="flex h-[64px] items-center gap-6">
+            <div className="h-8 w-32 rounded-lg bg-muted animate-pulse" />
+            <div className="h-5 w-px bg-border/50 hidden md:block" />
+            <div className="hidden md:flex items-center gap-2 flex-1">
+              <div className="h-9 w-24 rounded-xl bg-muted animate-pulse" />
+              <div className="h-9 w-24 rounded-xl bg-muted animate-pulse" />
+              <div className="h-9 w-24 rounded-xl bg-muted animate-pulse" />
+            </div>
+            <div className="ml-auto flex items-center gap-3">
+              <div className="h-9 w-24 rounded-xl bg-muted animate-pulse hidden md:block" />
+              <div className="h-9 w-12 rounded-xl bg-muted animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </header>
+      {/* Skeleton Content */}
+      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
+        <div className="space-y-6">
+          <div className="h-24 w-full rounded-2xl bg-muted animate-pulse" />
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="h-64 rounded-xl bg-muted animate-pulse" />
+            <div className="h-64 rounded-xl bg-muted animate-pulse" />
+            <div className="h-64 rounded-xl bg-muted animate-pulse" />
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
 
 function ProtectedPageLoading() {
   return (
-    <div className="flex min-h-[45vh] items-center justify-center" aria-busy="true" aria-live="polite">
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-card/80 px-4 py-3 text-sm font-medium text-muted-foreground shadow-sm">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary" aria-hidden="true" />
-        Abrindo página…
+    <div className="space-y-6 w-full animate-pulse" aria-busy="true" aria-live="polite">
+      <div className="h-24 w-full rounded-2xl bg-muted" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="h-64 rounded-xl bg-muted" />
+        <div className="h-64 rounded-xl bg-muted" />
+        <div className="h-64 rounded-xl bg-muted" />
       </div>
     </div>
   );
