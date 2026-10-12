@@ -1,9 +1,16 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, CheckCircle2, FileText, FlaskConical, ImagePlus, LoaderCircle, Pill, Stethoscope, UploadCloud, X, ShieldAlert, Syringe, ArrowRight, ChevronLeft, ChevronRight, BrainCircuit, Layers, RefreshCcw } from 'lucide-react';
+import { useLocation } from 'wouter';
+import {
+  UploadCloud,
+  X,
+  LoaderCircle,
+  CheckCircle2,
+  AlertTriangle,
+  FileText,
+} from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
-import { getInvalidDocumentMessage, waitForDocumentProcessing } from '@/lib/document-processing';
-import { getReadableUploadError } from '@/lib/upload-errors';
+import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
 
 interface UploadModalProps {
   open?: boolean;
@@ -11,534 +18,297 @@ interface UploadModalProps {
   onSuccess?: (docId: string) => void;
 }
 
-const DOC_TYPES = [
-  { value: 'exame',          label: 'Exame',              icon: FlaskConical, color: 'text-blue-500',   bg: 'bg-blue-500/10 border-blue-500/30'    },
-  { value: 'receita',        label: 'Receita Médica',     icon: Pill,         color: 'text-emerald-500',bg: 'bg-emerald-500/10 border-emerald-500/30'},
-  { value: 'laudo',          label: 'Laudo',              icon: Stethoscope,  color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/30' },
-  { value: 'relatorio',      label: 'Relatório',          icon: FileText,     color: 'text-indigo-500', bg: 'bg-indigo-500/10 border-indigo-500/30' },
-  { value: 'atestado',       label: 'Atestado',           icon: ShieldAlert,  color: 'text-amber-500',  bg: 'bg-amber-500/10 border-amber-500/30'   },
-  { value: 'vacina',         label: 'Vacina',             icon: Syringe,      color: 'text-rose-500',   bg: 'bg-rose-500/10 border-rose-500/30'     },
-  { value: 'encaminhamento', label: 'Encaminhamento',     icon: ArrowRight,   color: 'text-orange-500', bg: 'bg-orange-500/10 border-orange-500/30' },
-  { value: 'outro',          label: 'Auto-Detectar',      icon: BrainCircuit, color: 'text-primary',    bg: 'bg-primary/10 border-primary/30'       },
+const TYPE_OPTIONS = [
+  { id: 'outro', label: 'Automático' },
+  { id: 'receita', label: 'Receita' },
+  { id: 'exame', label: 'Exame' },
+  { id: 'laudo', label: 'Laudo' },
+  { id: 'atestado', label: 'Atestado' },
 ];
-
-const PROCESSING_STEPS = [
-  'Enviando o arquivo...',
-  'Documento recebido, iniciando análise...',
-  'Lendo o conteúdo do documento...',
-  'Organizando as informações identificadas...',
-  'Preparando o documento para revisão...',
-];
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ACCEPTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-
-import { useLocation } from 'wouter';
 
 export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSuccess }: UploadModalProps) {
   const [, setLocation] = useLocation();
   const [internalOpen, setInternalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const [step, setStep] = useState<'type' | 'file' | 'processing' | 'done' | 'failed'>('type');
-  const [docType, setDocType] = useState('');
-  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [selectedType, setSelectedType] = useState('outro');
   const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [resultId, setResultId] = useState<string | null>(null);
-  const [canReview, setCanReview] = useState(false);
-  const [error, setError] = useState('');
-  const [processingStep, setProcessingStep] = useState(0);
-  const [backendProgress, setBackendProgress] = useState(0);
-  const [processingMessage, setProcessingMessage] = useState('');
-  const [batchCompleted, setBatchCompleted] = useState(0);
-  const [currentFileIndex, setCurrentFileIndex] = useState(0);
-  const [retryable, setRetryable] = useState(false);
-
-  const fileRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const pollAbortedRef = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'done' | 'error'>('idle');
+  const [progress, setProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [resultId, setResultId] = useState<string | null>(null);
 
-  const addFiles = (picked: File[]) => {
-    if (!picked.length) return;
-    const invalidFile = picked.find((file) => !ACCEPTED_FILE_TYPES.includes(file.type));
-    if (invalidFile) {
-      setError('Envie arquivos PDF, JPG ou PNG.');
-      return;
-    }
-    if (picked.some((file) => file.size > MAX_FILE_SIZE)) {
-      setError('O tamanho máximo permitido por arquivo é 10 MB.');
-      return;
-    }
-
-    setError('');
-    setFiles(prev => [...prev, ...picked]);
-  };
-
-  // Limpa o input para o iOS disparar onChange mesmo ao tirar outra foto com o mesmo nome.
-  const handlePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    addFiles(Array.from(e.target.files || []));
-    e.target.value = '';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setIsDragging(false);
-    if (e.dataTransfer.files?.length) addFiles(Array.from(e.dataTransfer.files));
-  };
-
-  useEffect(() => {
-    if (!files.length) { setPreviewUrls([]); return; }
-    const urls = files.map(f => URL.createObjectURL(f));
-    setPreviewUrls(urls);
-    return () => urls.forEach(u => URL.revokeObjectURL(u));
-  }, [files]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
-    const handler = () => setInternalOpen(true);
+    const handler = () => {
+      setInternalOpen(true);
+      setStatus('idle');
+      setFiles([]);
+      setProgress(0);
+      setErrorMessage('');
+    };
     window.addEventListener('open-upload-modal', handler);
     return () => window.removeEventListener('open-upload-modal', handler);
   }, []);
 
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
 
-
-
-  useEffect(() => {
-    if (!isOpen || step !== 'file') return;
-    const handler = (e: ClipboardEvent) => {
-      const newFiles: File[] = [];
-      for (const item of (e.clipboardData?.items ?? [])) {
-        if (item.type.startsWith('image/') || item.type === 'application/pdf') {
-          const f = item.getAsFile(); if (f) newFiles.push(f);
-        }
-      }
-      if (newFiles.length) { addFiles(newFiles); e.preventDefault(); }
-    };
-    window.addEventListener('paste', handler as any);
-    return () => window.removeEventListener('paste', handler as any);
-  }, [isOpen, step]);
-
-  const resetModal = () => {
-    setFiles([]); setStep('type'); setDocType(''); setIsBatchMode(false); setResultId(null); setCanReview(false); setError(''); setProcessingMessage(''); setProcessingStep(0); setBackendProgress(0); setBatchCompleted(0); setCurrentFileIndex(0); setRetryable(false);
+  const handleClose = () => {
+    setInternalOpen(false);
+    if (externalOnClose) externalOnClose();
   };
-  const handleClose = () => { pollAbortedRef.current = true; resetModal(); setInternalOpen(false); if (externalOnClose) externalOnClose(); };
 
-  useEffect(() => {
-    if (isOpen && mounted) closeButtonRef.current?.focus();
-  }, [isOpen, mounted]);
-
-  if (!isOpen || !mounted) return null;
-
-  const startUpload = async () => {
-    if (!files.length) return;
-    
-    if (isBatchMode) {
-      pollAbortedRef.current = false;
-      setError('');
-      setProcessingMessage('');
-      setStep('processing');
-      setProcessingStep(0);
-      setBackendProgress(0);
-      
-      let queued = 0;
-      try {
-        queued = batchCompleted;
-        for (let index = batchCompleted; index < files.length; index++) {
-          if (pollAbortedRef.current) return;
-          const formData = new FormData();
-          formData.append('file', files[index]);
-          formData.append('documentType', 'outro');
-          await customFetch('/api/documents/upload', { method: 'POST', body: formData as any });
-          queued = index + 1;
-          setBatchCompleted(queued);
-          setBackendProgress(Math.round((queued / files.length) * 100));
-        }
-        window.dispatchEvent(new CustomEvent('document-uploaded'));
-        setProcessingMessage(`${files.length} documentos foram enviados para processamento. Você pode acompanhar o status na lista de documentos.`);
-        setRetryable(false);
-        setStep('done');
-      } catch (err) {
-        console.error('Erro no upload em lote:', err);
-        window.dispatchEvent(new CustomEvent('document-uploaded'));
-        setRetryable(queued < files.length);
-        setProcessingMessage(queued > 0
-          ? `${queued} de ${files.length} documentos foram enviados. O envio parou no arquivo ${queued + 1}. Motivo: ${getReadableUploadError(err, 'verifique sua conexão')}. Tente novamente para enviar apenas os restantes.`
-          : getReadableUploadError(err, 'Nenhum arquivo foi enviado. Verifique sua conexão e tente novamente.'));
-        setStep('failed');
+  const handleFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (picked.length) {
+      if (picked.some((f) => f.size > 10 * 1024 * 1024)) {
+        setErrorMessage('O tamanho máximo permitido por arquivo é 10 MB.');
+        return;
       }
+      setErrorMessage('');
+      setFiles(picked);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const picked = Array.from(e.dataTransfer.files || []);
+    if (picked.length) {
+      if (picked.some((f) => f.size > 10 * 1024 * 1024)) {
+        setErrorMessage('O tamanho máximo permitido por arquivo é 10 MB.');
+        return;
+      }
+      setErrorMessage('');
+      setFiles(picked);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!files.length) {
+      fileInputRef.current?.click();
       return;
     }
-    
-    const formData = new FormData();
-    files.forEach(f => formData.append('file', f));
-    if (docType && docType !== 'outro') formData.append('documentType', docType);
-    
-    pollAbortedRef.current = false;
-    setError('');
-    setProcessingMessage('');
-    setStep('processing');
-    setProcessingStep(0);
-    setBackendProgress(0);
-    setRetryable(false);
 
-    let docId: string;
+    setStatus('uploading');
+    setProgress(20);
+    setErrorMessage('');
+
     try {
-      const res = (await customFetch('/api/documents/upload', { method: 'POST', body: formData as any })) as any;
-      if (!res || !res.id) throw new Error('ID não retornado.');
-      docId = res.id;
-      setResultId(docId);
+      const formData = new FormData();
+      files.forEach((f) => formData.append('file', f));
+      formData.append('documentType', selectedType);
+
+      const res = (await customFetch('/api/documents/upload', {
+        method: 'POST',
+        body: formData as any,
+      })) as any;
+
       window.dispatchEvent(new CustomEvent('document-uploaded'));
+      setResultId(res.id);
+
       if (res.status === 'pronto') {
-        setBackendProgress(100);
-        setProcessingStep(PROCESSING_STEPS.length - 1);
-        setCanReview(true);
-        setStep('done');
+        setProgress(100);
+        setStatus('done');
+        if (onSuccess) onSuccess(res.id);
         return;
+      }
+
+      setStatus('processing');
+      setProgress(typeof res.progress === 'number' ? res.progress : 45);
+
+      const outcome = await waitForDocumentProcessing(res.id, {
+        onProgress: setProgress,
+      });
+
+      if (outcome.status === 'pronto') {
+        setProgress(100);
+        setStatus('done');
+        if (onSuccess) onSuccess(res.id);
+      } else {
+        setStatus('error');
+        setErrorMessage('message' in outcome ? (outcome as any).message : 'Não foi possível ler o documento.');
       }
     } catch (err) {
       const invalidMsg = getInvalidDocumentMessage(err);
-      if (invalidMsg) {
-        setProcessingMessage(invalidMsg);
-        setStep('failed');
-        return;
-      }
-      console.error('Erro no upload:', err);
-      setProcessingMessage(getReadableUploadError(err, 'Falha ao enviar o documento. Verifique sua conexão e tente novamente.'));
-      setRetryable(true);
-      setStep('failed');
-      return;
+      setStatus('error');
+      setErrorMessage(invalidMsg || 'Erro no envio do documento.');
     }
-
-    const outcome = await waitForDocumentProcessing(docId, {
-      isAborted: () => pollAbortedRef.current,
-      onProgress: (value) => {
-        const progressValue = Math.max(0, Math.min(100, value));
-        setBackendProgress(progressValue);
-        setProcessingStep(
-          progressValue >= 90 ? 4 :
-            progressValue >= 40 ? 3 :
-              progressValue >= 25 ? 2 : 1,
-        );
-      },
-    });
-
-    if (outcome.status === 'aborted') return;
-    window.dispatchEvent(new CustomEvent('document-uploaded'));
-    if (outcome.status === 'pronto') {
-      setBackendProgress(100);
-      setProcessingStep(PROCESSING_STEPS.length - 1);
-      setCanReview(true);
-      setStep('done');
-      onSuccess?.(docId);
-      return;
-    }
-
-    setProcessingMessage(outcome.status === 'rejeitado'
-      ? outcome.message
-      : outcome.status === 'failed'
-        ? outcome.message
-        : 'O processamento está demorando mais que o esperado. O arquivo foi enviado e você pode acompanhar o status na lista de documentos.');
-    setRetryable(outcome.status === 'failed' || outcome.status === 'timeout');
-    setStep('failed');
   };
 
-  const finishAndNavigate = () => {
-    handleClose();
-    setLocation(resultId ? `/documentos/${resultId}${canReview ? '?edit=true' : ''}` : '/documentos');
-  };
-
-  const selectedType = DOC_TYPES.find(t => t.value === docType);
-  const progress = step === 'processing' ? backendProgress : 0;
+  if (!isOpen || !mounted) return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center glass-modal p-4 page-enter"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0f1e3c]/60 backdrop-blur-xs p-4 animate-in fade-in"
       onClick={handleClose}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          handleClose();
-          return;
-        }
-        if (event.key !== 'Tab') return;
-
-        const focusable = Array.from(
-          dialogRef.current?.querySelectorAll<HTMLElement>(
-            'button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]',
-          ) ?? [],
-        ).filter((element) => element.getClientRects().length > 0);
-        if (!focusable.length) return;
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }}
     >
       <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="upload-dialog-title"
-        className="relative max-h-[90dvh] w-full max-w-[560px] overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl md:p-8"
-        onClick={e => e.stopPropagation()}
+        className="relative w-full max-w-[640px] bg-white rounded-[28px] p-7 sm:p-8 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] border border-[#dde3ec]"
+        onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="upload-dialog-title" className="sr-only">Enviar documento de saúde</h2>
-        
-        <button ref={closeButtonRef} type="button" onClick={handleClose} className="absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Fechar envio de documento">
-          <X size={18} />
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute right-4 top-4 w-10 h-10 rounded-[13px] bg-[#f1f4f8] hover:bg-slate-200 transition-colors flex items-center justify-center text-[#5a6a80] cursor-pointer"
+          aria-label="Fechar"
+        >
+          <X size={20} />
         </button>
 
-        {/* ── STEP TYPE ────────────────── */}
-        {step === 'type' && (
-          <div className="space-y-5">
-            <div className="text-center">
-              <span className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">passo 1 de 2</span>
-              <h2 className="mt-1.5 text-xl font-extrabold tracking-tight text-foreground">Qual é o tipo de documento?</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Isso ajuda na extração das informações com muito mais precisão.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {DOC_TYPES.map(t => {
-                const Icon = t.icon;
-                const sel = docType === t.value && !isBatchMode;
-                return (
-                  <button type="button" key={t.value} aria-pressed={sel} onClick={() => { setDocType(t.value); setIsBatchMode(false); }}
-                        className={`flex min-h-20 flex-col items-center gap-2 rounded-2xl border p-3 text-center transition-all cursor-pointer ${sel ? `${t.bg} ring-2 ring-offset-1 ${t.color}` : 'border-border bg-background hover:bg-muted'}`}
-                  >
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl border ${t.bg}`}>
-                      <Icon size={16} className={t.color} />
-                    </span>
-                    <span className={`text-[11px] font-bold leading-tight ${sel ? t.color : 'text-foreground'}`}>{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            
-            <button type="button" onClick={() => { setIsBatchMode(true); setDocType('outro'); setStep('file'); }}
-              className="flex min-h-16 w-full items-center justify-between rounded-2xl border border-primary/30 bg-primary/10 p-3 text-primary transition-all hover:bg-primary/20">
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-background text-primary shadow-sm"><Layers size={18} /></span>
-                <div className="text-left">
-                   <p className="text-[11px] font-bold">Modo em Lote (Auto-Detectar)</p>
-                   <p className="text-[10px] text-primary/70">Múltiplas imagens, cada uma vira 1 documento separado.</p>
-                </div>
-              </div>
-              <ChevronRight size={16} />
-            </button>
-            
-            <button type="button" onClick={() => { if (docType && !isBatchMode) setStep('file'); }} disabled={!docType || isBatchMode}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-all cursor-pointer">
-              Continuar <Check size={14} />
-            </button>
-          </div>
-        )}
+        <h2 className="m-0 mb-1 text-2xl font-extrabold tracking-[-0.03em] text-[#1b3a60]">
+          Adicionar documento
+        </h2>
+        <p className="m-0 mb-4.5 text-sm text-[#5a6a80]">
+          Envie uma foto ou PDF.
+        </p>
 
-        {/* ── STEP FILE ────────────────── */}
-        {step === 'file' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 pr-10">
-              <button type="button" aria-label="Voltar à escolha do tipo" onClick={() => setStep('type')} className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted">
-                <ChevronLeft size={18} />
-              </button>
-              <div className="flex-1">
-                <span className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">passo 2 de 2</span>
-                <h2 className="text-xl font-extrabold tracking-tight text-foreground leading-none mt-0.5">Envie o arquivo</h2>
-              </div>
-              {selectedType && (
-                <span className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] font-bold ${selectedType.bg} ${selectedType.color}`}>
-                  <selectedType.icon size={12} /> {selectedType.label}
-                </span>
-              )}
-            </div>
-
-            {/* Inputs FORA da área clicável: se ficarem dentro, o click() da câmera borbulha e abre também o seletor de arquivos */}
-            <input ref={fileRef} type="file" multiple accept=".pdf,image/jpeg,image/png" aria-label="Selecionar documentos PDF, JPG ou PNG" className="hidden" onChange={handlePicked} />
-            <input ref={cameraRef} type="file" accept="image/*" capture="environment" aria-label="Tirar foto do documento" className="hidden" onChange={handlePicked} />
-
-            <div 
-              role="region"
-              aria-label="Área para soltar arquivos"
-              onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-              className={`group relative flex min-h-[220px] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed transition-all ${isDragging ? 'border-primary bg-primary/10 scale-[1.02]' : 'border-primary/20 bg-slate-50/50 dark:bg-slate-900/30 hover:border-primary/40 hover:bg-primary/5'}`}
+        {status === 'idle' && (
+          <>
+            {/* Dashed Dropzone */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-[20px] bg-[#f4f8fd] p-8 text-center cursor-pointer transition-colors ${
+                isDragging ? 'border-[#1b3a60] bg-blue-50' : 'border-[#9fb4d0] hover:border-[#1b3a60]'
+              }`}
             >
-              {files.length > 0 ? (
-                <div className="flex flex-col items-center justify-center w-full p-4">
-                  <div className="relative flex items-center justify-center w-full max-w-[220px] min-h-[140px]">
-                    {files.length > 1 && (
-                      <button type="button" aria-label="Arquivo anterior" onClick={(e) => { e.stopPropagation(); setCurrentFileIndex(prev => Math.max(0, prev - 1)); }} disabled={currentFileIndex === 0}
-                        className="absolute -left-10 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition-transform hover:scale-105 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30 dark:bg-slate-800 sm:-left-12">
-                        <ChevronLeft size={16} />
-                      </button>
-                    )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFilePicked}
+              />
 
-                    <div className="relative flex flex-col items-center group/img">
-                      {files[currentFileIndex].type.startsWith('image/') ? (
-                        <img src={previewUrls[currentFileIndex]} alt="Preview" className="h-36 w-auto max-w-[200px] rounded-2xl object-cover shadow-md border border-border/50 bg-white" />
-                      ) : (
-                        <div className="flex h-36 w-28 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/80 to-primary text-white shadow-md border border-primary/20"><FileText size={40} /></div>
-                      )}
-                      
-                      <button type="button" aria-label={`Remover ${files[currentFileIndex].name}`} onClick={e => {
-                        e.stopPropagation();
-                        setFiles(prev => {
-                          const next = prev.filter((_, idx) => idx !== currentFileIndex);
-                          if (currentFileIndex >= next.length && next.length > 0) setCurrentFileIndex(next.length - 1);
-                          return next;
-                        });
-                      }}
-                        className="absolute -right-3 -top-3 flex h-11 w-11 items-center justify-center rounded-full bg-destructive text-white shadow-md opacity-100 transition-all hover:scale-105 hover:bg-destructive/90 md:opacity-0 md:group-hover/img:opacity-100 md:group-focus-within/img:opacity-100">
-                        <X size={14} />
-                      </button>
-                    </div>
+              <div className="w-14 h-14 rounded-[18px] bg-[#1b3a60] mx-auto mb-3 flex items-center justify-center shadow-xs">
+                <UploadCloud size={26} className="text-white" strokeWidth={2} />
+              </div>
 
-                    {files.length > 1 && (
-                      <button type="button" aria-label="Próximo arquivo" onClick={(e) => { e.stopPropagation(); setCurrentFileIndex(prev => Math.min(files.length - 1, prev + 1)); }} disabled={currentFileIndex === files.length - 1}
-                        className="absolute -right-10 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-foreground shadow-sm transition-transform hover:scale-105 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30 dark:bg-slate-800 sm:-right-12">
-                        <ChevronRight size={16} />
-                      </button>
-                    )}
-                  </div>
-                  
-                  {files.length > 1 && (
-                    <div className="mt-5 flex gap-1.5 flex-wrap justify-center max-w-[80%]">
-                      {files.map((_, i) => (
-                        <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentFileIndex ? 'w-5 bg-primary' : 'w-1.5 bg-primary/20'}`} />
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="mt-5 text-center">
-                    <span className="block text-sm font-bold text-foreground">{files.length} arquivo(s) selecionado(s)</span>
-                    <span className="mt-1 block max-w-[280px] truncate text-[11px] text-muted-foreground" title={files[currentFileIndex].name}>
-                      {files[currentFileIndex].name}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">{(files.reduce((a, b) => a + b.size, 0) / (1024 * 1024)).toFixed(2)} MB no total</span>
-                    <button type="button" onClick={() => fileRef.current?.click()} className="mt-3 min-h-11 rounded-xl border border-border bg-background px-4 text-xs font-bold text-primary transition-colors hover:bg-muted">
-                      Adicionar outros arquivos
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center p-6 w-full pointer-events-none">
-                  <span className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-border/50 text-primary transition-transform duration-300 ${isDragging ? 'scale-110 shadow-md' : 'group-hover:-translate-y-1 group-hover:shadow-md'}`}>
-                    <UploadCloud size={26} strokeWidth={2.5} />
-                  </span>
-                  <h3 className="mt-4 text-base font-extrabold tracking-tight text-foreground">{isDragging ? 'Pode soltar aqui!' : 'Arraste arquivos ou escolha uma opção'}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground font-medium">PDF, JPG ou PNG (até 10 MB por arquivo)</p>
-                  
-                  <div className="mt-6 flex flex-wrap justify-center gap-3 w-full pointer-events-auto">
-                    <button type="button" onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
-                      className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-white px-4 text-xs font-bold text-foreground shadow-sm transition-all hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-800/80">
-                      <FileText size={14} className="text-primary" /> Procurar
-                    </button>
-                    <button type="button" onClick={e => { e.stopPropagation(); cameraRef.current?.click(); }}
-                      className="flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90">
-                      <ImagePlus size={14} /> Câmera
-                    </button>
-                  </div>
-                </div>
-              )}
+              <b className="text-[17px] text-[#1d2a3d] block">
+                {files.length > 0
+                  ? `${files.length} arquivo(s) selecionado(s)`
+                  : 'Arraste ou escolha um arquivo'}
+              </b>
+              <div className="text-[13px] text-[#5a6a80] mt-1.5">
+                {files.length > 0 ? files.map((f) => f.name).join(', ') : 'PDF, JPG ou PNG'}
+              </div>
             </div>
 
-            {error && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-bold text-destructive">{error}</p>}
-
-            <div className="flex items-center gap-3 pt-2">
-              <button type="button" onClick={handleClose} className="flex-1 h-12 rounded-2xl border border-border bg-white dark:bg-slate-800 text-sm font-bold text-foreground hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all shadow-sm cursor-pointer">Cancelar</button>
-              <button type="button" onClick={startUpload} disabled={files.length === 0}
-                className="flex-1 h-12 flex items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 hover:shadow-md transition-all shadow-sm cursor-pointer">
-                {isBatchMode ? `Enviar ${files.length || ''} documento(s)` : 'Enviar e processar'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP PROCESSING ──────────── */}
-        {step === 'processing' && (
-          <div className="py-6 text-center space-y-6">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <LoaderCircle size={32} className="animate-spin" />
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold">Preparando seus dados...</h3>
-              <p aria-live="polite" className="mt-1 text-sm text-muted-foreground">
-                {isBatchMode
-                  ? `Enviando ${batchCompleted + 1} de ${files.length} documentos...`
-                  : PROCESSING_STEPS[Math.min(processingStep, PROCESSING_STEPS.length - 1)]}
+            {/* Error Message if any */}
+            {errorMessage && (
+              <p className="text-center text-xs font-bold text-red-600 mt-3 mb-0">
+                {errorMessage}
               </p>
-              <p className="mt-2 text-[10px] text-muted-foreground/70">A leitura pode levar alguns minutos. Se fechar esta janela, o processamento continua em segundo plano.</p>
+            )}
+
+            {/* Document Type Pills */}
+            <div className="flex gap-2 my-4.5 mb-5.5 flex-wrap">
+              {TYPE_OPTIONS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedType(t.id)}
+                  className={`px-3.5 py-2 rounded-full text-[13px] font-semibold transition-colors cursor-pointer ${
+                    selectedType === t.id
+                      ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
+                      : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
-            <div className="mx-auto max-w-[380px] space-y-2">
-              <div className="flex justify-between text-[10px] font-bold">
-                <span className="text-muted-foreground">{isBatchMode ? 'Arquivos enviados' : 'Progresso'}</span>
-                <span className="font-mono text-primary">{progress}%</span>
-              </div>
-              <div role="progressbar" aria-label="Progresso do envio" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${progress}%` }} />
-              </div>
-              {!isBatchMode && <div className="flex flex-col gap-1.5 mt-3 text-left">
-                {PROCESSING_STEPS.map((s, i) => (
-                  <div key={i} className={`flex items-center gap-2 text-[11px] transition-all ${i < processingStep ? 'text-emerald-600 dark:text-emerald-400' : i === processingStep ? 'text-foreground font-bold' : 'text-muted-foreground/40'}`}>
-                    {i < processingStep ? <Check size={11} className="text-emerald-500 shrink-0" /> : i === processingStep ? <LoaderCircle size={11} className="animate-spin text-primary shrink-0" /> : <span className="w-[11px] shrink-0" />}
-                    {s}
-                  </div>
-                ))}
-              </div>}
+
+            {/* Action buttons */}
+            <div className="flex gap-2.5 justify-end">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleUpload}
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors cursor-pointer shadow-xs"
+              >
+                {files.length > 0 ? 'Enviar documento' : 'Escolher arquivo'}
+              </button>
+            </div>
+          </>
+        )}
+
+        {(status === 'uploading' || status === 'processing') && (
+          <div className="py-8 text-center space-y-4">
+            <LoaderCircle size={36} className="mx-auto text-[#1b3a60] animate-spin" />
+            <div>
+              <b className="text-lg text-[#1d2a3d] block">
+                {status === 'uploading' ? 'Enviando documento...' : 'Extraindo informações com IA...'}
+              </b>
+              <p className="text-sm text-[#5a6a80] mt-1">
+                Aguarde um instante enquanto organizamos os dados.
+              </p>
+            </div>
+            <div className="h-2 rounded-full bg-[#f1f4f8] max-w-sm mx-auto overflow-hidden">
+              <div
+                className="h-full bg-[#1b3a60] rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           </div>
         )}
 
-        {/* ── STEP DONE ────────────────── */}
-        {step === 'done' && (
-          <div className="space-y-5 py-2">
-            <div className="text-center">
-              <span className="flex mx-auto h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow mb-3">
-                <CheckCircle2 size={28} />
-              </span>
-              <h2 className="text-xl font-extrabold tracking-tight text-foreground">{isBatchMode ? 'Envio concluído' : 'Pronto para revisar'}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">{isBatchMode ? `${files.length} documentos enviados para processamento.` : 'Confira os dados extraídos e corrija o que for necessário.'}</p>
+        {status === 'done' && (
+          <div className="py-6 text-center space-y-4">
+            <CheckCircle2 size={42} className="mx-auto text-[#1f7a4d]" />
+            <div>
+              <b className="text-lg text-[#1d2a3d] block">Documento processado com sucesso!</b>
+              <p className="text-sm text-[#5a6a80] mt-1">
+                As informações foram catalogadas e já estão prontas para visualização.
+              </p>
             </div>
-            <div className="rounded-2xl border border-primary/10 bg-primary/[0.04] p-4 text-xs leading-5 text-muted-foreground">
-              {isBatchMode
-                ? processingMessage
-                : 'O documento já foi recebido pelo sistema. Na próxima tela, você pode revisar e editar as informações extraídas antes de confirmar a revisão.'}
-            </div>
-            <div className="flex items-center gap-3 pt-1">
-              <button type="button" onClick={resetModal} className="flex-1 h-11 rounded-xl border border-border bg-background text-xs font-bold hover:bg-muted transition-colors cursor-pointer">Enviar outro</button>
-              <button type="button" onClick={finishAndNavigate} className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm cursor-pointer">
-                <FileText size={15} /> {isBatchMode ? 'Acompanhar envios' : 'Revisar informações'}
+            <div className="flex gap-2.5 justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleClose();
+                  if (resultId) setLocation(`/documentos/${resultId}`);
+                  else setLocation('/documentos');
+                }}
+                className="min-h-[44px] px-6 rounded-xl bg-[#1b3a60] text-white font-bold text-sm hover:bg-[#24507f] transition-colors cursor-pointer"
+              >
+                Ver documento
               </button>
             </div>
           </div>
         )}
 
-        {step === 'failed' && (
-          <div className="space-y-5 py-2">
-            <div className="text-center">
-              <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-                <ShieldAlert size={27} />
-              </span>
-              <h2 className="text-xl font-extrabold tracking-tight text-foreground">Não foi possível concluir</h2>
-              <p role="alert" className="mt-2 text-sm leading-6 text-muted-foreground">{processingMessage}</p>
+        {status === 'error' && (
+          <div className="py-6 text-center space-y-4">
+            <AlertTriangle size={42} className="mx-auto text-[#a13a30]" />
+            <div>
+              <b className="text-lg text-[#1d2a3d] block">Falha no processamento</b>
+              <p className="text-sm text-red-600 mt-1">{errorMessage}</p>
             </div>
-            <div className="grid gap-3 pt-1 sm:grid-cols-2">
-              <button type="button" onClick={handleClose} className="min-h-11 rounded-xl border border-border bg-background text-sm font-bold transition-colors hover:bg-muted">Fechar</button>
-              {retryable && (
-                <button type="button" onClick={() => void startUpload()} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 text-sm font-bold text-primary transition-colors hover:bg-primary/10">
-                  <RefreshCcw size={15} /> {isBatchMode ? `Enviar restantes (${files.length - batchCompleted})` : 'Tentar novamente'}
-                </button>
-              )}
-              <button type="button" onClick={finishAndNavigate} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90">
-                <FileText size={15} /> {resultId ? 'Ver documento' : 'Ver documentos'}
+            <div className="flex gap-2.5 justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setStatus('idle')}
+                className="min-h-[44px] px-6 rounded-xl bg-[#1b3a60] text-white font-bold text-sm hover:bg-[#24507f] transition-colors cursor-pointer"
+              >
+                Tentar novamente
               </button>
             </div>
           </div>

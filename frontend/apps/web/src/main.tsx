@@ -6,10 +6,15 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import './index.css';
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 
-// Auth is cookie-backed. The browser handles cookie transmission automatically,
-// so keep API requests on this origin and avoid a JS-readable bearer token getter.
+// Auth is cookie-backed. In development, requests go to the same origin and are proxied by Vite.
+// In production, if VITE_API_URL is provided, it is prepended.
 setAuthTokenGetter(() => null);
-setBaseUrl(null);
+const apiUrl = import.meta.env.VITE_API_URL;
+if (import.meta.env.PROD && apiUrl) {
+  setBaseUrl(apiUrl);
+} else {
+  setBaseUrl(null);
+}
 
 // Register PWA Service Worker
 if ('serviceWorker' in navigator) {

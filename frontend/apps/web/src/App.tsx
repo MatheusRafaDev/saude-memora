@@ -338,6 +338,7 @@ function Router() {
             <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
             <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
             <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
+            <Route path="/emergencia">{() => <ProtectedRoute><Emergencia /></ProtectedRoute>}</Route>
             <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
             <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
             <Route component={NotFound} />

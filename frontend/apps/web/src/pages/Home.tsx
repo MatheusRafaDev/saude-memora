@@ -1,231 +1,619 @@
 import { useState } from 'react';
-import {
-  Activity,
-  ArrowUpRight,
-  ArrowRight,
-  ClipboardList,
-  FileText,
-  Heart,
-  Pill,
-  ShieldCheck,
-  Sparkles,
-  Users,
-  LayoutDashboard,
-} from 'lucide-react';
 import { Link } from 'wouter';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
-const resources = [
-  {
-    icon: Activity,
-    title: 'Exames',
-    description: 'Organize exames e consulte os resultados registrados.',
-  },
-  {
-    icon: Pill,
-    title: 'Medicamentos',
-    description: 'Consulte os medicamentos identificados nas suas receitas.',
-  },
-  {
-    icon: FileText,
-    title: 'Documentos',
-    description: 'Acesse receitas, laudos, atestados e outros documentos.',
-  },
-  {
-    icon: ClipboardList,
-    title: 'Histórico de saúde',
-    description: 'Mantenha suas informações importantes reunidas.',
-  },
-];
-
-function HeroVisual() {
-  const [activeTab, setActiveTab] = useState<'assistant' | 'family'>('assistant');
-
-  return (
-    <div
-      aria-label="Apresentação visual da plataforma SaúdeMemora"
-      className="relative mx-auto w-full max-w-[620px]"
-    >
-      <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-primary/15 via-accent/10 to-transparent blur-3xl" aria-hidden="true" />
-      
-      <div className="relative overflow-hidden rounded-[2rem] border border-border/80 bg-white/95 shadow-[0_32px_90px_-38px_rgba(25,48,83,0.35)] backdrop-blur-sm">
-        {/* Switcher Bar */}
-        <div className="flex items-center justify-between border-b border-border/70 bg-slate-50/80 px-4 py-2.5 sm:px-5">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="" className="brand-logo-animated h-6 w-6 object-contain" />
-            <span className="text-xs font-bold text-foreground">SaúdeMemora</span>
-          </div>
-
-          <div className="flex items-center rounded-xl bg-white p-1 shadow-xs border border-border/60">
-            <button
-              type="button"
-              onClick={() => setActiveTab('assistant')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-[11px] font-semibold transition-all ${
-                activeTab === 'assistant'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Sparkles size={12} />
-              <span>Atendimento</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('family')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-[11px] font-semibold transition-all ${
-                activeTab === 'family'
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Users size={12} />
-              <span>Família</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tab 1: Atendimento Illustration */}
-        {activeTab === 'assistant' && (
-          <div className="relative overflow-hidden bg-gradient-to-b from-blue-50/40 to-white p-3 sm:p-4">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-white shadow-inner group">
-              <img
-                src="/hero-health-illustration.svg"
-                alt="Profissional de saúde conversa com uma pessoa idosa em um ambiente azul acolhedor"
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-            </div>
-            
-          </div>
-        )}
-
-        {/* Tab 2: Família Illustration */}
-        {activeTab === 'family' && (
-          <div className="relative overflow-hidden bg-gradient-to-b from-teal-50/40 to-white p-3 sm:p-4">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-white shadow-inner group">
-              <img
-                src="/family-health-illustration.svg"
-                alt="Família reunida no sofá consultando informações de saúde em um tablet"
-                loading="eager"
-                decoding="async"
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-            </div>
-
-            <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1 font-medium text-accent">
-                <Heart size={13} /> Cuidado compartilhado para todas as idades
-              </span>
-              <span className="text-[10px]">Tudo em um só lugar</span>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      q: 'O SaúdeMemora faz diagnósticos?',
+      a: 'Não. É uma ferramenta de organização e não substitui avaliação médica nem atendimento de emergência.',
+    },
+    {
+      q: 'Os dados lidos estão sempre certos?',
+      a: 'Podem conter erros. Por isso você confere e corrige as informações extraídas.',
+    },
+    {
+      q: 'Posso apagar o que adicionei?',
+      a: 'Sim. Você pode apagar documentos individualmente ou solicitar a exclusão da conta.',
+    },
+    {
+      q: 'Funciona no celular?',
+      a: 'Sim, a interface é adaptada para celular e computador.',
+    },
+  ];
+
   return (
-    <div className="min-h-[100dvh] bg-background font-sans text-foreground">
+    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
 
-      <main>
-        <section className="relative isolate overflow-hidden">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_18%_15%,rgba(28,84,135,0.09),transparent_38%),radial-gradient(ellipse_at_88%_40%,rgba(20,125,128,0.08),transparent_34%)]" />
-          <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 md:grid-cols-[0.92fr_1.08fr] md:gap-10 md:py-24 lg:gap-16">
-            <div className="page-enter">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm">
-                <Heart size={13} className="fill-accent/15 text-accent" />
+      <main className="flex-1">
+        {/* ── Hero Section ────────────────────────────────────────── */}
+        <section className="relative overflow-hidden bg-[radial-gradient(900px_500px_at_8%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_100%_40%,#e8f4f2,transparent_60%),#fff] px-6 py-20 sm:px-12 md:py-24">
+          <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
+            <div className="flex-1 min-w-[320px] max-w-[560px]">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#b9dcd6] bg-[#e8f4f2] px-4 py-2 text-[13px] font-bold text-[#2f7a70]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
+                </svg>
                 Seu histórico de saúde, mais organizado
-              </div>
-              <h1 className="mt-6 max-w-xl text-balance text-4xl font-bold leading-[1.08] tracking-[-0.045em] text-foreground sm:text-5xl lg:text-[3.65rem]">
-                Cuidar da sua saúde também é <span className="text-primary">ter sua história por perto.</span>
+              </span>
+
+              <h1 className="mt-6 text-[42px] sm:text-[56px] lg:text-[68px] font-extrabold leading-[1.03] tracking-[-0.045em] text-[#1d2a3d]">
+                Cuidar da sua saúde também é <span className="text-[#2f7a70]">ter sua história por perto.</span>
               </h1>
-              <p className="mt-5 max-w-lg text-base leading-7 text-muted-foreground sm:text-[17px]">
+
+              <p className="mt-6 text-[18px] sm:text-[20px] leading-[1.65] text-[#5a6a80]">
                 Reúna exames, receitas e informações importantes em um espaço pessoal, para encontrar o que precisa com mais facilidade.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/entrar" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90">
-                  Acessar plataforma <ArrowRight size={16} />
+
+              <div className="mt-9 flex flex-wrap gap-3.5">
+                <Link
+                  href="/entrar"
+                  className="inline-flex min-h-[54px] items-center gap-2 rounded-[14px] bg-[#1b3a60] px-7 text-[16px] font-bold text-white shadow-[0_10px_24px_rgba(27,58,96,0.25)] transition-all hover:bg-[#244d7e] hover:-translate-y-0.5"
+                >
+                  <span>Acessar plataforma</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
                 </Link>
-                <Link href="/recursos" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-white/75 px-5 text-sm font-semibold text-foreground transition-colors hover:bg-white">
+
+                <Link
+                  href="/recursos"
+                  className="inline-flex min-h-[54px] items-center rounded-[14px] border border-[#dde3ec] bg-white px-7 text-[16px] font-bold text-[#1d2a3d] transition-all hover:bg-[#f7f9fc]"
+                >
                   Conhecer os recursos
                 </Link>
               </div>
-              <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[11px] font-medium text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5"><ShieldCheck size={14} className="text-accent" /> Espaço pessoal</span>
-                <span className="inline-flex items-center gap-1.5"><FileText size={14} className="text-accent" /> Seus documentos reunidos</span>
-              </div>
-            </div>
-            <div className="slide-up"><HeroVisual /></div>
-          </div>
-        </section>
 
-        <section id="recursos" className="scroll-mt-20 border-y border-border/70 bg-slate-50/70">
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Tudo organizado em um só lugar</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Acesse suas informações de saúde com mais facilidade.
-              </p>
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {resources.map(({ icon: Icon, title, description }) => (
-                <article key={title} className="rounded-2xl border border-border/80 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent"><Icon size={19} strokeWidth={1.8} aria-hidden="true" /></span>
-                  <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 text-[13px] leading-5 text-muted-foreground">{description}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-b border-border/70 bg-gradient-to-b from-white to-slate-50/60">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-2">
-            <div className="max-w-xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Conheça o projeto</p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Tecnologia para deixar seu histórico mais acessível.</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Entenda por que o SaúdeMemora foi criado e os princípios que orientam a plataforma: segurança, simplicidade e carinho com seus dados e os de quem você ama.
-              </p>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link href="/sobre" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted">
-                  Conheça nossa história <ArrowUpRight size={16} />
-                </Link>
-                <Link href="/recursos" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-semibold text-primary transition-colors hover:bg-secondary/80">
-                  Explorar recursos <ArrowRight size={15} />
-                </Link>
+              <div className="mt-9 flex flex-wrap gap-7 text-[14px] font-semibold text-[#5a6a80]">
+                <span className="flex items-center gap-2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
+                  </svg>
+                  Espaço pessoal
+                </span>
+                <span className="flex items-center gap-2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                  </svg>
+                  Documentos reunidos
+                </span>
+                <span className="flex items-center gap-2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l4 4 10-10" />
+                  </svg>
+                  Você confere tudo
+                </span>
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-white p-3 shadow-xl transition-all duration-300 hover:shadow-2xl">
-              <div className="overflow-hidden rounded-2xl bg-teal-50/40">
+            {/* Hero Interactive Mockup Card */}
+            <div className="relative flex-1 min-w-[340px] max-w-[500px]">
+              <div className="overflow-hidden rounded-[28px] border border-[#dde3ec] bg-white shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)]">
+                <div className="flex items-center gap-2 border-b border-[#dde3ec] bg-[#f1f4f8] px-5 py-3.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#e7a9a0]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#ecd08a]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#a8d3b5]" />
+                  <span className="ml-3 text-[12px] text-[#5a6a80]">Visão geral · dados de exemplo</span>
+                </div>
+
+                <div className="p-7">
+                  <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+                    SEU ESPAÇO DE SAÚDE
+                  </div>
+                  <div className="mt-1 mb-4 text-[26px] font-extrabold tracking-[-0.03em]">Olá, Ana</div>
+
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-[#fde8e6] px-2.5 py-1 text-[12px] font-bold text-[#a13a30]">O+</span>
+                    <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">34 anos</span>
+                    <span className="rounded-full bg-[#fdf3d8] px-2.5 py-1 text-[12px] font-bold text-[#6b4208]">2 alergias</span>
+                    <span className="rounded-full bg-[#e8f4f2] px-2.5 py-1 text-[12px] font-bold text-[#2f7a70]">5 documentos</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-bold truncate">Receita · Dr. Silva</div>
+                      <div className="text-[12px] text-[#5a6a80]">Pronto</div>
+                    </div>
+                    <span className="rounded-full bg-[#e6f4ec] px-2.5 py-1 text-[12px] font-bold text-[#1f7a4d]">Pronto</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-bold truncate">Hemograma completo</div>
+                      <div className="text-[12px] text-[#5a6a80]">Revisar dados</div>
+                    </div>
+                    <span className="rounded-full bg-[#fdf3d8] px-2.5 py-1 text-[12px] font-bold text-[#6b4208]">Revisar</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-bold truncate">Laudo de imagem</div>
+                      <div className="text-[12px] text-[#5a6a80]">Lendo arquivo…</div>
+                    </div>
+                    <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1b3a60]">Processando 60%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating review card */}
+              <div className="absolute -bottom-6 -left-6 flex items-center gap-3 rounded-[18px] border border-[#dde3ec] bg-white p-3.5 sm:px-5 sm:py-4 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)] animate-in fade-in zoom-in-95">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#e6f4ec]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f7a4d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l4 4 10-10" />
+                  </svg>
+                </div>
+                <div>
+                  <b className="text-[14px] text-[#1d2a3d]">Exame conferido</b>
+                  <div className="text-[12px] text-[#5a6a80]">Revisado por você</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── 4 Key Values Bar ────────────────────────────────────── */}
+        <section className="border-t border-b border-[#dde3ec] bg-white px-6 py-12 sm:px-12">
+          <div className="mx-auto max-w-[1140px]">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
+                  </svg>
+                </div>
+                <div>
+                  <b className="text-[16px] text-[#1d2a3d]">Espaço pessoal</b>
+                  <div className="mt-1 text-[14px] leading-relaxed text-[#5a6a80]">Você decide o que adicionar.</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                  </svg>
+                </div>
+                <div>
+                  <b className="text-[16px] text-[#1d2a3d]">Tudo reunido</b>
+                  <div className="mt-1 text-[14px] leading-relaxed text-[#5a6a80]">Exames, receitas e laudos.</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l4 4 10-10" />
+                  </svg>
+                </div>
+                <div>
+                  <b className="text-[16px] text-[#1d2a3d]">Você confere</b>
+                  <div className="mt-1 text-[14px] leading-relaxed text-[#5a6a80]">Revise o que foi lido.</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13" />
+                  </svg>
+                </div>
+                <div>
+                  <b className="text-[16px] text-[#1d2a3d]">Você apaga</b>
+                  <div className="mt-1 text-[14px] leading-relaxed text-[#5a6a80]">Exclua documentos ou a conta.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Como funciona (3 Steps) ─────────────────────────────── */}
+        <section className="border-b border-[#dde3ec] bg-[#f1f4f8] px-6 py-20 sm:px-12 md:py-24">
+          <div className="mx-auto max-w-[1140px]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Como funciona</div>
+            <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
+              Do papel ao histórico, em três passos.
+            </h2>
+            <p className="mt-3.5 max-w-[560px] text-[17px] leading-[1.6] text-[#5a6a80]">
+              Os dados extraídos automaticamente podem conter erros, por isso a conferência fica com você.
+            </p>
+
+            <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
+              {/* Step 1 */}
+              <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7 transition-all hover:shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#1b3a60] text-[18px] font-extrabold text-white">
+                    1
+                  </div>
+                  <h3 className="text-[22px] font-bold">Envie</h3>
+                </div>
+                <p className="mt-3.5 mb-5 text-[16px] leading-[1.6] text-[#5a6a80]">
+                  Adicione uma foto ou PDF de exames, receitas e laudos.
+                </p>
+                <div className="flex h-28 flex-col items-center justify-center gap-1.5 rounded-[16px] border-2 border-dashed border-[#b8c4d6] bg-[#f7f9fc] text-[13px] text-[#5a6a80]">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 16V5M7 10l5-5 5 5M5 19h14" />
+                  </svg>
+                  <span>Arraste um arquivo ou toque para enviar</span>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7 transition-all hover:shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#1b3a60] text-[18px] font-extrabold text-white">
+                    2
+                  </div>
+                  <h3 className="text-[22px] font-bold">Confira</h3>
+                </div>
+                <p className="mt-3.5 mb-5 text-[16px] leading-[1.6] text-[#5a6a80]">
+                  A plataforma organiza as informações lidas e você revisa e corrige o que precisar.
+                </p>
+                <div className="flex h-11 items-center gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
+                  <span>Medicamento · Dipirona 500 mg</span>
+                </div>
+                <div className="mt-2 flex h-11 items-center justify-between gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
+                  <span>Posologia · a cada 6 horas</span>
+                  <span className="rounded-full bg-[#fdf3d8] px-2.5 py-0.5 text-[11px] font-bold text-[#6b4208]">
+                    Revisar
+                  </span>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7 transition-all hover:shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#1b3a60] text-[18px] font-extrabold text-white">
+                    3
+                  </div>
+                  <h3 className="text-[22px] font-bold">Encontre</h3>
+                </div>
+                <p className="mt-3.5 mb-5 text-[16px] leading-[1.6] text-[#5a6a80]">
+                  Busque por título ou conteúdo e filtre por tipo, status e período.
+                </p>
+                <div className="flex h-11 items-center gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a6a80" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 5a6 6 0 100 12 6 6 0 000-12zM16 16l4 4" />
+                  </svg>
+                  <span>hemograma</span>
+                </div>
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  <span className="rounded-full bg-[#e8f4f2] px-2.5 py-1 text-[12px] font-bold text-[#2f7a70]">Exame</span>
+                  <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Últimos 6 meses</span>
+                  <span className="rounded-full bg-[#e6f4ec] px-2.5 py-1 text-[12px] font-bold text-[#1f7a4d]">Pronto</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Recursos Bento Grid ─────────────────────────────────── */}
+        <section className="bg-white px-6 py-20 sm:px-12 md:py-24">
+          <div className="mx-auto max-w-[1140px]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Recursos</div>
+            <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
+              Tudo organizado em um só lugar
+            </h2>
+
+            <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-5">
+              <div className="rounded-[28px] bg-[#1b3a60] p-9 text-white md:col-span-3">
+                <div className="flex h-13 w-13 items-center justify-center rounded-[17px] bg-white/15">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                  </svg>
+                </div>
+                <h3 className="mt-6 text-[26px] font-bold">Documentos em um só lugar</h3>
+                <p className="mt-2 mb-6 max-w-[460px] text-[16px] leading-[1.65] text-[#c9d6e8]">
+                  Reúna exames, receitas, laudos, atestados, vacinas e encaminhamentos no seu espaço pessoal.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {['Exames', 'Receitas', 'Laudos', 'Atestados', 'Vacinas', 'Encaminhamentos'].map((tag) => (
+                    <span key={tag} className="rounded-full bg-white/10 px-3.5 py-2 text-[13px] font-semibold text-white">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-[#b9dcd6] bg-[#e8f4f2] p-9 md:col-span-2">
+                <div className="flex h-13 w-13 items-center justify-center rounded-[17px] bg-white shadow-sm">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
+                  </svg>
+                </div>
+                <h3 className="mt-6 text-[26px] font-bold text-[#1d2a3d]">Medicamentos</h3>
+                <p className="mt-2 text-[16px] leading-[1.65] text-[#5a6a80]">
+                  Consulte os medicamentos identificados nas suas receitas.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
+              <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12h4l3-7 4 14 3-7h4" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[19px] font-bold">Exames</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Organize exames e consulte os resultados registrados.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[19px] font-bold">Histórico de saúde</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Mantenha suas informações importantes reunidas.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3h8v18H8zM11 18h2" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[19px] font-bold">Celular e computador</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Interface adaptada para consultar em qualquer tela.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Original ao lado dos dados lidos ────────────────────── */}
+        <section className="border-t border-b border-[#dde3ec] bg-[#f1f4f8] px-6 py-20 sm:px-12 md:py-24">
+          <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
+            <div className="flex flex-1 min-w-[340px] gap-4">
+              <div className="flex-1 rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
+                <div className="text-[12px] font-bold uppercase text-[#5a6a80]">ORIGINAL</div>
+                <div className="mt-3.5 space-y-2.5">
+                  <div className="h-2.5 w-[90%] rounded-full bg-[#d5dce8]" />
+                  <div className="h-2.5 w-[70%] rounded-full bg-[#d5dce8]" />
+                  <div className="h-2.5 w-[95%] rounded-full bg-[#d5dce8]" />
+                  <div className="h-2.5 w-[60%] rounded-full bg-[#d5dce8]" />
+                  <div className="h-2.5 w-[85%] rounded-full bg-[#d5dce8]" />
+                  <div className="h-2.5 w-[75%] rounded-full bg-[#d5dce8]" />
+                </div>
+              </div>
+
+              <div className="mt-10 flex-1 rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
+                <div className="text-[12px] font-bold uppercase text-[#2f7a70]">DADOS LIDOS</div>
+                <div className="mt-3.5 space-y-2">
+                  <div className="rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#5a6a80]">
+                    Exame · Hemograma
+                  </div>
+                  <div className="rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#5a6a80]">
+                    Data · 12/09/2026
+                  </div>
+                  <div className="rounded-xl border-2 border-[#e3b95a] bg-[#fdf3d8] px-3 py-2 text-[13px] font-semibold text-[#6b4208]">
+                    Valor · confirme este campo
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-[340px]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Você no controle</div>
+              <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
+                Original ao lado dos dados lidos.
+              </h2>
+              <p className="mt-4 mb-6 text-[17px] leading-[1.65] text-[#5a6a80]">
+                Compare o documento com o que foi extraído, corrija o que for preciso e mantenha seu histórico confiável.
+              </p>
+
+              <ul className="space-y-3.5">
+                {[
+                  'Campos que pedem atenção ficam destacados',
+                  'Edite qualquer informação extraída',
+                  'Os dados podem conter erros: confira sempre',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-[16px] font-medium text-[#1d2a3d]">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2f7a70] text-white">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12l4 4 10-10" />
+                      </svg>
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Para toda a família ─────────────────────────────────── */}
+        <section className="bg-white px-6 py-20 sm:px-12 md:py-24">
+          <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
+            <div className="flex-1 min-w-[340px]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Para toda a família</div>
+              <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
+                Cuidado compartilhado, tudo ao seu alcance.
+              </h2>
+              <p className="mt-4 mb-6 text-[17px] leading-[1.65] text-[#5a6a80]">
+                Medicamentos, carteirinhas e exames reunidos para você e para quem você ama.
+              </p>
+
+              <ul className="space-y-3.5">
+                {[
+                  'Medicamentos, carteirinhas e exames ao seu alcance',
+                  'Interface adaptada para celular e computador',
+                  'Você controla o que adiciona à sua conta',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-[16px] font-medium text-[#1d2a3d]">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2f7a70] text-white">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12l4 4 10-10" />
+                      </svg>
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-8">
+                <Link
+                  href="/sobre"
+                  className="inline-flex min-h-[52px] items-center rounded-xl border border-[#dde3ec] bg-white px-7 text-[16px] font-bold text-[#1d2a3d] transition-colors hover:bg-[#f7f9fc]"
+                >
+                  Conheça nossa história
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-[340px]">
+              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e8f4f2] to-[#dfe9f5] p-6 shadow-sm flex items-center justify-center">
                 <img
-                  src="/health-records-illustration.svg"
-                  alt="Duas gerações organizam juntas documentos de saúde em casa"
-                  className="h-auto w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
+                  src="/home-illustration.svg"
+                  alt="Ilustração família e saúde"
+                  className="h-auto w-full max-w-[420px] block"
                 />
               </div>
-              <div className="mt-3 flex items-center justify-between px-2 py-1">
-                <div>
-                  <p className="text-xs font-bold text-foreground">Cuidado para toda a família</p>
-                  <p className="text-[11px] text-muted-foreground">Medicamentos, carteirinhas e exames ao seu alcance.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Privacidade e controle (Dark Navy Section) ──────────── */}
+        <section className="bg-[#1b3a60] px-6 py-20 sm:px-12 md:py-24 text-white">
+          <div className="mx-auto max-w-[1140px]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#7cc4e6]">Privacidade e controle</div>
+            <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em]">
+              Seus dados, sob o seu comando.
+            </h2>
+
+            <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-3">
+              <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
+                  </svg>
                 </div>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                  <Heart size={16} className="fill-accent/20" />
-                </span>
+                <h3 className="mt-5 text-[20px] font-bold">Consentimento</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
+                  Gerencie seu consentimento a qualquer momento.
+                </p>
+              </div>
+
+              <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13" />
+                  </svg>
+                </div>
+                <h3 className="mt-5 text-[20px] font-bold">Apague documentos</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
+                  Remova documentos individualmente.
+                </p>
+              </div>
+
+              <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
+                  </svg>
+                </div>
+                <h3 className="mt-5 text-[20px] font-bold">Exclua a conta</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
+                  Solicite a exclusão da sua conta quando quiser.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ (Perguntas frequentes) ──────────────────────────── */}
+        <section className="bg-white px-6 py-20 sm:px-12 md:py-24">
+          <div className="mx-auto max-w-[1140px]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Perguntas frequentes</div>
+            <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
+              Antes de começar
+            </h2>
+
+            <div className="mt-10 max-w-[820px] divide-y divide-[#dde3ec]">
+              {faqs.map((faq, i) => {
+                const isOpen = openFaq === i;
+                return (
+                  <div key={faq.q} className="py-6">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : i)}
+                      className="flex w-full items-center justify-between text-left text-[18px] sm:text-[19px] font-bold text-[#1d2a3d] transition-colors hover:text-[#1b3a60]"
+                    >
+                      <span>{faq.q}</span>
+                      <span className="text-[24px] font-normal text-[#2f7a70] transition-transform duration-200">
+                        {isOpen ? '−' : '+'}
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <p className="mt-3 text-[16px] leading-[1.65] text-[#5a6a80] animate-in fade-in slide-in-from-top-1">
+                        {faq.a}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Final Call To Action ─────────────────────────────────── */}
+        <section className="px-6 pb-24 sm:px-12">
+          <div className="mx-auto max-w-[1140px] rounded-[36px] bg-gradient-to-r from-[#1b3a60] to-[#24507f] p-10 sm:p-16 text-white shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-8">
+              <div className="max-w-[560px]">
+                <h2 className="text-[32px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em]">
+                  Comece a reunir sua história de saúde.
+                </h2>
+                <p className="mt-4 text-[17px] sm:text-[18px] leading-[1.6] text-[#c9d6e8]">
+                  Crie sua conta em poucos minutos e adicione seu primeiro documento.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/cadastro"
+                  className="inline-flex min-h-[52px] items-center rounded-[14px] bg-white px-7 text-[16px] font-bold text-[#1b3a60] transition-all hover:bg-[#f1f4f8]"
+                >
+                  Criar conta
+                </Link>
+                <Link
+                  href="/entrar"
+                  className="inline-flex min-h-[52px] items-center rounded-[14px] border border-white/35 px-7 text-[16px] font-bold text-white transition-all hover:bg-white/10"
+                >
+                  Já tenho conta
+                </Link>
               </div>
             </div>
           </div>
         </section>
       </main>
 
-      <PublicPageFooter />
+      <PublicPageFooter variant="home" />
     </div>
   );
 }

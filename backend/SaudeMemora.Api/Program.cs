@@ -752,6 +752,35 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRe
     return Results.Ok(new { Message = "Sua senha foi redefinida com sucesso." });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("passwordReset");
 
+// Altera a senha do paciente autenticado
+app.MapPost("/api/auth/alterar-senha", async (ClaimsPrincipal user, IPacienteRepository repo, AlterarSenhaDto dto, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Results.Unauthorized();
+
+    var paciente = await repo.GetByIdAsync(userId);
+    if (paciente == null) return Results.NotFound();
+
+    if (string.IsNullOrWhiteSpace(dto.SenhaAtual) || !BCrypt.Net.BCrypt.Verify(dto.SenhaAtual, paciente.Senha))
+    {
+        return Results.BadRequest(new[] { "Senha atual incorreta." });
+    }
+
+    if (string.IsNullOrWhiteSpace(dto.NovaSenha) || dto.NovaSenha.Length < 8)
+    {
+        return Results.BadRequest(new[] { "A nova senha deve ter no mínimo 8 caracteres." });
+    }
+
+    paciente.Senha = BCrypt.Net.BCrypt.HashPassword(dto.NovaSenha);
+    paciente.SecurityStamp = Guid.NewGuid().ToString("N");
+
+    await repo.UpdateAsync(paciente);
+    await cache.SafeRemoveAsync($"secstamp_{paciente.Id}");
+    await cache.SafeRemoveAsync($"paciente_v2_{userId}");
+
+    return Results.Ok(new { Message = "Senha alterada com sucesso." });
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
+
 //  Paciente Endpoints 
 
 // Retorna o perfil médico completo do paciente autenticado
@@ -788,6 +817,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
         paciente.PlanoSaude,
         paciente.NumeroCarteirinha,
         paciente.ContatoEmergencia,
+        paciente.ConsentimentoIa,
         UrlCarteirinha = !string.IsNullOrEmpty(paciente.IdPublicoCarteirinha) ? storage.GetSignedUrl(paciente.IdPublicoCarteirinha) : paciente.UrlCarteirinha
     };
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
@@ -806,6 +836,7 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
 
     if (!string.IsNullOrWhiteSpace(dto.Nome)) paciente.Nome = dto.Nome;
     if (!string.IsNullOrWhiteSpace(dto.DataNascimento)) paciente.DataNascimento = dto.DataNascimento;
+    if (!string.IsNullOrWhiteSpace(dto.Sexo)) paciente.Sexo = dto.Sexo;
     if (dto.ContatoEmergencia != null) paciente.ContatoEmergencia = dto.ContatoEmergencia;
     
     if (!string.IsNullOrWhiteSpace(dto.Email) && !string.Equals(dto.Email, paciente.Email, StringComparison.OrdinalIgnoreCase))
@@ -1646,7 +1677,8 @@ public record PerfilMedicoDto(
 
 public record ContatoDto(string? Telefone, string? Endereco, string? ContatoEmergencia);
 
-public record PerfilUpdateDto(string? Nome, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha, string? SenhaAtual, string? ContatoEmergencia);
+public record PerfilUpdateDto(string? Nome, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha, string? SenhaAtual, string? ContatoEmergencia, string? Sexo);
+public record AlterarSenhaDto(string SenhaAtual, string NovaSenha);
 public record DeleteAccountDto(string Senha);
 
 public class DocumentUpdateDto

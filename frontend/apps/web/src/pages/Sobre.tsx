@@ -1,133 +1,174 @@
 import { Link } from 'wouter';
-import { ArrowRight, Github, HeartPulse, Linkedin, ShieldCheck, Sparkles } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
-const principles = [
-  {
-    icon: HeartPulse,
-    title: 'Mais contexto para você',
-    description: 'Reunir registros ajuda a consultar suas informações de saúde quando precisar delas.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Privacidade como prioridade',
-    description: 'O espaço é pessoal, e você decide quais documentos e informações deseja adicionar.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Organização com tecnologia',
-    description: 'Ferramentas digitais ajudam a organizar documentos e tornar o histórico mais fácil de consultar.',
-  },
-];
-
 export default function Sobre() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
-      <main>
-        <section className="relative isolate overflow-hidden border-b border-border/70">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_20%_10%,rgba(28,84,135,0.1),transparent_42%),radial-gradient(ellipse_at_90%_50%,rgba(20,125,128,0.08),transparent_35%)]" />
-          <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20">
-            <div className="mt-10 max-w-3xl">
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-primary">
-                <HeartPulse size={14} className="text-accent" /> Sobre o SaúdeMemora
-              </span>
-              <h1 className="mt-5 text-balance text-4xl font-bold leading-[1.1] tracking-[-0.045em] sm:text-5xl">
-                Sua história de saúde merece estar organizada e ao seu alcance.
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                O SaúdeMemora nasceu para facilitar a organização de exames, receitas e informações importantes em um espaço digital pessoal.
-              </p>
-            </div>
+
+      <main className="flex-1">
+        {/* ── Hero Section ────────────────────────────────────────── */}
+        <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e8f4f2] px-6 py-20 sm:px-12">
+          <div className="mx-auto max-w-[1000px]">
+            <span className="inline-block rounded-full bg-[#e8f4f2] px-3.5 py-1.5 text-[12px] font-bold text-[#2f7a70]">
+              Sobre o SaúdeMemora
+            </span>
+            <h1 className="mt-5 text-[40px] sm:text-[50px] lg:text-[54px] font-extrabold leading-[1.06] tracking-[-0.04em] text-[#1d2a3d] max-w-[780px]">
+              Sua história de saúde merece estar{' '}
+              <span className="text-[#2f7a70]">organizada e ao seu alcance.</span>
+            </h1>
+            <p className="mt-5 text-[18px] leading-[1.65] text-[#5a6a80] max-w-[620px]">
+              O SaúdeMemora nasceu para facilitar a organização de exames, receitas e informações importantes em um espaço digital pessoal.
+            </p>
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-5xl gap-10 px-5 py-12 sm:px-8 sm:py-16 md:grid-cols-[1fr_0.72fr] md:gap-14">
-          <article className="space-y-5 text-sm leading-7 text-muted-foreground">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Por que criamos a plataforma</h2>
-            <p>
-              Informações de saúde costumam ficar espalhadas entre papéis, arquivos e diferentes momentos da vida. O SaúdeMemora ajuda a reuni-las para que você possa consultar seu histórico com mais praticidade.
-            </p>
-            <p>
-              A proposta é apoiar a organização pessoal: guardar documentos, visualizar informações extraídas e manter registros importantes em um só lugar. Você continua no controle do que adiciona à sua conta.
-            </p>
-            <div className="rounded-2xl border border-primary/10 bg-primary/[0.04] p-5 text-foreground">
-              <p className="font-semibold">Importante</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                O SaúdeMemora é uma ferramenta de organização. Não realiza diagnósticos, não substitui profissionais de saúde e não deve ser usado para decisões de emergência.
-              </p>
-            </div>
-          </article>
-
-          <aside className="group h-fit overflow-hidden rounded-3xl border border-border/80 bg-white p-3 shadow-[0_20px_55px_-40px_rgba(25,48,83,0.4)] transition-all duration-300 hover:shadow-2xl">
-            <div className="overflow-hidden rounded-2xl bg-blue-50/50">
-              <img
-                src="/sobre-illustration.svg"
-                alt="Pessoa organiza informações de saúde em um computador em seu espaço de trabalho"
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-            <div className="p-4 sm:p-5">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary text-primary">
-                  <HeartPulse size={16} />
-                </span>
-                <p className="text-xs font-bold uppercase tracking-[.14em] text-accent">Nossa missão</p>
+        {/* ── Nossa história ───────────────────────────────────────── */}
+        <section className="px-6 py-16 sm:px-12">
+          <div className="mx-auto flex max-w-[1000px] flex-wrap gap-14">
+            <div className="flex-[1.2] min-w-[320px] text-[16px] leading-[1.8] text-[#5a6a80]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+                Nossa história
               </div>
-              <h2 className="mt-3 text-lg font-bold leading-snug tracking-tight">
-                Tornar seu histórico de saúde mais simples e acolhedor de acompanhar.
+              <h2 className="mt-2.5 mb-5 text-[30px] sm:text-[34px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#1d2a3d]">
+                Por que criamos a plataforma
               </h2>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                Uma experiência prática, humana e pensada para trazer tranquilidade ao dia a dia de você e de quem você ama.
+              <p className="mb-4">
+                Informações de saúde costumam ficar espalhadas entre papéis, arquivos e diferentes momentos da vida. O SaúdeMemora ajuda a reuni-las para que você possa consultar seu histórico com mais praticidade.
+              </p>
+              <p className="mb-6">
+                Você continua no controle do que adiciona à sua conta.
+              </p>
+
+              <div className="rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a] text-[15px] leading-relaxed">
+                <b className="text-[16px]">Importante</b>
+                <p className="mt-1">
+                  É uma ferramenta de organização. Não realiza diagnósticos nem substitui profissionais de saúde.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-[320px]">
+              <div className="rounded-[32px] border border-[#dde3ec] bg-white p-3 shadow-sm">
+                <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e8f4f2] to-[#dfe9f5] p-5">
+                  <img
+                    src="/sobre-illustration.svg"
+                    alt="Ilustração missão"
+                    className="h-auto w-full block"
+                  />
+                </div>
+                <div className="p-5">
+                  <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+                    NOSSA MISSÃO
+                  </div>
+                  <h3 className="mt-2 text-[19px] font-bold leading-snug">
+                    Tornar seu histórico de saúde mais simples e acolhedor de acompanhar.
+                  </h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── O que orienta o projeto ─────────────────────────────── */}
+        <section className="border-t border-b border-[#dde3ec] bg-[#f1f4f8] px-6 py-16 sm:px-12">
+          <div className="mx-auto max-w-[1000px]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+              O que orienta o projeto
+            </div>
+            <h2 className="mt-2.5 text-[30px] sm:text-[34px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#1d2a3d]">
+              Feito para organizar, com responsabilidade.
+            </h2>
+
+            <div className="mt-9 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Mais contexto para você</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Reunir registros ajuda a consultar suas informações quando precisar.
+                </p>
+              </div>
+
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Privacidade como prioridade</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  O espaço é pessoal, e você decide o que adicionar.
+                </p>
+              </div>
+
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l4 4 10-10" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Organização com tecnologia</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Ferramentas digitais tornam o histórico mais fácil de consultar.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Quem criou ──────────────────────────────────────────── */}
+        <section className="px-6 py-16 sm:px-12">
+          <div className="mx-auto flex max-w-[1000px] flex-wrap items-center gap-7 rounded-[32px] border border-[#dde3ec] bg-white p-10 shadow-sm">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#2f7a70] to-[#1b3a60] text-[26px] font-extrabold text-white shadow-md">
+              MR
+            </div>
+            <div className="flex-1 min-w-[280px]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+                Quem criou
+              </div>
+              <h2 className="mt-1 text-[26px] font-bold">Matheus Rafael</h2>
+              <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                Criador do SaúdeMemora, desenvolveu o projeto para facilitar a organização e o acesso às informações de saúde.
               </p>
             </div>
-          </aside>
-        </section>
-
-        <section className="border-y border-border/70 bg-slate-50/70">
-          <div className="mx-auto max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">O que orienta o projeto</p>
-              <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Feito para organizar, com responsabilidade.</h2>
-            </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {principles.map(({ icon: Icon, title, description }) => (
-                <article key={title} className="rounded-2xl border border-border/80 bg-white p-5 shadow-sm">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent"><Icon size={19} /></span>
-                  <h3 className="mt-4 text-sm font-bold">{title}</h3>
-                  <p className="mt-2 text-[13px] leading-5 text-muted-foreground">{description}</p>
-                </article>
-              ))}
-            </div>
           </div>
         </section>
 
-        <section className="mx-auto flex max-w-5xl flex-col gap-6 px-5 py-12 sm:px-8 sm:py-16 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Quem criou</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight">Matheus Rafael</h2>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-              Criador do SaúdeMemora, desenvolveu o projeto com o propósito de facilitar a organização e o acesso às informações de saúde no dia a dia.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <a href="https://www.linkedin.com/in/matheus-rafael-50a676219/" target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-white px-3.5 text-xs font-semibold transition-colors hover:bg-muted">
-                <Linkedin size={15} /> LinkedIn
-              </a>
-              <a href="https://github.com/MatheusRafaDev" target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-white px-3.5 text-xs font-semibold transition-colors hover:bg-muted">
-                <Github size={15} /> GitHub
-              </a>
+        {/* ── CTA Banner ─────────────────────────────────────────── */}
+        <section className="px-6 pb-16 sm:px-12">
+          <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-12 sm:p-14 text-white">
+            <div className="max-w-[520px]">
+              <h2 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em]">
+                Comece a reunir sua história de saúde.
+              </h2>
+              <p className="mt-3 text-[16px] leading-relaxed text-[#c9d6e8]">
+                Crie sua conta em poucos minutos e adicione seu primeiro documento.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                href="/cadastro"
+                className="inline-flex min-h-[48px] items-center rounded-xl bg-white px-6 text-[15px] font-bold text-[#1b3a60] transition-colors hover:bg-[#f1f4f8]"
+              >
+                Criar conta
+              </Link>
+              <Link
+                href="/entrar"
+                className="inline-flex min-h-[48px] items-center rounded-xl border border-white/35 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Já tenho conta
+              </Link>
             </div>
           </div>
-          <Link href="/entrar" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90">
-            Acessar plataforma <ArrowRight size={16} />
-          </Link>
         </section>
       </main>
-      <PublicPageFooter />
+
+      <PublicPageFooter variant="compact" />
     </div>
   );
 }

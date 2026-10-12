@@ -1,79 +1,95 @@
-import { Link } from 'wouter';
-import { ArrowLeft, FileText, ShieldCheck, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
+const sections = [
+  {
+    id: 'dados',
+    title: '1. Quais dados você adiciona',
+    content:
+      'Você decide quais documentos e informações adicionar ao seu espaço pessoal. Isso pode incluir receitas médicas, exames laboratoriais, laudos de imagem, atestados e dados de anamnese (como alergias, tipo sanguíneo e condições crônicas). O envio é sempre voluntário e gerido por você.',
+  },
+  {
+    id: 'uso',
+    title: '2. Como os dados são usados',
+    content:
+      'Os documentos são usados exclusivamente para organizar e consultar seu histórico de saúde pessoal, inclusive com apoio de inteligência artificial para leitura e extração de campos, mediante o seu consentimento. Seus dados não são vendidos nem compartilhados com terceiros para fins publicitários.',
+  },
+  {
+    id: 'controle',
+    title: '3. Seu controle',
+    content:
+      'Você tem total autonomia sobre suas informações: pode visualizar o documento original lado a lado com os dados lidos, editar qualquer campo extraído, revogar o consentimento para recursos de IA, apagar documentos individualmente ou solicitar a exclusão definitiva da sua conta a qualquer momento.',
+  },
+  {
+    id: 'contato',
+    title: '4. Contato',
+    content:
+      'Para dúvidas sobre privacidade, exercício dos seus direitos como titular de dados ou suporte, você pode entrar em contato através dos canais de suporte da plataforma ou pelo e-mail suporte@saudememora.com.br.',
+  },
+];
+
 export default function Privacidade() {
+  const [activeSection, setActiveSection] = useState('dados');
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
-      <main className="mx-auto max-w-3xl space-y-8 px-5 py-8 sm:px-8 md:py-12">
-        <Link href="/" className="inline-flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeft size={16} className="mr-2" /> Voltar ao início
-        </Link>
 
-        <header>
-          <h1 className="mb-4 text-3xl font-extrabold">Privacidade, sem complicação</h1>
-          <p className="text-muted-foreground">Última atualização: {new Date().toLocaleDateString('pt-BR')}</p>
-          <p className="mt-4 text-base leading-7 text-foreground">
-            Você escolhe quais informações de saúde adicionar. Veja abaixo, em linguagem simples, o que acontece com os arquivos enviados.
-          </p>
-        </header>
+      <main className="flex-1">
+        {/* ── Hero Section ────────────────────────────────────────── */}
+        <section className="border-b border-[#dde3ec] bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e8f4f2] px-6 py-16 sm:px-12">
+          <div className="mx-auto max-w-[1000px]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">
+              DOCUMENTO LEGAL
+            </div>
+            <h1 className="mt-2.5 mb-2 text-[38px] sm:text-[46px] font-extrabold tracking-[-0.04em] text-[#1d2a3d]">
+              Política de Privacidade
+            </h1>
+            <p className="text-[15px] text-[#5a6a80]">Última atualização: 12 de outubro de 2026</p>
+          </div>
+        </section>
 
-        <div className="space-y-8 text-sm leading-7 text-muted-foreground">
-          <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-              <ShieldCheck size={19} className="text-primary" /> O caminho do seu arquivo
-            </h2>
-            <ol className="mt-4 list-decimal space-y-3 pl-5">
-              <li>O arquivo é enviado ao SaúdeMemora para leitura e organização das informações.</li>
-              <li>
-                Quando você autoriza o processamento por inteligência artificial, o sistema pode encaminhar o arquivo a serviços externos de OCR e IA, como OCR.space, Google Gemini e Groq, conforme a etapa usada.
-              </li>
-              <li>
-                As imagens originais ficam no Cloudinary, em armazenamento autenticado e não público. Os dados do documento, como título, texto extraído e resumo, ficam no banco de dados da plataforma.
-              </li>
-            </ol>
-            <p className="mt-4">
-              Esses serviços externos participam do processamento do arquivo. Não envie documentos de outras pessoas sem autorização. Você pode revogar o consentimento para impedir novos processamentos por IA; isso não apaga documentos que já foram salvos.
-            </p>
-          </section>
+        {/* ── Content Layout ──────────────────────────────────────── */}
+        <div className="mx-auto flex max-w-[1000px] flex-col gap-12 px-6 py-14 sm:px-12 md:flex-row">
+          <aside className="w-full md:w-60 shrink-0">
+            <div className="sticky top-28 flex flex-col gap-1">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveSection(section.id);
+                    document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`rounded-xl px-3.5 py-2.5 text-left text-[14px] transition-colors ${
+                    activeSection === section.id
+                      ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]'
+                      : 'font-medium text-[#5a6a80] hover:bg-[#f1f4f8] hover:text-[#1d2a3d]'
+                  }`}
+                >
+                  {section.title.split('. ')[1]}
+                </button>
+              ))}
+            </div>
+          </aside>
 
-          <section>
-            <h2 className="text-lg font-bold text-foreground">Como excluir um documento</h2>
-            <p className="mt-2">
-              Abra <Link href="/documentos" className="font-semibold text-primary underline underline-offset-4">Meus documentos</Link>, abra o menu do documento e escolha “Apagar”. A imagem e os dados associados são removidos da sua lista.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-bold text-foreground">Como excluir sua conta</h2>
-            <p className="mt-2">
-              Em <Link href="/perfil" className="font-semibold text-primary underline underline-offset-4">Perfil</Link>, escolha “Deletar minha conta” e confirme com sua senha. O acesso é encerrado e a exclusão dos dados e arquivos é agendada para remoção pelo sistema; ela pode levar algum tempo para ser concluída.
-            </p>
-          </section>
-
-          <section className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-              <FileText size={19} className="text-primary" /> Precisão e uso dos dados
-            </h2>
-            <p className="mt-2">
-              A leitura automática pode errar. Confira os dados extraídos antes de usá-los ou compartilhá-los com um profissional de saúde. O SaúdeMemora organiza informações e não faz diagnóstico nem substitui avaliação médica.
-            </p>
-            <p className="mt-3">
-              Para uma emergência, procure atendimento de urgência ou ligue para o serviço de emergência da sua região.
-            </p>
-          </section>
-
-          <p className="flex items-start gap-2 border-t border-border pt-5">
-            <Trash2 size={17} className="mt-1 shrink-0 text-muted-foreground" />
-            <span>
-              Para gerenciar consentimento, documentos ou exclusão da conta, use a área autenticada do aplicativo. Consulte também os <Link href="/termos" className="font-semibold text-primary underline underline-offset-4">Termos de Uso</Link>.
-            </span>
-          </p>
+          <div className="flex-1 space-y-9">
+            {sections.map((section) => (
+              <section key={section.id} id={section.id} className="scroll-mt-28">
+                <h2 className="mb-2.5 text-[24px] font-bold tracking-[-0.02em] text-[#1d2a3d]">
+                  {section.title}
+                </h2>
+                <p className="text-[16px] leading-[1.8] text-[#5a6a80]">
+                  {section.content}
+                </p>
+              </section>
+            ))}
+          </div>
         </div>
       </main>
-      <PublicPageFooter />
+
+      <PublicPageFooter variant="compact" />
     </div>
   );
 }

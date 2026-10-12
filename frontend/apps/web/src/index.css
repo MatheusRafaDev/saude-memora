@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -33,78 +33,87 @@
 
 /* ── Light (default / only) theme ─────────────────────────────── */
 :root {
-  /* Pure white background */
+  /* Pure white background / #fff */
   --background:          0 0% 100%;
-  --foreground:          215 35% 16%;
+  --foreground:          216 36% 18%; /* #1d2a3d */
 
-  --border:              214 20% 88%;
-  --input:               214 18% 84%;
-  --ring:                213 60% 36%;
+  --border:              216 26% 89%; /* #dde3ec */
+  --input:               216 22% 82%; /* #c6cfdb */
+  --ring:                213 56% 24%; /* #1b3a60 */
 
-  /* Cards: very faint blue-white */
-  --card:                210 40% 98%;
-  --card-foreground:     215 35% 16%;
+  /* Cards: pure white with soft border */
+  --card:                0 0% 100%;
+  --card-foreground:     216 36% 18%; /* #1d2a3d */
 
-  /* Primary = navy blue */
+  /* Primary = Navy #1b3a60 */
   --primary:             213 56% 24%;
   --primary-foreground:  0 0% 100%;
 
-  /* Secondary = pale navy tint */
-  --secondary:           213 40% 93%;
-  --secondary-foreground:213 50% 22%;
+  /* Secondary = Soft neutral #f1f4f8 */
+  --secondary:           214 33% 96%;
+  --secondary-foreground:213 56% 24%;
 
-  /* Muted = light gray-blue */
-  --muted:               210 28% 95%;
-  --muted-foreground:    214 16% 48%;
+  /* Muted = Slate text #5a6a80 */
+  --muted:               214 33% 96%;
+  --muted-foreground:    215 17% 43%;
 
-  /* Accent = medium navy-blue */
-  --accent:              213 56% 36%;
+  /* Accent = Teal #2f7a70 */
+  --accent:              172 44% 33%;
   --accent-foreground:   0 0% 100%;
 
-  --destructive:         4 70% 50%;
+  /* Destructive = Red #c0463a / #a13a30 */
+  --destructive:         5 53% 49%;
   --destructive-foreground: 0 0% 100%;
 
-  --radius: 0.875rem;
-  --app-font-sans: 'Inter', sans-serif;
+  --radius: 0.75rem;
+  --app-font-sans: 'Figtree', system-ui, -apple-system, sans-serif;
   --app-font-mono: 'DM Mono', monospace;
 
-  /* Navbar / header uses same white */
-  --sidebar:             213 56% 22%;
-  --sidebar-foreground:  210 30% 94%;
-  --sidebar-primary:     199 66% 62%;
-  --sidebar-accent:      213 34% 30%;
-  --sidebar-border:      213 30% 28%;
-  --sidebar-ring:        199 66% 62%;
+  /* Specific Design System Palette */
+  --color-navy: #1b3a60;
+  --color-navy-hover: #244d7e;
+  --color-teal: #2f7a70;
+  --color-teal-light: #e8f4f2;
+  --color-teal-border: #b9dcd6;
+  --color-sky: #1f7fe0;
+  --color-sky-light: #7cc4e6;
+  --color-bg-neutral: #f7f9fc;
+  --color-card-border: #dde3ec;
+  --color-input-border: #c6cfdb;
+  --color-badge-green-bg: #e6f4ec;
+  --color-badge-green-text: #1f7a4d;
+  --color-badge-amber-bg: #fdf3d8;
+  --color-badge-amber-text: #6b4208;
+  --color-badge-amber-border: #e3b95a;
+  --color-badge-blue-bg: #e5eefb;
+  --color-badge-blue-text: #1b3a60;
+  --color-badge-red-bg: #fff5f4;
+  --color-badge-red-text: #a13a30;
+  --color-badge-red-border: #f0b8b2;
+  --color-danger: #c0463a;
 
-  --shadow-xs:   0 1px 3px rgba(20,40,70,.06), 0 1px 2px rgba(20,40,70,.04);
-  --shadow-soft: 0 4px 16px rgba(20,40,70,.07), 0 1px 4px rgba(20,40,70,.04);
-  --shadow-lift: 0 8px 28px rgba(20,40,70,.10), 0 3px 10px rgba(20,40,70,.05);
-  --shadow-float:0 20px 48px rgba(20,40,70,.14), 0 6px 18px rgba(20,40,70,.06);
+  --shadow-card: 0 12px 30px -24px rgba(27, 58, 96, 0.4);
+  --shadow-modal: 0 40px 90px -30px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 30px 70px -30px rgba(27, 58, 96, 0.35);
 }
 
-/* No dark mode — keep white always */
 .dark {
   --background:          0 0% 100%;
-  --foreground:          215 35% 16%;
-  --border:              214 20% 88%;
-  --input:               214 18% 84%;
-  --card:                210 40% 98%;
-  --card-foreground:     215 35% 16%;
+  --foreground:          216 36% 18%;
+  --border:              216 26% 89%;
+  --input:               216 22% 82%;
+  --card:                0 0% 100%;
+  --card-foreground:     216 36% 18%;
   --primary:             213 56% 24%;
   --primary-foreground:  0 0% 100%;
-  --secondary:           213 40% 93%;
-  --secondary-foreground:213 50% 22%;
-  --muted:               210 28% 95%;
-  --muted-foreground:    214 16% 48%;
-  --accent:              213 56% 36%;
+  --secondary:           214 33% 96%;
+  --secondary-foreground:213 56% 24%;
+  --muted:               214 33% 96%;
+  --muted-foreground:    215 17% 43%;
+  --accent:              172 44% 33%;
   --accent-foreground:   0 0% 100%;
-  --destructive:         4 70% 50%;
+  --destructive:         5 53% 49%;
   --destructive-foreground: 0 0% 100%;
-  --sidebar:             213 56% 22%;
-  --shadow-xs:   0 1px 3px rgba(20,40,70,.06), 0 1px 2px rgba(20,40,70,.04);
-  --shadow-soft: 0 4px 16px rgba(20,40,70,.07), 0 1px 4px rgba(20,40,70,.04);
-  --shadow-lift: 0 8px 28px rgba(20,40,70,.10), 0 3px 10px rgba(20,40,70,.05);
-  --shadow-float:0 20px 48px rgba(20,40,70,.14), 0 6px 18px rgba(20,40,70,.06);
 }
 
 @layer base {

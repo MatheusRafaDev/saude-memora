@@ -1,474 +1,668 @@
-import { useState, useEffect, useRef, type FormEvent } from 'react';
-import { Check, ClipboardList, Droplets, FileText, Plus, Save, Search, X } from 'lucide-react';
-import { useGetApiFichaMedicaMe, usePatchApiFichaMedicaMe } from '@workspace/api-client-react';
-import { CatalogAutocomplete } from '@/components/CatalogAutocomplete';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import {
+  Check,
+  Plus,
+  X,
+  Pill,
+  Shield,
+  LoaderCircle,
+  ArrowRight,
+  ArrowLeft,
+  Heart,
+  Save,
+} from 'lucide-react';
+import {
+  useGetApiFichaMedicaMe,
+  usePatchApiFichaMedicaMe,
+} from '@workspace/api-client-react';
+import { useToast } from '@/hooks/use-toast';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-const ALLERGY_OPTIONS = [
-  'Dipirona', 'Penicilina', 'Amoxicilina', 'AAS / Aspirina',
-  'Anti-inflamatórios (AINE)', 'Sulfas', 'Contraste iodado',
-  'Látex', 'Pólen', 'Pelo de animais', 'Ácaros', 'Mofo',
-  'Amendoim', 'Frutos do mar', 'Leite / Lactose', 'Glúten', 'Ovo', 'Soja', 'Nozes / Castanhas'
+const STEPS = [
+  { id: 1, name: 'Dados gerais' },
+  { id: 2, name: 'Condições' },
+  { id: 3, name: 'Alergias e remédios' },
+  { id: 4, name: 'Hábitos' },
+  { id: 5, name: 'Revisão' },
 ];
-
-const CHRONIC_DISEASE_OPTIONS = [
-  'Hipertensão (Pressão alta)', 'Diabetes Tipo 1', 'Diabetes Tipo 2',
-  'Doença Cardíaca', 'Insuficiência Cardíaca', 'Arritmia Cardíaca',
-  'Câncer / Oncológica', 'Asma', 'DPOC (Bronquite / Enfisema)', 'Fibromialgia',
-  'Artrite / Artrose', 'Osteoporose', 'Depressão', 'Ansiedade',
-  'Epilepsia', 'Doença Renal Crônica', 'Hipotireoidismo', 'Hipertireoidismo',
-  'Doença Celíaca', 'Lúpus', 'Doença de Parkinson', 'Alzheimer', 'Refluxo Gastroesofágico'
-];
-
-const HABIT_OPTIONS = [
-  'Pratico exercícios regulares', 'Sedentário(a)', 'Musculação / Crossfit', 'Corrida / Caminhada', 'Natação / Ciclismo', 
-  'Durmo 8h/dia', 'Durmo menos de 6h', 'Insônia', 'Ronco / Apneia',
-  'Alimentação balanceada', 'Dieta restritiva / Jejum', 'Consumo muito doce/açúcar', 'Bebo 2L+ de água por dia',
-  'Uso de telas antes de dormir', 'Meditação / Yoga', 'Terapia Psicológica'
-];
-
-const PREDEFINED_CONDITIONS = [
-  'Hipertensão (Pressão alta)',
-  'Diabetes',
-  'Doenças Cardíacas (Infarto, arritmias, etc.)',
-  'Câncer (Oncológicas)',
-  'Doenças Respiratórias (Asma, DPOC, etc.)',
-  'Doenças Renais'
-];
-
-type ConditionState = { nome: string; tem: boolean; detalhes: string };
-
-function AutocompleteMultiSelect({
-  label,
-  placeholder,
-  options,
-  selected,
-  onChange,
-  chipColorClass = 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20'
-}: {
-  label: string;
-  placeholder: string;
-  options: string[];
-  selected: string[];
-  onChange: (items: string[]) => void;
-  chipColorClass?: string;
-}) {
-  const [query, setQuery] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const normalize = (str: string) =>
-    str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-  const filteredOptions = options.filter(
-    opt => normalize(opt).includes(normalize(query)) && !selected.includes(opt)
-  );
-
-  const addItem = (item: string) => {
-    const trimmed = item.trim();
-    if (trimmed && !selected.includes(trimmed)) {
-      onChange([...selected, trimmed]);
-    }
-    setQuery('');
-    setIsOpen(false);
-  };
-
-  const removeItem = (item: string) => {
-    onChange(selected.filter(i => i !== item));
-  };
-
-  return (
-    <div className="space-y-2" ref={containerRef}>
-      <div className="flex items-center justify-between">
-        <label className="block text-xs font-bold text-foreground">{label}</label>
-        {selected.length > 0 && (
-          <span className="text-[10px] font-medium text-muted-foreground">{selected.length} selecionada(s)</span>
-        )}
-      </div>
-
-      {/* Selected Items / Chips */}
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pb-1">
-          {selected.map(item => (
-            <span
-              key={item}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-xs ${chipColorClass}`}
-            >
-              <span>{item}</span>
-              <button
-                type="button"
-                onClick={() => removeItem(item)}
-                className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
-                title="Remover"
-              >
-                <X size={12} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Input Field + Dropdown */}
-      <div className="relative">
-        <div className="relative flex items-center">
-          <input
-            type="text"
-            value={query}
-            onFocus={() => setIsOpen(true)}
-            onChange={e => {
-              setQuery(e.target.value);
-              setIsOpen(true);
-            }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                if (filteredOptions.length > 0 && query.trim()) {
-                  addItem(filteredOptions[0]);
-                } else if (query.trim()) {
-                  addItem(query.trim());
-                }
-              }
-            }}
-            placeholder={placeholder}
-            className="h-11 w-full rounded-xl border border-input bg-background px-4 pr-10 text-xs font-medium outline-none transition-all focus:border-accent focus:ring-4 focus:ring-accent/10"
-          />
-          <div className="absolute right-3 text-muted-foreground pointer-events-none">
-            <Search size={16} />
-          </div>
-        </div>
-
-        {/* Floating Suggestion List */}
-        {isOpen && (
-          <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-border bg-card dropdown-opaque p-1.5 shadow-2xl">
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map(opt => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => addItem(opt)}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-foreground hover:bg-accent/10 hover:text-accent transition-colors text-left"
-                >
-                  <span>{opt}</span>
-                  <Plus size={14} className="text-muted-foreground opacity-60" />
-                </button>
-              ))
-            ) : query.trim() ? (
-              <button
-                type="button"
-                onClick={() => addItem(query.trim())}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-accent hover:bg-accent/10 transition-colors"
-              >
-                <Plus size={14} />
-                <span>Adicionar "{query.trim()}"</span>
-              </button>
-            ) : (
-              <div className="px-3 py-3 text-xs text-muted-foreground text-center font-medium">
-                Digite para buscar opções disponíveis...
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-import { useLocation } from 'wouter';
 
 export default function Record() {
   const [, setLocation] = useLocation();
-  const { data: recordRaw, isLoading, refetch } = useGetApiFichaMedicaMe();
+  const { toast } = useToast();
+  const { data: fichaRaw, refetch } = useGetApiFichaMedicaMe();
   const patchFicha = usePatchApiFichaMedicaMe();
 
-  const [conditions, setConditions] = useState<ConditionState[]>([]);
-  const [form, setForm] = useState({
-    familyHistory: '',
-    surgeries: '',
-    smoker: false,
-    alcohol: false,
-    habitsList: [] as string[],
-    notes: '',
-    outrasDoencas: '',
-    bloodType: '',
-    allergies: [] as string[],
-    chronicDiseases: [] as string[],
-    medicamentosContinuos: [] as string[],
-    organDonor: false
-  });
-  
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+  const [currentStep, setCurrentStep] = useState(3);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedText, setLastSavedText] = useState('Salvo automaticamente');
 
+  // Form State
+  const [bloodType, setBloodType] = useState('O+');
+  const [allergies, setAllergies] = useState<string[]>(['Dipirona', 'Penicilina']);
+  const [allergyInput, setAllergyInput] = useState('');
+
+  const [medications, setMedications] = useState<Array<{ nome: string; posologia: string }>>([
+    { nome: 'Losartana 50 mg', posologia: '1 vez ao dia' },
+    { nome: 'Vitamina D', posologia: '1 vez por semana' },
+  ]);
+  const [newMedNome, setNewMedNome] = useState('');
+  const [newMedPosologia, setNewMedPosologia] = useState('');
+  const [isAddingMed, setIsAddingMed] = useState(false);
+
+  const [isDonor, setIsDonor] = useState(true);
+  const [isSmoker, setIsSmoker] = useState(false);
+  const [isAlcohol, setIsAlcohol] = useState(false);
+
+  // Conditions
+  const [conditionsList, setConditionsList] = useState<Array<{ nome: string; tem: boolean }>>([
+    { nome: 'Hipertensão arterial', tem: true },
+    { nome: 'Diabetes Mellitus', tem: false },
+    { nome: 'Asma / Bronquite', tem: false },
+    { nome: 'Doença cardíaca', tem: false },
+    { nome: 'Colesterol alto', tem: false },
+  ]);
+
+  // General data
+  const [altura, setAltura] = useState('1.68');
+  const [peso, setPeso] = useState('65');
+  const [habitosGerais, setHabitosGerais] = useState('Caminhada 3x por semana, 7h de sono.');
+  const [historicoFamiliar, setHistoricoFamiliar] = useState('Hipertensão materna.');
+
+  // Load from API
   useEffect(() => {
-    if (recordRaw) {
-      const r = recordRaw as unknown as any;
-      setForm({
-        familyHistory: r.historicoFamiliar || '',
-        surgeries: r.cirurgias || '',
-        smoker: !!r.fuma,
-        alcohol: !!r.bebe,
-        habitsList: r.habitosGerais ? r.habitosGerais.split(',').map((h: string) => h.trim()).filter(Boolean) : [],
-        notes: r.observacoes || '',
-        outrasDoencas: r.outrasDoencas || '',
-        bloodType: r.tipoSanguineo || '',
-        allergies: r.alergias || [],
-        chronicDiseases: r.doencasCronicas || [],
-        medicamentosContinuos: r.medicamentosContinuos || [],
-        organDonor: !!r.doadorOrgaos
-      });
-
-      // Merge backend conditions with predefined list
-      const savedConditions = (r.condicoes || []) as ConditionState[];
-      const merged = PREDEFINED_CONDITIONS.map(name => {
-        const existing = savedConditions.find(c => c.nome === name);
-        return existing || { nome: name, tem: false, detalhes: '' };
-      });
-      setConditions(merged);
+    if (fichaRaw) {
+      const f = fichaRaw as any;
+      if (f.tipoSanguineo) setBloodType(f.tipoSanguineo);
+      if (Array.isArray(f.alergias) && f.alergias.length > 0) setAllergies(f.alergias);
+      if (f.doadorOrgaos !== undefined) setIsDonor(Boolean(f.doadorOrgaos));
+      if (f.fuma !== undefined) setIsSmoker(Boolean(f.fuma));
+      if (f.bebe !== undefined) setIsAlcohol(Boolean(f.bebe));
+      if (f.habitosGerais) setHabitosGerais(f.habitosGerais);
+      if (f.historicoFamiliar) setHistoricoFamiliar(f.historicoFamiliar);
+      if (Array.isArray(f.medicamentosContinuos) && f.medicamentosContinuos.length > 0) {
+        setMedications(
+          f.medicamentosContinuos.map((m: any) =>
+            typeof m === 'string' ? { nome: m, posologia: 'Uso contínuo' } : m
+          )
+        );
+      }
     }
-  }, [recordRaw]);
+  }, [fichaRaw]);
 
-  const set = (key: keyof typeof form, value: any) => setForm((old) => ({ ...old, [key]: value }));
-  
-  const updateCondition = (index: number, key: keyof ConditionState, value: string | boolean) => {
-    setConditions(old => {
-      const copy = [...old];
-      copy[index] = { ...copy[index], [key]: value };
-      return copy;
-    });
+  // Handle add allergy
+  const handleAddAllergy = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && allergyInput.trim()) {
+      e.preventDefault();
+      const val = allergyInput.trim();
+      if (!allergies.includes(val)) {
+        setAllergies([...allergies, val]);
+      }
+      setAllergyInput('');
+    }
   };
 
-  const save = async (event?: FormEvent) => { 
-    if (event) event.preventDefault();
-    setError('');
-    setSaved(false);
+  const removeAllergy = (item: string) => {
+    setAllergies(allergies.filter((a) => a !== item));
+  };
 
+  const handleAddMed = () => {
+    if (newMedNome.trim()) {
+      setMedications([
+        ...medications,
+        { nome: newMedNome.trim(), posologia: newMedPosologia.trim() || 'Uso contínuo' },
+      ]);
+      setNewMedNome('');
+      setNewMedPosologia('');
+      setIsAddingMed(false);
+    }
+  };
+
+  const handleSaveToApi = async () => {
     try {
+      setIsSaving(true);
       await patchFicha.mutateAsync({
         data: {
-          patientId: (recordRaw as unknown as any)?.patientId || 'unknown',
-          historicoFamiliar: form.familyHistory,
-          cirurgias: form.surgeries,
-          fuma: form.smoker,
-          bebe: form.alcohol,
-          habitosGerais: form.habitsList.join(', '),
-          observacoes: form.notes,
-          condicoes: conditions,
-          outrasDoencas: form.outrasDoencas,
-          tipoSanguineo: form.bloodType,
-          doadorOrgaos: form.organDonor,
-          alergias: form.allergies,
-          doencasCronicas: form.chronicDiseases,
-          medicamentosContinuos: form.medicamentosContinuos
-        } as any
+          tipoSanguineo: bloodType as any,
+          alergias: allergies,
+          medicamentosContinuos: medications.map((m) => m.nome),
+          doadorOrgaos: isDonor,
+          fuma: isSmoker,
+          bebe: isAlcohol,
+          habitosGerais,
+          historicoFamiliar,
+          condicoes: conditionsList,
+        } as any,
       });
-      setSaved(true); 
-      // Do not await refetch() on auto-save to prevent focus loss issues
-      window.setTimeout(() => setSaved(false), 2400); 
-
-      // Se for um clique manual no botão Salvar (tem event), redireciona
-      if (event) {
-        setLocation('/visao-geral');
-      }
-    } catch (err) {
-      setError('Erro ao salvar ficha.');
+      setLastSavedText('Salvo agora');
+      toast({ title: 'Anamnese atualizada com sucesso!' });
+      refetch();
+    } catch {
+      toast({ title: 'Erro ao salvar alterações', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  // Auto-save debounce
-  useEffect(() => {
-    if (!recordRaw) return; // Only auto-save if we have loaded the data
-    const timer = setTimeout(() => {
-      save();
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [form, conditions]);
+  const handleNext = async () => {
+    await handleSaveToApi();
+    if (currentStep < 5) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      toast({ title: 'Anamnese concluída com sucesso!' });
+      setLocation('/dashboard');
+    }
+  };
 
-  if (isLoading) {
-    return <div className="page-enter p-12 text-center text-muted-foreground">Carregando ficha médica...</div>;
-  }
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
-  return <div className="page-enter mx-auto max-w-4xl space-y-3">
-    <section>
-      <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">contexto de saúde</p>
-      <h1 className="mt-1 text-2xl font-extrabold tracking-[-.06em] md:text-3xl">Minha anamnese</h1>
-      <p className="mt-1 max-w-[570px] text-xs leading-5 text-muted-foreground">Atualize suas informações de saúde. Suas respostas são salvas automaticamente.</p>
-    </section>
-    
-    <form onSubmit={save} className="space-y-3">
-      <section id="sec-disease" className="rounded-xl border border-border bg-card p-3.5 md:p-4">
-        <div className="flex items-start gap-3 border-b border-border/70 pb-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-accent"><ClipboardList size={17} /></span>
+  const progressPercent = Math.round((currentStep / 5) * 100);
+
+  return (
+    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
+        {/* Header Title */}
+        <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <h2 className="text-sm font-extrabold">Histórico de Doenças</h2>
-            <p className="text-[11px] text-muted-foreground">Condições crônicas e histórico de saúde pessoal.</p>
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+              Ficha de saúde
+            </div>
+            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+              Anamnese
+            </h1>
+            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+              Responda no seu ritmo: o progresso é salvo a cada passo.
+            </p>
           </div>
         </div>
-        
-        <div className="mt-3 space-y-2.5">
-          {conditions.map((cond, index) => (
-            <div key={cond.nome} className={`rounded-xl border transition-colors ${cond.tem ? 'border-accent/40 bg-accent/5' : 'border-border bg-muted/30'} p-2.5 md:p-3`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <span className="text-sm font-bold">{cond.nome}</span>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => updateCondition(index, 'tem', true)} className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${cond.tem ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-background text-muted-foreground hover:bg-muted border border-border'}`}>Sim</button>
-                  <button type="button" onClick={() => { updateCondition(index, 'tem', false); updateCondition(index, 'detalhes', ''); }} className={`rounded-lg px-4 py-2 text-xs font-bold transition-all ${!cond.tem ? 'bg-secondary text-secondary-foreground shadow-sm border border-transparent' : 'bg-background text-muted-foreground hover:bg-muted border border-border'}`}>Não</button>
+
+        {/* Stepper Header Bar */}
+        <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] mb-5 overflow-x-auto">
+          <div className="flex gap-4 items-center min-w-[600px]">
+            {STEPS.map((s, idx) => {
+              const isPassed = s.id < currentStep;
+              const isCurrent = s.id === currentStep;
+
+              return (
+                <div key={s.id} className="flex-1 flex items-center gap-2.5">
+                  <div
+                    onClick={() => setCurrentStep(s.id)}
+                    className={`w-[34px] h-[34px] rounded-full font-bold flex items-center justify-center text-sm shrink-0 cursor-pointer transition-colors ${
+                      isPassed
+                        ? 'bg-[#2f7a70] text-white border border-[#2f7a70]'
+                        : isCurrent
+                        ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
+                        : 'bg-white text-[#5a6a80] border border-[#dde3ec]'
+                    }`}
+                  >
+                    {isPassed ? <Check size={16} strokeWidth={2.5} /> : s.id}
+                  </div>
+                  <span
+                    className={`text-sm whitespace-nowrap ${
+                      isCurrent
+                        ? 'font-bold text-[#1d2a3d]'
+                        : isPassed
+                        ? 'font-medium text-[#1d2a3d]'
+                        : 'font-medium text-[#5a6a80]'
+                    }`}
+                  >
+                    {s.name}
+                  </span>
+                  {idx < STEPS.length - 1 && (
+                    <div
+                      className={`flex-1 h-[2px] transition-colors ${
+                        isPassed ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'
+                      }`}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main 2-col Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Main Content Card (8 cols) */}
+          <div className="lg:col-span-8 bg-white border border-[#dde3ec] rounded-[20px] p-8 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+            {/* Step 1: Dados gerais */}
+            {currentStep === 1 && (
+              <div>
+                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                  Passo 1 de 5
+                </div>
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                  Dados gerais de saúde
+                </h2>
+                <p className="m-0 mb-6 text-[#5a6a80] text-sm">
+                  Dados corporais e medidas básicas para acompanhamento médico.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
+                      Altura (metros)
+                    </label>
+                    <input
+                      type="text"
+                      value={altura}
+                      onChange={(e) => setAltura(e.target.value)}
+                      placeholder="Ex: 1.70"
+                      className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
+                      Peso aproximado (kg)
+                    </label>
+                    <input
+                      type="text"
+                      value={peso}
+                      onChange={(e) => setPeso(e.target.value)}
+                      placeholder="Ex: 70"
+                      className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                    />
+                  </div>
                 </div>
               </div>
-              
-              {cond.tem && (
-                <div className="mt-3 pt-3 border-t border-accent/20 page-enter">
-                  <Field label="Detalhes (quando diagnosticado, medicações em uso, etc)" value={cond.detalhes} onChange={(v) => updateCondition(index, 'detalhes', v)} id={`cond-${index}`} textarea />
-                </div>
-              )}
-            </div>
-          ))}
-          
-          <div className="pt-2">
-            <Field label="Outras doenças ou observações de saúde" value={form.outrasDoencas} onChange={(v) => set('outrasDoencas', v)} id="outras-doencas" textarea />
-          </div>
-          
-          <div className="pt-3 border-t border-border/70">
-            <h3 className="text-sm font-bold mb-3">Informações Importantes</h3>
-            <div className="space-y-4">
+            )}
 
-              {/* Blood Type Select */}
+            {/* Step 2: Condições */}
+            {currentStep === 2 && (
               <div>
-                <span className="mb-2 flex items-center gap-1.5 text-xs font-bold"><Droplets size={14} className="text-red-500" /> Tipo sanguíneo</span>
-                <div className="flex flex-wrap gap-2">
-                  {BLOOD_TYPES.map(bt => (
-                    <button
-                      key={bt} type="button"
-                      onClick={() => set('bloodType', form.bloodType === bt ? '' : bt)}
-                      className={`rounded-xl border px-4 py-2 text-xs font-extrabold transition-all ${
-                        form.bloodType === bt
-                          ? 'border-red-400 bg-red-50 text-red-700 shadow-sm dark:bg-red-950/40 dark:text-red-300 dark:border-red-600'
-                          : 'border-border bg-background text-muted-foreground hover:border-red-300 hover:bg-red-50/50'
-                      }`}
-                    >{bt}</button>
+                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                  Passo 2 de 5
+                </div>
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                  Condições de saúde
+                </h2>
+                <p className="m-0 mb-6 text-[#5a6a80] text-sm">
+                  Selecione as condições preexistentes diagnosticadas por um médico.
+                </p>
+
+                <div className="space-y-3 mb-6">
+                  {conditionsList.map((cond, idx) => (
+                    <label
+                      key={cond.nome}
+                      className="flex items-center gap-3 p-3.5 border border-[#dde3ec] rounded-xl hover:bg-slate-50 cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={cond.tem}
+                        onChange={(e) => {
+                          const updated = [...conditionsList];
+                          updated[idx].tem = e.target.checked;
+                          setConditionsList(updated);
+                        }}
+                        className="w-4 h-4 rounded text-[#2f7a70] focus:ring-[#2f7a70]"
+                      />
+                      <span className="text-sm font-semibold text-[#1d2a3d]">
+                        {cond.nome}
+                      </span>
+                    </label>
                   ))}
                 </div>
               </div>
+            )}
 
-              {/* Allergies Autocomplete Multi-Select */}
-              <div id="sec-allergy">
-                <AutocompleteMultiSelect
-                  label="Alergias conhecidas"
-                  placeholder="Digite para pesquisar alergias (ex: Dipirona, Penicilina, Amendoim)..."
-                  options={ALLERGY_OPTIONS}
-                  selected={form.allergies}
-                  onChange={(items) => set('allergies', items)}
-                  chipColorClass="bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
+            {/* Step 3: Alergias e remédios */}
+            {currentStep === 3 && (
+              <div>
+                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                  Passo 3 de 5
+                </div>
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                  Alergias e medicamentos
+                </h2>
+                <p className="m-0 mb-6 text-[#5a6a80] text-sm">
+                  Essas informações ajudam a alertar interações nas suas receitas.
+                </p>
+
+                {/* Tipo Sanguíneo */}
+                <div className="text-sm font-bold mb-2.5">Tipo sanguíneo</div>
+                <div className="flex gap-2 flex-wrap mb-6.5">
+                  {BLOOD_TYPES.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setBloodType(type)}
+                      className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer transition-colors ${
+                        bloodType === type
+                          ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs'
+                          : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Alergias */}
+                <div className="text-sm font-bold mb-2.5">Alergias</div>
+                <div className="h-[46px] w-full border border-[#c6cfdb] rounded-xl bg-white flex items-center gap-2 px-3.5 text-sm text-[#5a6a80] focus-within:border-[#1b3a60]">
+                  <Plus size={16} className="text-[#5a6a80]" />
+                  <input
+                    type="text"
+                    value={allergyInput}
+                    onChange={(e) => setAllergyInput(e.target.value)}
+                    onKeyDown={handleAddAllergy}
+                    placeholder="Digite e pressione Enter"
+                    className="w-full bg-transparent border-none outline-none text-[#1d2a3d] placeholder:text-[#5a6a80] text-sm"
+                  />
+                </div>
+
+                {/* Tag Pills */}
+                <div className="flex gap-2 flex-wrap my-3 mb-6.5">
+                  {allergies.map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#fdf3d8] text-[#6b4208] text-sm font-semibold"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => removeAllergy(item)}
+                        className="hover:opacity-75 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                {/* Medicamentos contínuos */}
+                <div className="flex justify-between items-center mb-2.5">
+                  <div className="text-sm font-bold">Medicamentos de uso contínuo</div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingMed(true)}
+                    className="text-xs font-bold text-[#1b3a60] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={14} /> Adicionar
+                  </button>
+                </div>
+
+                {isAddingMed && (
+                  <div className="p-4 bg-slate-50 border border-[#dde3ec] rounded-xl mb-4 space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Nome do remédio (Ex: Losartana 50mg)"
+                      value={newMedNome}
+                      onChange={(e) => setNewMedNome(e.target.value)}
+                      className="w-full h-10 px-3 border border-[#c6cfdb] rounded-lg text-sm bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Posologia (Ex: 1 comprimido ao dia)"
+                      value={newMedPosologia}
+                      onChange={(e) => setNewMedPosologia(e.target.value)}
+                      className="w-full h-10 px-3 border border-[#c6cfdb] rounded-lg text-sm bg-white"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingMed(false)}
+                        className="px-3 py-1.5 text-xs font-semibold text-[#5a6a80] hover:bg-slate-200 rounded-lg"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddMed}
+                        className="px-3 py-1.5 text-xs font-bold bg-[#1b3a60] text-white rounded-lg hover:bg-[#24507f]"
+                      >
+                        Salvar remédio
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="divide-y divide-[#dde3ec] mb-4">
+                  {medications.map((med, index) => (
+                    <div key={index} className="flex items-center gap-3.5 py-3.5">
+                      <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
+                        <Pill size={22} className="text-[#1b3a60]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[15px] font-bold text-[#1d2a3d]">{med.nome}</div>
+                        <div className="text-[13px] text-[#5a6a80]">{med.posologia}</div>
+                      </div>
+                      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
+                        Contínuo
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Switches */}
+                <div className="divide-y divide-[#dde3ec]">
+                  <div className="flex justify-between items-center py-3.5 text-[15px] font-semibold">
+                    <span>Doador de órgãos</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsDonor(!isDonor)}
+                      className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
+                        isDonor ? 'bg-[#2f7a70]' : 'bg-[#c6cfdb]'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white transition-all shadow-xs ${
+                          isDonor ? 'right-[3px]' : 'left-[3px]'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex justify-between items-center py-3.5 text-[15px] font-semibold">
+                    <span>Fumante</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSmoker(!isSmoker)}
+                      className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
+                        isSmoker ? 'bg-[#2f7a70]' : 'bg-[#c6cfdb]'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white transition-all shadow-xs ${
+                          isSmoker ? 'right-[3px]' : 'left-[3px]'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Hábitos */}
+            {currentStep === 4 && (
+              <div>
+                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                  Passo 4 de 5
+                </div>
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                  Hábitos e rotina
+                </h2>
+                <p className="m-0 mb-6 text-[#5a6a80] text-sm">
+                  Atividade física, sono e histórico relevante na família.
+                </p>
+
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
+                      Hábitos gerais (Sono, alimentação, atividade física)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={habitosGerais}
+                      onChange={(e) => setHabitosGerais(e.target.value)}
+                      className="w-full p-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
+                      Histórico familiar de saúde
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={historicoFamiliar}
+                      onChange={(e) => setHistoricoFamiliar(e.target.value)}
+                      placeholder="Ex: Diabetes paterno, Hipertensão materna"
+                      className="w-full p-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Revisão */}
+            {currentStep === 5 && (
+              <div>
+                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                  Passo 5 de 5
+                </div>
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                  Revisão da Anamnese
+                </h2>
+                <p className="m-0 mb-6 text-[#5a6a80] text-sm">
+                  Confira o resumo das suas informações de saúde antes de finalizar.
+                </p>
+
+                <div className="space-y-3 bg-[#f7f9fc] p-5 rounded-2xl border border-[#dde3ec] mb-6 text-sm">
+                  <div className="flex justify-between border-b border-slate-200 pb-2">
+                    <span className="text-[#5a6a80]">Tipo Sanguíneo:</span>
+                    <strong className="text-[#1b3a60]">{bloodType}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-200 pb-2">
+                    <span className="text-[#5a6a80]">Alergias:</span>
+                    <strong>{allergies.join(', ') || 'Nenhuma'}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-200 pb-2">
+                    <span className="text-[#5a6a80]">Remédios contínuos:</span>
+                    <strong>{medications.map((m) => m.nome).join(', ') || 'Nenhum'}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-200 pb-2">
+                    <span className="text-[#5a6a80]">Doador de órgãos:</span>
+                    <strong>{isDonor ? 'Sim' : 'Não'}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#5a6a80]">Fumante:</span>
+                    <strong>{isSmoker ? 'Sim' : 'Não'}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Actions: Voltar / Continuar */}
+            <div className="flex justify-between items-center mt-6.5 pt-4 border-t border-[#dde3ec]">
+              <button
+                type="button"
+                onClick={handleBack}
+                disabled={currentStep === 1}
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                ← Voltar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={isSaving}
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors shadow-xs cursor-pointer disabled:opacity-60"
+              >
+                {isSaving ? (
+                  <LoaderCircle size={16} className="animate-spin" />
+                ) : currentStep === 5 ? (
+                  'Concluir Anamnese'
+                ) : (
+                  'Continuar →'
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: Progress & Auto-save Card (4 cols) */}
+          <div className="lg:col-span-4 flex flex-col gap-5">
+            {/* Progress Card */}
+            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="flex justify-between font-bold text-sm">
+                <span>Progresso</span>
+                <span className="text-[#2f7a70]">{progressPercent}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-[#f1f4f8] my-2.5 mb-4 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#2f7a70] transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
 
-              {/* Chronic Diseases Autocomplete Multi-Select */}
-              <AutocompleteMultiSelect
-                label="Doenças crônicas"
-                placeholder="Digite para pesquisar doenças (ex: Hipertensão, Diabetes, Asma)..."
-                options={CHRONIC_DISEASE_OPTIONS}
-                selected={form.chronicDiseases}
-                onChange={(items) => set('chronicDiseases', items)}
-                chipColorClass="bg-orange-500/10 border-orange-500/30 text-orange-800 dark:text-orange-200 hover:bg-orange-500/20"
-              />
-
-              {/* Medicamentos Continuos */}
               <div className="space-y-1">
-              <CatalogAutocomplete
-                  label="Medicamentos de uso contínuo"
-                  selected={form.medicamentosContinuos}
-                  onChange={(items) => set('medicamentosContinuos', items)}
-                  sourceOptions={[{ value: 'medicamentos', label: 'Medicamentos' }]}
-                  allowCustomEntry
-              />
-                <p className="text-[11px] text-muted-foreground">
-                  Busque no catálogo ou digite o nome e pressione Enter para adicionar.
-                </p>
+                {STEPS.map((s) => {
+                  const isDone = s.id < currentStep;
+                  const isCurrent = s.id === currentStep;
+
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => setCurrentStep(s.id)}
+                      className={`flex gap-2.5 items-center py-2 text-sm cursor-pointer rounded-lg px-1 transition-colors ${
+                        isCurrent
+                          ? 'font-bold text-[#1d2a3d]'
+                          : isDone
+                          ? 'font-medium text-[#1d2a3d]'
+                          : 'font-medium text-[#5a6a80]'
+                      }`}
+                    >
+                      <div
+                        className={`w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 ${
+                          isDone
+                            ? 'bg-[#e8f4f2] text-[#2f7a70]'
+                            : isCurrent
+                            ? 'bg-[#1b3a60] text-white'
+                            : 'bg-[#f1f4f8] text-[#5a6a80]'
+                        }`}
+                      >
+                        {isDone ? (
+                          <Check size={14} strokeWidth={2.5} />
+                        ) : (
+                          <span className="text-xs">{s.id}</span>
+                        )}
+                      </div>
+                      {s.name}
+                    </div>
+                  );
+                })}
               </div>
+            </div>
 
-              {/* Organ donor */}
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-4">
-                <input type="checkbox" checked={form.organDonor} onChange={(e) => set('organDonor', e.target.checked)} data-testid="checkbox-organ-donor" className="h-4 w-4 accent-[hsl(var(--accent))]" />
-                <span><span className="block text-xs font-bold">Sou doador(a) de órgãos</span><span className="mt-0.5 block text-[10px] text-muted-foreground">Esta informação fica visível no seu resumo médico.</span></span>
-              </label>
+            {/* Auto-save Card */}
+            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="flex gap-3 items-center">
+                <div className="w-11 h-11 rounded-[14px] bg-[#e8f4f2] flex items-center justify-center shrink-0">
+                  <Shield size={22} className="text-[#2f7a70]" strokeWidth={2} />
+                </div>
+                <div>
+                  <b className="text-[15px] text-[#1d2a3d] block leading-tight">
+                    {lastSavedText}
+                  </b>
+                  <div className="text-[13px] text-[#5a6a80] mt-0.5">
+                    Seus dados são protegidos por criptografia.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div id="sec-blood" className="pt-3 border-t border-border/70">
-            <div id="sec-family" className="grid gap-4 pt-3 md:grid-cols-2">
-              <Field label="Histórico familiar (Ex: Mãe teve câncer, Pai infartou)" value={form.familyHistory} onChange={(v) => set('familyHistory', v)} id="family-history" />
-              <Field label="Cirurgias e internações prévias" value={form.surgeries} onChange={(v) => set('surgeries', v)} id="surgeries" />
-            </div>
-          </div>
         </div>
-      </section>
-      
-      <section id="sec-habits" className="rounded-xl border border-border bg-card p-3.5 md:p-4">
-        <div className="flex items-start gap-3 border-b border-border/70 pb-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-accent"><FileText size={17} /></span>
-          <div>
-            <h2 className="text-sm font-extrabold">Hábitos e rotina</h2>
-          </div>
-        </div>
-        
-        <div className="grid gap-2 pt-3 md:grid-cols-2">
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-3">
-            <input type="checkbox" checked={form.smoker} onChange={(e) => set('smoker', e.target.checked)} className="h-4 w-4 accent-[hsl(var(--accent))]" />
-            <span><span className="block text-xs font-bold">Fuma</span></span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted/60 p-3">
-            <input type="checkbox" checked={form.alcohol} onChange={(e) => set('alcohol', e.target.checked)} className="h-4 w-4 accent-[hsl(var(--accent))]" />
-            <span><span className="block text-xs font-bold">Consome álcool</span></span>
-          </label>
-        </div>
-        
-        <div className="mt-6">
-          <AutocompleteMultiSelect
-            label="Outros hábitos e estilo de vida"
-            placeholder="Digite para adicionar (ex: Durmo 8h, Sedentário)..."
-            options={HABIT_OPTIONS}
-            selected={form.habitsList}
-            onChange={(items) => set('habitsList', items)}
-            chipColorClass="bg-accent/10 border-accent/30 text-accent hover:bg-accent/20"
-          />
-        </div>
-        <div className="mt-5">
-          <Field label="Algo mais que seu médico deveria saber?" value={form.notes} onChange={(v) => set('notes', v)} id="notes" textarea />
-        </div>
-      </section>
-      
-      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row border-t border-border/60 pt-4 pb-12">
-        <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-          <Check size={13} className={saved ? "text-emerald-500" : "text-muted-foreground/50"} /> 
-          {patchFicha.isPending ? 'Salvando alterações...' : saved ? 'Todas as alterações foram salvas' : 'Preencha com cuidado'}
+
+        <p className="mt-8 text-center text-xs text-[#5a6a80]">
+          Tela de design com dados de exemplo.
         </p>
-        <div className="flex items-center gap-3">
-          {error && <span className="text-xs text-red-500 font-bold">{error}</span>}
-          <button type="submit" disabled={patchFicha.isPending} data-testid="button-save-record" className="flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-xs font-bold text-primary-foreground hover:-translate-y-0.5 disabled:opacity-50">
-            {saved ? <><Check size={15} /> Salvo</> : <><Save size={15} /> Salvar</>}
-          </button>
-        </div>
-      </div>
-    </form>
-  </div>;
-}
-
-function Field({ label, value, onChange, id, textarea = false, placeholder = '' }: { label: string; value: string; onChange: (value: string) => void; id: string; textarea?: boolean; placeholder?: string }) {
-  return <label className="block">
-    <span className="mb-2 block text-[11px] font-bold">{label}</span>
-    {textarea ? 
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} data-testid={`input-record-${id}`} placeholder={placeholder} rows={2} className="w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-xs outline-none placeholder:text-muted-foreground/45 focus:ring-4 focus:ring-accent/10" /> : 
-      <input value={value} onChange={(e) => onChange(e.target.value)} data-testid={`input-record-${id}`} placeholder={placeholder} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs outline-none placeholder:text-muted-foreground/45 focus:ring-4 focus:ring-accent/10" />
-    }
-  </label>;
+      </main>
+    </div>
+  );
 }

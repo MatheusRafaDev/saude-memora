@@ -1,13 +1,20 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X, LoaderCircle } from 'lucide-react';
-import { LourdesHeartMark } from '@/components/LourdesHeartMark';
-import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch, getGetApiPacientesMeQueryOptions, getGetApiDocumentsQueryOptions, getGetApiFichaMedicaMeQueryOptions, useGetApiPacientesMe } from '@workspace/api-client-react';
+import { Eye, EyeOff, LoaderCircle, X } from 'lucide-react';
+import {
+  usePostApiAuthLogin,
+  usePostApiAuthRegister,
+  customFetch,
+  getGetApiPacientesMeQueryOptions,
+  getGetApiDocumentsQueryOptions,
+  getGetApiFichaMedicaMeQueryOptions,
+  useGetApiPacientesMe,
+} from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 
-interface AuthProps {
+export interface AuthProps {
   defaultMode?: 'login' | 'register';
-  params?: Record<string, string | undefined>;
+  [key: string]: any;
 }
 
 export default function Auth({ defaultMode }: AuthProps = {}) {
@@ -15,14 +22,14 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const queryClient = useQueryClient();
 
   const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
-    query: { 
-      queryKey: getGetApiPacientesMeQueryOptions().queryKey, 
+    query: {
+      queryKey: getGetApiPacientesMeQueryOptions().queryKey,
       retry: false,
-      meta: { skipUnauthorizedRedirect: true }
-    }
+      meta: { skipUnauthorizedRedirect: true },
+    },
   });
 
-  const loginMutation    = usePostApiAuthLogin();
+  const loginMutation = usePostApiAuthLogin();
   const registerMutation = usePostApiAuthRegister();
 
   const getInitialMode = (): 'login' | 'register' => {
@@ -30,7 +37,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     if (location === '/cadastro' || location === '/criar-conta') return 'register';
     if (typeof window !== 'undefined') {
       const search = window.location.search;
-      if (search.includes('mode=register') || search.includes('tab=register') || search.includes('cadastro')) {
+      if (search.includes('mode=register') || search.includes('cadastro')) {
         return 'register';
       }
     }
@@ -38,6 +45,16 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   };
 
   const [mode, setMode] = useState<'login' | 'register'>(getInitialMode);
+  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', password: '', termsAccepted: false });
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  // Recover password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMessage, setForgotMessage] = useState('');
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
 
   useEffect(() => {
     if (user && !isUserLoading) {
@@ -50,34 +67,21 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       setMode(defaultMode);
     } else if (location === '/cadastro' || location === '/criar-conta') {
       setMode('register');
-    } else if (location === '/entrar' && !window.location.search.includes('register')) {
+    } else if (location === '/entrar') {
       setMode('login');
     }
   }, [defaultMode, location]);
 
   const handleModeChange = (newMode: 'login' | 'register') => {
     setMode(newMode);
-    if (newMode === 'register' && location === '/entrar') {
+    setError('');
+    setMessage('');
+    if (newMode === 'register') {
       window.history.replaceState(null, '', '/cadastro');
-    } else if (newMode === 'login' && (location === '/cadastro' || location === '/criar-conta')) {
+    } else {
       window.history.replaceState(null, '', '/entrar');
     }
   };
-  const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm]                 = useState({ name: '', birthDate: '', sex: 'Outro', email: '', password: '' });
-  const [message, setMessage]           = useState('');
-  const [error, setError]               = useState('');
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotEmail, setForgotEmail]         = useState('');
-  const [forgotMessage, setForgotMessage]     = useState('');
-
-  if (isUserLoading || user) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -87,324 +91,338 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     try {
       if (mode === 'login') {
         await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
-        
-        setMessage('Carregando seus dados...');
+        setMessage('Carregando seu histórico...');
         await Promise.allSettled([
           queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
           queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
-          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions())
+          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
         ]);
-        
         setLocation('/visao-geral');
       } else {
+        if (!form.termsAccepted) {
+          setError('Você precisa aceitar os Termos e a Política de Privacidade para continuar.');
+          return;
+        }
+
         await registerMutation.mutateAsync({
-          data: { nome: form.name, dataNascimento: form.birthDate, sexo: form.sex, email: form.email, senha: form.password }
+          data: {
+            nome: form.name.trim(),
+            email: form.email.trim(),
+            senha: form.password,
+          },
         });
-        await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
-        
-        setMessage('Preparando sua conta...');
+
+        setMessage('Conta criada com sucesso! Entrando...');
         await Promise.allSettled([
           queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
           queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
-          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions())
+          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
         ]);
-        
         setLocation('/visao-geral');
       }
     } catch (err: any) {
-      if (err.data && Array.isArray(err.data))      setError(err.data.join(', '));
-      else if (err.data?.message)                    setError(err.data.message);
-      else                                           setError('Ocorreu um erro na requisição.');
+      const apiMessage = err?.response?.data?.message || err?.message || 'Ocorreu um erro. Verifique seus dados.';
+      setError(apiMessage);
     }
   };
 
-  const handleForgotSubmit = async (e: FormEvent) => {
+  const handleForgotPassword = async (e: FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return;
-    
+    setIsForgotLoading(true);
+    setForgotMessage('');
     try {
-      await customFetch('/api/auth/forgot-password', {
+      await customFetch('/api/auth/reset-password/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail })
+        body: JSON.stringify({ email: forgotEmail }),
       });
-      setForgotMessage('Se o e-mail estiver cadastrado, você receberá um link de recuperação em instantes.');
-    } catch (err) {
-      // Even on error, we can show a generic message for security, or the actual error
-      setForgotMessage('Erro ao enviar solicitação. Tente novamente mais tarde.');
+      setForgotMessage('Se o e-mail estiver cadastrado, enviamos as instruções de recuperação.');
+    } catch {
+      setForgotMessage('Se o e-mail estiver cadastrado, enviamos as instruções de recuperação.');
+    } finally {
+      setIsForgotLoading(false);
     }
-    
-    setTimeout(() => { setShowForgotModal(false); setForgotMessage(''); setForgotEmail(''); }, 4000);
   };
 
-  const inputCls = "h-11 w-full rounded-xl border border-input bg-card/80 px-4 text-[13px] outline-none transition-all placeholder:text-muted-foreground/45 focus:border-accent/40 focus:ring-4 focus:ring-accent/8 focus:bg-card";
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f7f9fc]">
+        <LoaderCircle className="h-8 w-8 animate-spin text-[#1b3a60]" />
+      </div>
+    );
+  }
+
+  const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
-    <div className="app-noise flex min-h-[100dvh] bg-background">
+    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
+      <div className="flex min-h-[820px] flex-1 flex-col lg:flex-row">
+        {/* ── Left Illustration & Highlights Panel (Desktop 44%) ── */}
+        <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[17px] text-white">
+            <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+            <span>
+              saúde<span className="font-semibold text-[#7cc4e6]">memora</span>
+            </span>
+          </Link>
 
-      {/* ── Left panel ─────────────────────────────────────────────────── */}
-      <section className="relative hidden w-[42%] overflow-hidden bg-[hsl(var(--sidebar))] p-10 text-white lg:flex lg:flex-col">
-        {/* Decoration */}
-        <div className="pointer-events-none absolute -right-24 top-16 h-80 w-80 rounded-full border border-white/6" />
-        <div className="pointer-events-none absolute -right-8  top-32 h-56 w-56 rounded-full border border-white/4" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-[hsl(var(--sidebar-primary)/.07)] blur-3xl" />
+          {/* SVG Illustration from Design Board */}
+          <div className="my-auto py-8">
+            <img
+              src="/login-illustration.svg"
+              alt="Ilustração de segurança e saúde"
+              className="mx-auto block h-auto w-full max-w-[340px]"
+            />
 
-        {/* Logo */}
-        <Link href="/" className="relative flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <LourdesHeartMark className="h-8 w-8" />
-          <span className="text-[15px] font-bold tracking-[-0.04em]">
-            saúde<span className="text-[hsl(var(--sidebar-primary))]">memora</span>
-          </span>
-        </Link>
+            <h1 className="mt-6 max-w-[400px] text-[38px] font-extrabold leading-[1.05] tracking-[-0.04em]">
+              Tudo o que importa, <span className="text-[#7cc4e6]">em um só lugar.</span>
+            </h1>
 
-        {/* 3D Mascot Illustration Card */}
-        <div className="relative my-auto flex flex-col items-center justify-center py-4">
-          <div className="group relative w-full max-w-[340px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-white/20 hover:bg-white/[0.07]">
-            <div className="overflow-hidden rounded-2xl bg-black/20">
-              <img
-                src="/login-illustration.svg"
-                alt="Profissional de saúde em um ambiente azul, com um gráfico de sinais vitais"
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Tagline */}
-        <div className="relative max-w-[380px] pb-4">
-          <p className="font-mono text-[9px] uppercase tracking-[.22em] text-[hsl(var(--sidebar-primary))] mb-2">
-            uma nova relação com sua saúde
-          </p>
-          <h1 className="text-[clamp(28px,3.2vw,44px)] font-black leading-[1.02] tracking-[-0.05em]">
-            Tudo o que importa,{' '}
-            <span className="text-[hsl(var(--sidebar-primary))]">em um só lugar.</span>
-          </h1>
-          <p className="mt-3 text-[12px] leading-6 text-white/60">
-            Organize seus documentos de saúde com clareza, contexto e o cuidado que a sua história merece.
-          </p>
-        </div>
-      </section>
-
-      {/* ── Right panel: Form ──────────────────────────────────────────── */}
-      <section className="flex flex-1 items-center justify-center px-5 py-10 sm:px-10">
-        <div className="w-full max-w-[400px] page-enter">
-
-          {/* Mobile logo & Welcome Banner */}
-          <div className="mb-6 lg:hidden">
-            <Link href="/" className="mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <LourdesHeartMark className="h-7 w-7 text-accent" />
-              <span className="text-[15px] font-bold tracking-[-0.04em]">
-                Saúde<span className="text-accent">Memora</span>
-              </span>
-            </Link>
-
-            <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-slate-50/80 p-3 shadow-xs">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <ShieldCheck size={22} strokeWidth={2.2} />
-              </span>
-              <div>
-                <p className="text-xs font-bold text-foreground">Espaço Pessoal Protegido</p>
-                <p className="text-[11px] text-muted-foreground">Seus exames, laudos e receitas em total sigilo.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Heading */}
-          <div className="mb-7">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-mono text-[9px] uppercase tracking-[.2em] text-accent mb-1.5">bem-vindo</p>
-                <h2 className="text-2xl font-black tracking-[-0.05em] text-foreground">
-                  {mode === 'login' ? 'Que bom ter você aqui.' : 'Comece a cuidar da sua história.'}
-                </h2>
-              </div>
-            </div>
-            <p className="mt-2 text-[13px] text-muted-foreground">
-              {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Crie um espaço seguro para seus documentos.'}
+            <p className="mt-3 max-w-[400px] text-[15px] leading-relaxed text-[#c9d6e8]">
+              Organize seus documentos de saúde com clareza, contexto e o cuidado que a sua história merece.
             </p>
+
+            <div className="mt-6 space-y-2.5 text-[14px] font-medium">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                  </svg>
+                </div>
+                <span>Exames, receitas e laudos reunidos</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l4 4 10-10" />
+                  </svg>
+                </div>
+                <span>Você confere e corrige o que foi lido</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
+                  </svg>
+                </div>
+                <span>Espaço pessoal, com você no controle</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Right Form Panel ───────────────────────────────────── */}
+        <section className="flex flex-1 flex-col justify-between p-6 sm:p-12">
+          {/* Top Return Link */}
+          <div>
+            <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">
+              ← Voltar ao início
+            </Link>
           </div>
 
-          {/* Mode toggle */}
-          <div className="mb-6 flex rounded-xl border border-border bg-muted/50 p-1">
-            {(['login', 'register'] as const).map((m) => (
+          {/* Form Container (max-w 420px centered) */}
+          <div className="mx-auto my-auto w-full max-w-[420px] py-8">
+            <h2 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.035em]">
+              {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
+            </h2>
+            <p className="mt-2 mb-6 text-[15px] text-[#5a6a80]">
+              {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
+            </p>
+
+            {/* Segmented Pill Tabs */}
+            <div className="mb-6 flex rounded-xl border border-[#dde3ec] bg-[#f1f4f8] p-1">
               <button
-                key={m}
-                onClick={() => handleModeChange(m)}
                 type="button"
-                className={`flex-1 rounded-lg py-2 text-[12px] font-semibold transition-all ${
-                  mode === m
-                    ? 'bg-card text-primary shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                onClick={() => handleModeChange('login')}
+                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-semibold transition-all ${
+                  mode === 'login' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
                 }`}
               >
-                {m === 'login' ? 'Entrar' : 'Criar conta'}
+                Entrar
               </button>
-            ))}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={submit} className="space-y-3.5">
-            {mode === 'register' && (
-              <>
-                <label className="block">
-                  <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">Nome Completo</span>
-                  <input
-                    required autoComplete="name" value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Seu nome completo"
-                    className={inputCls}
-                  />
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-
-                  <label className="block col-span-2">
-                    <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">Nascimento</span>
-                    <input
-                      type="date" required value={form.birthDate}
-                      onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                      className={inputCls}
-                    />
-                  </label>
-                </div>
-                <label className="block">
-                  <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">Sexo</span>
-                  <select
-                    value={form.sex} onChange={(e) => setForm({ ...form, sex: e.target.value })}
-                    className={inputCls}
-                  >
-                    <option value="F">Feminino</option>
-                    <option value="M">Masculino</option>
-                    <option value="Outro">Outro</option>
-                  </select>
-                </label>
-              </>
-            )}
-
-            {/* Email */}
-            <label className="block">
-              <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">E-mail</span>
-              <div className="relative">
-                <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                <input
-                  required autoComplete="email" type="email" value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="voce@email.com"
-                  className={`${inputCls} pl-10`}
-                />
-              </div>
-            </label>
-
-            {/* Password */}
-            <label className="block">
-              <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">Senha</span>
-              <div className="relative">
-                <LockKeyhole size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                <input
-                  required autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  minLength={8} type={showPassword ? 'text' : 'password'} value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="No mínimo 8 caracteres"
-                  className={`${inputCls} pl-10 pr-10`}
-                />
-                <button
-                  type="button" onClick={() => setShowPassword(!showPassword)}
-                  aria-label="Mostrar senha"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-            </label>
-
-            {/* Forgot password */}
-            {mode === 'login' && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => { setShowForgotModal(true); setForgotMessage(''); }}
-                  className="text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Esqueci minha senha
-                </button>
-              </div>
-            )}
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loginMutation.isPending || registerMutation.isPending}
-              className="group mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground shadow-[0_8px_20px_hsl(var(--primary)/.2)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_hsl(var(--primary)/.3)] active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0"
-            >
-              {loginMutation.isPending || registerMutation.isPending ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <>
-                  {mode === 'login' ? 'Entrar na minha conta' : 'Criar meu espaço'}
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-                </>
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={() => handleModeChange('register')}
+                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-semibold transition-all ${
+                  mode === 'register' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
+                }`}
+              >
+                Criar conta
+              </button>
+            </div>
 
             {/* Messages */}
-            {message && (
-              <div className="flex items-center gap-2 rounded-xl bg-secondary/80 px-3.5 py-3 text-[12px] font-medium text-secondary-foreground">
-                <Check size={14} className="shrink-0 text-accent" /> {message}
-              </div>
-            )}
             {error && (
-              <div className="flex items-center gap-2 rounded-xl bg-destructive/8 border border-destructive/15 px-3.5 py-3 text-[12px] font-medium text-destructive">
+              <div className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
                 {error}
               </div>
             )}
-          </form>
+            {message && (
+              <div className="mb-5 rounded-xl border border-[#b9dcd6] bg-[#e8f4f2] p-3.5 text-[14px] text-[#2f7a70]">
+                {message}
+              </div>
+            )}
 
-          {/* Footer trust */}
+            {/* Form */}
+            <form onSubmit={submit} className="space-y-4">
+              {mode === 'register' && (
+                <label className="block">
+                  <span className="block mb-1.5 text-[13px] font-semibold">Nome completo</span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Seu nome completo"
+                    value={form.name}
+                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                  />
+                </label>
+              )}
 
-        </div>
-      </section>
+              <label className="block">
+                <span className="block mb-1.5 text-[13px] font-semibold">E-mail</span>
+                <input
+                  type="email"
+                  required
+                  placeholder="voce@email.com"
+                  value={form.email}
+                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                  className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                />
+              </label>
 
-      {/* ── Forgot password modal ─────────────────────────────────────── */}
-      {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center glass-modal px-4 page-enter">
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-float relative">
-            <button
-              onClick={() => setShowForgotModal(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <X size={16} />
-            </button>
+              <label className="block">
+                <span className="block mb-1.5 text-[13px] font-semibold">Senha</span>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder={mode === 'register' ? 'No mínimo 8 caracteres' : 'Sua senha'}
+                    value={form.password}
+                    onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                    className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 pr-11 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5a6a80] hover:text-[#1d2a3d]"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </label>
 
-            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-accent">
-              <LockKeyhole size={16} />
-            </div>
-            <h3 className="text-[17px] font-bold mt-4">Recuperar senha</h3>
-            <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
-              Digite o e-mail da sua conta para recebermos as instruções de recuperação.
-            </p>
+              {mode === 'login' ? (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[14px] font-semibold text-[#1b3a60] hover:underline"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-start gap-2.5 pt-1 text-[13px] text-[#5a6a80] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.termsAccepted}
+                    onChange={(e) => setForm((prev) => ({ ...prev, termsAccepted: e.target.checked }))}
+                    className="mt-0.5 h-4 w-4 rounded border-[#c6cfdb] text-[#1b3a60] focus:ring-[#1b3a60]"
+                  />
+                  <span>
+                    Li e concordo com os{' '}
+                    <Link href="/termos" className="font-semibold text-[#1b3a60] hover:underline">
+                      Termos de Uso
+                    </Link>{' '}
+                    e a{' '}
+                    <Link href="/privacidade" className="font-semibold text-[#1b3a60] hover:underline">
+                      Política de Privacidade
+                    </Link>
+                    .
+                  </span>
+                </label>
+              )}
 
-            <form onSubmit={handleForgotSubmit} className="mt-5 space-y-3">
-              <input
-                required type="email" value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="voce@email.com"
-                className="h-11 w-full rounded-xl border border-input bg-background/60 px-4 text-[13px] outline-none transition-all placeholder:text-muted-foreground/45 focus:border-accent/40 focus:ring-4 focus:ring-accent/8"
-              />
               <button
                 type="submit"
-                className="w-full h-11 rounded-xl bg-primary text-[12px] font-semibold text-primary-foreground hover:bg-primary/90 transition-all hover:-translate-y-0.5"
+                disabled={isPending}
+                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1b3a60] font-bold text-white transition-all hover:bg-[#244d7e] disabled:opacity-50"
               >
-                Enviar link de recuperação
+                {isPending ? (
+                  <LoaderCircle className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <span>{mode === 'login' ? 'Entrar na minha conta' : 'Criar minha conta'}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </>
+                )}
               </button>
             </form>
 
-            {forgotMessage && (
-              <div className="mt-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/40 p-3 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 flex items-start gap-2">
-                <Check size={14} className="shrink-0 mt-0.5" />
+            <p className="mt-6 text-[12px] leading-relaxed text-[#5a6a80]">
+              Seu espaço é pessoal: você decide quais documentos e informações adicionar.
+            </p>
+          </div>
+
+          <div />
+        </section>
+      </div>
+
+      {/* ── Modal Recuperar Senha (matches ModalRecuperarSenha.html) ── */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f1e3c]/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-[500px] rounded-[28px] bg-white p-8 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.4)] animate-in zoom-in-95">
+            <button
+              type="button"
+              onClick={() => {
+                setShowForgotModal(false);
+                setForgotMessage('');
+              }}
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f1f4f8] text-[#5a6a80] hover:text-[#1d2a3d]"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8f4f2]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
+              </svg>
+            </div>
+
+            <h2 className="mt-4 mb-1.5 text-[22px] font-bold">Recuperar senha</h2>
+            <p className="mb-5 text-[14px] leading-relaxed text-[#5a6a80]">
+              Digite o e-mail da sua conta para recebermos as instruções de recuperação.
+            </p>
+
+            {forgotMessage ? (
+              <div className="rounded-xl border border-[#b9dcd6] bg-[#e8f4f2] p-4 text-[14px] text-[#2f7a70]">
                 {forgotMessage}
               </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <input
+                  type="email"
+                  required
+                  placeholder="voce@email.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[14px] outline-none focus:border-[#1b3a60]"
+                />
+                <button
+                  type="submit"
+                  disabled={isForgotLoading}
+                  className="flex h-12 w-full items-center justify-center rounded-xl bg-[#1b3a60] text-[15px] font-bold text-white transition-all hover:bg-[#244d7e]"
+                >
+                  {isForgotLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : 'Enviar link de recuperação'}
+                </button>
+              </form>
             )}
           </div>
         </div>

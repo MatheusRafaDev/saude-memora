@@ -12,15 +12,16 @@ export function PublicPageHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-6 md:px-8">
+    <header className="sticky top-0 z-40 w-full border-b border-[#dde3ec] bg-white">
+      <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between px-6 sm:px-12">
         <Link href="/" className="flex items-center gap-2.5" aria-label="SaúdeMemora — início">
-          <img src="/logo.png" alt="" className="brand-logo-animated h-9 w-9 object-contain" />
-          <span className="text-[15px] font-bold tracking-tight text-foreground">
-            Saúde<span className="text-accent">Memora</span>
+          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+          <span className="text-[18px] font-extrabold tracking-[-0.03em] text-[#1d2a3d]">
+            saúde<span className="font-semibold text-[#2f7a70]">memora</span>
           </span>
         </Link>
-        <nav aria-label="Navegação principal" className="hidden items-center gap-8 md:flex">
+
+        <nav aria-label="Navegação principal" className="hidden items-center gap-9 md:flex">
           {navigation.map(({ href, label }) => {
             const isCurrent = location === href;
             return (
@@ -28,34 +29,47 @@ export function PublicPageHeader() {
                 key={href}
                 href={href}
                 aria-current={isCurrent ? 'page' : undefined}
-                className={`relative py-2 text-[13px] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-primary after:transition-transform ${isCurrent ? 'text-primary after:scale-x-100' : 'text-muted-foreground after:scale-x-0 hover:text-primary hover:after:scale-x-100'}`}
+                className={`text-[15px] transition-colors ${
+                  isCurrent
+                    ? 'font-bold text-[#1b3a60]'
+                    : 'font-medium text-[#5a6a80] hover:text-[#1b3a60]'
+                }`}
               >
                 {label}
               </Link>
             );
           })}
         </nav>
+
         <div className="hidden items-center gap-2 md:flex">
-          <Link href="/entrar" className="rounded-md px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted">
+          <Link
+            href="/entrar"
+            className="rounded-xl px-4 py-3 text-[15px] font-semibold text-[#1d2a3d] transition-colors hover:bg-[#f1f4f8]"
+          >
             Entrar
           </Link>
-          <Link href="/cadastro" className="rounded-md bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+          <Link
+            href="/cadastro"
+            className="rounded-xl bg-[#1b3a60] px-5 py-3 text-[15px] font-bold text-white transition-all hover:bg-[#244d7e]"
+          >
             Criar conta
           </Link>
         </div>
+
         <button
           type="button"
           aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
           aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen((open) => !open)}
-          className="flex h-11 w-11 items-center justify-center rounded-md text-foreground hover:bg-muted md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-xl text-[#1d2a3d] hover:bg-[#f1f4f8] md:hidden"
         >
-          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
+
       {mobileMenuOpen && (
-        <nav aria-label="Navegação móvel" className="border-t border-border bg-background px-4 py-3 md:hidden">
-          <div className="mx-auto flex max-w-6xl flex-col gap-1">
+        <nav aria-label="Navegação móvel" className="border-t border-[#dde3ec] bg-white px-6 py-4 md:hidden">
+          <div className="flex flex-col gap-2">
             {navigation.map(({ href, label }) => {
               const isCurrent = location === href;
               return (
@@ -64,15 +78,29 @@ export function PublicPageHeader() {
                   href={href}
                   onClick={() => setMobileMenuOpen(false)}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`rounded-md px-3 py-3 text-sm font-medium transition-colors ${isCurrent ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
+                  className={`rounded-xl px-4 py-3 text-[15px] font-medium transition-colors ${
+                    isCurrent ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]' : 'text-[#5a6a80] hover:bg-[#f1f4f8]'
+                  }`}
                 >
                   {label}
                 </Link>
               );
             })}
-            <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3">
-              <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md border border-border px-3 py-3 text-center text-sm font-semibold text-foreground">Entrar</Link>
-              <Link href="/cadastro" onClick={() => setMobileMenuOpen(false)} className="rounded-md bg-primary px-3 py-3 text-center text-sm font-semibold text-primary-foreground">Criar conta</Link>
+            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-[#dde3ec] pt-4">
+              <Link
+                href="/entrar"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl border border-[#dde3ec] px-4 py-3 text-center text-[14px] font-semibold text-[#1d2a3d]"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/cadastro"
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl bg-[#1b3a60] px-4 py-3 text-center text-[14px] font-bold text-white"
+              >
+                Criar conta
+              </Link>
             </div>
           </div>
         </nav>

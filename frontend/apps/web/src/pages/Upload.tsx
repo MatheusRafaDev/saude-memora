@@ -1,183 +1,486 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, CheckCircle2, FileText, ImagePlus, LoaderCircle, Lock, UploadCloud } from 'lucide-react';
+import {
+  UploadCloud,
+  FileText,
+  Shield,
+  AlertTriangle,
+  RotateCw,
+  LoaderCircle,
+  Check,
+  CheckCircle2,
+} from 'lucide-react';
 import { customFetch, getGetApiDocumentsQueryKey } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
+import { useToast } from '@/hooks/use-toast';
 
-function UploadProcessingStatus({
-  stage,
-  progress,
-  fileCount,
-}: {
-  stage: 'uploading' | 'processing';
+type UploadQueueItem = {
+  id: string;
+  name: string;
+  sizeStr: string;
   progress: number;
-  fileCount: number;
-}) {
-  const isProcessing = stage === 'processing';
-  const progressValue = Math.max(0, Math.min(progress, 100));
-  const isExtractionComplete = isProcessing && progressValue >= 90;
+  status: 'pronto' | 'processando' | 'fila' | 'falha';
+  statusText: string;
+  error?: string;
+};
 
-  return (
-    <section className="mx-auto max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-lg shadow-primary/5 sm:p-8 md:p-10" aria-live="polite">
-      <div className="flex flex-col items-center text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-primary">
-          <LoaderCircle size={25} className="animate-spin" aria-hidden="true" />
-        </span>
-        <h2 className="mt-5 text-lg font-extrabold text-foreground">
-          {isProcessing ? 'Estamos lendo seu documento' : 'Enviando seu documento'}
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          {isProcessing
-            ? 'Estamos extraindo e organizando as informações. Você pode acompanhar o andamento abaixo.'
-            : `${fileCount} arquivo${fileCount === 1 ? '' : 's'} sendo enviado${fileCount === 1 ? '' : 's'} com segurança.`}
-        </p>
-      </div>
-
-      <div className="mt-8">
-        <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
-          <span className="text-foreground">{isProcessing ? 'Progresso do processamento' : 'Enviando arquivos'}</span>
-          <span className="tabular-nums text-primary">
-            {isProcessing && progressValue > 0 ? `${progressValue}%` : 'Em andamento'}
-          </span>
-        </div>
-        <div
-          className="h-2.5 overflow-hidden rounded-full bg-muted"
-          role="progressbar"
-          aria-label={isProcessing ? 'Progresso do processamento' : 'Envio do documento'}
-          aria-valuemin={isProcessing ? 0 : undefined}
-          aria-valuemax={isProcessing ? 100 : undefined}
-          aria-valuenow={isProcessing ? progressValue : undefined}
-          aria-valuetext={isProcessing ? `${progressValue}% concluído` : 'Envio em andamento'}
-        >
-          {isProcessing ? (
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
-              style={{ width: `${progressValue}%` }}
-            />
-          ) : (
-            <div className="h-full w-1/3 rounded-full bg-primary/80 animate-continuous" />
-          )}
-        </div>
-      </div>
-
-      <ol className="mt-7 grid gap-2 sm:grid-cols-3">
-        {[
-          { label: 'Arquivo recebido', complete: isProcessing, active: !isProcessing },
-          { label: 'Leitura do documento', complete: isExtractionComplete, active: isProcessing && !isExtractionComplete },
-          { label: 'Organização dos dados', complete: false, active: isExtractionComplete },
-        ].map(({ label, complete, active }) => (
-          <li
-            key={label}
-            className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
-              complete
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                : active
-                  ? 'border-primary/20 bg-primary/5 text-primary'
-                  : 'border-border bg-muted/40 text-muted-foreground'
-            }`}
-          >
-            {complete ? (
-              <Check size={14} aria-hidden="true" />
-            ) : active ? (
-              <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <span className="h-3.5 w-3.5 rounded-full border border-current opacity-50" aria-hidden="true" />
-            )}
-            <span>{label}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
+const DOC_TYPES = [
+  { id: 'auto', label: 'Detectar automático' },
+  { id: 'receita', label: 'Receita' },
+  { id: 'exame', label: 'Exame' },
+  { id: 'laudo', label: 'Laudo' },
+  { id: 'atestado', label: 'Atestado' },
+];
 
 export default function Upload() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const [files, setFiles] = useState<File[]>([]);
-  const [docType, setDocType] = useState('exame');
-  const [stage, setStage] = useState<'idle' | 'uploading' | 'processing' | 'done'>('idle');
-  const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
 
-  const [resultId, setResultId] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [selectedType, setSelectedType] = useState('auto');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fileRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const start = async () => { 
-    if (files.length === 0) return; 
-    setStage('uploading');
-    setProgress(0);
-    setError('');
+  // Queue of uploaded items
+  const [queue, setQueue] = useState<UploadQueueItem[]>([
+    {
+      id: 'mock-1',
+      name: 'receita-dr-silva.jpg',
+      sizeStr: '1,2 MB · enviado',
+      progress: 100,
+      status: 'pronto',
+      statusText: 'Pronto',
+    },
+    {
+      id: 'mock-2',
+      name: 'hemograma.pdf',
+      sizeStr: '840 KB · lendo informações',
+      progress: 60,
+      status: 'processando',
+      statusText: 'Processando 60%',
+    },
+    {
+      id: 'mock-3',
+      name: 'laudo-ultrassom.png',
+      sizeStr: '2,4 MB · aguardando',
+      progress: 15,
+      status: 'fila',
+      statusText: 'Na fila',
+    },
+    {
+      id: 'mock-4',
+      name: 'exame-borrado.jpg',
+      sizeStr: '3,1 MB · não foi possível ler',
+      progress: 100,
+      status: 'falha',
+      statusText: 'Falhou',
+      error: 'Tentar novamente · dica: fotografe com boa luz',
+    },
+  ]);
 
-    try {
-      const formData = new FormData();
-      files.forEach(f => formData.append('file', f));
-      formData.append('documentType', docType);
+  const handleFiles = async (files: File[]) => {
+    if (files.length === 0) return;
 
-      // We use customFetch directly because the Orval hook doesn't support dynamic multipart bodies well without schema
-      const res = await customFetch('/api/documents/upload', {
-        method: 'POST',
-        body: formData as any
-      }) as any;
-
-      setResultId(res.id);
-      void queryClient.invalidateQueries({ queryKey: getGetApiDocumentsQueryKey() });
-      if (res.status === 'pronto') { setProgress(100); setStage('done'); return; }
-
-      // Aguarda o worker validar/extrair o documento
-      setProgress(typeof res.progress === 'number' ? res.progress : 25);
-      setStage('processing');
-      const outcome = await waitForDocumentProcessing(res.id, {
-        onProgress: setProgress,
-      });
-      if (outcome.status === 'pronto') { setProgress(100); setStage('done'); }
-      else if (outcome.status === 'rejeitado') { setFiles([]); setError(outcome.message); setStage('idle'); setProgress(0); }
-      else if (outcome.status === 'failed') { setError(outcome.message); setStage('idle'); setProgress(0); }
-      else setLocation('/documentos');
-    } catch (err) {
-      const invalidMsg = getInvalidDocumentMessage(err);
-      if (invalidMsg) { setFiles([]); setError(invalidMsg); setStage('idle'); setProgress(0); return; }
-      console.error(err);
-      setError('Erro ao processar o documento. Tente novamente.');
-      setStage('idle');
-      setProgress(0);
-    }
-  };
-
-  // Limpa o input para o iOS disparar onChange mesmo ao tirar outra foto com o mesmo nome
-  const handlePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = Array.from(e.target.files || []);
-    e.target.value = '';
-    
-    if (picked.length) { 
-      if (picked.some(f => f.size > 10 * 1024 * 1024)) {
-        setError('O tamanho máximo permitido por arquivo é 10 MB.');
-        setFiles([]);
-        return;
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: 'Arquivo muito grande',
+          description: `${file.name} ultrapassa o limite de 10 MB.`,
+          variant: 'destructive',
+        });
+        continue;
       }
-      setError(''); 
-      setFiles(picked); 
+
+      const tempId = `upload-${Date.now()}-${Math.random()}`;
+      const sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB · enviando`;
+
+      const newItem: UploadQueueItem = {
+        id: tempId,
+        name: file.name,
+        sizeStr,
+        progress: 20,
+        status: 'processando',
+        statusText: 'Processando 20%',
+      };
+
+      setQueue((prev) => [newItem, ...prev]);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (selectedType !== 'auto') {
+          formData.append('documentType', selectedType);
+        }
+
+        const res = (await customFetch('/api/documents/upload', {
+          method: 'POST',
+          body: formData as any,
+        })) as any;
+
+        void queryClient.invalidateQueries({ queryKey: getGetApiDocumentsQueryKey() });
+        window.dispatchEvent(new CustomEvent('document-uploaded'));
+
+        if (res.status === 'pronto') {
+          setQueue((prev) =>
+            prev.map((item) =>
+              item.id === tempId
+                ? {
+                    ...item,
+                    progress: 100,
+                    status: 'pronto',
+                    statusText: 'Pronto',
+                    sizeStr: `${(file.size / (1024 * 1024)).toFixed(1)} MB · enviado`,
+                  }
+                : item
+            )
+          );
+          toast({ title: 'Documento processado com sucesso!' });
+          continue;
+        }
+
+        // Wait for worker processing
+        const outcome = await waitForDocumentProcessing(res.id, {
+          onProgress: (p) => {
+            setQueue((prev) =>
+              prev.map((item) =>
+                item.id === tempId
+                  ? {
+                      ...item,
+                      progress: p,
+                      statusText: `Processando ${p}%`,
+                    }
+                  : item
+              )
+            );
+          },
+        });
+
+        if (outcome.status === 'pronto') {
+          setQueue((prev) =>
+            prev.map((item) =>
+              item.id === tempId
+                ? {
+                    ...item,
+                    progress: 100,
+                    status: 'pronto',
+                    statusText: 'Pronto',
+                    sizeStr: `${(file.size / (1024 * 1024)).toFixed(1)} MB · concluído`,
+                  }
+                : item
+            )
+          );
+          toast({ title: 'Documento concluído e catalogado!' });
+        } else {
+          setQueue((prev) =>
+            prev.map((item) =>
+              item.id === tempId
+                ? {
+                    ...item,
+                    status: 'falha',
+                    statusText: 'Falhou',
+                    error: 'message' in outcome ? (outcome as any).message : 'Erro ao processar arquivo.',
+                  }
+                : item
+            )
+          );
+        }
+      } catch (err) {
+        const invalidMsg = getInvalidDocumentMessage(err);
+        setQueue((prev) =>
+          prev.map((item) =>
+            item.id === tempId
+              ? {
+                  ...item,
+                  status: 'falha',
+                  statusText: 'Falhou',
+                  error: invalidMsg || 'Erro no envio do documento.',
+                }
+              : item
+          )
+        );
+      }
     }
   };
 
-  const finish = () => { 
-    if (resultId) {
-      setLocation(`/documentos/${resultId}`);
-    } else {
-      setLocation('/documentos');
-    }
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
   };
 
-  return <div className="page-enter mx-auto max-w-[850px] space-y-8"><Link href="/documentos" className="flex w-fit items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary"><ArrowLeft size={15} /> Voltar para documentos</Link><section className="text-center"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">novo documento</p><h1 className="mt-2 text-3xl font-extrabold tracking-[-.06em] md:text-[42px]">{stage === 'done' ? 'Tudo pronto para revisar.' : 'Vamos guardar isso com cuidado.'}</h1><p className="mx-auto mt-3 max-w-[500px] text-sm leading-6 text-muted-foreground">{stage === 'idle' ? 'Envie um exame, receita ou relatório. A SaúdeMemora lê o documento e organiza as informações principais para você.' : stage === 'uploading' ? 'Enviando seus arquivos com segurança...' : stage === 'processing' ? 'Estamos extraindo e organizando as informações...' : 'Encontramos as informações principais. Dê uma olhada antes de salvar.'}</p></section>
-    {stage === 'idle' && <><input ref={fileRef} type="file" multiple accept=".pdf,image/jpeg,image/png" className="hidden" onChange={handlePicked} /><input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePicked} /><div role="button" tabIndex={0} onClick={() => fileRef.current?.click()} className="group relative flex min-h-[285px] w-full cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-accent/50 bg-[hsl(var(--secondary)/.4)] px-6 transition-all hover:border-accent hover:bg-secondary"><span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card text-accent soft-shadow transition-transform group-hover:-translate-y-1"><UploadCloud size={28} /></span><h2 className="mt-5 text-base font-extrabold">{files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : 'Clique para escolher arquivos'}</h2><p className="mt-2 text-xs text-muted-foreground">PDF, JPG ou PNG · até 10 MB</p><div className="mt-6 flex gap-3"><span className="rounded-lg border border-border bg-card px-3 py-2 text-[11px] font-bold text-primary">Procurar arquivos</span><button type="button" onClick={(e) => { e.stopPropagation(); cameraRef.current?.click(); }} className="rounded-lg border border-border bg-accent text-accent-foreground px-3 py-2 text-[11px] font-bold flex items-center gap-1.5 hover:bg-accent/90"><ImagePlus size={14} /> Usar Câmera</button></div></div><div className="flex items-center justify-center gap-6 text-[10px] text-muted-foreground"><span className="flex items-center gap-1.5"><Lock size={12} className="text-accent" /> Privado por padrão</span><span className="flex items-center gap-1.5"><ImagePlus size={12} className="text-accent" /> Imagem ou PDF</span></div>
-    
-    {error && <p className="text-center text-xs font-bold text-red-500">{error}</p>}
-    <button onClick={start} className="mx-auto flex h-12 items-center gap-2 rounded-xl bg-primary px-7 text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40" disabled={files.length === 0}>Processar documento</button></>}
-    
-    {(stage === 'uploading' || stage === 'processing') && <UploadProcessingStatus stage={stage} progress={progress} fileCount={files.length} />}
-    
-    {stage === 'done' && <div className="rounded-3xl border border-border bg-card p-6 soft-shadow md:p-9"><div className="flex items-center gap-3 border-b border-border pb-5"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-accent"><CheckCircle2 size={22} /></span><div><p className="text-sm font-extrabold">Documento processado</p><p className="mt-1 text-xs text-muted-foreground">{files.length} arquivo(s)</p></div><span className="ml-auto rounded-full bg-secondary px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-[.1em] text-secondary-foreground">Concluído</span></div><div className="rounded-xl border border-accent/25 bg-secondary/50 p-4 mt-6"><p className="flex items-center gap-2 text-xs font-bold text-secondary-foreground"><Check size={15} /> Extração concluída com sucesso</p><p className="mt-2 text-xs leading-5 text-muted-foreground">O documento foi salvo no banco de dados com as informações extraídas.</p></div><button onClick={finish} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:-translate-y-0.5"><FileText size={16} /> Ver documento</button></div>}
-  </div>;
+  const onDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    void handleFiles(files);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-8 pb-16">
+        {/* Breadcrumb */}
+        <div className="text-sm text-[#5a6a80] mb-3.5 flex items-center gap-2">
+          <Link href="/documentos" className="hover:text-[#1b3a60] transition-colors">
+            Documentos
+          </Link>
+          <span>/</span>
+          <span className="text-[#1d2a3d] font-medium">Adicionar documento</span>
+        </div>
+
+        {/* Header Title */}
+        <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
+          <div>
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+              Envio de arquivos
+            </div>
+            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+              Adicionar documento
+            </h1>
+            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+              Envie fotos ou PDFs e acompanhe a leitura em tempo real.
+            </p>
+          </div>
+        </div>
+
+        {/* 2-col Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column (8 cols) */}
+          <div className="lg:col-span-8 flex flex-col gap-5">
+            {/* Drag & Drop Zone */}
+            <div
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={onDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-[24px] bg-gradient-to-br from-[#f4f8fd] to-[#e8f4f2] py-14 px-6 text-center cursor-pointer transition-all ${
+                isDragging ? 'border-[#1b3a60] bg-blue-50/80 scale-[1.01]' : 'border-[#9fb4d0] hover:border-[#1b3a60]'
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  e.target.value = '';
+                  void handleFiles(files);
+                }}
+              />
+
+              <div className="w-[76px] h-[76px] rounded-[24px] bg-[#1b3a60] mx-auto mb-4.5 flex items-center justify-center shadow-[0_14px_28px_-12px_rgba(27,58,96,0.5)]">
+                <UploadCloud size={34} className="text-white" strokeWidth={2} />
+              </div>
+
+              <div className="text-[22px] font-extrabold tracking-[-0.02em] text-[#1d2a3d]">
+                Arraste arquivos aqui
+              </div>
+              <p className="mt-2 mb-5.5 text-[#5a6a80] text-base">
+                ou toque para escolher fotos e PDFs do seu aparelho
+              </p>
+
+              <button
+                type="button"
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors shadow-xs pointer-events-none"
+              >
+                Escolher arquivos
+              </button>
+
+              <div className="mt-4.5 text-[13px] text-[#5a6a80]">
+                PDF, JPG ou PNG · até 10 MB por arquivo
+              </div>
+            </div>
+
+            {/* Document Type Selector Card */}
+            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="text-sm font-bold text-[#1d2a3d] mb-3">
+                Tipo de documento
+              </div>
+              <div className="flex gap-2.5 flex-wrap">
+                {DOC_TYPES.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setSelectedType(t.id)}
+                    className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+                      selectedType === t.id
+                        ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs'
+                        : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Enviados agora Card */}
+            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
+                  <FileText size={18} className="text-[#1b3a60]" />
+                </div>
+                <b className="text-base text-[#1d2a3d] flex-1">Enviados agora</b>
+                <span className="inline-block px-2.5 py-1 rounded-full bg-[#f1f4f8] text-[#1d2a3d] text-xs font-bold whitespace-nowrap">
+                  {queue.length} arquivos
+                </span>
+              </div>
+
+              <div className="divide-y divide-[#dde3ec]">
+                {queue.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3.5 py-4">
+                    {/* File icon preview */}
+                    <div className="w-11 h-14 rounded-lg bg-white border border-[#dde3ec] p-2.5 shrink-0 flex flex-col justify-between shadow-xs">
+                      <div className="space-y-1">
+                        <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[90%]" />
+                        <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[65%]" />
+                        <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[85%]" />
+                      </div>
+                      <div className="h-[4px] rounded-[2px] bg-[#2f7a70]/50 w-[70%]" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <b className="text-[15px] text-[#1d2a3d] truncate">{item.name}</b>
+                        {item.status === 'pronto' && (
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e6f4ec] text-[#1f7a4d] text-xs font-bold whitespace-nowrap">
+                            Pronto
+                          </span>
+                        )}
+                        {item.status === 'processando' && (
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
+                            {item.statusText}
+                          </span>
+                        )}
+                        {item.status === 'fila' && (
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#fdf3d8] text-[#6b4208] text-xs font-bold whitespace-nowrap">
+                            Na fila
+                          </span>
+                        )}
+                        {item.status === 'falha' && (
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#fde8e6] text-[#a13a30] text-xs font-bold whitespace-nowrap">
+                            Falhou
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-[13px] text-[#5a6a80] mb-2">
+                        {item.sizeStr}
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="h-2 rounded-full bg-[#f1f4f8] overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            item.status === 'pronto'
+                              ? 'bg-[#2f7a70]'
+                              : item.status === 'processando'
+                              ? 'bg-[#1f7fe0]'
+                              : item.status === 'fila'
+                              ? 'bg-[#e3b95a]'
+                              : 'bg-[#a13a30]'
+                          }`}
+                          style={{ width: `${item.progress}%` }}
+                        />
+                      </div>
+
+                      {item.error && (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex gap-2 items-center mt-2 text-[13px] text-[#a13a30] font-semibold cursor-pointer hover:underline"
+                        >
+                          <RotateCw size={14} />
+                          {item.error}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column (4 cols) */}
+          <div className="lg:col-span-4 flex flex-col gap-5">
+            {/* Como funciona Card */}
+            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="text-base font-extrabold text-[#1d2a3d] mb-4">
+                Como funciona
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1b3a60] text-white font-extrabold flex items-center justify-center shrink-0 text-sm">
+                    1
+                  </div>
+                  <div>
+                    <b className="text-[15px] text-[#1d2a3d] block">Envie</b>
+                    <div className="text-[13px] text-[#5a6a80] leading-relaxed mt-0.5">
+                      Foto ou PDF do documento.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1b3a60] text-white font-extrabold flex items-center justify-center shrink-0 text-sm">
+                    2
+                  </div>
+                  <div>
+                    <b className="text-[15px] text-[#1d2a3d] block">Aguarde a leitura</b>
+                    <div className="text-[13px] text-[#5a6a80] leading-relaxed mt-0.5">
+                      Organizamos as informações automaticamente.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#1b3a60] text-white font-extrabold flex items-center justify-center shrink-0 text-sm">
+                    3
+                  </div>
+                  <div>
+                    <b className="text-[15px] text-[#1d2a3d] block">Confira</b>
+                    <div className="text-[13px] text-[#5a6a80] leading-relaxed mt-0.5">
+                      Revise e corrija o que for preciso.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Boas práticas Card */}
+            <div className="bg-[#e8f4f2] border border-[#b9dcd6] rounded-[20px] p-5.5">
+              <div className="flex gap-2.5 items-center font-extrabold text-[#2f7a70] mb-2.5 text-base">
+                <Shield size={20} strokeWidth={2} />
+                Boas práticas
+              </div>
+              <ul className="m-0 pl-4.5 text-sm leading-relaxed text-[#1d2a3d] space-y-1">
+                <li>Fotografe em local bem iluminado</li>
+                <li>Enquadre a página inteira</li>
+                <li>Evite sombras e reflexos</li>
+              </ul>
+            </div>
+
+            {/* Accuracy & Privacy Disclaimer Card */}
+            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="flex gap-2.5 items-start text-[13px] leading-relaxed text-[#5a6a80]">
+                <AlertTriangle size={18} className="text-[#5a6a80] shrink-0 mt-0.5" />
+                <span>
+                  Os dados lidos podem conter erros: confira sempre. Você pode apagar qualquer documento depois.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-8 text-center text-xs text-[#5a6a80]">
+          Tela de design com dados de exemplo.
+        </p>
+      </main>
+    </div>
+  );
 }

@@ -1,20 +1,39 @@
 import { Link } from 'wouter';
-import { ArrowLeft, FileSearch } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background gap-6 p-4">
-      <div className="flex flex-col items-center text-center max-w-md">
-        <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-primary mb-4">
-          <FileSearch size={40} />
+    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col items-center justify-center text-center p-8 bg-[radial-gradient(700px_400px_at_50%_0,#e6eef9,transparent_60%),#fff]">
+      <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[20px] text-[#1b3a60] tracking-[-0.03em]">
+        <img src="/logo.svg" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
+        <span>
+          saúde<span className="font-semibold text-[#2f7a70]">memora</span>
         </span>
-        <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent mb-2">Erro 404</p>
-        <h1 className="text-4xl font-extrabold tracking-[-0.06em] text-foreground">Página não encontrada</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          A página que você está procurando não existe ou foi movida.
-        </p>
-        <Link href="/visao-geral" className="mt-6 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all">
-          <ArrowLeft size={16} /> Voltar ao Painel
+      </Link>
+
+      <div className="mt-6 text-[120px] sm:text-[150px] font-extrabold leading-none tracking-[-0.06em] bg-gradient-to-br from-[#1b3a60] to-[#2f7a70] bg-clip-text text-transparent select-none">
+        404
+      </div>
+
+      <h1 className="mt-2 mb-2.5 text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em]">
+        Página não encontrada
+      </h1>
+
+      <p className="mb-7 max-w-[420px] text-[16px] sm:text-[17px] leading-relaxed text-[#5a6a80]">
+        O endereço pode ter mudado ou não existe mais. Vamos te levar de volta ao caminho certo.
+      </p>
+
+      <div className="flex flex-wrap justify-center gap-3">
+        <Link
+          href="/"
+          className="inline-flex min-h-[44px] items-center rounded-xl bg-[#1b3a60] px-5 text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
+        >
+          Voltar ao início
+        </Link>
+        <Link
+          href="/visao-geral"
+          className="inline-flex min-h-[44px] items-center rounded-xl border border-[#dde3ec] bg-white px-5 text-[14px] font-bold text-[#1d2a3d] transition-all hover:bg-[#f7f9fc]"
+        >
+          Ir para visão geral
         </Link>
       </div>
     </div>

@@ -1,149 +1,210 @@
 import { Link } from 'wouter';
-import {
-  Activity,
-  ArrowRight,
-  ClipboardList,
-  FileText,
-  HeartPulse,
-  Pill,
-  Search,
-  ShieldCheck,
-  Upload,
-} from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
-const resources = [
-  {
-    icon: FileText,
-    title: 'Documentos em um só lugar',
-    description: 'Reúna exames, receitas, laudos, atestados, vacinas e encaminhamentos no seu espaço pessoal.',
-  },
-  {
-    icon: Upload,
-    title: 'Envio e leitura de arquivos',
-    description: 'Envie imagens ou PDFs. A plataforma organiza informações extraídas para você conferir e corrigir.',
-  },
-  {
-    icon: Search,
-    title: 'Busca e filtros',
-    description: 'Encontre registros pelo título ou conteúdo e filtre por tipo, status e período.',
-  },
-  {
-    icon: Activity,
-    title: 'Resultados de exames',
-    description: 'Consulte os resultados registrados nos documentos e mantenha o histórico mais acessível.',
-  },
-  {
-    icon: Pill,
-    title: 'Medicamentos registrados',
-    description: 'Localize medicamentos identificados nas receitas adicionadas à sua conta.',
-  },
-  {
-    icon: ClipboardList,
-    title: 'Ficha de saúde',
-    description: 'Mantenha reunidas informações pessoais de saúde para consultar quando precisar.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Privacidade e controle',
-    description: 'Gerencie seu consentimento, apague documentos individualmente ou solicite a exclusão da conta.',
-  },
-  {
-    icon: HeartPulse,
-    title: 'Acesso rápido às informações',
-    description: 'Consulte seus registros em uma interface adaptada para celular e computador.',
-  },
-];
-
 export default function Recursos() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
-      <main>
-        <section className="relative isolate overflow-hidden border-b border-border/70">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_20%_10%,rgba(28,84,135,0.1),transparent_42%),radial-gradient(ellipse_at_90%_50%,rgba(20,125,128,0.08),transparent_35%)]" />
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 md:grid-cols-[1.1fr_0.9fr] lg:gap-14">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Recursos da plataforma</p>
-              <h1 className="mt-4 text-balance text-4xl font-bold leading-tight tracking-[-0.045em] sm:text-5xl">
-                Suas informações de saúde, mais fáceis de organizar e encontrar.
+
+      <main className="flex-1">
+        {/* ── Hero Section ────────────────────────────────────────── */}
+        <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e8f4f2] px-6 py-16 sm:px-12 md:py-20">
+          <div className="mx-auto flex max-w-[1100px] flex-wrap items-center gap-14">
+            <div className="flex-1 min-w-[320px]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+                Recursos da plataforma
+              </div>
+              <h1 className="mt-4 text-[38px] sm:text-[46px] lg:text-[50px] font-extrabold leading-[1.08] tracking-[-0.04em] text-[#1d2a3d]">
+                Suas informações de saúde, mais fáceis de{' '}
+                <span className="text-[#2f7a70]">organizar e encontrar.</span>
               </h1>
-              <p className="mt-5 text-base leading-7 text-muted-foreground sm:text-lg">
+              <p className="mt-5 mb-7 text-[17px] sm:text-[18px] leading-[1.65] text-[#5a6a80]">
                 Conheça as ferramentas do SaúdeMemora para reunir documentos, laudos e receitas em um espaço seguro com suporte de inteligência artificial.
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/entrar" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90">
-                  Experimentar agora <ArrowRight size={16} />
-                </Link>
-                <a href="#resources-list-title" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-white/80 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-white">
-                  Ver funcionalidades
-                </a>
-              </div>
+              <Link
+                href="/cadastro"
+                className="inline-flex min-h-[48px] items-center rounded-xl bg-[#1b3a60] px-6 text-[15px] font-bold text-white transition-all hover:bg-[#244d7e]"
+              >
+                Experimentar agora
+              </Link>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[480px]">
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-tr from-accent/15 via-primary/10 to-transparent blur-2xl" aria-hidden="true" />
-              <div className="group relative overflow-hidden rounded-3xl border border-border/80 bg-white p-2.5 shadow-xl transition-all duration-300 hover:shadow-2xl">
-                <div className="overflow-hidden rounded-2xl bg-teal-50/50">
-                  <img
-                    src="/recursos-illustration.svg"
-                    alt="Documentos de saúde organizados em pastas, computador e celular em tons de azul"
-                    loading="eager"
-                    fetchPriority="high"
-                    decoding="async"
-                    className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                </div>
-                <div className="mt-2.5 flex items-center justify-between px-2 py-1 text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1 font-semibold text-primary">
-                    <ShieldCheck size={13} /> OCR inteligente para receitas e exames
-                  </span>
-                  <span className="text-[10px]">SaúdeMemora 3D</span>
-                </div>
+            <div className="flex-1 min-w-[320px]">
+              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e8f4f2] to-[#dfe9f5] p-5 shadow-sm">
+                <img
+                  src="/recursos-illustration.svg"
+                  alt="Ilustração recursos"
+                  className="h-auto w-full block"
+                />
               </div>
             </div>
           </div>
         </section>
 
-        <section aria-labelledby="resources-list-title" className="mx-auto max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
-          <h2 id="resources-list-title" className="text-2xl font-bold tracking-tight sm:text-3xl">O que você encontra</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Os recursos ajudam a organizar e consultar informações. Os dados extraídos automaticamente podem conter erros; confira-os sempre.
-          </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {resources.map(({ icon: Icon, title, description }) => (
-              <article key={title} className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-primary">
-                  <Icon size={20} aria-hidden="true" />
-                </span>
-                <h3 className="mt-4 text-base font-semibold">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-              </article>
-            ))}
+        {/* ── Funcionalidades ─────────────────────────────────────── */}
+        <section className="px-6 py-16 sm:px-12">
+          <div className="mx-auto max-w-[1100px]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+              Funcionalidades
+            </div>
+            <h2 className="mt-2.5 text-[30px] sm:text-[34px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#1d2a3d]">
+              O que você encontra
+            </h2>
+
+            <div className="mt-9 grid grid-cols-1 gap-4 md:grid-cols-5">
+              <div className="rounded-[24px] bg-[#1b3a60] p-8 text-white md:col-span-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                  </svg>
+                </div>
+                <h3 className="mt-5 text-[22px] font-bold">Documentos em um só lugar</h3>
+                <p className="mt-2 text-[15px] leading-[1.65] text-[#c9d6e8]">
+                  Reúna exames, receitas, laudos, atestados, vacinas e encaminhamentos no seu espaço pessoal.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] border border-[#dde3ec] bg-[#e8f4f2] p-8 md:col-span-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 16V5M7 10l5-5 5 5M5 19h14" />
+                  </svg>
+                </div>
+                <h3 className="mt-5 text-[22px] font-bold text-[#1d2a3d]">Envio e leitura de arquivos</h3>
+                <p className="mt-2 text-[15px] leading-[1.65] text-[#5a6a80]">
+                  Envie imagens ou PDFs. A plataforma organiza informações extraídas para você conferir e corrigir.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 5a6 6 0 100 12 6 6 0 000-12zM16 16l4 4" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Busca e filtros</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Encontre registros pelo título ou conteúdo e filtre por tipo, status e período.
+                </p>
+              </div>
+
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Resultados de exames</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Consulte os resultados registrados nos documentos.
+                </p>
+              </div>
+
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Medicamentos registrados</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Localize medicamentos identificados nas receitas.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Ficha de saúde</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Mantenha reunidas informações pessoais de saúde.
+                </p>
+              </div>
+
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Privacidade e controle</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Gerencie seu consentimento, apague documentos ou solicite a exclusão da conta.
+                </p>
+              </div>
+
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l4 4 10-10" />
+                  </svg>
+                </div>
+                <h3 className="mt-4 text-[17px] font-bold">Acesso rápido</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
+                  Interface adaptada para celular e computador.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="border-y border-amber-300 bg-amber-50">
-          <div className="mx-auto max-w-5xl px-5 py-6 sm:px-8">
-            <h2 className="font-bold text-amber-950">Uma ferramenta de organização</h2>
-            <p className="mt-2 text-sm leading-6 text-amber-950">
-              O SaúdeMemora não faz diagnósticos e não substitui avaliação médica nem atendimento de emergência. Em uma emergência no Brasil, ligue 192 (SAMU) ou procure um serviço de urgência.
-            </p>
+        {/* ── Disclaimers ─────────────────────────────────────────── */}
+        <section className="px-6 py-6 pb-16 sm:px-12">
+          <div className="mx-auto flex max-w-[1100px] flex-wrap gap-4">
+            <div className="flex-1 min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
+              <b>Confira os dados extraídos</b>
+              <p className="mt-2 text-[15px] leading-relaxed">
+                Os dados extraídos automaticamente podem conter erros; confira-os sempre.
+              </p>
+            </div>
+
+            <div className="flex-1 min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
+              <b>Uma ferramenta de organização</b>
+              <p className="mt-2 text-[15px] leading-relaxed">
+                O SaúdeMemora não faz diagnósticos e não substitui avaliação médica nem atendimento de emergência. Em emergência no Brasil, ligue 192 (SAMU).
+              </p>
+            </div>
           </div>
         </section>
 
-        <section className="mx-auto flex max-w-5xl flex-col gap-5 px-5 py-12 sm:px-8 sm:py-16 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Quer organizar seu histórico?</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Acesse sua conta para começar a reunir seus documentos.</p>
+        {/* ── CTA Banner ─────────────────────────────────────────── */}
+        <section className="px-6 pb-16 sm:px-12">
+          <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-12 sm:p-14 text-white">
+            <div className="max-w-[520px]">
+              <h2 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em]">
+                Comece a reunir sua história de saúde.
+              </h2>
+              <p className="mt-3 text-[16px] leading-relaxed text-[#c9d6e8]">
+                Crie sua conta em poucos minutos e adicione seu primeiro documento.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                href="/cadastro"
+                className="inline-flex min-h-[48px] items-center rounded-xl bg-white px-6 text-[15px] font-bold text-[#1b3a60] transition-colors hover:bg-[#f1f4f8]"
+              >
+                Criar conta
+              </Link>
+              <Link
+                href="/entrar"
+                className="inline-flex min-h-[48px] items-center rounded-xl border border-white/35 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Já tenho conta
+              </Link>
+            </div>
           </div>
-          <Link href="/entrar" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-            Acessar plataforma <ArrowRight size={16} />
-          </Link>
         </section>
       </main>
-      <PublicPageFooter />
+
+      <PublicPageFooter variant="compact" />
     </div>
   );
 }

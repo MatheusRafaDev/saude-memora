@@ -1,76 +1,81 @@
-import { useState } from 'react';
-import { Github, Linkedin } from 'lucide-react';
 import { Link } from 'wouter';
-import { LegalDocumentDialog, type LegalDocument } from '@/components/LegalDocumentDialog';
 
-function Brand() {
-  return (
-    <Link href="/" className="flex w-fit items-center gap-2.5" aria-label="SaúdeMemora — início">
-      <img src="/logo.png" alt="" className="brand-logo-animated h-9 w-9 object-contain" />
-      <span className="text-[15px] font-bold tracking-tight text-foreground">
-        Saúde<span className="text-accent">Memora</span>
-      </span>
-    </Link>
-  );
-}
-
-export function PublicPageFooter() {
-  const [legalDocument, setLegalDocument] = useState<LegalDocument | null>(null);
-
-  return (
-    <>
-      <footer className="border-t border-border bg-muted/40">
-        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-7 sm:px-6 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-8">
-          <div className="min-w-0">
-            <Brand />
-            <p className="mt-2 text-xs text-muted-foreground">Organização e acesso às suas informações de saúde.</p>
-            <p className="mt-1 text-xs text-muted-foreground">Criado por Matheus Rafael.</p>
-          </div>
-          <nav
-            aria-label="Links institucionais"
-            className="grid grid-cols-2 items-center justify-items-start gap-x-6 gap-y-1 text-xs font-medium text-muted-foreground md:flex md:flex-wrap md:justify-center"
-          >
-            <Link href="/recursos" className="hover:text-primary">Recursos</Link>
-            <Link href="/sobre" className="hover:text-primary">Sobre</Link>
-            <button type="button" onClick={() => setLegalDocument('privacy')} className="min-h-11 text-left transition-colors hover:text-primary">
-              Privacidade
-            </button>
-            <button type="button" onClick={() => setLegalDocument('terms')} className="min-h-11 text-left transition-colors hover:text-primary">
-              Termos de uso
-            </button>
-          </nav>
-          <div className="flex items-center justify-between gap-4 md:justify-end">
-            <div className="flex items-center gap-4">
-              <a
-                href="https://www.linkedin.com/in/matheus-rafael-50a676219/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="LinkedIn de Matheus Rafael"
-                className="text-muted-foreground transition-colors hover:text-primary"
-              >
-                <Linkedin size={17} />
-              </a>
-              <a
-                href="https://github.com/MatheusRafaDev"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="GitHub de Matheus Rafael"
-                className="text-muted-foreground transition-colors hover:text-primary"
-              >
-                <Github size={17} />
-              </a>
-            </div>
-            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} SaúdeMemora</p>
+export function PublicPageFooter({ variant = 'home' }: { variant?: 'home' | 'compact' }) {
+  if (variant === 'compact') {
+    return (
+      <footer className="border-t border-[#dde3ec] bg-[#f1f4f8] px-6 py-7 sm:px-12 text-[13px] text-[#5a6a80]">
+        <div className="mx-auto flex max-w-[1140px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span>Organização e acesso às suas informações de saúde.</span>
+          <div className="flex gap-4">
+            <Link href="/privacidade" className="hover:text-[#1b3a60]">Privacidade</Link>
+            <Link href="/termos" className="hover:text-[#1b3a60]">Termos de uso</Link>
+            <span>© {new Date().getFullYear()} SaúdeMemora</span>
           </div>
         </div>
       </footer>
-      <LegalDocumentDialog
-        document={legalDocument ?? 'privacy'}
-        open={legalDocument !== null}
-        onOpenChange={(open) => {
-          if (!open) setLegalDocument(null);
-        }}
-      />
-    </>
+    );
+  }
+
+  return (
+    <footer className="border-t border-[#dde3ec] bg-[#f1f4f8] p-8 sm:p-12">
+      <div className="mx-auto flex max-w-[1140px] flex-wrap justify-between gap-12 text-[#5a6a80]">
+        <div className="max-w-[300px]">
+          <div className="text-[18px] font-extrabold text-[#1d2a3d]">
+            saúde<span className="font-semibold text-[#1f7fe0]">memora</span>
+          </div>
+          <p className="mt-3 text-[14px] leading-relaxed">
+            Organização e acesso às suas informações de saúde.
+          </p>
+        </div>
+
+        <div>
+          <b className="text-[14px] font-bold text-[#1d2a3d]">Produto</b>
+          <div className="mt-2.5 text-[14px]">
+            <Link href="/recursos" className="transition-colors hover:text-[#1b3a60]">Recursos</Link>
+          </div>
+          <div className="mt-2.5 text-[14px]">
+            <Link href="/sobre" className="transition-colors hover:text-[#1b3a60]">Sobre</Link>
+          </div>
+        </div>
+
+        <div>
+          <b className="text-[14px] font-bold text-[#1d2a3d]">Legal</b>
+          <div className="mt-2.5 text-[14px]">
+            <Link href="/privacidade" className="transition-colors hover:text-[#1b3a60]">Privacidade</Link>
+          </div>
+          <div className="mt-2.5 text-[14px]">
+            <Link href="/termos" className="transition-colors hover:text-[#1b3a60]">Termos de uso</Link>
+          </div>
+        </div>
+
+        <div>
+          <b className="text-[14px] font-bold text-[#1d2a3d]">Criador</b>
+          <div className="mt-2.5 text-[14px] text-[#1d2a3d] font-semibold">Matheus Rafael</div>
+          <div className="mt-2.5 flex items-center gap-2 text-[14px]">
+            <a
+              href="https://www.linkedin.com/in/matheus-rafael-50a676219/"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-[#1b3a60]"
+            >
+              LinkedIn
+            </a>
+            <span>·</span>
+            <a
+              href="https://github.com/MatheusRafaDev"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-[#1b3a60]"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-8 max-w-[1140px] border-t border-[#dde3ec] pt-5 text-[13px] text-[#5a6a80]">
+        © {new Date().getFullYear()} SaúdeMemora
+      </div>
+    </footer>
   );
 }

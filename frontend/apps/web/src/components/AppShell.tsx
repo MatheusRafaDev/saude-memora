@@ -1,52 +1,61 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Activity, BookOpen, FileText, LogOut, ShieldCheck, UserRound, Plus, ChevronDown, History, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
 import { EmergenciaModal } from '@/components/EmergenciaModal';
 import { useGetApiPacientesMe, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
 
 const navItems = [
-  { href: '/visao-geral',     label: 'Visão geral',   icon: Activity  },
-  { href: '/documentos', label: 'Documentos',     icon: FileText  },
-  { href: '/anamnese',   label: 'Anamnese',       icon: BookOpen  },
-  { href: '/chat',       label: 'Chat IA',        icon: MessageSquare },
+  {
+    href: '/visao-geral',
+    label: 'Visão geral',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/documentos',
+    label: 'Documentos',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
+      </svg>
+    ),
+  },
+  {
+    href: '/anamnese',
+    label: 'Anamnese',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 4h10a3 3 0 013 3v13H8a3 3 0 01-3-3zM8 8h6" />
+      </svg>
+    ),
+  },
+  {
+    href: '/chat',
+    label: 'Chat IA',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 5h14v11H10l-5 4z" />
+      </svg>
+    ),
+  },
 ];
-
-function preloadRoute(href: string) {
-  switch (href) {
-    case '/visao-geral':
-      void import('@/pages/Dashboard');
-      break;
-    case '/documentos':
-      void import('@/pages/Documents');
-      break;
-    case '/anamnese':
-      void import('@/pages/Record');
-      break;
-    case '/chat':
-      void import('@/pages/Chat');
-      break;
-  }
-}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showEmergenciaModal, setShowEmergenciaModal] = useState(false);
-  const { signOut, isSigningOut } = useAuth();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { signOut } = useAuth();
+
   const { data: profileRaw } = useGetApiPacientesMe();
   const { data: fichaRaw, isLoading: isFichaLoading } = useGetApiFichaMedicaMe();
-  const profile = (profileRaw as unknown as any) || { nome: 'Usuário', email: '' };
+  const profile = (profileRaw as unknown as any) || { nome: 'Ana Souza', email: '' };
 
-  const [currentDate, setCurrentDate] = useState('');
-  useEffect(() => {
-    setCurrentDate(new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }));
-  }, []);
-
-  // Force anamnese completion if it doesn't exist yet
   const isAnamnesePending = !isFichaLoading && fichaRaw !== undefined && Object.keys(fichaRaw as any).length === 0;
 
   useEffect(() => {
@@ -55,234 +64,195 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [isAnamnesePending, location, setLocation]);
 
-  const active = navItems.find((item) => location.startsWith(item.href))?.href;
-  const navigate = (href: string) => { setUserMenuOpen(false); setLocation(href); };
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const activeHref = navItems.find((item) => location.startsWith(item.href))?.href || (location === '/visao-geral' ? '/visao-geral' : '');
 
   const initials = profile.nome
-    ? profile.nome.split(' ').map((n: string) => n[0]).slice(0, 2).join('')
-    : '?';
+    ? profile.nome
+        .split(' ')
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'AS';
 
   return (
-    <div className="app-noise min-h-[100dvh] bg-background flex flex-col">
+    <div className="min-h-screen bg-[#f7f9fc] flex flex-col font-sans text-[#1d2a3d]">
       <a
         href="#main-content"
-        className="absolute left-4 top-2 z-[60] -translate-y-20 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground focus:translate-y-0"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-[60] focus:rounded-lg focus:bg-[#1b3a60] focus:px-4 focus:py-3 focus:text-white"
       >
         Pular para o conteúdo
       </a>
 
-      {/* ── Top Navigation Bar ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 w-full glass-header border-b border-white/5">
-        <div className="mx-auto max-w-[1440px] px-4 md:px-8">
-          <div className="flex h-[64px] items-center gap-6">
+      {/* ── Desktop Header ─────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 flex h-[72px] items-center gap-7 border-b border-[#dde3ec] bg-white px-6 sm:px-10">
+        <Link
+          href={isAnamnesePending ? '/anamnese' : '/visao-geral'}
+          className="flex items-center gap-2.5 shrink-0 text-[#1b3a60] font-extrabold text-[18px] tracking-[-0.03em]"
+        >
+          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+          <span>
+            saúde<span className="font-semibold text-[#2f7a70]">memora</span>
+          </span>
+        </Link>
 
-            {/* Logo */}
-            <Link href={isAnamnesePending ? "/anamnese" : "/visao-geral"} className="flex items-center gap-2.5 shrink-0" data-testid="link-brand">
-              <span className="brand-logo flex items-center justify-center">
-                <LourdesHeartMark className="h-7 w-7" />
-              </span>
-              <span className="leading-tight hidden sm:block">
-                <span className="block text-[14px] font-bold tracking-[-0.04em] text-foreground">
-                  saúde<span className="text-accent">memora</span>
-                </span>
-                <span className="font-mono text-[8px] uppercase tracking-[.2em] text-muted-foreground/50">
-                  seu histórico
-                </span>
-              </span>
-            </Link>
-
-            {/* Divider */}
-            <div className="h-5 w-px bg-border/50 hidden md:block" />
-
-            {/* Nav items (Desktop only) */}
-            <nav aria-label="Navegação principal" className="hidden md:flex items-center justify-center gap-1 flex-1">
-              {!isAnamnesePending && navItems.map(({ href, label, icon: Icon }) => {
-                const isActive = active === href;
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onMouseEnter={() => preloadRoute(href)}
-                    onFocus={() => preloadRoute(href)}
-                    data-testid={`link-nav-${href.slice(1)}`}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`
-                      relative flex min-h-11 items-center gap-2 rounded-xl px-3 py-2
-                      text-[13px] font-medium transition-all duration-200 whitespace-nowrap
-                      ${isActive
-                        ? 'bg-primary/8 text-primary'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }
-                    `}
-                  >
-                    <Icon
-                      size={15}
-                      strokeWidth={isActive ? 2.2 : 1.8}
-                    />
-                    <span className="hidden sm:block">{label}</span>
-
-                    {/* Active bottom indicator */}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full bg-primary" />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Right side */}
-            <div className="ml-auto flex items-center gap-3 shrink-0">
-
-              {/* Date badge */}
-              {currentDate && (
-                <span className="font-mono text-[10px] sm:text-xs text-muted-foreground/80 capitalize mr-1">
-                  {currentDate.replace('.', '')}
-                </span>
-              )}
-
-              {/* Add button */}
-              {!isAnamnesePending && (
-              <button
-                onClick={triggerUploadModal}
-                className="
-                  flex min-h-11 items-center gap-1.5 rounded-xl
-                  bg-accent px-3 py-2 sm:px-3.5 sm:gap-2
-                  text-[11px] sm:text-[12px] font-semibold text-white
-                  shadow-md shadow-accent/25
-                  hover:shadow-lg hover:shadow-accent/30
-                  hover:-translate-y-px
-                  active:translate-y-0 active:scale-[0.98]
-                  transition-all duration-200
-                "
-                data-testid="button-add-document"
-              >
-                <Plus size={14} strokeWidth={2.5} />
-                <span>Adicionar</span>
-              </button>
-              )}
-
-              {/* User menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                  aria-expanded={userMenuOpen}
-                  aria-label="Abrir menu da conta"
-                  data-testid="button-user-menu"
-                  className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted"
-                >
-                  <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                    style={{ background: 'linear-gradient(135deg, hsl(199 66% 42%), hsl(213 42% 32%))' }}
-                  >
-                    {initials}
-                  </div>
-                  <ChevronDown
-                    size={13}
-                    className={`text-muted-foreground transition-transform duration-200 hidden sm:block ${userMenuOpen ? 'rotate-180' : ''}`}
-                  />
-                </button>
-
-                {/* Dropdown */}
-                {userMenuOpen && (
-                  <>
-                    {/* Backdrop */}
-                    <button
-                      className="fixed inset-0 z-10"
-                      onClick={() => setUserMenuOpen(false)}
-                      aria-label="Fechar menu"
-                    />
-                    <div className="absolute right-0 top-full mt-2 z-20 w-[220px] rounded-2xl border border-border bg-card shadow-xl shadow-black/20 overflow-hidden">
-                      {/* User info */}
-                      <div className="border-b border-border p-1.5">
-                        <button
-                          onClick={() => { if (!isAnamnesePending) navigate('/perfil'); }}
-                          className={`w-full text-left rounded-xl px-3 py-2 ${isAnamnesePending ? 'cursor-default' : 'hover:bg-muted transition-colors'}`}
-                        >
-                          <p className="text-[13px] font-semibold text-foreground truncate">{profile.nome}</p>
-                          <p className="text-[11px] text-muted-foreground truncate mt-0.5">{profile.email}</p>
-                        </button>
-                      </div>
-
-                      {/* Options */}
-                      <div className="py-1.5">
-                        {!isAnamnesePending && (
-                        <>
-                          <button
-                            onClick={() => navigate('/perfil')}
-                            className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-foreground transition-colors hover:bg-muted"
-                          >
-                            <UserRound size={14} />
-                            Meu perfil
-                          </button>
-                          <button
-                            onClick={() => { setShowEmergenciaModal(true); setUserMenuOpen(false); }}
-                            className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-600 transition-colors hover:bg-muted dark:text-red-500"
-                          >
-                            <ShieldCheck size={14} />
-                            Emergência
-                          </button>
-                        </>
-                        )}
-                        <button
-                          onClick={() => { void signOut(); }}
-                          disabled={isSigningOut}
-                          data-testid="button-signout"
-                          className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-destructive transition-colors hover:bg-destructive/8 disabled:cursor-wait disabled:opacity-60"
-                        >
-                          <LogOut size={14} />
-                          {isSigningOut ? 'Saindo...' : 'Sair da conta'}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 pb-24 md:px-8 md:py-8"
-      >
-        <div key={location} className="page-transition-enter flex-1">
-          {children}
-        </div>
-      </main>
-
-      {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}
-      {!isAnamnesePending && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/90 backdrop-blur-md border-t border-border pb-[env(safe-area-inset-bottom)]">
-          <nav aria-label="Navegação principal" className="flex h-16 items-center justify-around px-2">
-            {navItems.map(({ href, label, icon: Icon }) => {
-              const isActive = active === href;
+        {/* Navigation center */}
+        <nav aria-label="Navegação principal" className="hidden md:flex flex-1 items-center justify-center gap-1">
+          {!isAnamnesePending &&
+            navItems.map(({ href, label, icon }) => {
+              const isActive = activeHref === href;
               return (
                 <Link
                   key={href}
                   href={href}
-                  onTouchStart={() => preloadRoute(href)}
-                  onFocus={() => preloadRoute(href)}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`
-                    flex flex-col items-center justify-center gap-1 w-full h-full
-                    transition-colors duration-200
-                    ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
-                  `}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] transition-colors ${
+                    isActive
+                      ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]'
+                      : 'font-medium text-[#5a6a80] hover:bg-[#f1f4f8] hover:text-[#1b3a60]'
+                  }`}
                 >
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'scale-110 transition-transform' : ''} />
-                  <span className="text-[10px] font-semibold">{label}</span>
+                  <span className={isActive ? 'text-[#1b3a60]' : 'text-[#5a6a80]'}>{icon}</span>
+                  <span>{label}</span>
                 </Link>
               );
             })}
-          </nav>
-        </div>
-      )}
+        </nav>
 
+        {/* Right side actions */}
+        <div className="ml-auto flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowEmergenciaModal(true)}
+            className="flex items-center gap-2 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] px-3.5 py-2.5 text-[13px] font-bold text-[#a13a30] transition-colors hover:bg-[#fde8e6]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a13a30" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM12 9v6M9 12h6" />
+            </svg>
+            <span>Emergência</span>
+          </button>
+
+          {!isAnamnesePending && (
+            <button
+              type="button"
+              onClick={triggerUploadModal}
+              className="hidden sm:inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              <span>Adicionar</span>
+            </button>
+          )}
+
+          {/* User Avatar & Dropdown */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((prev) => !prev)}
+              aria-label="Menu do usuário"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#2f7a70] to-[#1b3a60] text-[14px] font-bold text-white transition-transform hover:scale-105"
+            >
+              {initials}
+            </button>
+
+            {userMenuOpen && (
+              <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-[#dde3ec] bg-white p-2 shadow-2xl animate-in fade-in zoom-in-95">
+                <div className="border-b border-[#dde3ec] px-3 py-2.5">
+                  <div className="text-[14px] font-bold text-[#1d2a3d] truncate">{profile.nome}</div>
+                  <div className="text-[12px] text-[#5a6a80] truncate">{profile.email}</div>
+                </div>
+
+                <div className="py-1">
+                  <Link
+                    href="/perfil"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
+                    </svg>
+                    Meu perfil
+                  </Link>
+
+                  <Link
+                    href="/emergencia"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM12 9v6M9 12h6" />
+                    </svg>
+                    Ficha de emergência
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      void signOut();
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#a13a30] hover:bg-[#fff5f4]"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                    Sair da conta
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main page content */}
+      <div id="main-content" className="flex-1 pb-20 md:pb-8">
+        {children}
+      </div>
+
+      {/* ── Mobile Bottom Navigation Bar (as per Mobile reference) ── */}
+      <nav
+        aria-label="Navegação móvel inferior"
+        className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-[#dde3ec] bg-white px-2 md:hidden"
+      >
+        {!isAnamnesePending &&
+          navItems.map(({ href, label, icon }) => {
+            const isActive = activeHref === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex flex-col items-center justify-center gap-1 px-3 py-1 text-[11px] font-medium transition-colors ${
+                  isActive ? 'text-[#1b3a60] font-bold' : 'text-[#5a6a80]'
+                }`}
+              >
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-xl ${
+                    isActive ? 'bg-[#f1f4f8] text-[#1b3a60]' : 'text-[#5a6a80]'
+                  }`}
+                >
+                  {icon}
+                </div>
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+      </nav>
+
+      {/* Modals */}
       <UploadModal />
       <ConsentModal />
-      <EmergenciaModal open={showEmergenciaModal} onClose={() => setShowEmergenciaModal(false)} />
+      <EmergenciaModal open={showEmergenciaModal} onOpenChange={setShowEmergenciaModal} />
     </div>
   );
 }

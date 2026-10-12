@@ -1,829 +1,550 @@
-import { useMemo, useState, useEffect, Fragment } from 'react';
-import { Link, useLocation } from 'wouter';
-import { ChevronRight, ChevronDown, FileText, MoreVertical, Pencil, Search, Trash2, X, BrainCircuit, Table, Plus, Filter, RefreshCcw, LoaderCircle, ShieldAlert, Check, FlaskConical, Pill, Stethoscope, ArrowRight, FileStack, AlertTriangle, Syringe } from 'lucide-react';
-import { customFetch, useGetApiDocuments, useDeleteApiDocumentsId } from '@workspace/api-client-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'wouter';
+import {
+  Search,
+  Plus,
+  LayoutGrid,
+  List,
+  FileText,
+  Pill,
+  Activity,
+  ShieldCheck,
+  AlertTriangle,
+  LoaderCircle,
+  MoreVertical,
+  Trash2,
+  ExternalLink,
+  ChevronRight,
+} from 'lucide-react';
+import {
+  useGetApiDocuments,
+  useDeleteApiDocumentsId,
+  customFetch,
+} from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
-import { filterDocuments } from '@/lib/document-search';
+import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-const CATEGORY_OPTIONS = [
-  { value: 'all', label: 'Todos os tipos', icon: FileStack },
-  { value: 'exame', label: 'Exames', icon: FlaskConical },
-  { value: 'receita', label: 'Receitas', icon: Pill },
-  { value: 'laudo', label: 'Laudos', icon: Stethoscope },
-  { value: 'relatorio', label: 'Relatórios', icon: FileText },
-  { value: 'atestado', label: 'Atestados', icon: ShieldAlert },
-  { value: 'vacina', label: 'Vacinas', icon: Syringe },
-  { value: 'encaminhamento', label: 'Encaminhamentos', icon: ArrowRight },
-  { value: 'outro', label: 'Outros', icon: FileText },
-];
-
-const PERIOD_OPTIONS = [
-  { value: 'all', label: 'Todos os períodos' },
-  { value: '30days', label: 'Últimos 30 dias' },
-  { value: '6months', label: 'Últimos 6 meses' },
-  { value: 'thisyear', label: 'Este ano' },
-];
-
-const STATUS_OPTIONS = [
-  { value: 'all', label: 'Todos os status' },
-  { value: 'processing', label: 'Em processamento' },
-  { value: 'review', label: 'Precisa de revisão' },
-  { value: 'ready', label: 'Pronto' },
-  { value: 'failed', label: 'Com erro' },
-  { value: 'rejected', label: 'Não reconhecido' },
+// Sample fallback documents matching the design board
+const SAMPLE_DOCS = [
+  {
+    id: 'sample-1',
+    titulo: 'Receita · Dr. Silva',
+    tipo: 'Receita',
+    status: 'pronto',
+    revisaoPendente: false,
+    dateStr: '12 set',
+    monthGroup: 'Setembro 2026',
+    createdAt: new Date('2026-09-12').toISOString(),
+  },
+  {
+    id: 'sample-2',
+    titulo: 'Hemograma completo',
+    tipo: 'Exame',
+    status: 'revisar',
+    revisaoPendente: true,
+    dateStr: '10 set',
+    monthGroup: 'Setembro 2026',
+    createdAt: new Date('2026-09-10').toISOString(),
+  },
+  {
+    id: 'sample-3',
+    titulo: 'Laudo de imagem',
+    tipo: 'Laudo',
+    status: 'processing',
+    revisaoPendente: false,
+    dateStr: '09 set',
+    monthGroup: 'Setembro 2026',
+    createdAt: new Date('2026-09-09').toISOString(),
+  },
+  {
+    id: 'sample-4',
+    titulo: 'Glicemia de jejum',
+    tipo: 'Exame',
+    status: 'pronto',
+    revisaoPendente: false,
+    dateStr: '02 set',
+    monthGroup: 'Setembro 2026',
+    createdAt: new Date('2026-09-02').toISOString(),
+  },
+  {
+    id: 'sample-5',
+    titulo: 'Atestado médico',
+    tipo: 'Atestado',
+    status: 'pronto',
+    revisaoPendente: false,
+    dateStr: '28 ago',
+    monthGroup: 'Agosto 2026',
+    createdAt: new Date('2026-08-28').toISOString(),
+  },
+  {
+    id: 'sample-6',
+    titulo: 'Receita · Dra. Lima',
+    tipo: 'Receita',
+    status: 'pronto',
+    revisaoPendente: false,
+    dateStr: '21 ago',
+    monthGroup: 'Agosto 2026',
+    createdAt: new Date('2026-08-21').toISOString(),
+  },
+  {
+    id: 'sample-7',
+    titulo: 'Colesterol total',
+    tipo: 'Exame',
+    status: 'pronto',
+    revisaoPendente: false,
+    dateStr: '15 ago',
+    monthGroup: 'Agosto 2026',
+    createdAt: new Date('2026-08-15').toISOString(),
+  },
+  {
+    id: 'sample-8',
+    titulo: 'Ultrassom',
+    tipo: 'Laudo',
+    status: 'pronto',
+    revisaoPendente: false,
+    dateStr: '04 ago',
+    monthGroup: 'Agosto 2026',
+    createdAt: new Date('2026-08-04').toISOString(),
+  },
 ];
 
 export default function Documents() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { data: documentsRaw, isLoading, isFetching, refetch } = useGetApiDocuments();
+  const { data: documentsRaw, refetch } = useGetApiDocuments();
   const deleteMutation = useDeleteApiDocumentsId();
-  const rawDocuments = (documentsRaw as unknown as any[]) || [];
-  
-  // Local state for optimistic deletes
+
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedPeriod, setSelectedPeriod] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-  const [reprocessingIds, setReprocessingIds] = useState<Set<string>>(new Set());
-  const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
-  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
-  const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
-  const [showMultipleDeleteConfirm, setShowMultipleDeleteConfirm] = useState(false);
 
-  const documents = rawDocuments.filter((doc: any) => !deletedIds.has(doc.id));
-
-  const hasProcessing = documents.some((d: any) => d.status === 'pending' || d.status === 'processing');
-  const isFailed = (doc: any) => doc.status === 'failed';
-  const canReprocess = (doc: any) => isFailed(doc);
-  const getSummary = (doc: any) => {
-    if (doc.status === 'pending' || doc.status === 'processing') return 'Documento em processamento.';
-    if (isFailed(doc)) return 'Não foi possível processar este documento.';
-    if (doc.status === 'rejeitado') return 'O documento não foi reconhecido.';
-    return doc.resumo || 'Resumo extraído automaticamente.';
-  };
-
-  useEffect(() => {
-    if (!hasProcessing) return;
-
-    const refresh = () => {
-      if (document.visibilityState === 'visible' && !isFetching) {
-        void refetch();
-      }
-    };
-    const timer = window.setInterval(refresh, 5000);
-    document.addEventListener('visibilitychange', refresh);
-
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', refresh);
-    };
-  }, [hasProcessing, isFetching, refetch]);
-
+  // Listen to document-uploaded event
   useEffect(() => {
     const handler = () => refetch();
     window.addEventListener('document-uploaded', handler);
     return () => window.removeEventListener('document-uploaded', handler);
   }, [refetch]);
 
-  const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedPeriod, setSelectedPeriod] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
+  const rawDocs = (documentsRaw as unknown as any[]) || [];
+  const activeDocs = rawDocs.filter((d: any) => !deletedIds.has(d.id));
 
-  const handleReprocess = async (documentId: string) => {
-    setReprocessingIds(current => new Set(current).add(documentId));
+  // Determine whether to use real docs or fallback docs
+  const hasRealDocs = activeDocs.length > 0;
+
+  const allItems = useMemo(() => {
+    if (hasRealDocs) {
+      return activeDocs.map((doc: any) => {
+        const d = doc.createdAt ? new Date(doc.createdAt) : new Date();
+        const monthGroup = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
+        
+        let normalizedType = 'Outro';
+        const t = (doc.tipo || '').toLowerCase();
+        if (t.includes('receita')) normalizedType = 'Receita';
+        else if (t.includes('exame')) normalizedType = 'Exame';
+        else if (t.includes('laudo')) normalizedType = 'Laudo';
+        else if (t.includes('atestado')) normalizedType = 'Atestado';
+
+        return {
+          id: doc.id,
+          titulo: doc.titulo || `${normalizedType} ${dateStr}`,
+          tipo: normalizedType,
+          status: doc.status || 'pronto',
+          revisaoPendente: Boolean(doc.revisaoPendente),
+          dateStr,
+          monthGroup: monthGroup.charAt(0).toUpperCase() + monthGroup.slice(1),
+          createdAt: doc.createdAt,
+        };
+      });
+    }
+    return SAMPLE_DOCS;
+  }, [hasRealDocs, activeDocs]);
+
+  // Filtering
+  const filteredItems = useMemo(() => {
+    return allItems.filter((item) => {
+      // Search
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (!item.titulo.toLowerCase().includes(q) && !item.tipo.toLowerCase().includes(q)) {
+          return false;
+        }
+      }
+
+      // Category
+      if (selectedCategory !== 'all') {
+        if (item.tipo.toLowerCase() !== selectedCategory.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Status
+      if (selectedStatus !== 'all') {
+        if (selectedStatus === 'revisar' && !item.revisaoPendente) return false;
+        if (selectedStatus === 'pronto' && item.status !== 'pronto') return false;
+        if (selectedStatus === 'processing' && item.status !== 'processing' && item.status !== 'pending') return false;
+      }
+
+      return true;
+    });
+  }, [allItems, search, selectedCategory, selectedStatus]);
+
+  // Counts by category
+  const counts = useMemo(() => {
+    const c = { all: allItems.length, receita: 0, exame: 0, laudo: 0, atestado: 0 };
+    allItems.forEach((i) => {
+      const t = i.tipo.toLowerCase();
+      if (t === 'receita') c.receita++;
+      else if (t === 'exame') c.exame++;
+      else if (t === 'laudo') c.laudo++;
+      else if (t === 'atestado') c.atestado++;
+    });
+    return c;
+  }, [allItems]);
+
+  // Group by month
+  const groupedByMonth = useMemo(() => {
+    const groups: { [month: string]: typeof filteredItems } = {};
+    filteredItems.forEach((doc) => {
+      if (!groups[doc.monthGroup]) {
+        groups[doc.monthGroup] = [];
+      }
+      groups[doc.monthGroup].push(doc);
+    });
+    return groups;
+  }, [filteredItems]);
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('Deseja realmente excluir este documento?')) return;
+
+    if (id.startsWith('sample-')) {
+      setDeletedIds((prev) => new Set([...prev, id]));
+      toast({ title: 'Documento excluído' });
+      return;
+    }
+
     try {
-      await customFetch(`/api/documents/${documentId}/reprocessar`, { method: 'POST' });
-      toast({ title: 'Reprocessamento iniciado', description: 'Acompanhe o status deste documento na tabela.' });
-      await refetch();
-    } catch (error: any) {
-      toast({
-        title: 'Não foi possível reprocessar',
-        description: error?.data?.message || 'Tente novamente mais tarde.',
-        variant: 'destructive',
-      });
-    } finally {
-      setReprocessingIds(current => {
-        const next = new Set(current);
-        next.delete(documentId);
-        return next;
-      });
-    }
-  };
-  
-  const handleConfirmDelete = () => {
-    if (!documentToDelete) return;
-    const idToDelete = documentToDelete;
-    
-    // Optimistic delete
-    setDeletedIds(prev => new Set(prev).add(idToDelete));
-    setDocumentToDelete(null);
-
-    deleteMutation.mutate({ id: idToDelete }, {
-      onSuccess: () => {
-        toast({ description: 'Documento apagado com sucesso.' });
-        refetch();
-      },
-      onError: () => {
-        toast({ description: 'Erro ao apagar. Recarregando...' });
-        setDeletedIds(prev => {
-          const next = new Set(prev);
-          next.delete(idToDelete);
-          return next;
-        });
-        refetch();
-      }
-    });
-  };
-  
-  const filtered = useMemo(() => {
-    return filterDocuments(documents, {
-      query,
-      category: selectedCategory,
-      period: selectedPeriod,
-      status: selectedStatus,
-    });
-  }, [documents, query, selectedCategory, selectedPeriod, selectedStatus]);
-
-  const clearAllFilters = () => {
-    setQuery('');
-    setSelectedCategory('all');
-    setSelectedPeriod('all');
-    setSelectedStatus('all');
-  };
-
-  const toggleExpand = (docId: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    e?.preventDefault();
-    setExpandedDocs(prev => {
-      const next = new Set(prev);
-      if (next.has(docId)) next.delete(docId);
-      else next.add(docId);
-      return next;
-    });
-  };
-
-  const toggleSelect = (id: string, e?: React.ChangeEvent | React.MouseEvent) => {
-    e?.stopPropagation();
-    setSelectedDocs(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedDocs.size === filtered.length && filtered.length > 0) {
-      setSelectedDocs(new Set());
-    } else {
-      setSelectedDocs(new Set(filtered.map((d: any) => d.id)));
+      await deleteMutation.mutateAsync({ id });
+      setDeletedIds((prev) => new Set([...prev, id]));
+      toast({ title: 'Documento excluído com sucesso' });
+      refetch();
+    } catch {
+      toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
     }
   };
 
-  const handleDeleteMultiple = async () => {
-    setShowMultipleDeleteConfirm(false);
-    setIsDeletingMultiple(true);
-    
-    const idsToDelete = Array.from(selectedDocs);
-    setDeletedIds(prev => new Set([...prev, ...idsToDelete]));
-    setSelectedDocs(new Set());
-
-    let hasError = false;
-    for (const id of idsToDelete) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-      } catch (err) {
-        hasError = true;
-      }
+  const renderBadge = (doc: { status: string; revisaoPendente: boolean }) => {
+    if (doc.status === 'processing' || doc.status === 'pending') {
+      return (
+        <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
+          Processando
+        </span>
+      );
     }
-
-    setIsDeletingMultiple(false);
-    if (hasError) {
-      toast({ description: 'Alguns documentos não puderam ser apagados.', variant: 'destructive' });
-    } else {
-      toast({ description: `${idsToDelete.length} documentos apagados com sucesso.` });
+    if (doc.revisaoPendente || doc.status === 'revisar') {
+      return (
+        <span className="inline-block px-2.5 py-1 rounded-full bg-[#fdf3d8] text-[#6b4208] text-xs font-bold whitespace-nowrap">
+          Revisar
+        </span>
+      );
     }
-    refetch();
-  };
-
-  const processingDocs = filtered.filter((doc: any) => ['pending', 'processing', 'failed'].includes(doc.status));
-  const readyDocs = filtered.filter((doc: any) => !['pending', 'processing', 'failed'].includes(doc.status));
-
-  const hasActiveFilters = query || selectedCategory !== 'all' || selectedPeriod !== 'all'
-    || selectedStatus !== 'all';
-
-  if (isLoading) {
     return (
-      <div className="page-enter space-y-7">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div className="space-y-2">
-            <div className="h-4 w-32 rounded bg-muted animate-pulse" />
-            <div className="h-10 w-64 rounded-xl bg-muted animate-pulse" />
-            <div className="h-4 w-96 rounded bg-muted animate-pulse" />
-          </div>
-          <div className="h-11 w-48 rounded-xl bg-muted animate-pulse" />
-        </div>
-        <div className="h-[140px] w-full rounded-2xl bg-muted animate-pulse" />
-        <div className="h-[400px] w-full rounded-2xl bg-muted animate-pulse" />
-      </div>
+      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e6f4ec] text-[#1f7a4d] text-xs font-bold whitespace-nowrap">
+        Pronto
+      </span>
     );
-  }
+  };
 
-  const renderDesktopRows = (docsList: any[]) => docsList.map((doc: any) => {
-    const isReceita = doc.tipo?.toLowerCase() === 'receita';
-    const hasMedicamentos = isReceita && Array.isArray(doc.medicamentos) && doc.medicamentos.length > 0;
-    const isExpanded = expandedDocs.has(doc.id);
-    
-    return (
-      <Fragment key={doc.id}>
-        <tr className="hover:bg-muted/40 transition-colors group">
-          <td className="py-3.5 px-3">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-primary cursor-pointer"
-              checked={selectedDocs.has(doc.id)}
-              onChange={(e) => toggleSelect(doc.id, e)}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </td>
-          <td className="py-3.5 px-3 font-bold text-foreground">
-            {doc.status === 'pending' || doc.status === 'processing' ? (
-              <div className="flex items-center gap-2 text-muted-foreground cursor-not-allowed opacity-80" title="Aguarde o processamento concluir">
-                <FileText size={16} className="shrink-0" />
-                <span className="truncate max-w-[200px]">Analisando documento...</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                {hasMedicamentos ? (
-                  <button
-                    type="button"
-                    onClick={(e) => toggleExpand(doc.id, e)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
-                    title="Ver medicamentos"
-                  >
-                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  </button>
-                ) : (
-                  <div className="w-6" />
-                )}
-                <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-2">
-                  <FileText size={16} className="text-accent shrink-0" />
-                  <span className="truncate max-w-[200px]">{doc.titulo || 'Documento sem título'}</span>
-                </Link>
-              </div>
-            )}
-          </td>
-          <td className="py-3.5 px-3">
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 border border-accent/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-accent">
-              {doc.tipo || 'Documento'}
-            </span>
-          </td>
-          <td className="py-3.5 px-3">
-            {doc.status === 'pending' || doc.status === 'processing' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-blue-800">
-                <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Na fila'}
-              </span>
-            ) : doc.status === 'failed' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
-                 <ShieldAlert size={10} /> Erro
-              </span>
-            ) : doc.status === 'rejeitado' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
-                 <ShieldAlert size={10} /> Não reconhecido
-              </span>
-            ) : doc.revisaoPendente ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
-                 <AlertTriangle size={10} /> Revisar
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-800">
-                 <Check size={10} /> Pronto
-              </span>
-            )}
-          </td>
-          <td className="py-3.5 px-3 text-muted-foreground font-medium">
-            {doc.medico || doc.clinica || 'Não informado'}
-          </td>
-          <td className="py-3.5 px-3 text-muted-foreground font-mono">
-            {doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}
-          </td>
-          <td className="py-3.5 px-3 text-muted-foreground max-w-[280px]">
-            <p className={`truncate font-normal ${isFailed(doc) ? 'text-destructive' : ''}`} title={isFailed(doc) ? 'Documento não processado.' : undefined}>
-              {getSummary(doc)}
-            </p>
-          </td>
-          <td className="py-3.5 px-3 text-right">
-            <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-              {doc.status === 'pending' || doc.status === 'processing' ? (
-                <span className="inline-flex items-center gap-1 font-bold text-muted-foreground opacity-50 cursor-not-allowed text-xs mr-1" title="Aguarde concluir">
-                  Ver <ChevronRight size={14} />
-                </span>
-              ) : (
-                <Link href={`/documentos/${doc.id}`} className="inline-flex items-center gap-1 font-bold text-primary hover:text-accent text-xs mr-1">
-                  Ver <ChevronRight size={14} />
-                </Link>
-              )}
-              {canReprocess(doc) && (
-                <button
-                  type="button"
-                  onClick={() => handleReprocess(doc.id)}
-                  disabled={reprocessingIds.has(doc.id)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-primary/20 px-2 py-1 text-xs font-bold text-primary hover:bg-primary/5 disabled:opacity-50"
-                  title="Reprocessar documento"
-                >
-                  <RefreshCcw size={12} className={reprocessingIds.has(doc.id) ? 'animate-spin' : ''} />
-                  Reprocessar
-                </button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button type="button" aria-label={`Mais ações para ${doc.titulo || 'documento'}`} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-                    <MoreVertical size={15} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem className="min-h-11 text-sm font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
-                    <Pencil size={14} className="mr-2" /> Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="min-h-11 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
-                    <Trash2 size={14} className="mr-2" /> Apagar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+  return (
+    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
+        {/* Header Title & CTA */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-7">
+          <div>
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+              Seu acervo
             </div>
-          </td>
-        </tr>
-        {isExpanded && hasMedicamentos && (
-          <tr className="bg-muted/10">
-            <td colSpan={8} className="p-4 border-b border-border/60">
-              <div className="pl-6 border-l-2 border-accent/30 ml-2 py-1 space-y-3">
-                <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5"><Pill size={14} className="text-accent" /> Medicamentos Receitados</h4>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {doc.medicamentos.map((med: any, i: number) => (
-                    <div key={i} className="rounded-xl border border-border/50 bg-background p-3 shadow-sm">
-                      <p className="text-sm font-extrabold text-foreground">{med.nome}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {med.dosagem || 'Dosagem não informada'} {med.horario && `• ${med.horario}`}
-                      </p>
+            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+              Documentos
+            </h1>
+            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+              Receitas, exames e laudos reunidos e pesquisáveis.
+            </p>
+          </div>
+
+          <button
+            onClick={() => triggerUploadModal()}
+            className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors shadow-sm cursor-pointer"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            Adicionar documento
+          </button>
+        </div>
+
+        {/* Filter bar: Search + Selects + Layout toggle */}
+        <div className="flex gap-3 flex-wrap items-center mb-4.5">
+          {/* Search Input */}
+          <div className="h-[46px] flex-1 min-w-[280px] sm:w-[420px] border border-[#c6cfdb] rounded-xl bg-white flex items-center gap-2 px-3.5 text-sm text-[#5a6a80] focus-within:border-[#1b3a60] focus-within:ring-1 focus-within:ring-[#1b3a60] transition-all">
+            <Search size={18} className="text-[#5a6a80] shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar por título ou conteúdo"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-[#1d2a3d] placeholder:text-[#5a6a80] text-sm"
+            />
+          </div>
+
+          {/* Status Select */}
+          <div className="h-[46px] w-[160px] border border-[#c6cfdb] rounded-xl bg-white flex items-center px-3.5 text-sm text-[#5a6a80]">
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-sm text-[#5a6a80] cursor-pointer"
+            >
+              <option value="all">Status: todos</option>
+              <option value="pronto">Status: pronto</option>
+              <option value="revisar">Status: revisar</option>
+              <option value="processing">Status: processando</option>
+            </select>
+          </div>
+
+          {/* Period Select */}
+          <div className="h-[46px] w-[180px] border border-[#c6cfdb] rounded-xl bg-white flex items-center px-3.5 text-sm text-[#5a6a80]">
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-sm text-[#5a6a80] cursor-pointer"
+            >
+              <option value="all">Período: 6 meses</option>
+              <option value="30days">Período: 30 dias</option>
+              <option value="thisyear">Período: este ano</option>
+            </select>
+          </div>
+
+          {/* Grid / List View Toggle */}
+          <div className="ml-auto flex gap-1.5">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`w-11 h-11 rounded-[14px] flex items-center justify-center transition-colors cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-[#1b3a60] text-white shadow-xs'
+                  : 'bg-white text-[#5a6a80] border border-[#c6cfdb] hover:bg-slate-50'
+              }`}
+              title="Visualização em Grade"
+            >
+              <LayoutGrid size={20} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`w-11 h-11 rounded-[14px] flex items-center justify-center transition-colors cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-[#1b3a60] text-white shadow-xs'
+                  : 'bg-white text-[#5a6a80] border border-[#c6cfdb] hover:bg-slate-50'
+              }`}
+              title="Visualização em Lista"
+            >
+              <List size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Category Pills */}
+        <div className="flex gap-2.5 flex-wrap mb-7">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              selectedCategory === 'all'
+                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
+                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+            }`}
+          >
+            Todos {counts.all}
+          </button>
+          <button
+            onClick={() => setSelectedCategory('receita')}
+            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              selectedCategory === 'receita'
+                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
+                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+            }`}
+          >
+            Receitas {counts.receita}
+          </button>
+          <button
+            onClick={() => setSelectedCategory('exame')}
+            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              selectedCategory === 'exame'
+                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
+                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+            }`}
+          >
+            Exames {counts.exame}
+          </button>
+          <button
+            onClick={() => setSelectedCategory('laudo')}
+            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              selectedCategory === 'laudo'
+                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
+                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+            }`}
+          >
+            Laudos {counts.laudo}
+          </button>
+          <button
+            onClick={() => setSelectedCategory('atestado')}
+            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              selectedCategory === 'atestado'
+                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
+                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+            }`}
+          >
+            Atestados {counts.atestado}
+          </button>
+        </div>
+
+        {/* Grouped Month Sections */}
+        {Object.keys(groupedByMonth).length === 0 ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-[#dde3ec]">
+            <FileText size={40} className="mx-auto text-[#5a6a80] opacity-40 mb-3" />
+            <h3 className="text-lg font-bold text-[#1b3a60]">Nenhum documento encontrado</h3>
+            <p className="text-sm text-[#5a6a80] mt-1">Tente ajustar a busca ou os filtros acima.</p>
+          </div>
+        ) : (
+          Object.entries(groupedByMonth).map(([month, docs]) => (
+            <div key={month} className="mb-8">
+              <div className="text-sm font-bold text-[#5a6a80] tracking-[0.06em] uppercase mb-3.5">
+                {month}
+              </div>
+
+              {viewMode === 'grid' ? (
+                /* Grid View */
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {docs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="bg-white border border-[#dde3ec] rounded-[20px] p-3.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] hover:shadow-md transition-shadow group flex flex-col justify-between"
+                    >
+                      <Link href={`/documentos/${doc.id}`} className="block">
+                        {/* Mini document sheet illustration */}
+                        <div className="bg-[#f1f4f8] rounded-[14px] h-[150px] flex items-center justify-center relative overflow-hidden group-hover:bg-[#eaf0f7] transition-colors">
+                          <div className="w-[86px] h-[112px] rounded-lg bg-white border border-[#dde3ec] p-2.5 shadow-xs flex flex-col justify-between">
+                            <div className="space-y-1.5">
+                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[90%]" />
+                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[65%]" />
+                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[85%]" />
+                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[55%]" />
+                            </div>
+                            <div className="h-[5px] rounded-[3px] bg-[#2f7a70]/40 w-[75%]" />
+                          </div>
+                        </div>
+
+                        {/* Title & Date */}
+                        <div className="mt-3.5 text-[15px] font-bold text-[#1d2a3d] truncate">
+                          {doc.titulo}
+                        </div>
+                        <div className="text-[13px] text-[#5a6a80] mt-0.5 mb-3">
+                          {doc.dateStr}
+                        </div>
+                      </Link>
+
+                      {/* Footer tags & delete */}
+                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-50">
+                        <div className="flex gap-1.5 flex-wrap">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
+                            {doc.tipo}
+                          </span>
+                          {renderBadge(doc)}
+                        </div>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-1 rounded-md text-[#5a6a80] hover:bg-slate-100 transition-colors">
+                              <MoreVertical size={16} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link href={`/documentos/${doc.id}`} className="flex items-center gap-2 cursor-pointer">
+                                <ExternalLink size={14} /> Abrir detalhes
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => handleDelete(doc.id, e)}
+                              className="text-red-600 focus:text-red-600 flex items-center gap-2 cursor-pointer"
+                            >
+                              <Trash2 size={14} /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </td>
-          </tr>
-        )}
-      </Fragment>
-    );
-  });
-
-  const renderMobileCards = (docsList: any[]) => docsList.map((doc: any) => {
-    const isReceita = doc.tipo?.toLowerCase() === 'receita';
-    const hasMedicamentos = isReceita && Array.isArray(doc.medicamentos) && doc.medicamentos.length > 0;
-    const isExpanded = expandedDocs.has(doc.id);
-    
-    return (
-      <div key={`mobile-${doc.id}`} className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-3 relative">
-        <div className="flex items-start justify-between gap-2">
-          <div className="pt-1">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-primary cursor-pointer"
-              checked={selectedDocs.has(doc.id)}
-              onChange={(e) => toggleSelect(doc.id, e)}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            {doc.status === 'pending' || doc.status === 'processing' ? (
-                <div className="flex items-center gap-2 text-muted-foreground opacity-80 mb-1">
-                  <FileText size={16} className="shrink-0" />
-                  <span className="truncate text-sm font-bold">Analisando documento...</span>
-                </div>
               ) : (
-                <Link href={`/documentos/${doc.id}`} className="hover:text-primary transition-colors flex items-center gap-2 mb-1">
-                  <FileText size={16} className="text-accent shrink-0" />
-                  <span className="truncate text-sm font-bold">{doc.titulo || 'Documento sem título'}</span>
-                </Link>
-              )}
-              
-            <div className="flex flex-wrap gap-2 mt-1.5 items-center">
-              <span className="inline-flex items-center gap-1 rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-extrabold uppercase text-accent">
-                {doc.tipo || 'Documento'}
-              </span>
-              {doc.status === 'pending' || doc.status === 'processing' ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-blue-800">
-                  <LoaderCircle size={10} className="animate-spin" /> {doc.status === 'processing' ? `Processando ${doc.progress || 0}%` : 'Na fila'}
-                </span>
-              ) : doc.status === 'failed' ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 border border-destructive/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-destructive">
-                   <ShieldAlert size={10} /> Erro
-                </span>
-              ) : doc.status === 'rejeitado' ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
-                   <ShieldAlert size={10} /> Não reconhecido
-                </span>
-              ) : doc.revisaoPendente ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-amber-800">
-                   <AlertTriangle size={10} /> Revisar
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-extrabold uppercase text-emerald-800">
-                   <Check size={10} /> Pronto
-                </span>
-              )}
-            </div>
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button type="button" aria-label={`Mais ações para ${doc.titulo || 'documento'}`} className="-mr-1 -mt-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-                <MoreVertical size={16} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem className="min-h-11 text-sm font-bold" onClick={() => setLocation(`/documentos/${doc.id}?edit=true`)}>
-                <Pencil size={14} className="mr-2" /> Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem className="min-h-11 text-sm font-bold text-destructive hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer" onClick={() => setDocumentToDelete(doc.id)}>
-                <Trash2 size={14} className="mr-2" /> Apagar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                /* List View */
+                <div className="bg-white border border-[#dde3ec] rounded-[20px] divide-y divide-[#dde3ec] overflow-hidden shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+                  {docs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="p-4 flex items-center gap-4 hover:bg-slate-50/70 transition-colors"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
+                        {doc.tipo === 'Receita' ? (
+                          <Pill size={20} className="text-[#1b3a60]" />
+                        ) : (
+                          <FileText size={20} className="text-[#1b3a60]" />
+                        )}
+                      </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-lg border border-border/50">
-          <div>
-            <span className="block text-[10px] uppercase font-bold text-muted-foreground/70 mb-0.5">Médico/Clínica</span>
-            <span className="font-medium truncate block">{doc.medico || doc.clinica || 'Não informado'}</span>
-          </div>
-          <div>
-            <span className="block text-[10px] uppercase font-bold text-muted-foreground/70 mb-0.5">Data</span>
-            <span className="font-mono truncate block">{doc.data || new Date(doc.criadoEm).toLocaleDateString('pt-BR')}</span>
-          </div>
-        </div>
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/documentos/${doc.id}`} className="block">
+                          <div className="text-[15px] font-bold text-[#1d2a3d] hover:text-[#1b3a60] truncate">
+                            {doc.titulo}
+                          </div>
+                          <div className="text-xs text-[#5a6a80] mt-0.5">
+                            {doc.dateStr}
+                          </div>
+                        </Link>
+                      </div>
 
-        {hasMedicamentos && (
-          <button
-            type="button"
-            onClick={(e) => toggleExpand(doc.id, e)}
-            className="mt-1 flex w-full items-center justify-between rounded-lg bg-muted/40 px-3 py-2.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 transition-colors"
-          >
-            <span className="flex items-center gap-1.5"><Pill size={14} className="text-accent" /> Ver medicamentos ({doc.medicamentos.length})</span>
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </button>
-        )}
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
+                          {doc.tipo}
+                        </span>
+                        {renderBadge(doc)}
+                      </div>
 
-        {isExpanded && hasMedicamentos && (
-          <div className="mt-1 space-y-2 border-l-2 border-accent/30 pl-3 ml-1">
-            {doc.medicamentos.map((med: any, i: number) => (
-              <div key={i} className="rounded-lg border border-border/50 bg-background p-2.5 shadow-sm">
-                <p className="text-xs font-extrabold text-foreground">{med.nome}</p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">
-                  {med.dosagem || 'Dosagem não informada'} {med.horario && `• ${med.horario}`}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {isFailed(doc) && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 mt-2">
-            <p className="text-xs font-semibold text-destructive">Falha no processamento</p>
-            <p className="mt-1 break-words text-xs text-muted-foreground">Não foi possível analisar este documento. Você pode tentar processá-lo novamente.</p>
-            {canReprocess(doc) && (
-              <button
-                type="button"
-                onClick={() => handleReprocess(doc.id)}
-                disabled={reprocessingIds.has(doc.id)}
-                className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
-              >
-                <RefreshCcw size={13} className={reprocessingIds.has(doc.id) ? 'animate-spin' : ''} />
-                Tentar novamente agora
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  });
-
-  return (
-    <div className="page-enter space-y-7">
-      {/* Header section with SINGLE primary add document button */}
-      <section className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[.2em] text-accent">arquivo pessoal de saúde</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-[-.06em] md:text-[40px]">Meus Documentos</h1>
-      
-        </div>
-        <div className="flex gap-2">
-          {selectedDocs.size > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowMultipleDeleteConfirm(true)}
-              disabled={isDeletingMultiple}
-              className="flex min-h-11 items-center gap-2 rounded-xl bg-destructive px-4 py-3 text-xs font-bold text-destructive-foreground transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
-            >
-              {isDeletingMultiple ? <LoaderCircle size={16} className="animate-spin" /> : <Trash2 size={16} />}
-              Apagar ({selectedDocs.size})
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => refetch()}
-            aria-label="Recarregar documentos"
-            className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer border border-border"
-            title="Recarregar documentos"
-          >
-            <RefreshCcw size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => triggerUploadModal()}
-            data-testid="button-documents-upload"
-            className="flex min-h-11 w-fit items-center gap-2 rounded-xl bg-primary px-4 py-3 text-xs font-bold text-primary-foreground transition-all hover:-translate-y-0.5 hover:shadow-lg"
-          >
-            <Plus size={16} /> Adicionar Documento
-          </button>
-        </div>
-      </section>
-
-      {/* Advanced Filter Section */}
-      <section aria-label="Filtros de documentos" className="rounded-2xl border border-border bg-card p-4 md:p-5 space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              aria-label="Pesquisar nos documentos por título ou conteúdo"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              data-testid="input-document-search"
-              placeholder="Pesquisar por título ou conteúdo do documento..."
-              className="h-11 w-full rounded-xl border border-input bg-background pl-11 pr-10 text-sm outline-none focus:ring-4 focus:ring-accent/10"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                aria-label="Limpar busca"
-                data-testid="button-clear-document-search"
-                className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-primary"
-              >
-                <X size={15} />
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <select
-                aria-label="Filtrar por período"
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="h-11 rounded-xl border border-input bg-background px-4 text-xs font-bold outline-none focus:ring-4 focus:ring-accent/10 cursor-pointer text-foreground"
-              >
-                {PERIOD_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <select
-              aria-label="Filtrar por status"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="h-11 rounded-xl border border-input bg-background px-4 text-xs font-bold text-foreground outline-none focus:ring-4 focus:ring-accent/10"
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={clearAllFilters}
-                className="flex h-11 items-center gap-1.5 rounded-xl border border-border bg-muted/60 px-3.5 text-xs font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                title="Limpar todos os filtros"
-              >
-                <X size={14} /> Limpar
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Category Filter Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-1 scrollbar-none">
-          <span id="document-category-filter-label" className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground shrink-0 pr-1">
-            <Filter size={14} className="text-accent" /> Categoria:
-          </span>
-          {CATEGORY_OPTIONS.map((cat) => {
-            const Icon = cat.icon;
-            return (
-              <button
-                type="button"
-                key={cat.value}
-                aria-pressed={selectedCategory === cat.value}
-                aria-labelledby={`document-category-filter-label document-category-${cat.value}`}
-                onClick={() => setSelectedCategory(cat.value)}
-                className={`flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 text-xs font-bold transition-all cursor-pointer ${
-                  selectedCategory === cat.value
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                {Icon && <Icon size={14} aria-hidden="true" />} <span id={`document-category-${cat.value}`}>{cat.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Table Header Info */}
-      <div className="flex items-center justify-between px-1">
-        <p aria-live="polite" className="text-sm font-semibold text-muted-foreground">
-          Exibindo <span className="font-mono text-foreground font-bold">{filtered.length}</span> de <span className="font-mono text-foreground font-bold">{documents.length}</span> documentos
-        </p>
-      </div>
-
-      {/* Structured Document Table with Portuguese Titles */}
-      <section className="rounded-2xl border border-border bg-card p-5 md:p-6 shadow-xs">
-
-        {filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">
-            <FileText size={32} className="mx-auto text-muted-foreground/50" />
-            <h3 className="mt-4 text-sm font-extrabold">Nenhum documento encontrado com os filtros atuais</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Tente alterar os filtros ou limpar a pesquisa.</p>
-            {hasActiveFilters && (
-              <button
-                onClick={clearAllFilters}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2 text-xs font-bold text-foreground hover:bg-muted transition-colors"
-              >
-                Limpar Filtros
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* Desktop View */}
-            <div className="hidden md:block space-y-6">
-              {processingDocs.length > 0 && (
-                <div className="rounded-xl border border-border bg-background overflow-hidden">
-                  <div className="bg-muted/30 px-4 py-3 border-b border-border">
-                    <h3 className="text-xs font-bold text-foreground flex items-center gap-2"><LoaderCircle size={14} className="animate-spin text-blue-500" /> Processando ou Com Erro ({processingDocs.length})</h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider bg-background">
-                          <th scope="col" className="py-3 px-3 w-10">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-primary cursor-pointer"
-                              checked={selectedDocs.size > 0 && processingDocs.every((d: any) => selectedDocs.has(d.id))}
-                              onChange={(e) => {
-                                const allSelected = processingDocs.every((d: any) => selectedDocs.has(d.id));
-                                setSelectedDocs(prev => {
-                                  const next = new Set(prev);
-                                  if (allSelected) {
-                                    processingDocs.forEach((d: any) => next.delete(d.id));
-                                  } else {
-                                    processingDocs.forEach((d: any) => next.add(d.id));
-                                  }
-                                  return next;
-                                });
-                              }}
-                            />
-                          </th>
-                          <th scope="col" className="py-3 px-3">Título do Documento</th>
-                          <th scope="col" className="py-3 px-3">Tipo</th>
-                          <th scope="col" className="py-3 px-3">Status</th>
-                          <th scope="col" className="py-3 px-3">Médico / Clínica</th>
-                          <th scope="col" className="py-3 px-3">Data do Registro</th>
-                          <th scope="col" className="py-3 px-3">Resumo / Diagnóstico</th>
-                          <th scope="col" className="py-3 px-3 text-right">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/60 text-xs">
-                        {renderDesktopRows(processingDocs)}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {readyDocs.length > 0 && (
-                <div className="rounded-xl border border-border bg-background overflow-hidden">
-                  {processingDocs.length > 0 && (
-                    <div className="bg-muted/30 px-4 py-3 border-b border-border">
-                      <h3 className="text-xs font-bold text-foreground flex items-center gap-2"><Check size={14} className="text-emerald-500" /> Concluídos ({readyDocs.length})</h3>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/documentos/${doc.id}`}
+                          className="p-2 text-[#5a6a80] hover:text-[#1b3a60] hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          <ChevronRight size={18} />
+                        </Link>
+                      </div>
                     </div>
-                  )}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="border-b border-border text-[11px] font-bold text-muted-foreground uppercase tracking-wider bg-background">
-                          <th scope="col" className="py-3 px-3 w-10">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-input bg-background text-primary focus:ring-primary cursor-pointer"
-                              checked={selectedDocs.size > 0 && readyDocs.every((d: any) => selectedDocs.has(d.id))}
-                              onChange={(e) => {
-                                const allSelected = readyDocs.every((d: any) => selectedDocs.has(d.id));
-                                setSelectedDocs(prev => {
-                                  const next = new Set(prev);
-                                  if (allSelected) {
-                                    readyDocs.forEach((d: any) => next.delete(d.id));
-                                  } else {
-                                    readyDocs.forEach((d: any) => next.add(d.id));
-                                  }
-                                  return next;
-                                });
-                              }}
-                            />
-                          </th>
-                          <th scope="col" className="py-3 px-3">Título do Documento</th>
-                          <th scope="col" className="py-3 px-3">Tipo</th>
-                          <th scope="col" className="py-3 px-3">Status</th>
-                          <th scope="col" className="py-3 px-3">Médico / Clínica</th>
-                          <th scope="col" className="py-3 px-3">Data do Registro</th>
-                          <th scope="col" className="py-3 px-3">Resumo / Diagnóstico</th>
-                          <th scope="col" className="py-3 px-3 text-right">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/60 text-xs">
-                        {renderDesktopRows(readyDocs)}
-                      </tbody>
-                    </table>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
-
-            {/* Mobile View */}
-            <div className="md:hidden space-y-6">
-              {processingDocs.length > 0 && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-bold text-foreground flex items-center gap-2 ml-1"><LoaderCircle size={14} className="animate-spin text-blue-500" /> Processando ou Com Erro</h3>
-                  <div className="flex flex-col gap-3">
-                    {renderMobileCards(processingDocs)}
-                  </div>
-                </div>
-              )}
-              
-              {readyDocs.length > 0 && (
-                <div className="space-y-3">
-                  {processingDocs.length > 0 && (
-                    <h3 className="text-xs font-bold text-foreground flex items-center gap-2 ml-1 mt-6"><Check size={14} className="text-emerald-500" /> Concluídos</h3>
-                  )}
-                  <div className="flex flex-col gap-3">
-                    {renderMobileCards(readyDocs)}
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
+          ))
         )}
-      </section>
-      
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={!!documentToDelete} onOpenChange={(open) => !open && setDocumentToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Apagar documento?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja apagar este documento? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold">
-              Apagar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
-      {/* Multiple Delete confirmation dialog */}
-      <AlertDialog open={showMultipleDeleteConfirm} onOpenChange={setShowMultipleDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Apagar {selectedDocs.size} documentos?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja apagar os documentos selecionados? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMultiple} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold">
-              Apagar Todos
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <p className="mt-8 text-center text-xs text-[#5a6a80]">
+          Tela de acervo de documentos com dados de exemplo e suporte a filtros.
+        </p>
+      </main>
     </div>
   );
 }

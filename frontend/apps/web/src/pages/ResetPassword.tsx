@@ -1,28 +1,43 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, ShieldCheck } from 'lucide-react';
-import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { customFetch } from '@workspace/api-client-react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 
 export default function ResetPassword() {
-  const [location, setLocation] = useLocation();
-  const [showPassword, setShowPassword] = useState(false);
+  const [, setLocation] = useLocation();
+  const [token, setToken] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('token') || '';
+    }
+    return '';
+  });
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
+  const calculateStrength = (pwd: string) => {
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    return score;
+  };
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const strength = calculateStrength(password);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
     setError('');
     setMessage('');
 
-    if (!token) {
-      setError('Token de recuperação inválido ou ausente.');
+    if (password.length < 8) {
+      setError('A senha deve ter pelo menos 8 caracteres.');
       return;
     }
 
@@ -31,123 +46,129 @@ export default function ResetPassword() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('A senha deve ter no mínimo 8 caracteres.');
-      return;
-    }
-
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       await customFetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, senha: password })
+        body: JSON.stringify({ token, senha: password }),
       });
-      setMessage('Senha redefinida com sucesso. Redirecionando...');
-      setTimeout(() => { setLocation('/entrar'); }, 2000);
+      setMessage('Senha alterada com sucesso! Redirecionando...');
+      setTimeout(() => setLocation('/entrar'), 2000);
     } catch (err: any) {
-      if (err.data && Array.isArray(err.data)) setError(err.data.join(', '));
-      else if (err.data?.message) setError(err.data.message);
-      else setError('Ocorreu um erro ao redefinir a senha. O link pode ter expirado.');
+      setError(err?.response?.data?.message || 'Token inválido ou expirado. Solicite nova recuperação.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const inputCls = "h-11 w-full rounded-xl border border-input bg-card/80 px-4 text-[13px] outline-none transition-all placeholder:text-muted-foreground/45 focus:border-accent/40 focus:ring-4 focus:ring-accent/8 focus:bg-card";
-
   return (
-    <div className="app-noise flex min-h-[100dvh] bg-background">
-      <section className="flex flex-1 items-center justify-center px-5 py-10 sm:px-10">
-        <div className="w-full max-w-[400px] page-enter">
-          <Link href="/" className="mb-8 flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <LourdesHeartMark className="h-7 w-7 text-accent" />
-            <span className="text-[15px] font-bold tracking-[-0.04em]">
-              saúde<span className="text-accent">memora</span>
-            </span>
-          </Link>
+    <div className="min-h-screen bg-[#f7f9fc] font-sans text-[#1d2a3d] flex flex-col justify-center items-center p-6 bg-[radial-gradient(800px_500px_at_20%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_90%_90%,#e8f4f2,transparent_60%),#fff]">
+      {/* Brand */}
+      <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[20px] text-[#1b3a60] tracking-[-0.03em] mb-8">
+        <img src="/logo.svg" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
+        <span>
+          saúde<span className="font-semibold text-[#2f7a70]">memora</span>
+        </span>
+      </Link>
 
-          <div className="mb-7">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent">
-              <LockKeyhole size={17} />
-            </div>
-            <h2 className="text-2xl font-black tracking-[-0.05em] text-foreground">
-              Redefinir Senha
-            </h2>
-            <p className="mt-2 text-[13px] text-muted-foreground">
-              Crie uma nova senha segura para acessar seu espaço.
-            </p>
-          </div>
-
-          <form onSubmit={submit} className="space-y-4">
-            <label className="block">
-              <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">Nova Senha</span>
-              <div className="relative">
-                <LockKeyhole size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                <input
-                  required minLength={8} type={showPassword ? 'text' : 'password'} value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="No mínimo 8 caracteres"
-                  className={`${inputCls} pl-10 pr-10`}
-                />
-                <button
-                  type="button" onClick={() => setShowPassword(!showPassword)}
-                  aria-label="Mostrar senha"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted-foreground/60 hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-            </label>
-
-            <label className="block">
-              <span className="mb-1.5 block text-[11px] font-semibold text-foreground/80">Confirmar Nova Senha</span>
-              <div className="relative">
-                <LockKeyhole size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                <input
-                  required minLength={6} type={showPassword ? 'text' : 'password'} value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Digite a senha novamente"
-                  className={`${inputCls} pl-10 pr-10`}
-                />
-              </div>
-            </label>
-
-            <button
-              type="submit"
-              disabled={isLoading || !token}
-              className="group mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground shadow-[0_8px_20px_hsl(var(--primary)/.2)] transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_hsl(var(--primary)/.3)] active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0"
-            >
-              {isLoading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <>
-                  Redefinir senha
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-                </>
-              )}
-            </button>
-
-            {message && (
-              <div className="flex items-center gap-2 rounded-xl bg-secondary/80 px-3.5 py-3 text-[12px] font-medium text-secondary-foreground">
-                <Check size={14} className="shrink-0 text-accent" /> {message}
-              </div>
-            )}
-            {error && (
-              <div className="flex items-center gap-2 rounded-xl bg-destructive/8 border border-destructive/15 px-3.5 py-3 text-[12px] font-medium text-destructive">
-                {error}
-              </div>
-            )}
-          </form>
-          
-          <div className="mt-6 flex justify-center">
-            <Link href="/entrar" className="text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Lembrei minha senha. Voltar para login.
-            </Link>
-          </div>
-
+      {/* Card */}
+      <div className="w-full max-w-[460px] rounded-[28px] border border-[#dde3ec] bg-white p-9 shadow-[0_30px_70px_-40px_rgba(27,58,96,0.4)]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#e8f4f2]">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
+          </svg>
         </div>
-      </section>
+
+        <h1 className="mt-5 mb-1.5 text-[28px] font-extrabold tracking-[-0.035em]">
+          Criar nova senha
+        </h1>
+        <p className="mb-6 text-[15px] leading-relaxed text-[#5a6a80]">
+          Escolha uma senha com no mínimo 8 caracteres para voltar a acessar seu espaço.
+        </p>
+
+        {error && (
+          <div className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
+            {error}
+          </div>
+        )}
+        {message && (
+          <div className="mb-5 rounded-xl border border-[#b9dcd6] bg-[#e8f4f2] p-3.5 text-[14px] text-[#2f7a70]">
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!token && (
+            <label className="block">
+              <span className="block mb-1.5 text-[13px] font-semibold">Código / Token</span>
+              <input
+                type="text"
+                required
+                placeholder="Insira o código recebido"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[14px] outline-none focus:border-[#1b3a60]"
+              />
+            </label>
+          )}
+
+          <label className="block">
+            <span className="block mb-1.5 text-[13px] font-semibold">Nova senha</span>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 pr-11 text-[15px] outline-none focus:border-[#1b3a60]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5a6a80] hover:text-[#1d2a3d]"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </label>
+
+          {/* Strength Bars */}
+          <div className="flex gap-1.5 pt-1">
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 1 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 2 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 3 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 4 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
+          </div>
+
+          <label className="block pt-2">
+            <span className="block mb-1.5 text-[13px] font-semibold">Confirmar senha</span>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              placeholder="••••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none focus:border-[#1b3a60]"
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="mt-6 flex h-[50px] w-full items-center justify-center rounded-xl bg-[#1b3a60] text-[15px] font-bold text-white transition-all hover:bg-[#244d7e] disabled:opacity-50"
+          >
+            {isLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : 'Salvar nova senha'}
+          </button>
+        </form>
+
+        <div className="mt-5 text-center">
+          <Link href="/entrar" className="text-[14px] text-[#5a6a80] hover:text-[#1b3a60] hover:underline">
+            ← Voltar para o login
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
