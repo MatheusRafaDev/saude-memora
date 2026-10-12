@@ -162,8 +162,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           <div className="group relative w-full max-w-[340px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-white/20 hover:bg-white/[0.07]">
             <div className="overflow-hidden rounded-2xl bg-black/20">
               <img
-                src="/login-illustration.jpg?v=clean3"
-                alt="Assistente SaúdeMemora dando as boas-vindas"
+                src="/login-illustration.svg"
+                alt="Profissional de saúde em um ambiente azul, com um gráfico de sinais vitais"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"

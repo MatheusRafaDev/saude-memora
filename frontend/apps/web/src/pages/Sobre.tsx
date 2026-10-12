@@ -63,8 +63,8 @@ export default function Sobre() {
           <aside className="group h-fit overflow-hidden rounded-3xl border border-border/80 bg-white p-3 shadow-[0_20px_55px_-40px_rgba(25,48,83,0.4)] transition-all duration-300 hover:shadow-2xl">
             <div className="overflow-hidden rounded-2xl bg-blue-50/50">
               <img
-                src="/sobre-illustration.jpg?v=clean3"
-                alt="Criador e missão do SaúdeMemora: Construindo o futuro da saúde"
+                src="/sobre-illustration.svg"
+                alt="Pessoa organiza informações de saúde em um computador em seu espaço de trabalho"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"

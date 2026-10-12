@@ -90,8 +90,8 @@ function HeroVisual() {
           <div className="relative overflow-hidden bg-gradient-to-b from-blue-50/40 to-white p-3 sm:p-4">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-white shadow-inner group">
               <img
-                src="/hero-health-illustration.jpg?v=clean3"
-                alt="Ilustração do atendimento e cuidado SaúdeMemora"
+                src="/hero-health-illustration.svg"
+                alt="Profissional de saúde conversa com uma pessoa idosa em um ambiente azul acolhedor"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
@@ -107,8 +107,8 @@ function HeroVisual() {
           <div className="relative overflow-hidden bg-gradient-to-b from-teal-50/40 to-white p-3 sm:p-4">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-white shadow-inner group">
               <img
-                src="/family-health-illustration.jpg?v=clean3"
-                alt="Ilustração da família acompanhando saúde no SaúdeMemora"
+                src="/family-health-illustration.svg"
+                alt="Família reunida no sofá consultando informações de saúde em um tablet"
                 loading="eager"
                 decoding="async"
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
@@ -206,8 +206,8 @@ export default function Home() {
             <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-white p-3 shadow-xl transition-all duration-300 hover:shadow-2xl">
               <div className="overflow-hidden rounded-2xl bg-teal-50/40">
                 <img
-                  src="/family-health-illustration.jpg?v=clean3"
-                  alt="Família reunida acompanhando histórico de saúde"
+                  src="/health-records-illustration.svg"
+                  alt="Duas gerações organizam juntas documentos de saúde em casa"
                   className="h-auto w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
                 />
               </div>

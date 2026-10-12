@@ -87,8 +87,8 @@ export default function Recursos() {
               <div className="group relative overflow-hidden rounded-3xl border border-border/80 bg-white p-2.5 shadow-xl transition-all duration-300 hover:shadow-2xl">
                 <div className="overflow-hidden rounded-2xl bg-teal-50/50">
                   <img
-                    src="/recursos-illustration.jpg?v=clean3"
-                    alt="Ilustração 3D dos recursos de organização do SaúdeMemora"
+                    src="/recursos-illustration.svg"
+                    alt="Documentos de saúde organizados em pastas, computador e celular em tons de azul"
                     loading="eager"
                     fetchPriority="high"
                     decoding="async"
