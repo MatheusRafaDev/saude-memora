@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Navy Leaf (Left) -->
-  <path d="M32 54 C32 54 14 42 14 26 C14 16 22 12 28 16 C32 19 32 25 32 30 C32 38 32 54 32 54 Z" fill="#1b3a60"/>
-  <!-- Teal Leaf (Right) with subtle pulse accent cut -->
-  <path d="M32 54 C32 54 50 42 50 26 C50 16 42 12 36 16 C32 19 32 25 32 30 C32 38 32 54 32 54 Z" fill="#2f7a70"/>
-  <!-- Central subtle pulse light line -->
-  <path d="M26 30 L30 24 L34 36 L38 28 L41 31" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
