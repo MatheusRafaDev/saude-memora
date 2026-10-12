@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Activity,
   ArrowUpRight,
@@ -8,12 +9,12 @@ import {
   Pill,
   ShieldCheck,
   Sparkles,
-  LoaderCircle,
+  Users,
+  LayoutDashboard,
 } from 'lucide-react';
-import { Link, useLocation } from 'wouter';
+import { Link } from 'wouter';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
-import { useGetApiPacientesMe, getGetApiPacientesMeQueryOptions } from '@workspace/api-client-react';
 
 const resources = [
   {
@@ -38,99 +39,96 @@ const resources = [
   },
 ];
 
-function ProductPreview() {
+function HeroVisual() {
+  const [activeTab, setActiveTab] = useState<'assistant' | 'family'>('assistant');
+
   return (
     <div
-      aria-label="Prévia ilustrativa da plataforma SaúdeMemora"
-      className="relative mx-auto w-full max-w-[600px]"
+      aria-label="Apresentação visual da plataforma SaúdeMemora"
+      className="relative mx-auto w-full max-w-[620px]"
     >
-      <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-transparent to-accent/15 blur-2xl" aria-hidden="true" />
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-border/80 bg-white shadow-[0_32px_90px_-38px_rgba(25,48,83,0.35)]">
-        <div className="flex min-h-14 items-center justify-between border-b border-border/70 bg-white/90 px-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="" className="brand-logo-animated h-7 w-7 object-contain" />
+      <div className="absolute -inset-6 rounded-[2.5rem] bg-gradient-to-br from-primary/15 via-accent/10 to-transparent blur-3xl" aria-hidden="true" />
+      
+      <div className="relative overflow-hidden rounded-[2rem] border border-border/80 bg-white/95 shadow-[0_32px_90px_-38px_rgba(25,48,83,0.35)] backdrop-blur-sm">
+        {/* Switcher Bar */}
+        <div className="flex items-center justify-between border-b border-border/70 bg-slate-50/80 px-4 py-2.5 sm:px-5">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="" className="brand-logo-animated h-6 w-6 object-contain" />
             <span className="text-xs font-bold text-foreground">SaúdeMemora</span>
           </div>
-          <span className="rounded-full bg-secondary px-3 py-1 text-[10px] font-semibold text-primary">Prévia ilustrativa</span>
-        </div>
 
-        <div className="grid min-h-[330px] sm:grid-cols-[145px_1fr]">
-          <aside className="hidden border-r border-border/70 bg-slate-50/80 p-4 sm:block">
-            <p className="mb-3 px-2 text-[9px] font-bold uppercase tracking-[.16em] text-muted-foreground">Seu espaço</p>
-            <div className="space-y-1.5 text-[11px]">
-              <p className="flex items-center gap-2 rounded-xl bg-primary px-2.5 py-2.5 font-semibold text-white"><Activity size={13} /> Visão geral</p>
-              <p className="flex items-center gap-2 rounded-xl px-2.5 py-2.5 text-muted-foreground"><FileText size={13} /> Documentos</p>
-              <p className="flex items-center gap-2 rounded-xl px-2.5 py-2.5 text-muted-foreground"><ClipboardList size={13} /> Ficha médica</p>
-            </div>
-            <div className="mt-8 rounded-xl border border-primary/10 bg-white p-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary text-primary"><ShieldCheck size={14} /></div>
-              <p className="mt-2 text-[10px] font-semibold text-foreground">Acesso protegido</p>
-              <p className="mt-1 text-[9px] leading-4 text-muted-foreground">Seu histórico em um espaço pessoal.</p>
-            </div>
-          </aside>
-
-          <div className="p-4 sm:p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-medium text-muted-foreground">Seu espaço de saúde</p>
-                <h2 className="mt-1 text-lg font-bold tracking-tight text-foreground">Visão geral</h2>
-              </div>
-              <span className="rounded-full border border-border px-2.5 py-1 text-[9px] font-medium text-muted-foreground">Tudo em ordem</span>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {[
-                { icon: FileText, label: 'Documentos', value: 'Seu histórico' },
-                { icon: Activity, label: 'Exames', value: 'Resultados' },
-                { icon: Pill, label: 'Medicamentos', value: 'Receitas' },
-              ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="rounded-2xl border border-border/80 bg-white p-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary text-primary"><Icon size={15} /></span>
-                  <p className="mt-3 text-[10px] font-semibold text-foreground">{label}</p>
-                  <p className="mt-1 text-[9px] text-muted-foreground">{value}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 rounded-2xl border border-border/80 bg-white">
-              <div className="flex items-center justify-between border-b border-border/70 px-3.5 py-3">
-                <span className="text-[10px] font-bold text-foreground">Acesso rápido</span>
-                <ArrowUpRight size={14} className="text-muted-foreground" />
-              </div>
-              <div className="flex items-center gap-3 px-3.5 py-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"><Sparkles size={15} /></span>
-                <div>
-                  <p className="text-[10px] font-semibold text-foreground">Organize um novo documento</p>
-                  <p className="mt-0.5 text-[9px] text-muted-foreground">Exames, receitas e outros registros</p>
-                </div>
-                <ArrowRight size={14} className="ml-auto text-muted-foreground" />
-              </div>
-            </div>
+          <div className="flex items-center rounded-xl bg-white p-1 shadow-xs border border-border/60">
+            <button
+              type="button"
+              onClick={() => setActiveTab('assistant')}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-[11px] font-semibold transition-all ${
+                activeTab === 'assistant'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Sparkles size={12} />
+              <span>Atendimento</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('family')}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-[11px] font-semibold transition-all ${
+                activeTab === 'family'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Users size={12} />
+              <span>Família</span>
+            </button>
           </div>
         </div>
+
+        {/* Tab 1: Atendimento Illustration */}
+        {activeTab === 'assistant' && (
+          <div className="relative overflow-hidden bg-gradient-to-b from-blue-50/40 to-white p-3 sm:p-4">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-white shadow-inner group">
+              <img
+                src="/hero-health-illustration.jpg?v=clean3"
+                alt="Ilustração do atendimento e cuidado SaúdeMemora"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </div>
+            
+          </div>
+        )}
+
+        {/* Tab 2: Família Illustration */}
+        {activeTab === 'family' && (
+          <div className="relative overflow-hidden bg-gradient-to-b from-teal-50/40 to-white p-3 sm:p-4">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/70 bg-white shadow-inner group">
+              <img
+                src="/family-health-illustration.jpg?v=clean3"
+                alt="Ilustração da família acompanhando saúde no SaúdeMemora"
+                loading="eager"
+                decoding="async"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+              />
+            </div>
+
+            <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-1 font-medium text-accent">
+                <Heart size={13} /> Cuidado compartilhado para todas as idades
+              </span>
+              <span className="text-[10px]">Tudo em um só lugar</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 export default function Home() {
-  const [, setLocation] = useLocation();
-  const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
-    query: { queryKey: getGetApiPacientesMeQueryOptions().queryKey, retry: false }
-  });
-
-  if (user && !isUserLoading) {
-    setLocation('/visao-geral');
-  }
-
-  if (isUserLoading || user) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-[100dvh] bg-background font-sans text-foreground">
       <PublicPageHeader />
@@ -163,7 +161,7 @@ export default function Home() {
                 <span className="inline-flex items-center gap-1.5"><FileText size={14} className="text-accent" /> Seus documentos reunidos</span>
               </div>
             </div>
-            <div className="slide-up"><ProductPreview /></div>
+            <div className="slide-up"><HeroVisual /></div>
           </div>
         </section>
 
@@ -187,16 +185,42 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="border-b border-border/70">
-          <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 py-12 sm:px-6 sm:py-16 md:flex-row md:items-center">
-            <div className="max-w-2xl">
+        <section className="border-b border-border/70 bg-gradient-to-b from-white to-slate-50/60">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-2">
+            <div className="max-w-xl">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Conheça o projeto</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Tecnologia para deixar seu histórico mais acessível.</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">Entenda por que o SaúdeMemora foi criado e os princípios que orientam a plataforma.</p>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Entenda por que o SaúdeMemora foi criado e os princípios que orientam a plataforma: segurança, simplicidade e carinho com seus dados e os de quem você ama.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link href="/sobre" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted">
+                  Conheça nossa história <ArrowUpRight size={16} />
+                </Link>
+                <Link href="/recursos" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-semibold text-primary transition-colors hover:bg-secondary/80">
+                  Explorar recursos <ArrowRight size={15} />
+                </Link>
+              </div>
             </div>
-            <Link href="/sobre" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
-              Conheça nossa história <ArrowUpRight size={16} />
-            </Link>
+
+            <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-white p-3 shadow-xl transition-all duration-300 hover:shadow-2xl">
+              <div className="overflow-hidden rounded-2xl bg-teal-50/40">
+                <img
+                  src="/family-health-illustration.jpg?v=clean3"
+                  alt="Família reunida acompanhando histórico de saúde"
+                  className="h-auto w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
+                />
+              </div>
+              <div className="mt-3 flex items-center justify-between px-2 py-1">
+                <div>
+                  <p className="text-xs font-bold text-foreground">Cuidado para toda a família</p>
+                  <p className="text-[11px] text-muted-foreground">Medicamentos, carteirinhas e exames ao seu alcance.</p>
+                </div>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <Heart size={16} className="fill-accent/20" />
+                </span>
+              </div>
+            </div>
           </div>
         </section>
       </main>

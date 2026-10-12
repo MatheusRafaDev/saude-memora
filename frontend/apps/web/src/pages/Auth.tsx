@@ -1,12 +1,17 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, X, LoaderCircle } from 'lucide-react';
 import { LourdesHeartMark } from '@/components/LourdesHeartMark';
 import { usePostApiAuthLogin, usePostApiAuthRegister, customFetch, getGetApiPacientesMeQueryOptions, getGetApiDocumentsQueryOptions, getGetApiFichaMedicaMeQueryOptions, useGetApiPacientesMe } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 
-export default function Auth() {
-  const [, setLocation] = useLocation();
+interface AuthProps {
+  defaultMode?: 'login' | 'register';
+  params?: Record<string, string | undefined>;
+}
+
+export default function Auth({ defaultMode }: AuthProps = {}) {
+  const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
   const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
@@ -17,14 +22,47 @@ export default function Auth() {
     }
   });
 
-  if (user && !isUserLoading) {
-    setLocation('/visao-geral');
-  }
-
   const loginMutation    = usePostApiAuthLogin();
   const registerMutation = usePostApiAuthRegister();
 
-  const [mode, setMode]                 = useState<'login' | 'register'>('login');
+  const getInitialMode = (): 'login' | 'register' => {
+    if (defaultMode) return defaultMode;
+    if (location === '/cadastro' || location === '/criar-conta') return 'register';
+    if (typeof window !== 'undefined') {
+      const search = window.location.search;
+      if (search.includes('mode=register') || search.includes('tab=register') || search.includes('cadastro')) {
+        return 'register';
+      }
+    }
+    return 'login';
+  };
+
+  const [mode, setMode] = useState<'login' | 'register'>(getInitialMode);
+
+  useEffect(() => {
+    if (user && !isUserLoading) {
+      setLocation('/visao-geral');
+    }
+  }, [user, isUserLoading, setLocation]);
+
+  useEffect(() => {
+    if (defaultMode) {
+      setMode(defaultMode);
+    } else if (location === '/cadastro' || location === '/criar-conta') {
+      setMode('register');
+    } else if (location === '/entrar' && !window.location.search.includes('register')) {
+      setMode('login');
+    }
+  }, [defaultMode, location]);
+
+  const handleModeChange = (newMode: 'login' | 'register') => {
+    setMode(newMode);
+    if (newMode === 'register' && location === '/entrar') {
+      window.history.replaceState(null, '', '/cadastro');
+    } else if (newMode === 'login' && (location === '/cadastro' || location === '/criar-conta')) {
+      window.history.replaceState(null, '', '/entrar');
+    }
+  };
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm]                 = useState({ name: '', birthDate: '', sex: 'Outro', email: '', password: '' });
   const [message, setMessage]           = useState('');
@@ -119,19 +157,34 @@ export default function Auth() {
           </span>
         </Link>
 
+        {/* 3D Mascot Illustration Card */}
+        <div className="relative my-auto flex flex-col items-center justify-center py-4">
+          <div className="group relative w-full max-w-[340px] overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:border-white/20 hover:bg-white/[0.07]">
+            <div className="overflow-hidden rounded-2xl bg-black/20">
+              <img
+                src="/login-illustration.jpg?v=clean3"
+                alt="Assistente SaúdeMemora dando as boas-vindas"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Tagline */}
-        <div className="relative mt-auto max-w-[380px] pb-8">
-          <p className="font-mono text-[9px] uppercase tracking-[.22em] text-[hsl(var(--sidebar-primary))] mb-4">
+        <div className="relative max-w-[380px] pb-4">
+          <p className="font-mono text-[9px] uppercase tracking-[.22em] text-[hsl(var(--sidebar-primary))] mb-2">
             uma nova relação com sua saúde
           </p>
-          <h1 className="text-[clamp(34px,3.8vw,56px)] font-black leading-[.97] tracking-[-0.065em]">
+          <h1 className="text-[clamp(28px,3.2vw,44px)] font-black leading-[1.02] tracking-[-0.05em]">
             Tudo o que importa,{' '}
             <span className="text-[hsl(var(--sidebar-primary))]">em um só lugar.</span>
           </h1>
-          <p className="mt-5 text-[13px] leading-7 text-white/50">
+          <p className="mt-3 text-[12px] leading-6 text-white/60">
             Organize seus documentos de saúde com clareza, contexto e o cuidado que a sua história merece.
           </p>
-
         </div>
       </section>
 
@@ -139,20 +192,36 @@ export default function Auth() {
       <section className="flex flex-1 items-center justify-center px-5 py-10 sm:px-10">
         <div className="w-full max-w-[400px] page-enter">
 
-          {/* Mobile logo */}
-          <Link href="/" className="mb-8 flex items-center gap-2 lg:hidden hover:opacity-80 transition-opacity">
-            <LourdesHeartMark className="h-7 w-7 text-accent" />
-            <span className="text-[15px] font-bold tracking-[-0.04em]">
-              saúde<span className="text-accent">memora</span>
-            </span>
-          </Link>
+          {/* Mobile logo & Welcome Banner */}
+          <div className="mb-6 lg:hidden">
+            <Link href="/" className="mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <LourdesHeartMark className="h-7 w-7 text-accent" />
+              <span className="text-[15px] font-bold tracking-[-0.04em]">
+                Saúde<span className="text-accent">Memora</span>
+              </span>
+            </Link>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-slate-50/80 p-3 shadow-xs">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ShieldCheck size={22} strokeWidth={2.2} />
+              </span>
+              <div>
+                <p className="text-xs font-bold text-foreground">Espaço Pessoal Protegido</p>
+                <p className="text-[11px] text-muted-foreground">Seus exames, laudos e receitas em total sigilo.</p>
+              </div>
+            </div>
+          </div>
 
           {/* Heading */}
           <div className="mb-7">
-            <p className="font-mono text-[9px] uppercase tracking-[.2em] text-accent mb-2">bem-vind0</p>
-            <h2 className="text-2xl font-black tracking-[-0.05em] text-foreground">
-              {mode === 'login' ? 'Que bom ter você aqui.' : 'Comece a cuidar da sua história.'}
-            </h2>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[.2em] text-accent mb-1.5">bem-vindo</p>
+                <h2 className="text-2xl font-black tracking-[-0.05em] text-foreground">
+                  {mode === 'login' ? 'Que bom ter você aqui.' : 'Comece a cuidar da sua história.'}
+                </h2>
+              </div>
+            </div>
             <p className="mt-2 text-[13px] text-muted-foreground">
               {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Crie um espaço seguro para seus documentos.'}
             </p>
@@ -163,7 +232,7 @@ export default function Auth() {
             {(['login', 'register'] as const).map((m) => (
               <button
                 key={m}
-                onClick={() => setMode(m)}
+                onClick={() => handleModeChange(m)}
                 type="button"
                 className={`flex-1 rounded-lg py-2 text-[12px] font-semibold transition-all ${
                   mode === m

@@ -60,15 +60,31 @@ export default function Sobre() {
             </div>
           </article>
 
-          <aside className="h-fit rounded-3xl border border-border/80 bg-white p-6 shadow-[0_20px_55px_-40px_rgba(25,48,83,0.4)]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary text-primary">
-              <HeartPulse size={23} />
+          <aside className="group h-fit overflow-hidden rounded-3xl border border-border/80 bg-white p-3 shadow-[0_20px_55px_-40px_rgba(25,48,83,0.4)] transition-all duration-300 hover:shadow-2xl">
+            <div className="overflow-hidden rounded-2xl bg-blue-50/50">
+              <img
+                src="/sobre-illustration.jpg?v=clean3"
+                alt="Criador e missão do SaúdeMemora: Construindo o futuro da saúde"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
             </div>
-            <p className="mt-5 text-xs font-bold uppercase tracking-[.14em] text-accent">Nossa missão</p>
-            <h2 className="mt-2 text-xl font-bold leading-snug tracking-tight">Tornar seu histórico de saúde mais simples de acompanhar.</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Uma experiência acolhedora, prática e pensada para dar mais organização ao dia a dia.
-            </p>
+            <div className="p-4 sm:p-5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary text-primary">
+                  <HeartPulse size={16} />
+                </span>
+                <p className="text-xs font-bold uppercase tracking-[.14em] text-accent">Nossa missão</p>
+              </div>
+              <h2 className="mt-3 text-lg font-bold leading-snug tracking-tight">
+                Tornar seu histórico de saúde mais simples e acolhedor de acompanhar.
+              </h2>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Uma experiência prática, humana e pensada para trazer tranquilidade ao dia a dia de você e de quem você ama.
+              </p>
+            </div>
           </aside>
         </section>
 

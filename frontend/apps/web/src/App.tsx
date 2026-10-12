@@ -18,9 +18,14 @@ import {
   getGetApiPacientesMeQueryKey,
 } from '@workspace/api-client-react';
 
-const Auth = lazy(() => import('@/pages/Auth'));
-const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
-const Home = lazy(() => import('@/pages/Home'));
+import Home from '@/pages/Home';
+import Auth from '@/pages/Auth';
+import ResetPassword from '@/pages/ResetPassword';
+import Sobre from '@/pages/Sobre';
+import Recursos from '@/pages/Recursos';
+import Termos from '@/pages/Termos';
+import Privacidade from '@/pages/Privacidade';
+
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Documents = lazy(() => import('@/pages/Documents'));
 const Upload = lazy(() => import('@/pages/Upload'));
@@ -29,10 +34,6 @@ const Record = lazy(() => import('@/pages/Record'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const Emergencia = lazy(() => import('@/pages/Emergencia'));
 const Chat = lazy(() => import('@/pages/Chat'));
-const Termos = lazy(() => import('@/pages/Termos'));
-const Privacidade = lazy(() => import('@/pages/Privacidade'));
-const Sobre = lazy(() => import('@/pages/Sobre'));
-const Recursos = lazy(() => import('@/pages/Recursos'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -310,32 +311,39 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 function AppPage({ children }: { children: ReactNode }) { return <AppShell>{children}</AppShell>; }
 
 function Router() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location]);
+
   return (
     <>
       <SessionKeepAlive />
-      <Suspense fallback={<PageLoading />}>
-        {/* Keep the shared shell outside the boundary so it survives a page crash. */}
-        <RoutedErrorBoundary>
+      <RoutedErrorBoundary>
+        <div key={location} className="page-transition-enter min-h-[100dvh] flex flex-col flex-1">
           <Switch>
             <Route path="/" component={HomeRoute} />
             <Route path="/entrar" component={Auth} />
+            <Route path="/cadastro">{() => <Auth defaultMode="register" />}</Route>
+            <Route path="/criar-conta">{() => <Auth defaultMode="register" />}</Route>
             <Route path="/reset-password" component={ResetPassword} />
+            <Route path="/termos" component={Termos} />
+            <Route path="/privacidade" component={Privacidade} />
+            <Route path="/sobre" component={Sobre} />
+            <Route path="/recursos" component={Recursos} />
             <Route path="/visao-geral">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>
             <Route path="/documentos">{() => <ProtectedRoute><Documents /></ProtectedRoute>}</Route>
             <Route path="/documentos/:id">{(params) => <ProtectedRoute><DocumentDetail id={params.id} /></ProtectedRoute>}</Route>
             <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
             <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
             <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
-            <Route path="/emergencia/:token">{(params) => <Emergencia token={params.token} />}</Route>
+            <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
             <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
-            <Route path="/termos" component={Termos} />
-            <Route path="/privacidade" component={Privacidade} />
-            <Route path="/sobre" component={Sobre} />
-            <Route path="/recursos" component={Recursos} />
             <Route component={NotFound} />
           </Switch>
-        </RoutedErrorBoundary>
-      </Suspense>
+        </div>
+      </RoutedErrorBoundary>
     </>
   );
 }

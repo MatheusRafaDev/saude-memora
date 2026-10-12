@@ -247,7 +247,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         tabIndex={-1}
         className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 pb-24 md:px-8 md:py-8"
       >
-        {children}
+        <div key={location} className="page-transition-enter flex-1">
+          {children}
+        </div>
       </main>
 
       {/* ── Bottom Navigation (Mobile only) ────────────────────────────── */}

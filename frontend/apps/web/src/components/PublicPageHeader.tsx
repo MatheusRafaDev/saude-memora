@@ -2,20 +2,6 @@ import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 
-function preloadPublicRoute(href: string) {
-  switch (href) {
-    case '/recursos':
-      void import('@/pages/Recursos');
-      break;
-    case '/sobre':
-      void import('@/pages/Sobre');
-      break;
-    case '/entrar':
-      void import('@/pages/Auth');
-      break;
-  }
-}
-
 export function PublicPageHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
@@ -41,8 +27,6 @@ export function PublicPageHeader() {
               <Link
                 key={href}
                 href={href}
-                onMouseEnter={() => preloadPublicRoute(href)}
-                onFocus={() => preloadPublicRoute(href)}
                 aria-current={isCurrent ? 'page' : undefined}
                 className={`relative py-2 text-[13px] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-primary after:transition-transform ${isCurrent ? 'text-primary after:scale-x-100' : 'text-muted-foreground after:scale-x-0 hover:text-primary hover:after:scale-x-100'}`}
               >
@@ -52,10 +36,10 @@ export function PublicPageHeader() {
           })}
         </nav>
         <div className="hidden items-center gap-2 md:flex">
-          <Link href="/entrar" onMouseEnter={() => preloadPublicRoute('/entrar')} onFocus={() => preloadPublicRoute('/entrar')} className="rounded-md px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted">
+          <Link href="/entrar" className="rounded-md px-3.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted">
             Entrar
           </Link>
-          <Link href="/entrar" onMouseEnter={() => preloadPublicRoute('/entrar')} onFocus={() => preloadPublicRoute('/entrar')} className="rounded-md bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+          <Link href="/cadastro" className="rounded-md bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
             Criar conta
           </Link>
         </div>
@@ -78,8 +62,6 @@ export function PublicPageHeader() {
                 <Link
                   key={href}
                   href={href}
-                  onTouchStart={() => preloadPublicRoute(href)}
-                  onFocus={() => preloadPublicRoute(href)}
                   onClick={() => setMobileMenuOpen(false)}
                   aria-current={isCurrent ? 'page' : undefined}
                   className={`rounded-md px-3 py-3 text-sm font-medium transition-colors ${isCurrent ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'}`}
@@ -90,7 +72,7 @@ export function PublicPageHeader() {
             })}
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3">
               <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md border border-border px-3 py-3 text-center text-sm font-semibold text-foreground">Entrar</Link>
-              <Link href="/entrar" onClick={() => setMobileMenuOpen(false)} className="rounded-md bg-primary px-3 py-3 text-center text-sm font-semibold text-primary-foreground">Criar conta</Link>
+              <Link href="/cadastro" onClick={() => setMobileMenuOpen(false)} className="rounded-md bg-primary px-3 py-3 text-center text-sm font-semibold text-primary-foreground">Criar conta</Link>
             </div>
           </div>
         </nav>

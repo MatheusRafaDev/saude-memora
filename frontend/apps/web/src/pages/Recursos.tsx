@@ -63,14 +63,46 @@ export default function Recursos() {
       <main>
         <section className="relative isolate overflow-hidden border-b border-border/70">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_20%_10%,rgba(28,84,135,0.1),transparent_42%),radial-gradient(ellipse_at_90%_50%,rgba(20,125,128,0.08),transparent_35%)]" />
-          <div className="mx-auto max-w-5xl px-5 py-14 sm:px-8 sm:py-20">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Recursos da plataforma</p>
-            <h1 className="mt-4 max-w-3xl text-balance text-4xl font-bold leading-tight tracking-[-0.045em] sm:text-5xl">
-              Suas informações de saúde, mais fáceis de organizar e encontrar.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Conheça as ferramentas do SaúdeMemora para reunir documentos e consultar os registros adicionados à sua conta.
-            </p>
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 md:grid-cols-[1.1fr_0.9fr] lg:gap-14">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Recursos da plataforma</p>
+              <h1 className="mt-4 text-balance text-4xl font-bold leading-tight tracking-[-0.045em] sm:text-5xl">
+                Suas informações de saúde, mais fáceis de organizar e encontrar.
+              </h1>
+              <p className="mt-5 text-base leading-7 text-muted-foreground sm:text-lg">
+                Conheça as ferramentas do SaúdeMemora para reunir documentos, laudos e receitas em um espaço seguro com suporte de inteligência artificial.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link href="/entrar" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:-translate-y-0.5 hover:bg-primary/90">
+                  Experimentar agora <ArrowRight size={16} />
+                </Link>
+                <a href="#resources-list-title" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-white/80 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-white">
+                  Ver funcionalidades
+                </a>
+              </div>
+            </div>
+
+            <div className="relative mx-auto w-full max-w-[480px]">
+              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-tr from-accent/15 via-primary/10 to-transparent blur-2xl" aria-hidden="true" />
+              <div className="group relative overflow-hidden rounded-3xl border border-border/80 bg-white p-2.5 shadow-xl transition-all duration-300 hover:shadow-2xl">
+                <div className="overflow-hidden rounded-2xl bg-teal-50/50">
+                  <img
+                    src="/recursos-illustration.jpg?v=clean3"
+                    alt="Ilustração 3D dos recursos de organização do SaúdeMemora"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    className="h-auto w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
+                <div className="mt-2.5 flex items-center justify-between px-2 py-1 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1 font-semibold text-primary">
+                    <ShieldCheck size={13} /> OCR inteligente para receitas e exames
+                  </span>
+                  <span className="text-[10px]">SaúdeMemora 3D</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
