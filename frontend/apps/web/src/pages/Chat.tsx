@@ -79,7 +79,7 @@ export default function Chat() {
   const [sendError, setSendError] = useState(false);
   const [historyDays, setHistoryDays] = useState<ChatDay[]>([]);
   const [chatDate, setChatDate] = useState(getLocalDateKey());
-  const [sessionId, setSessionId] = useState(createSessionId);
+  const [sessionId, setSessionId] = useState<string>(createSessionId);
   const [selectedArchiveDate, setSelectedArchiveDate] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const archiveRequestId = useRef(0);
