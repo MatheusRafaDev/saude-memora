@@ -295,6 +295,14 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   return (
     <div className="min-h-screen bg-[#f7f9fc] pb-16 font-sans text-[#1d2a3d]">
       <main className="mx-auto max-w-[1240px] px-5 pb-16 pt-8 sm:px-10">
+        <Link
+          href="/documentos"
+          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] shadow-xs transition-colors hover:bg-slate-50"
+        >
+          <ArrowLeft size={17} />
+          Voltar aos documentos
+        </Link>
+
         <div className="mb-3.5 flex items-center gap-2 text-sm text-[#5a6a80]">
           <Link href="/documentos" className="transition-colors hover:text-[#1b3a60]">
             Documentos
