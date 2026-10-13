@@ -64,7 +64,7 @@ function PageLoading() {
   return (
     <div className="min-h-screen flex flex-col bg-background" aria-busy="true" aria-live="polite">
       {/* Skeleton Header */}
-      <header className="sticky top-0 z-40 w-full glass-header border-b border-white/5">
+      <header className="sticky top-0 z-40 hidden w-full glass-header border-b border-white/5 lg:block">
         <div className="mx-auto max-w-[1440px] px-4 md:px-8">
           <div className="flex h-[64px] items-center gap-6">
             <div className="h-8 w-32 rounded-lg bg-muted animate-pulse" />
@@ -82,7 +82,7 @@ function PageLoading() {
         </div>
       </header>
       {/* Skeleton Content */}
-      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
+      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
         <div className="space-y-6">
           <div className="h-24 w-full rounded-2xl bg-muted animate-pulse" />
           <div className="grid gap-5 lg:grid-cols-3">
@@ -92,6 +92,11 @@ function PageLoading() {
           </div>
         </div>
       </main>
+      <nav aria-label="Carregando navegação móvel" className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-center justify-around border-t border-[#dde3ec] bg-white px-4 pb-[env(safe-area-inset-bottom)] lg:hidden">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div key={index} className="h-9 w-12 animate-pulse rounded-xl bg-muted" />
+        ))}
+      </nav>
     </div>
   );
 }
@@ -267,7 +272,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         {/* Skeleton Header */}
-        <header className="sticky top-0 z-40 w-full glass-header border-b border-white/5">
+        <header className="sticky top-0 z-40 hidden w-full glass-header border-b border-white/5 lg:block">
           <div className="mx-auto max-w-[1440px] px-4 md:px-8">
             <div className="flex h-[64px] items-center gap-6">
               <div className="h-8 w-32 rounded-lg bg-muted animate-pulse" />
@@ -285,7 +290,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
           </div>
         </header>
         {/* Skeleton Content */}
-        <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 md:px-8 md:py-8">
+        <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
           <div className="space-y-6">
             <div className="h-24 w-full rounded-2xl bg-muted animate-pulse" />
             <div className="grid gap-5 lg:grid-cols-3">
@@ -295,6 +300,11 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
             </div>
           </div>
         </main>
+        <nav aria-label="Carregando navegação móvel" className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-center justify-around border-t border-[#dde3ec] bg-white px-4 pb-[env(safe-area-inset-bottom)] lg:hidden">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="h-9 w-12 animate-pulse rounded-xl bg-muted" />
+          ))}
+        </nav>
       </div>
     );
   }

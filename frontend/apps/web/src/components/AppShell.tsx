@@ -101,7 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       {/* ── Desktop Header ─────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 flex h-[72px] items-center gap-7 border-b border-[#dde3ec] bg-white px-6 sm:px-10">
+      <header className="sticky top-0 z-40 hidden h-[72px] items-center gap-7 border-b border-[#dde3ec] bg-white px-6 sm:px-10 lg:flex">
         <Link
           href="/visao-geral"
           className="flex items-center gap-2.5 shrink-0 text-[#1b3a60] font-extrabold text-[18px] tracking-[-0.03em]"
@@ -208,7 +208,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ── Mobile Bottom Navigation Bar (as per Mobile reference) ── */}
       <nav
           aria-label="Navegação móvel inferior"
-          className="fixed inset-x-0 bottom-0 z-40 flex min-h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-[#dde3ec] bg-white px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_rgba(27,58,96,0.45)] lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-[#dde3ec] bg-white px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_rgba(27,58,96,0.45)] lg:hidden"
         >
         {mobileNavItems.map(({ href, label, icon }) => {
             const isActive = activeHref === href;
