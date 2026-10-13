@@ -476,7 +476,7 @@ public class DocumentProcessingService : IOcrAiService
             }
             else if (lower.StartsWith("crm"))
             {
-                dto.Crm = l.Replace("CRM", "").Replace("crm", "").Replace(":", "").Trim();
+                dto.Crm = new string(l.Where(char.IsDigit).ToArray());
             }
             else if (l.Length > 25 && !lower.Contains("www") && !lower.Contains("http") && !lower.Contains("rua ") && !lower.Contains("cep") && !lower.Contains("fone") && !lower.Contains("telefone"))
             {

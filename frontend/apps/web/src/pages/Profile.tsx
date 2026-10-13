@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   X,
   Phone,
+  LogOut,
 } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
@@ -28,7 +29,7 @@ import { useConsentimento, useSaveConsentimento } from '@/hooks/useConsentimento
 
 export default function Profile() {
   const { toast } = useToast();
-  const { signOut } = useAuth();
+  const { signOut, isSigningOut } = useAuth();
   const {
     data: profileRaw,
     refetch,
@@ -794,6 +795,22 @@ export default function Profile() {
             )}
           </div>
         </div>
+
+        <section className="mt-6 rounded-[20px] border border-[#dde3ec] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-5">
+          <div>
+            <h2 className="text-sm font-bold text-[#203047]">Sair da conta</h2>
+            <p className="mt-1 text-sm text-[#5a6a80]">Encerre sua sessão neste dispositivo.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            disabled={isSigningOut}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#ead5d2] px-4 text-sm font-semibold text-[#a13a30] transition-colors hover:bg-[#fff6f5] disabled:cursor-not-allowed disabled:opacity-60 sm:mt-0 sm:w-auto"
+          >
+            {isSigningOut ? <LoaderCircle size={17} className="animate-spin" /> : <LogOut size={17} />}
+            {isSigningOut ? 'Saindo...' : 'Sair da conta'}
+          </button>
+        </section>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
           Os dados e preferências exibidos pertencem à sua conta.

@@ -103,7 +103,7 @@ function createDocumentEditForm(doc: any): DocumentEditForm {
     data: typeof doc?.data === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(doc.data) ? `${doc.data.slice(8, 10)}/${doc.data.slice(5, 7)}/${doc.data.slice(0, 4)}` : textValue(doc?.data),
     resumo: textValue(doc?.resumo),
     diagnostico: textValue(doc?.diagnostico),
-    crm: textValue(doc?.crm),
+    crm: textValue(doc?.crm).replace(/\D/g, ''),
     cid: textValue(doc?.cid),
     cnes: textValue(doc?.cnes),
     nomeExame: textValue(doc?.nomeExame),
@@ -251,6 +251,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const medications = Array.isArray(doc?.medicamentos) ? doc.medicamentos : [];
   const alerts = Array.isArray(doc?.alertas) ? doc.alertas : [];
   const activeAlerts = alerts.filter((alert: any) => alert.dispensado !== true);
+  useEffect(() => {
+    if (activeTab === 'alertas' && activeAlerts.length === 0) setActiveTab('dados');
+  }, [activeTab, activeAlerts.length]);
   const indentedContent: any[] = Array.isArray(doc?.conteudoIndentado) ? doc.conteudoIndentado : [];
   const lowConfidenceFields = Array.isArray(doc?.camposBaixaConfianca)
     ? doc.camposBaixaConfianca
@@ -347,6 +350,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
   const updateTextField = (key: DocumentTextField, value: string) => {
     if (key === 'data') value = maskDate(value);
+    if (key === 'crm') value = value.replace(/\D/g, '');
     if (key === 'cnes') value = value.replace(/\D/g, '').slice(0, 7);
     setFormData((previous) => ({ ...previous, [key]: value }));
     setConfirmedFields((previous) => { const next = new Set(previous); next.delete(key); return next; });
@@ -565,7 +569,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 ['medicamentos', 'Medicamentos'],
                 ['alertas', 'Alertas'],
               ] as const)
-                .filter(([tab]) => tab !== 'medicamentos' || hasMedicationTab)
+                .filter(([tab]) => (tab !== 'medicamentos' || hasMedicationTab) && (tab !== 'alertas' || activeAlerts.length > 0))
                 .map(([tab, label]) => (
                   <button
                     key={tab}
@@ -923,19 +927,24 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       <DialogPrimitive.Root open={isEditingModalOpen} onOpenChange={setIsEditingModalOpen}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#dde3ec] bg-white p-6 shadow-2xl outline-none">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-[#1b3a60]">Editar dados do documento</h3>
-              <DialogPrimitive.Close className="rounded-lg p-1 text-[#5a6a80] hover:bg-slate-100">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-[#dde3ec] bg-white shadow-2xl outline-none sm:w-[calc(100%-2rem)]">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#e7ebf1] bg-white px-4 py-4 sm:px-6">
+              <div>
+                <h3 className="text-lg font-bold text-[#1b3a60]">Editar documento</h3>
+                <p className="mt-0.5 text-xs text-[#5a6a80]">Altere os dados necessários e salve ao terminar.</p>
+              </div>
+              <DialogPrimitive.Close aria-label="Fechar edição" className="rounded-lg p-2 text-[#5a6a80] hover:bg-slate-100">
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>
-            <div className="space-y-6 text-sm">
-              <section>
-                <h4 className="mb-3 font-bold text-[#1b3a60]">Identificação</h4>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 text-sm sm:px-6">
+              <div className="space-y-6">
+              <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
+                <h4 className="mb-1 font-bold text-[#1b3a60]">Identificação</h4>
+                <p className="mb-4 text-xs text-[#5a6a80]">Título, tipo e data do documento.</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block font-semibold" htmlFor="document-tipo">Tipo</label>
+                    <label className="mb-1 block font-semibold" htmlFor="document-tipo">Tipo de documento</label>
                     <select
                       id="document-tipo"
                       value={formData.tipo}
@@ -948,7 +957,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     </select>
                     {confidencePath('tipo') && <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">Confira este campo. {confirmedFields.has('tipo') ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged('tipo')} onClick={() => confirmField('tipo')} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</div>}
                   </div>
-                  {documentTextFields.map(({ key, label, multiline }) => (
+                  {documentTextFields.filter(({ key }) => key === 'titulo' || key === 'data').map(({ key, label, multiline }) => (
                     <div key={key} className={multiline ? 'sm:col-span-2' : undefined}>
                       <label className="mb-1 block font-semibold" htmlFor={`document-${key}`}>{label}</label>
                       {multiline ? (
@@ -964,8 +973,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           id={`document-${key}`}
                           type="text"
                           value={formData[key]}
+                          inputMode={key === 'crm' || key === 'cnes' ? 'numeric' : undefined}
                           onChange={(event) => updateTextField(key, event.target.value)}
-                          maxLength={key === 'data' ? 10 : key === 'cnes' ? 7 : undefined}
+                          maxLength={key === 'data' ? 10 : key === 'cnes' ? 7 : key === 'crm' ? 20 : undefined}
                           placeholder={key === 'data' ? 'DD/MM/AAAA' : undefined}
                           className={`h-11 w-full rounded-xl border px-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                         />
@@ -1010,7 +1020,35 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 </div>
               </section>
 
-              <section>
+              <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
+                <h4 className="mb-1 font-bold text-[#1b3a60]">Profissional e local</h4>
+                <p className="mb-4 text-xs text-[#5a6a80]">Quem emitiu o documento e onde foi realizado.</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {documentTextFields.filter(({ key }) => ['medico', 'crm', 'clinica', 'cnes'].includes(key)).map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="mb-1 block font-semibold" htmlFor={`document-${key}`}>{label}</label>
+                      <input id={`document-${key}`} type="text" value={formData[key]} inputMode={key === 'crm' || key === 'cnes' ? 'numeric' : undefined} onChange={(event) => updateTextField(key, event.target.value)} maxLength={key === 'cnes' ? 7 : key === 'crm' ? 20 : undefined} className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />
+                      {confidencePath(key) && <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">Confira este campo. {confirmedFields.has(key) ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged(key)} onClick={() => confirmField(key)} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</div>}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
+                <h4 className="mb-1 font-bold text-[#1b3a60]">Informações clínicas</h4>
+                <p className="mb-4 text-xs text-[#5a6a80]">Revise os campos extraídos e corrija somente o que for necessário.</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {documentTextFields.filter(({ key }) => !['titulo', 'data', 'medico', 'crm', 'clinica', 'cnes'].includes(key)).map(({ key, label, multiline }) => (
+                    <div key={key} className={multiline ? 'sm:col-span-2' : undefined}>
+                      <label className="mb-1 block font-semibold" htmlFor={`document-${key}`}>{label}</label>
+                      {multiline ? <textarea id={`document-${key}`} rows={3} value={formData[key]} onChange={(event) => updateTextField(key, event.target.value)} className={`w-full rounded-xl border bg-white p-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} /> : <input id={`document-${key}`} type="text" value={formData[key]} onChange={(event) => updateTextField(key, event.target.value)} className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />}
+                      {confidencePath(key) && <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">Confira este campo. {confirmedFields.has(key) ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged(key)} onClick={() => confirmField(key)} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</div>}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h4 className="font-bold text-[#1b3a60]">Medicamentos</h4>
                   <button
@@ -1094,7 +1132,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </section>
 
               {formData.resultadosExame.length > 0 && (
-                <section>
+                <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
                   <h4 className="mb-3 font-bold text-[#1b3a60]">Resultados do exame</h4>
                   <div className="space-y-3">
                     {formData.resultadosExame.map((result, index) => (
@@ -1122,19 +1160,20 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 </section>
               )}
 
+              </div>
             </div>
-            <div className="mt-6 flex justify-end gap-2.5">
+            <div className="sticky bottom-0 z-10 flex justify-end gap-2.5 border-t border-[#e7ebf1] bg-white px-4 py-3 sm:px-6">
               <button
                 type="button"
                 onClick={() => setIsEditingModalOpen(false)}
-                className="cursor-pointer rounded-xl border border-[#dde3ec] px-4 py-2.5 text-sm font-bold text-[#5a6a80] hover:bg-slate-50"
+                className="min-h-11 cursor-pointer rounded-xl border border-[#dde3ec] px-4 py-2.5 text-sm font-bold text-[#5a6a80] hover:bg-slate-50"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="cursor-pointer rounded-xl bg-[#1b3a60] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#24507f]"
+                className="min-h-11 flex-1 cursor-pointer rounded-xl bg-[#1b3a60] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#24507f] sm:flex-none"
               >
                 Salvar alterações
               </button>

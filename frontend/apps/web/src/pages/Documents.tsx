@@ -376,28 +376,22 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* Category Pills */}
-        <div className="flex gap-2.5 flex-wrap mb-7">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-              selectedCategory === 'all'
-                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
-                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
-            }`}
+        {/* Document type filter */}
+        <div className="mb-7 w-full sm:max-w-xs">
+          <label htmlFor="document-type-filter" className="mb-1.5 block text-sm font-semibold text-[#1d2a3d]">
+            Tipo de documento
+          </label>
+          <select
+            id="document-type-filter"
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-sm text-[#1d2a3d] outline-none transition-colors focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]"
           >
-            Todos {counts.all}
-          </button>
-          {DOCUMENT_TYPES.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setSelectedCategory(id)}
-              className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${selectedCategory === id ? 'bg-[#1b3a60] text-white border border-[#1b3a60]' : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'}`}
-            >
-              {label} {counts[id]}
-            </button>
-          ))}
+            <option value="all">Todos os tipos ({counts.all})</option>
+            {DOCUMENT_TYPES.map(({ id, label }) => (
+              <option key={id} value={id}>{label} ({counts[id]})</option>
+            ))}
+          </select>
         </div>
 
         {/* Grouped Month Sections */}

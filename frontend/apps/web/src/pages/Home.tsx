@@ -32,8 +32,8 @@ export default function Home() {
 
       <main className="flex-1">
         {/* ── Hero Section ────────────────────────────────────────── */}
-        <section className="relative overflow-hidden bg-[radial-gradient(900px_500px_at_8%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_100%_40%,#e5eefb,transparent_60%),#fff] px-6 py-20 sm:px-12 md:py-24">
-          <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-12 sm:flex-row sm:gap-16">
+        <section className="relative overflow-hidden bg-[radial-gradient(900px_500px_at_8%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_100%_40%,#e5eefb,transparent_60%),#fff] px-4 py-10 sm:px-12 sm:py-20 md:py-24">
+          <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-9 sm:flex-row sm:gap-16">
             <div className="w-full min-w-0 flex-1 sm:min-w-[320px] sm:max-w-[560px]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#bfd8f7] bg-[#e5eefb] px-4 py-2 text-[13px] font-bold text-[#1f7fe0]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -42,18 +42,18 @@ export default function Home() {
                 Seu histórico de saúde, mais organizado
               </span>
 
-              <h1 className="mt-6 text-[42px] sm:text-[56px] lg:text-[68px] font-extrabold leading-[1.03] tracking-[-0.045em] text-[#1d2a3d]">
+              <h1 className="mt-5 text-[36px] font-extrabold leading-[1.05] tracking-[-0.045em] text-[#1d2a3d] sm:mt-6 sm:text-[56px] sm:leading-[1.03] lg:text-[68px]">
                 Cuidar da sua saúde também é <span className="text-[#1f7fe0]">ter sua história por perto.</span>
               </h1>
 
-              <p className="mt-6 text-[18px] sm:text-[20px] leading-[1.65] text-[#5a6a80]">
+              <p className="mt-4 text-base leading-[1.6] text-[#5a6a80] sm:mt-6 sm:text-[20px] sm:leading-[1.65]">
                 Reúna exames, receitas e informações importantes em um espaço pessoal, para encontrar o que precisa com mais facilidade.
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-3.5">
+              <div className="mt-7 flex w-full flex-col gap-3 sm:mt-9 sm:w-auto sm:flex-row sm:flex-wrap sm:gap-3.5">
                 <Link
                   href="/entrar"
-                  className="inline-flex min-h-[54px] items-center gap-2 rounded-[14px] bg-[#1b3a60] px-7 text-[16px] font-bold text-white shadow-[0_10px_24px_rgba(27,58,96,0.25)] transition-all hover:bg-[#244d7e] hover:-translate-y-0.5"
+                  className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1b3a60] px-5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(27,58,96,0.25)] transition-all hover:bg-[#244d7e] hover:-translate-y-0.5 sm:min-h-[54px] sm:w-auto sm:px-7 sm:text-base"
                 >
                   <span>Acessar plataforma</span>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -63,13 +63,13 @@ export default function Home() {
 
                 <Link
                   href="/recursos"
-                  className="inline-flex min-h-[54px] items-center rounded-[14px] border border-[#dde3ec] bg-white px-7 text-[16px] font-bold text-[#1d2a3d] transition-all hover:bg-[#f7f9fc]"
+                  className="inline-flex min-h-[50px] w-full items-center justify-center rounded-[14px] border border-[#dde3ec] bg-white px-5 text-[15px] font-bold text-[#1d2a3d] transition-all hover:bg-[#f7f9fc] sm:min-h-[54px] sm:w-auto sm:px-7 sm:text-base"
                 >
                   Conhecer os recursos
                 </Link>
               </div>
 
-              <div className="mt-9 flex flex-wrap gap-7 text-[14px] font-semibold text-[#5a6a80]">
+              <div className="mt-7 flex flex-col gap-3 text-[13px] font-semibold text-[#5a6a80] sm:mt-9 sm:flex-row sm:flex-wrap sm:gap-7 sm:text-[14px]">
                 <span className="flex items-center gap-2">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
@@ -101,7 +101,7 @@ export default function Home() {
                   <span className="ml-3 text-[12px] text-[#5a6a80]">Seu espaço pessoal</span>
                 </div>
 
-                <div className="p-7">
+                <div className="p-4 sm:p-7">
                   <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                     ACESSO PESSOAL
                   </div>
@@ -158,7 +158,7 @@ export default function Home() {
               </div>
 
               {/* Floating review card */}
-              <div className="absolute -bottom-6 -left-6 flex items-center gap-3 rounded-[18px] border border-[#dde3ec] bg-white p-3.5 sm:px-5 sm:py-4 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)] animate-in fade-in zoom-in-95">
+              <div className="hidden rounded-[18px] border border-[#dde3ec] bg-white p-3.5 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)] animate-in fade-in zoom-in-95 sm:absolute sm:-bottom-6 sm:-left-6 sm:flex sm:items-center sm:gap-3 sm:right-auto sm:px-5 sm:py-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#e5eefb]">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12l4 4 10-10" />

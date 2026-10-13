@@ -1,10 +1,7 @@
-import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { BrandWordmark } from '@/components/BrandWordmark';
 
 export function PublicPageHeader() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
   const navigation = [
     { href: '/', label: 'Início' },
@@ -55,55 +52,15 @@ export function PublicPageHeader() {
           </Link>
         </div>
 
-        <button
-          type="button"
-          aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-          aria-expanded={mobileMenuOpen}
-          onClick={() => setMobileMenuOpen((open) => !open)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl text-[#1d2a3d] hover:bg-[#f1f4f8] md:hidden"
-        >
-          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-1 md:hidden">
+          <Link href="/entrar" className="rounded-lg px-2.5 py-2 text-sm font-semibold text-[#1d2a3d]">
+            Entrar
+          </Link>
+          <Link href="/cadastro" className="rounded-lg bg-[#1b3a60] px-3 py-2 text-sm font-bold text-white">
+            Criar conta
+          </Link>
+        </div>
       </div>
-
-      {mobileMenuOpen && (
-        <nav aria-label="Navegação móvel" className="border-t border-[#dde3ec] bg-white px-6 py-4 md:hidden">
-          <div className="flex flex-col gap-2">
-            {navigation.map(({ href, label }) => {
-              const isCurrent = location === href;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-current={isCurrent ? 'page' : undefined}
-                  className={`rounded-xl px-4 py-3 text-[15px] font-medium transition-colors ${
-                    isCurrent ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]' : 'text-[#5a6a80] hover:bg-[#f1f4f8]'
-                  }`}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-[#dde3ec] pt-4">
-              <Link
-                href="/entrar"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl border border-[#dde3ec] px-4 py-3 text-center text-[14px] font-semibold text-[#1d2a3d]"
-              >
-                Entrar
-              </Link>
-              <Link
-                href="/cadastro"
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl bg-[#1b3a60] px-4 py-3 text-center text-[14px] font-bold text-white"
-              >
-                Criar conta
-              </Link>
-            </div>
-          </div>
-        </nav>
-      )}
     </header>
   );
 }

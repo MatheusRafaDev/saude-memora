@@ -342,5 +342,21 @@ input::placeholder, textarea::placeholder {
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / .4); }
 
+@media (max-width: 1023px) {
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overflow-x: clip;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
 /* Selection */
 ::selection { background: hsl(var(--accent) / .15); color: hsl(var(--foreground)); }

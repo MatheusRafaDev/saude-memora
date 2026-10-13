@@ -334,7 +334,7 @@ function Router() {
     <>
       <SessionKeepAlive />
       <RoutedErrorBoundary>
-        <div key={location} className="page-transition-enter min-h-[100dvh] flex flex-col flex-1">
+        <div key={location} className="min-h-[100dvh] flex flex-col flex-1">
           <Switch>
             <Route path="/" component={HomeRoute} />
             <Route path="/entrar" component={Auth} />

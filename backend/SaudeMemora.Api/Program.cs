@@ -1523,7 +1523,7 @@ app.MapPut("/api/documents/{id}", async (
     doc.Data = updateDto.Data ?? doc.Data;
     doc.Resumo = updateDto.Resumo ?? doc.Resumo;
     doc.Diagnostico = updateDto.Diagnostico ?? doc.Diagnostico;
-    doc.Crm = updateDto.Crm ?? doc.Crm;
+    doc.Crm = updateDto.Crm is null ? doc.Crm : new string(updateDto.Crm.Where(char.IsDigit).ToArray());
     doc.Cid = updateDto.Cid ?? doc.Cid;
     doc.Cnes = updateDto.Cnes ?? doc.Cnes;
     doc.NomeExame = updateDto.NomeExame ?? doc.NomeExame;
