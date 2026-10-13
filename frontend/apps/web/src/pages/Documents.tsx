@@ -311,7 +311,7 @@ export default function Documents() {
         {/* Filter bar: Search + Selects + Layout toggle */}
         <div className="flex gap-3 flex-wrap items-center mb-4.5">
           {/* Search Input */}
-          <div className="h-[46px] flex-1 min-w-[280px] sm:w-[420px] border border-[#c6cfdb] rounded-xl bg-white flex items-center gap-2 px-3.5 text-sm text-[#5a6a80] focus-within:border-[#1b3a60] focus-within:ring-1 focus-within:ring-[#1b3a60] transition-all">
+          <div className="h-[46px] w-full min-w-0 flex-1 sm:w-[420px] border border-[#c6cfdb] rounded-xl bg-white flex items-center gap-2 px-3.5 text-sm text-[#5a6a80] focus-within:border-[#1b3a60] focus-within:ring-1 focus-within:ring-[#1b3a60] transition-all">
             <Search size={18} className="text-[#5a6a80] shrink-0" />
             <input
               type="text"

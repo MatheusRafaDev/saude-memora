@@ -26,8 +26,8 @@ export default function Sobre() {
 
         {/* ── Nossa história ───────────────────────────────────────── */}
         <section className="px-6 py-16 sm:px-12">
-          <div className="mx-auto flex max-w-[1000px] flex-wrap gap-14">
-            <div className="flex-[1.2] min-w-[320px] text-[16px] leading-[1.8] text-[#5a6a80]">
+          <div className="mx-auto flex max-w-[1000px] flex-col flex-wrap gap-10 sm:flex-row sm:gap-14">
+            <div className="w-full min-w-0 flex-[1.2] sm:min-w-[320px] text-[16px] leading-[1.8] text-[#5a6a80]">
               <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                 Nossa história
               </div>
@@ -49,7 +49,7 @@ export default function Sobre() {
               </div>
             </div>
 
-            <div className="flex-1 min-w-[320px]">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[320px]">
               <div className="rounded-[32px] border border-[#dde3ec] bg-white p-3 shadow-sm">
                 <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-5">
                   <img
@@ -127,7 +127,7 @@ export default function Sobre() {
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-[26px] font-extrabold text-white shadow-md">
               MR
             </div>
-            <div className="flex-1 min-w-[280px]">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[280px]">
               <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                 Quem criou
               </div>
@@ -141,7 +141,7 @@ export default function Sobre() {
 
         {/* ── CTA Banner ─────────────────────────────────────────── */}
         <section className="px-6 pb-16 sm:px-12">
-          <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-12 sm:p-14 text-white">
+          <div className="mx-auto flex max-w-[1100px] flex flex-col items-start justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-6 sm:flex-row sm:items-center sm:p-14 text-white">
             <div className="max-w-[520px]">
               <h2 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em]">
                 Comece a reunir sua história de saúde.

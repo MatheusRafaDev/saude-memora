@@ -20,7 +20,17 @@ function storeToken(patientId: string, token: string) {
 
 export async function getEmergencyToken(patientId: string) {
   const status = await customFetch<EmergencyStatus>('/api/pacientes/me/emergencia/status');
-  const cachedToken = window.sessionStorage.getItem(tokenStorageKey(patientId));
+  const key = tokenStorageKey(patientId);
+  let cachedToken = window.sessionStorage.getItem(key);
+
+  // Migrate the token created by older app versions, then remove its persistent copy.
+  if (!cachedToken) {
+    cachedToken = window.localStorage.getItem(key);
+    if (cachedToken) {
+      window.sessionStorage.setItem(key, cachedToken);
+      window.localStorage.removeItem(key);
+    }
+  }
 
   if (status.possuiToken) {
     return { token: cachedToken, needsRotation: !cachedToken };

@@ -171,8 +171,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
-      <div className="flex min-h-[820px] flex-1 flex-col lg:flex-row">
+    <div className={`bg-white font-sans text-[#1d2a3d] flex flex-col ${mode === 'login' ? 'h-[100dvh] overflow-hidden lg:h-auto lg:min-h-screen' : 'min-h-screen'}`}>
+      <div className={`flex flex-1 flex-col lg:flex-row ${mode === 'login' ? 'min-h-0' : 'min-h-[820px]'}`}>
         {/* ── Left Illustration & Highlights Panel (Desktop 44%) ── */}
         <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
           {/* Logo */}
@@ -229,7 +229,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         </section>
 
         {/* ── Right Form Panel ───────────────────────────────────── */}
-        <section className="flex flex-1 flex-col justify-between p-6 sm:p-12">
+        <section className={`flex flex-1 flex-col justify-between ${mode === 'login' ? 'p-4 sm:p-8 lg:p-12' : 'p-6 sm:p-12'}`}>
           {/* Mobile brand and return link */}
           <div className="flex flex-col gap-4">
             <Link
@@ -245,16 +245,16 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           </div>
 
           {/* Form Container (max-w 420px centered) */}
-          <div className="mx-auto my-auto w-full max-w-[420px] py-8">
-            <h2 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.035em]">
+          <div className={`mx-auto my-auto w-full max-w-[420px] ${mode === 'login' ? 'py-3 sm:py-5 lg:py-8' : 'py-8'}`}>
+            <h2 className="text-[26px] sm:text-[32px] font-extrabold tracking-[-0.035em]">
               {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
             </h2>
-            <p className="mt-2 mb-6 text-[15px] text-[#5a6a80]">
+            <p className="mt-2 mb-4 sm:mb-6 text-[15px] text-[#5a6a80]">
               {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
             </p>
 
             {/* Segmented Pill Tabs */}
-            <div className="mb-6 flex rounded-xl border border-[#dde3ec] bg-[#f1f4f8] p-1">
+            <div className="mb-4 sm:mb-6 flex rounded-xl border border-[#dde3ec] bg-[#f1f4f8] p-1">
               <button
                 type="button"
                 onClick={() => handleModeChange('login')}
@@ -288,7 +288,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             )}
 
             {/* Form */}
-            <form onSubmit={submit} className="space-y-4">
+            <form onSubmit={submit} className={`${mode === 'login' ? 'space-y-3 sm:space-y-4' : 'space-y-4'}`}>
               {mode === 'register' && (
                 <>
                   <label className="block">
@@ -345,7 +345,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                   onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
-                  className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                  className="h-11 sm:h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
                 />
               </label>
 
@@ -360,7 +360,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                     placeholder={mode === 'register' ? 'No mínimo 8 caracteres' : 'Sua senha'}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 pr-11 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                    className="h-11 sm:h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 pr-11 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
                   />
                   <button
                     type="button"
@@ -407,7 +407,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1b3a60] font-bold text-white transition-all hover:bg-[#244d7e] disabled:opacity-50"
+                className="mt-3 sm:mt-4 flex h-11 sm:h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1b3a60] font-bold text-white transition-all hover:bg-[#244d7e] disabled:opacity-50"
               >
                 {isPending ? (
                   <LoaderCircle className="h-5 w-5 animate-spin" />
@@ -422,7 +422,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               </button>
             </form>
 
-            <p className="mt-6 text-[12px] leading-relaxed text-[#5a6a80]">
+            <p className="mt-4 sm:mt-6 text-[12px] leading-relaxed text-[#5a6a80]">
               Seu espaço é pessoal: você decide quais documentos e informações adicionar.
             </p>
           </div>

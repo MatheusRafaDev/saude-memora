@@ -393,10 +393,10 @@ export default function Profile() {
           </div>
 
           {/* Right Column: Cards (flex: 1) */}
-          <div className="flex-1 min-w-[320px] sm:min-w-[640px] flex flex-col gap-5">
+          <div className="w-full min-w-0 flex-1 flex flex-col gap-5">
             {/* Card 1: Dados pessoais */}
             {activeTab === 'dados' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 {/* Avatar & User summary */}
                 <div className="flex gap-5 items-center mb-6">
                   <div className="w-[88px] h-[88px] rounded-[28px] bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-white text-3xl font-extrabold flex items-center justify-center shrink-0 shadow-xs">
@@ -549,7 +549,7 @@ export default function Profile() {
             )}
 
             {activeTab === 'carteirinha' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 <div className="flex items-center gap-2.5 mb-2">
                   <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
                     <CreditCard size={18} className="text-[#1b3a60]" />
@@ -669,7 +669,7 @@ export default function Profile() {
 
             {/* Card 2: Segurança */}
             {activeTab === 'seguranca' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
                     <Mail size={18} className="text-[#1b3a60]" />
@@ -699,7 +699,7 @@ export default function Profile() {
 
             {/* Card 3: Privacidade e consentimento */}
             {activeTab === 'privacidade' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
                     <Shield size={18} className="text-[#1b3a60]" />
@@ -771,11 +771,11 @@ export default function Profile() {
 
             {/* Card 4: Excluir conta Danger Card */}
             {activeTab === 'dados' && (
-              <div className="bg-[#fff5f4] border border-[#f0b8b2] rounded-[20px] p-7 flex gap-4.5 items-center flex-wrap">
+              <div className="bg-[#fff5f4] border border-[#f0b8b2] rounded-[20px] p-4 sm:p-7 flex gap-4.5 items-center flex-wrap">
                 <div className="w-12 h-12 rounded-2xl bg-[#fde8e6] flex items-center justify-center shrink-0">
                   <Trash2 size={24} className="text-[#a13a30]" strokeWidth={2} />
                 </div>
-                <div className="flex-1 min-w-[260px]">
+                <div className="flex-1 min-w-0">
                   <b className="text-[17px] text-[#7a2a22] block leading-tight">
                     Excluir conta
                   </b>

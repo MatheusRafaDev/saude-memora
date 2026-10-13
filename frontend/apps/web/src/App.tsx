@@ -353,7 +353,7 @@ function Router() {
             <Route path="/anamnese/inicio">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
             <Route path="/anamnese/editar">{() => <ProtectedRoute><AnamneseEdit /></ProtectedRoute>}</Route>
             <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
-            <Route path="/emergencia">{() => <ProtectedRoute><Emergencia /></ProtectedRoute>}</Route>
+            <Route path="/emergencia">{() => <ProtectedRoute>{null}</ProtectedRoute>}</Route>
             <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
             <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
             <Route path="/analises">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>

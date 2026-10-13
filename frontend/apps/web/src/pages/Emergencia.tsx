@@ -240,17 +240,17 @@ export default function Emergencia({ token }: { token?: string } = {}) {
         {/* 2-col Layout */}
         <div className="flex gap-6 flex-wrap items-start">
           {(isLoadingPublic || (!isPublicMode && (isProfileLoading || isFichaLoading))) ? (
-            <div className="w-full rounded-2xl border border-[#dde3ec] bg-white p-8 text-center text-[#5a6a80]">
+            <div className="w-full rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-8 text-center text-[#5a6a80]">
               Carregando ficha de emergência…
             </div>
           ) : (publicLoadError || (!isPublicMode && (profileError || fichaError))) ? (
-            <div role="alert" className="w-full rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center text-[#a13a30]">
+            <div role="alert" className="w-full rounded-2xl border border-[#f0b8b2] bg-white p-5 sm:p-8 text-center text-[#a13a30]">
               Não foi possível carregar os dados da ficha de emergência.
             </div>
           ) : (
           <>
           {/* Main Card (flex: 2) */}
-          <div className="flex-[2] min-w-[320px] sm:min-w-[600px]">
+          <div className="min-w-0 flex-[2]">
             <div className="bg-white border-2 border-[#c0463a] rounded-[28px] p-7 sm:p-9 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               {/* Header inside card with Blood Badge */}
               <div className="flex justify-between items-center gap-4 flex-wrap">
@@ -382,7 +382,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
           </div>
 
           {/* Right Column (flex: 1) */}
-          <div className="flex-1 min-w-[300px] flex flex-col gap-6">
+          <div className="w-full min-w-0 flex-1 flex flex-col gap-6">
             {/* SAMU 192 Card */}
             <div className="bg-[#1b3a60] text-white rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               <div className="text-xs font-bold tracking-[0.14em] uppercase text-[#7cc4e6] mb-1">

@@ -1,7 +1,6 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import { useLocation } from 'wouter';
 import {
-  ArrowLeft,
   Check,
   LoaderCircle,
   Plus,
@@ -21,7 +20,6 @@ import {
   CONDITION_SUGGESTIONS,
   FAMILY_HISTORY_SUGGESTIONS,
   findAnamneseSuggestions,
-  getAnamneseQuery,
   HABIT_SUGGESTIONS,
   hasAnamneseEntry,
   normalizeAnamneseTerm,
@@ -70,10 +68,10 @@ function EditableList({
     }
   };
   const matchingSuggestions = value.trim().length >= 2
-    ? findAnamneseSuggestions(value, suggestions).slice(0, 6)
-    : suggestions
-        .filter((s) => !items.some((item) => normalizeAnamneseTerm(item) === normalizeAnamneseTerm(s.label)))
-        .slice(0, 6);
+    ? findAnamneseSuggestions(value, suggestions)
+        .filter((suggestion) => !items.some((item) => normalizeAnamneseTerm(item) === normalizeAnamneseTerm(suggestion.label)))
+        .slice(0, 6)
+    : [];
 
   return (
     <section>
@@ -100,12 +98,12 @@ function EditableList({
         </button>
       </div>
       {matchingSuggestions.length > 0 && (
-        <div className="mt-2.5">
+        <div className="relative z-10">
           <div className="mb-1.5 text-xs text-[#5a6a80]">
-            Opções para preencher rápido:
+            Sugestões:
           </div>
           <div
-            className="flex flex-wrap gap-2"
+            className="absolute inset-x-0 top-1 max-h-52 overflow-y-auto rounded-xl border border-[#dde3ec] bg-white p-1.5 shadow-lg"
             aria-label={`Sugestões para ${label.toLowerCase()}`}
           >
             {matchingSuggestions.map((suggestion) => (
@@ -113,9 +111,8 @@ function EditableList({
                 key={suggestion.label}
                 type="button"
                 onClick={() => addItem(suggestion.label)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff] transition-colors"
+                className="flex min-h-10 w-full items-center rounded-lg px-3 py-2 text-left text-sm text-[#1b3a60] hover:bg-[#f1f7ff]"
               >
-                <Plus size={13} className="text-[#1f7fe0]" />
                 <span>{suggestion.label}</span>
               </button>
             ))}
@@ -169,7 +166,7 @@ function TextAreaField({
   const displaySuggestions = suggestions
     ? (searchQuery.trim().length >= 2
         ? findAnamneseSuggestions(searchQuery, suggestions, 10)
-        : suggestions.slice(0, 8))
+        : [])
     : [];
 
   const handleAddCustom = (text: string) => {
@@ -268,7 +265,7 @@ function TextAreaField({
         className="w-full rounded-xl border border-[#c6cfdb] bg-white p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
       />
       <p className="mt-1 text-xs text-[#78879a]">
-        Você pode marcar as opções sugeridas acima ou escrever/editar livremente no campo de texto.
+        Digite para ver sugestões ou escreva livremente no campo.
       </p>
     </section>
   );
@@ -478,7 +475,7 @@ export default function AnamneseEdit() {
     return (
       <div
         role="alert"
-        className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center text-[#a13a30]"
+        className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-5 sm:p-8 text-center text-[#a13a30]"
       >
         Não foi possível carregar sua anamnese. Tente novamente mais tarde.
       </div>
@@ -501,14 +498,6 @@ export default function AnamneseEdit() {
             Edite todas as informações de saúde que deseja manter registradas.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setLocation('/visao-geral')}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-4 text-sm font-bold text-[#1b3a60] hover:bg-[#f1f4f8]"
-        >
-          <ArrowLeft size={16} />
-          Voltar
-        </button>
       </div>
 
       <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#c9d9ee] bg-[#edf5ff] p-4 text-sm leading-relaxed text-[#315477]">
@@ -727,7 +716,7 @@ function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
   const [value, setValue] = useState('');
   const suggestions = value.trim().length >= 2
     ? findAnamneseSuggestions(value, CONDITION_SUGGESTIONS).slice(0, 6)
-    : CONDITION_SUGGESTIONS.slice(0, 6);
+    : [];
   const add = (name: string) => {
     onAdd(name);
     setValue('');
@@ -765,7 +754,7 @@ function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
       {suggestions.length > 0 && (
         <div className="mt-2.5">
           <div className="mb-1.5 text-xs text-[#5a6a80]">
-            Opções para preencher rápido:
+            Sugestões:
           </div>
           <div
             className="flex flex-wrap gap-2"

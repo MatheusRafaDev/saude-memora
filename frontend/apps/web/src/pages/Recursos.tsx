@@ -10,8 +10,8 @@ export default function Recursos() {
       <main className="flex-1">
         {/* ── Hero Section ────────────────────────────────────────── */}
         <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 py-16 sm:px-12 md:py-20">
-          <div className="mx-auto flex max-w-[1100px] flex-wrap items-center gap-14">
-            <div className="flex-1 min-w-[320px]">
+          <div className="mx-auto flex max-w-[1100px] flex-col flex-wrap items-center gap-10 sm:flex-row sm:gap-14">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[320px]">
               <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                 Recursos da plataforma
               </div>
@@ -30,7 +30,7 @@ export default function Recursos() {
               </Link>
             </div>
 
-            <div className="flex-1 min-w-[320px]">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[320px]">
               <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-5 shadow-sm">
                 <img
                   src="/recursos-illustration.svg"
@@ -158,15 +158,15 @@ export default function Recursos() {
 
         {/* ── Disclaimers ─────────────────────────────────────────── */}
         <section className="px-6 py-6 pb-16 sm:px-12">
-          <div className="mx-auto flex max-w-[1100px] flex-wrap gap-4">
-            <div className="flex-1 min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
+          <div className="mx-auto flex max-w-[1100px] flex-col gap-4 sm:flex-row sm:flex-wrap">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
               <b>Confira os dados extraídos</b>
               <p className="mt-2 text-[15px] leading-relaxed">
                 Os dados extraídos automaticamente podem conter erros; confira-os sempre.
               </p>
             </div>
 
-            <div className="flex-1 min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
               <b>Uma ferramenta de organização</b>
               <p className="mt-2 text-[15px] leading-relaxed">
                 O SaúdeMemora não faz diagnósticos e não substitui avaliação médica nem atendimento de emergência. Em emergência no Brasil, ligue 192 (SAMU).
@@ -177,7 +177,7 @@ export default function Recursos() {
 
         {/* ── CTA Banner ─────────────────────────────────────────── */}
         <section className="px-6 pb-16 sm:px-12">
-          <div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-12 sm:p-14 text-white">
+          <div className="mx-auto flex max-w-[1100px] flex flex-col items-start justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-6 sm:flex-row sm:items-center sm:p-14 text-white">
             <div className="max-w-[520px]">
               <h2 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em]">
                 Comece a reunir sua história de saúde.

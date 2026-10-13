@@ -1,30 +1,24 @@
-import { lazy, Suspense, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'wouter';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   FileText,
-  AlertTriangle,
-  FlaskConical,
   Pill,
   Plus,
   Shield,
   LoaderCircle,
-  ShieldAlert,
   ArrowRight,
   Activity,
-  Heart,
-  Calendar,
   X,
-  CreditCard,
   Maximize2
 } from 'lucide-react';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   useGetApiPacientesMe,
   useGetApiDocuments,
   useGetApiFichaMedicaMe,
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
-const Insights = lazy(() => import('@/pages/Insights'));
+import { triggerEmergencyModal } from '@/lib/emergency-modal';
 
 function uniqueLabels(values: unknown[]): string[] {
   const seen = new Set<string>();
@@ -84,17 +78,7 @@ export default function Dashboard() {
     Array.isArray(ficha.medicamentosContinuos) ? ficha.medicamentosContinuos : []
   );
 
-  const examDocs = docs.filter((d: any) => (d.tipo || '').toLowerCase().includes('exame'));
-  const prescriptionDocs = docs.filter((d: any) => (d.tipo || '').toLowerCase().includes('receita'));
-  const totalExams = examDocs.length;
-  const totalPrescriptions = prescriptionDocs.length;
 
-  const reviewDocs = docs.filter((d: any) => d.revisaoPendente);
-  const processingDocs = docs.filter((d: any) => d.status === 'pending' || d.status === 'processing');
-
-  const medicalAlerts = docs
-    .flatMap((doc: any) => (doc.alertas || []).map((a: any) => ({ ...a, docId: doc.id })))
-    .filter((a: any) => !a.dispensado);
 
   const displayRecentDocs = docs.slice(0, 4).map((d: any) => {
     let badge = 'Pronto';
@@ -193,107 +177,100 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Alerts are only shown when the API reports items that need attention. */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-5">
-          {/* Alert 1 */}
-          {medicalAlerts.length > 0 && <div className="flex items-center gap-3.5 bg-[#fff5f4] border border-[#f0b8b2] rounded-[18px] p-4.5">
-            <div className="w-11 h-11 rounded-[14px] bg-white flex items-center justify-center shrink-0 shadow-xs">
-              <AlertTriangle size={22} className="text-[#a13a30]" strokeWidth={2} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <b className="text-[15px] text-[#1d2a3d] block leading-tight">
-                {medicalAlerts.length} avisos médicos
-              </b>
-              <div className="text-[13px] text-[#5a6a80] mt-0.5 truncate">
-                {medicalAlerts[0]?.mensagem || 'Confira os alertas dos seus documentos'}
+          {/* Meu perfil e ficha de emergência */}
+          <div className="mb-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
+            {/* CARTEIRINHA DE SAÚDE */}
+            <div className="bg-gradient-to-br from-[#1b3a60] to-[#24507f] text-white rounded-[24px] p-6 shadow-md relative overflow-hidden lg:col-span-2">
+              <div className="flex justify-between items-center text-xs tracking-[0.14em] font-bold text-[#9fc3ea]">
+                <span>MEU PERFIL</span>
+                <span className="opacity-80">DIGITAL</span>
               </div>
-            </div>
-            <Link
-              href="/chat"
-              className="text-[13px] font-bold text-[#1b3a60] hover:underline shrink-0"
-            >
-              Ver →
-            </Link>
-          </div>}
 
-          {/* Alert 2 */}
-          {reviewDocs.length > 0 && <div className="flex items-center gap-3.5 bg-[#fdf3d8] border border-[#e3b95a] rounded-[18px] p-4.5">
-            <div className="w-11 h-11 rounded-[14px] bg-white flex items-center justify-center shrink-0 shadow-xs">
-              <FileText size={22} className="text-[#6b4208]" strokeWidth={2} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <b className="text-[15px] text-[#1d2a3d] block leading-tight">
-                {reviewDocs.length} documento(s) para revisar
-              </b>
-              <div className="text-[13px] text-[#5a6a80] mt-0.5 truncate">
-                {reviewDocs[0]?.titulo || 'Documento sem título'}
+              <div className="text-2xl font-extrabold mt-3.5 mb-0.5 tracking-[-0.03em]">
+                {fullName}
               </div>
-            </div>
-            <Link
-              href="/documentos"
-              className="text-[13px] font-bold text-[#1b3a60] hover:underline shrink-0"
-            >
-              Ver →
-            </Link>
-          </div>}
-
-          {/* Alert 3 */}
-          {processingDocs.length > 0 && <div className="flex items-center gap-3.5 bg-[#e5eefb] border border-[#b8cdee] rounded-[18px] p-4.5">
-            <div className="w-11 h-11 rounded-[14px] bg-white flex items-center justify-center shrink-0 shadow-xs">
-              <LoaderCircle size={22} className="text-[#1b3a60] animate-spin" strokeWidth={2} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <b className="text-[15px] text-[#1d2a3d] block leading-tight">
-                {processingDocs.length} em processamento
-              </b>
-              <div className="text-[13px] text-[#5a6a80] mt-0.5 truncate">
-                {processingDocs[0]?.titulo || 'Documento'} · {processingDocs[0]?.progress ?? 0}%
+              <div className="text-[13px] text-[#c9d6e8]">
+                Nascimento {birthDateFormatted}{age !== null ? ` · ${age} anos` : ''}
               </div>
+              <div className="mt-2 text-[13px] text-white">
+                <span className="font-bold">Plano:</span> {healthPlan || 'Não cadastrado'}
+                <span className="mx-1.5 text-[#9fc3ea]">·</span>
+                <span className="font-bold">Carteirinha:</span> {insuranceCardNumber || 'Não informada'}
+              </div>
+
+              <div className="flex gap-2.5 mt-5">
+                <div className="flex-1 bg-white/10 rounded-[14px] p-3 backdrop-blur-xs">
+                  <div className="text-[11px] text-[#9fc3ea] font-bold tracking-wider">
+                    TIPO SANGUÍNEO
+                  </div>
+                  <div className="text-2xl font-extrabold mt-0.5">{bloodType}</div>
+                </div>
+
+                <div className="flex-[2] bg-white/10 rounded-[14px] p-3 backdrop-blur-xs">
+                  <div className="text-[11px] text-[#9fc3ea] font-bold tracking-wider">
+                    ALERGIAS
+                  </div>
+                  <div className="text-sm font-bold mt-1 truncate">
+                    {allergiesDisplay}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3.5 text-[13px] text-[#c9d6e8]">
+                Condições: {conditionsDisplay}
+              </div>
+              <div className="mt-4 grid gap-3 border-t border-white/15 pt-4 sm:grid-cols-2">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#9fc3ea]">Medicamentos contínuos</div>
+                  <div className="mt-1 break-words text-sm font-semibold text-white">{continuousMeds.join(' · ') || 'Não informado'}</div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#9fc3ea]">Cirurgias anteriores</div>
+                  <div className="mt-1 break-words text-sm font-semibold text-white">{ficha.cirurgias?.trim() || 'Não informado'}</div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#9fc3ea]">Contato de emergência</div>
+                  <div className="mt-1 break-words text-sm font-semibold text-white">{user.contatoEmergencia?.trim() || 'Não informado'}</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCarteirinhaOpen(true)}
+                className="mt-4 w-full py-2 bg-white/10 hover:bg-white/15 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Maximize2 size={13} /> Ver dados completos do perfil
+              </button>
+
             </div>
-            <Link
-              href="/documentos"
-              className="text-[13px] font-bold text-[#1b3a60] hover:underline shrink-0"
+
+            {/* Quick Emergency Card */}
+            <button
+              type="button"
+              onClick={triggerEmergencyModal}
+              className="block w-full border border-[#f0b8b2] bg-white p-4.5 text-left rounded-[20px] shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] hover:border-[#a13a30] transition-colors"
             >
-              Ver →
-            </Link>
-          </div>}
-        </div>
+              <div className="flex gap-3 items-center">
+                <div className="w-11 h-11 rounded-[14px] bg-[#fde8e6] flex items-center justify-center shrink-0">
+                  <Shield size={22} className="text-[#a13a30]" strokeWidth={2} />
+                </div>
+                <div className="flex-1">
+                  <b className="text-[15px] text-[#1d2a3d] block leading-tight">
+                    Ficha de emergência
+                  </b>
+                  <div className="text-[13px] text-[#5a6a80] mt-0.5">
+                    Acesso rápido a contatos e alergias
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-[#a13a30]" />
+              </div>
+            </button>
 
-        {/* 4 KPI Counters */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-5">
-          <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-            <div className="text-[13px] text-[#5a6a80] font-semibold">Documentos</div>
-            <div className="text-3xl sm:text-[34px] font-extrabold tracking-[-0.03em] mt-1 text-[#1d2a3d]">
-              {docs.length}
-            </div>
           </div>
 
-          <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-            <div className="text-[13px] text-[#5a6a80] font-semibold">Exames</div>
-            <div className="text-3xl sm:text-[34px] font-extrabold tracking-[-0.03em] mt-1 text-[#1d2a3d]">
-              {totalExams}
-            </div>
-          </div>
 
-          <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-            <div className="text-[13px] text-[#5a6a80] font-semibold">Receitas</div>
-            <div className="text-3xl sm:text-[34px] font-extrabold tracking-[-0.03em] mt-1 text-[#1d2a3d]">
-              {totalPrescriptions}
-            </div>
-          </div>
-
-          <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-            <div className="text-[13px] text-[#5a6a80] font-semibold">Medicamentos</div>
-            <div className="text-3xl sm:text-[34px] font-extrabold tracking-[-0.03em] mt-1 text-[#1d2a3d]">
-              {continuousMeds.length}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Grid: 2 cols left, 1 col right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left Column (8 cols) */}
-          <div className="lg:col-span-8 flex flex-col gap-5">
+        {/* Documentos e tendências */}
+        <div className="grid grid-cols-1 items-start gap-5">
+          <div className="flex flex-col gap-5">
             {/* Recent Documents Card */}
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               <div className="flex items-center gap-2.5 mb-4">
@@ -411,96 +388,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right Column (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col gap-5">
-            {/* CARTEIRINHA DE SAÚDE */}
-            <div className="bg-gradient-to-br from-[#1b3a60] to-[#24507f] text-white rounded-[24px] p-6 shadow-md relative overflow-hidden">
-              <div className="flex justify-between items-center text-xs tracking-[0.14em] font-bold text-[#9fc3ea]">
-                <span>MEU PERFIL</span>
-                <span className="opacity-80">DIGITAL</span>
-              </div>
-
-              <div className="text-2xl font-extrabold mt-3.5 mb-0.5 tracking-[-0.03em]">
-                {fullName}
-              </div>
-              <div className="text-[13px] text-[#c9d6e8]">
-                Nascimento {birthDateFormatted}{age !== null ? ` · ${age} anos` : ''}
-              </div>
-              <div className="mt-2 text-[13px] text-white">
-                <span className="font-bold">Plano:</span> {healthPlan || 'Não cadastrado'}
-                <span className="mx-1.5 text-[#9fc3ea]">·</span>
-                <span className="font-bold">Carteirinha:</span> {insuranceCardNumber || 'Não informada'}
-              </div>
-
-              <div className="flex gap-2.5 mt-5">
-                <div className="flex-1 bg-white/10 rounded-[14px] p-3 backdrop-blur-xs">
-                  <div className="text-[11px] text-[#9fc3ea] font-bold tracking-wider">
-                    TIPO SANGUÍNEO
-                  </div>
-                  <div className="text-2xl font-extrabold mt-0.5">{bloodType}</div>
-                </div>
-
-                <div className="flex-[2] bg-white/10 rounded-[14px] p-3 backdrop-blur-xs">
-                  <div className="text-[11px] text-[#9fc3ea] font-bold tracking-wider">
-                    ALERGIAS
-                  </div>
-                  <div className="text-sm font-bold mt-1 truncate">
-                    {allergiesDisplay}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3.5 text-[13px] text-[#c9d6e8]">
-                Condições: {conditionsDisplay} · Medicamentos contínuos: {continuousMeds.length}
-              </div>
-
-              <button
-                onClick={() => setIsCarteirinhaOpen(true)}
-                className="mt-4 w-full py-2 bg-white/10 hover:bg-white/15 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Maximize2 size={13} /> Ver dados completos do perfil
-              </button>
-              <Link
-                href="/perfil"
-                className="mt-2 block text-center text-xs font-bold text-[#c9d6e8] underline-offset-2 hover:text-white hover:underline"
-              >
-                Editar meu perfil
-              </Link>
-            </div>
-
-            {/* Quick Emergency Card */}
-            <Link
-              href="/emergencia"
-              className="bg-white border border-[#f0b8b2] rounded-[20px] p-4.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] hover:border-[#a13a30] transition-colors block"
-            >
-              <div className="flex gap-3 items-center">
-                <div className="w-11 h-11 rounded-[14px] bg-[#fde8e6] flex items-center justify-center shrink-0">
-                  <Shield size={22} className="text-[#a13a30]" strokeWidth={2} />
-                </div>
-                <div className="flex-1">
-                  <b className="text-[15px] text-[#1d2a3d] block leading-tight">
-                    Ficha de emergência
-                  </b>
-                  <div className="text-[13px] text-[#5a6a80] mt-0.5">
-                    Acesso rápido a contatos e alergias
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-[#a13a30]" />
-              </div>
-            </Link>
-
-          </div>
         </div>
-
-        <section className="mt-10">
-          <div className="mb-4">
-            <h2 className="m-0 text-2xl font-extrabold text-[#1b3a60]">Análise do histórico</h2>
-            <p className="mb-0 mt-1 text-sm text-[#5a6a80]">Relatórios, tendências de exames e consultas a referências clínicas.</p>
-          </div>
-          <Suspense fallback={<div className="py-8 text-center text-sm text-[#5a6a80]">Carregando análise…</div>}>
-            <Insights embedded />
-          </Suspense>
-        </section>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
           Informações organizadas com segurança para o seu acompanhamento contínuo.
@@ -577,13 +465,16 @@ export default function Dashboard() {
             )}
 
             <div className="flex gap-2">
-              <Link
-                href="/emergencia"
-                onClick={() => setIsCarteirinhaOpen(false)}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCarteirinhaOpen(false);
+                  triggerEmergencyModal();
+                }}
                 className="flex-1 py-3 bg-[#fff5f4] border border-[#f0b8b2] text-[#a13a30] text-center font-bold text-sm rounded-xl hover:bg-[#fde8e6] transition-colors"
               >
                 Abrir ficha completa
-              </Link>
+              </button>
               <button
                 onClick={() => setIsCarteirinhaOpen(false)}
                 className="px-4 py-3 bg-[#f1f4f8] text-[#1b3a60] font-bold text-sm rounded-xl hover:bg-slate-200 transition-colors"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Check,
@@ -6,8 +6,6 @@ import {
   ExternalLink,
   LoaderCircle,
   Phone,
-  QrCode,
-  Share2,
   ShieldAlert,
   User,
   X,
@@ -21,7 +19,7 @@ import {
   useGetApiPacientesMe,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { getEmergencyToken, rotateEmergencyToken } from "@/lib/emergency-token";
+import { rotateEmergencyToken } from "@/lib/emergency-token";
 
 interface EmergenciaModalProps {
   open: boolean;
@@ -66,9 +64,9 @@ export function EmergenciaModal({
   const { toast } = useToast();
   const [generatedToken, setGeneratedToken] = useState("");
   const [tokenError, setTokenError] = useState(false);
+  const [tokenErrorMessage, setTokenErrorMessage] = useState("");
   const [isCopied, setIsCopied] = useState(false);
-  const [needsTokenRotation, setNeedsTokenRotation] = useState(false);
-  const [isRotatingToken, setIsRotatingToken] = useState(false);
+  const hasGeneratedTokenForOpen = useRef(false);
 
   const handleClose = () => {
     onClose?.();
@@ -115,34 +113,32 @@ export function EmergenciaModal({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !profileRaw || generatedToken || tokenError) return;
-    const patientId = (profileRaw as any).id;
-    getEmergencyToken(patientId)
-      .then(({ token, needsRotation }) => {
-        if (token) setGeneratedToken(token);
-        setNeedsTokenRotation(needsRotation);
-      })
-      .catch((error) => {
-        console.error("Erro ao carregar link de emergência:", error);
-        setTokenError(true);
-      });
-  }, [open, profileRaw, generatedToken, tokenError]);
-
-  const handleRotateToken = async () => {
-    const patientId = (profileRaw as any)?.id;
-    if (!patientId || isRotatingToken) return;
-    setIsRotatingToken(true);
-    setTokenError(false);
-    try {
-      setGeneratedToken(await rotateEmergencyToken(patientId));
-      setNeedsTokenRotation(false);
-    } catch {
-      setTokenError(true);
-      toast({ title: "Não foi possível gerar um novo link", variant: "destructive" });
-    } finally {
-      setIsRotatingToken(false);
+    if (!open) {
+      hasGeneratedTokenForOpen.current = false;
+      setGeneratedToken("");
+      setTokenError(false);
+      setTokenErrorMessage("");
+      return;
     }
-  };
+    if (!profileRaw || hasGeneratedTokenForOpen.current) return;
+    const patientId = (profileRaw as any).id;
+    if (!patientId) return;
+    hasGeneratedTokenForOpen.current = true;
+    setGeneratedToken("");
+    setTokenError(false);
+    setTokenErrorMessage("");
+    rotateEmergencyToken(patientId)
+      .then((token) => setGeneratedToken(token))
+      .catch((error) => {
+        console.error("Erro ao gerar link de emerg\u00eancia:", error);
+        setTokenError(true);
+        setTokenErrorMessage(
+          (error as { status?: number })?.status === 401
+            ? "Sua sess\u00e3o expirou. Entre novamente para gerar o QR Code."
+            : "N\u00e3o foi poss\u00edvel gerar o QR Code. Tente novamente."
+        );
+      });
+  }, [open, profileRaw]);
 
   if (!open) return null;
 
@@ -207,27 +203,6 @@ export function EmergenciaModal({
     }
   };
 
-  const handleShareLink = async () => {
-    if (!shareUrl) return;
-    if (!navigator.share) {
-      await handleCopyLink();
-      return;
-    }
-
-    try {
-      await navigator.share({
-        title: "Minha ficha de emergência — SaúdeMemora",
-        text: "Acesse minhas informações médicas de emergência.",
-        url: shareUrl,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") return;
-      toast({
-        title: "Não foi possível compartilhar o link",
-        variant: "destructive",
-      });
-    }
-  };
 
   return createPortal(
     <div
@@ -404,11 +379,8 @@ export function EmergenciaModal({
 
           <section className="mt-3 rounded-2xl border border-[#dde3ec] bg-white p-4 text-center sm:mt-4 sm:p-5">
             <div className="mb-3 flex items-center gap-2 text-left">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f1f4f8] text-[#1b3a60]">
-                <Share2 size={18} />
-              </div>
               <h3 className="mb-0 text-base font-bold text-[#1d2a3d]">
-                Compartilhar com socorrista
+                QR Code da ficha
               </h3>
             </div>
 
@@ -424,11 +396,7 @@ export function EmergenciaModal({
                 />
               ) : (
                 <span className="px-3 text-xs text-[#5a6a80]">
-                  {tokenError
-                    ? "Não foi possível carregar o link da ficha."
-                    : needsTokenRotation
-                      ? "Já existe um link ativo, mas ele não está salvo neste navegador."
-                      : "Verificando link de emergência…"}
+                  {tokenError ? tokenErrorMessage || "N\u00e3o foi poss\u00edvel gerar o QR Code. Tente novamente." : "Gerando QR Code da ficha de emerg\u00eancia\u2026"}
                 </span>
               )}
             </div>
@@ -436,19 +404,9 @@ export function EmergenciaModal({
               Mostre este QR Code para quem for prestar socorro acessar esta
               ficha.
             </p>
-
-            {needsTokenRotation && (
-              <button
-                type="button"
-                onClick={handleRotateToken}
-                disabled={isRotatingToken}
-                className="mb-3 min-h-11 w-full rounded-xl bg-[#c0463a] px-3 text-sm font-bold text-white hover:bg-[#a13a30] disabled:opacity-60"
-              >
-                {isRotatingToken ? "Gerando novo link…" : "Gerar novo link (invalidará o anterior)"}
-              </button>
-            )}
-
-            <label
+{shareUrl && (
+              <>
+<label
               htmlFor="emergency-modal-share-link"
               className="mb-1.5 block text-left text-xs font-bold text-[#5a6a80]"
             >
@@ -459,43 +417,29 @@ export function EmergenciaModal({
               type="url"
               readOnly
               value={shareUrl}
-              placeholder={
-                tokenError ? "Não foi possível gerar o link" : "Gerando link…"
-              }
               className="min-h-11 w-full rounded-xl border border-[#dde3ec] bg-[#f7f9fc] px-3 text-xs text-[#1d2a3d] outline-none focus:border-[#1f7fe0]"
             />
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={handleCopyLink}
-                disabled={!shareUrl}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f7f9fc] disabled:opacity-50"
               >
                 {isCopied ? <Check size={16} /> : <Copy size={16} />}
                 {isCopied ? "Link copiado!" : "Copiar link"}
               </button>
-              <button
-                type="button"
-                onClick={handleShareLink}
-                disabled={!shareUrl}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f7f9fc] disabled:opacity-50"
-              >
-                <Share2 size={16} />
-                Compartilhar
-              </button>
               <a
-                href={shareUrl || undefined}
+                href={shareUrl}
                 target="_blank"
                 rel="noreferrer"
-                aria-disabled={!shareUrl}
-                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f7f9fc] ${
-                  shareUrl ? "" : "pointer-events-none opacity-50"
-                }`}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f7f9fc]"
               >
                 <ExternalLink size={16} />
                 Abrir link
               </a>
             </div>
+                          </>
+            )}
             <p className="mb-0 mt-3 text-left text-[11px] leading-relaxed text-[#5a6a80]">
               Quem tiver o QR Code ou link poderá ver os dados exibidos nesta
               ficha. Compartilhe apenas com quem precisa.

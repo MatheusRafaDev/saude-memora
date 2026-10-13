@@ -392,7 +392,7 @@ export default function Record() {
 
   if (isError) {
     return (
-      <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center text-[#a13a30]">
+      <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-5 sm:p-8 text-center text-[#a13a30]">
         Não foi possível carregar sua anamnese. Tente novamente mais tarde.
       </div>
     );
@@ -464,7 +464,7 @@ export default function Record() {
         {/* Main 2-col Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* Main Content Card (8 cols) */}
-          <div className="lg:col-span-8 bg-white border border-[#dde3ec] rounded-[20px] p-8 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+          <div className="lg:col-span-8 bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-8 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
             {/* Step 1: Dados gerais */}
             {currentStep === 1 && (
               <div>

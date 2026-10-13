@@ -33,8 +33,8 @@ export default function Home() {
       <main className="flex-1">
         {/* ── Hero Section ────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-[radial-gradient(900px_500px_at_8%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_100%_40%,#e5eefb,transparent_60%),#fff] px-6 py-20 sm:px-12 md:py-24">
-          <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
-            <div className="flex-1 min-w-[320px] max-w-[560px]">
+          <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-12 sm:flex-row sm:gap-16">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[320px] sm:max-w-[560px]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#bfd8f7] bg-[#e5eefb] px-4 py-2 text-[13px] font-bold text-[#1f7fe0]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
@@ -92,7 +92,7 @@ export default function Home() {
             </div>
 
             {/* Product overview without invented patient records. */}
-            <div className="relative flex-1 min-w-[340px] max-w-[500px]">
+            <div className="relative w-full min-w-0 flex-1 sm:min-w-[340px] sm:max-w-[500px]">
               <div className="overflow-hidden rounded-[28px] border border-[#dde3ec] bg-white shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)]">
                 <div className="flex items-center gap-2 border-b border-[#dde3ec] bg-[#f1f4f8] px-5 py-3.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-[#e7a9a0]" />
@@ -391,8 +391,8 @@ export default function Home() {
 
         {/* ── Original ao lado dos dados lidos ────────────────────── */}
         <section className="border-t border-b border-[#dde3ec] bg-[#f1f4f8] px-6 py-20 sm:px-12 md:py-24">
-          <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
-            <div className="flex flex-1 min-w-[340px] gap-4">
+          <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-12 sm:flex-row sm:gap-16">
+            <div className="flex w-full min-w-0 flex-1 flex-col gap-4 sm:min-w-[340px] sm:flex-row">
               <div className="flex-1 rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
                 <div className="text-[12px] font-bold uppercase text-[#5a6a80]">ORIGINAL</div>
                 <div className="mt-3.5 space-y-2.5">
@@ -421,7 +421,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex-1 min-w-[340px]">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[340px]">
               <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Você no controle</div>
               <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
                 Original ao lado dos dados lidos.
@@ -452,8 +452,8 @@ export default function Home() {
 
         {/* ── Para toda a família ─────────────────────────────────── */}
         <section className="bg-white px-6 py-20 sm:px-12 md:py-24">
-          <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
-            <div className="flex-1 min-w-[340px]">
+          <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-12 sm:flex-row sm:gap-16">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[340px]">
               <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Para toda a família</div>
               <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
                 Cuidado compartilhado, tudo ao seu alcance.
@@ -489,7 +489,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex-1 min-w-[340px]">
+            <div className="w-full min-w-0 flex-1 sm:min-w-[340px]">
               <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-6 shadow-sm flex items-center justify-center">
                 <img
                   src="/home-illustration.svg"
@@ -586,7 +586,7 @@ export default function Home() {
 
         {/* ── Final Call To Action ─────────────────────────────────── */}
         <section className="px-6 pb-24 sm:px-12">
-          <div className="mx-auto max-w-[1140px] rounded-[36px] bg-gradient-to-r from-[#1b3a60] to-[#24507f] p-10 sm:p-16 text-white shadow-xl">
+          <div className="mx-auto max-w-[1140px] rounded-[36px] bg-gradient-to-r from-[#1b3a60] to-[#24507f] p-6 sm:p-10 md:p-16 text-white shadow-xl">
             <div className="flex flex-wrap items-center justify-between gap-8">
               <div className="max-w-[560px]">
                 <h2 className="text-[32px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em]">
