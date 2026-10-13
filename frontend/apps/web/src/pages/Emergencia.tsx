@@ -138,6 +138,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
   const age = hasValidBirthDate
     ? Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 86400000))
     : null;
+  const displayedAge = isPublicMode && Number.isInteger(publicData?.idade) ? publicData.idade : age;
   const birthDateFormatted = hasValidBirthDate
     ? birthDate.toLocaleDateString('pt-BR')
     : 'Não informado';
@@ -261,7 +262,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                     {name}
                   </div>
                   <div className="text-base sm:text-lg text-[#5a6a80] mt-0.5">
-                    {age !== null ? `${age} anos` : 'Idade não informada'}
+                    {displayedAge !== null ? `${displayedAge} anos` : 'Idade não informada'}
                     {hasValidBirthDate ? ` · Nascimento ${birthDateFormatted}` : ''}
                     {sex ? ` · ${sex}` : ''}
                   </div>
@@ -343,6 +344,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                     {surgeries?.trim() || 'Não informado'}
                   </p>
                 </div>
+                {!isPublicMode && <>
                 <div>
                   <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#5a6a80]">
                     Plano de saúde
@@ -374,6 +376,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                     {familyHistory?.trim() || 'Não informado'}
                   </p>
                 </div>
+                </>}
               </div>
             </div>
           </div>

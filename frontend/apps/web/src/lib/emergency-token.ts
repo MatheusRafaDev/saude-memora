@@ -15,18 +15,18 @@ function tokenStorageKey(patientId: string) {
 }
 
 function storeToken(patientId: string, token: string) {
-  window.localStorage.setItem(tokenStorageKey(patientId), token);
+  window.sessionStorage.setItem(tokenStorageKey(patientId), token);
 }
 
 export async function getEmergencyToken(patientId: string) {
   const status = await customFetch<EmergencyStatus>('/api/pacientes/me/emergencia/status');
-  const cachedToken = window.localStorage.getItem(tokenStorageKey(patientId));
+  const cachedToken = window.sessionStorage.getItem(tokenStorageKey(patientId));
 
   if (status.possuiToken) {
     return { token: cachedToken, needsRotation: !cachedToken };
   }
 
-  window.localStorage.removeItem(tokenStorageKey(patientId));
+  window.sessionStorage.removeItem(tokenStorageKey(patientId));
   const result = await customFetch<EmergencyTokenResponse>('/api/pacientes/me/emergencia', {
     method: 'POST',
   });

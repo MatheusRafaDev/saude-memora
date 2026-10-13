@@ -69,14 +69,15 @@ public class AuthFlowTests
     }
 
     [Fact]
-    public void GetIpKey_UsesForwardedForHeader_WhenPresent()
+    public void GetIpKey_IgnoresUntrustedForwardedForHeader()
     {
         var context = new DefaultHttpContext();
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("198.51.100.7");
         context.Request.Headers["X-Forwarded-For"] = "203.0.113.10, 10.0.0.1";
 
         var result = NetworkHelpers.GetIpKey(context);
 
-        Assert.Equal("203.0.113.10", result);
+        Assert.Equal("198.51.100.7", result);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Link } from 'wouter';
 import {
   FileText,
@@ -24,7 +24,7 @@ import {
   useGetApiFichaMedicaMe,
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
-import Insights from '@/pages/Insights';
+const Insights = lazy(() => import('@/pages/Insights'));
 
 function uniqueLabels(values: unknown[]): string[] {
   const seen = new Set<string>();
@@ -497,7 +497,9 @@ export default function Dashboard() {
             <h2 className="m-0 text-2xl font-extrabold text-[#1b3a60]">Análise do histórico</h2>
             <p className="mb-0 mt-1 text-sm text-[#5a6a80]">Relatórios, tendências de exames e consultas a referências clínicas.</p>
           </div>
-          <Insights embedded />
+          <Suspense fallback={<div className="py-8 text-center text-sm text-[#5a6a80]">Carregando análise…</div>}>
+            <Insights embedded />
+          </Suspense>
         </section>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">

@@ -23,7 +23,6 @@ using MongoDB.Driver;
 using DotNetEnv;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.AspNetCore.HttpOverrides;
-using System.IO.Compression;
 
 // Load .env variables
 Env.Load();
@@ -115,37 +114,22 @@ if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
 
 bool IsSecureRequest(HttpContext context)
 {
-    if (context.Request.IsHttps)
-        return true;
-
-    var forwardedProto = context.Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
-    return string.Equals(forwardedProto, "https", StringComparison.OrdinalIgnoreCase);
+    return context.Request.IsHttps;
 }
 
-TimeSpan GetJwtLifetime(IConfiguration config, HttpContext context)
+TimeSpan GetJwtLifetime(IConfiguration config)
 {
-    var userAgent = context.Request.Headers["User-Agent"].ToString().ToLowerInvariant();
-    bool isMobile = userAgent.Contains("mobi") || userAgent.Contains("android") || userAgent.Contains("iphone") || userAgent.Contains("ipad");
-
-    if (isMobile)
-    {
-        return TimeSpan.FromDays(3650); // 10 years for mobile
-    }
-
     var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN")?.Trim()?.ToLowerInvariant() ?? config["JwtSettings:ExpiresIn"]?.Trim()?.ToLowerInvariant();
-    if (string.IsNullOrEmpty(jwtExpiresInStr))
-        return TimeSpan.FromDays(7);
+    var lifetime = TimeSpan.FromDays(7);
 
-    if (jwtExpiresInStr.EndsWith("h") && double.TryParse(jwtExpiresInStr.TrimEnd('h'), out var hours))
-        return TimeSpan.FromHours(hours);
+    if (!string.IsNullOrEmpty(jwtExpiresInStr) && jwtExpiresInStr.EndsWith("h") && double.TryParse(jwtExpiresInStr.TrimEnd('h'), out var hours))
+        lifetime = TimeSpan.FromHours(hours);
+    else if (!string.IsNullOrEmpty(jwtExpiresInStr) && jwtExpiresInStr.EndsWith("d") && double.TryParse(jwtExpiresInStr.TrimEnd('d'), out var days))
+        lifetime = TimeSpan.FromDays(days);
+    else if (double.TryParse(jwtExpiresInStr, out var rawDays))
+        lifetime = TimeSpan.FromDays(rawDays);
 
-    if (jwtExpiresInStr.EndsWith("d") && double.TryParse(jwtExpiresInStr.TrimEnd('d'), out var days))
-        return TimeSpan.FromDays(days);
-
-    if (double.TryParse(jwtExpiresInStr, out var rawDays))
-        return TimeSpan.FromDays(rawDays);
-
-    return TimeSpan.FromDays(7);
+    return lifetime <= TimeSpan.Zero ? TimeSpan.FromDays(7) : TimeSpan.FromMinutes(Math.Min(lifetime.TotalMinutes, TimeSpan.FromDays(30).TotalMinutes));
 }
 
 void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
@@ -242,29 +226,38 @@ builder.Services.AddRateLimiter(o =>
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
     
     var trustedProxies = Environment.GetEnvironmentVariable("TRUSTED_PROXIES");
     if (!string.IsNullOrWhiteSpace(trustedProxies))
     {
         options.KnownNetworks.Clear();
         options.KnownProxies.Clear();
+        var parsedCount = 0;
         foreach (var proxy in trustedProxies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             if (System.Net.IPAddress.TryParse(proxy, out var ip))
+            {
                 options.KnownProxies.Add(ip);
+                parsedCount++;
+            }
             else if (proxy.Contains('/'))
             {
                 var parts = proxy.Split('/');
-                if (parts.Length == 2 && System.Net.IPAddress.TryParse(parts[0], out var netIp) && int.TryParse(parts[1], out var prefix))
+                if (parts.Length == 2 && System.Net.IPAddress.TryParse(parts[0], out var netIp) && int.TryParse(parts[1], out var prefix)
+                    && prefix >= 0 && prefix <= (netIp.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork ? 32 : 128))
+                {
                     options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(netIp, prefix));
+                    parsedCount++;
+                }
+                else
+                    throw new InvalidOperationException($"TRUSTED_PROXIES contém uma rede inválida: {proxy}");
             }
+            else
+                throw new InvalidOperationException($"TRUSTED_PROXIES contém um endereço inválido: {proxy}");
         }
-    }
-    else
-    {
-        options.ForwardLimit = 1;
-        options.KnownNetworks.Clear();
-        options.KnownProxies.Clear();
+        if (parsedCount == 0)
+            throw new InvalidOperationException("TRUSTED_PROXIES precisa conter ao menos um proxy ou uma rede válida.");
     }
 });
 
@@ -468,33 +461,9 @@ _ = Task.Run(async () =>
         {
             var catalogPath = Environment.GetEnvironmentVariable("CNES_CATALOG_PATH");
             if (string.IsNullOrWhiteSpace(catalogPath))
-            {
-                var zipPath = Path.Combine(Path.GetTempPath(), $"saudememora-cnes-{Guid.NewGuid():N}.zip");
-                try
-                {
-                    const string catalogUrl = "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/CNES/cnes_estabelecimentos_json.zip";
-                    using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
-                    using var response = await httpClient.GetAsync(catalogUrl, HttpCompletionOption.ResponseHeadersRead, token);
-                    response.EnsureSuccessStatusCode();
-                    await using (var zipFile = new FileStream(zipPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan))
-                    await using (var downloadStream = await response.Content.ReadAsStreamAsync(token))
-                        await downloadStream.CopyToAsync(zipFile, token);
+                catalogPath = Path.Combine(app.Environment.ContentRootPath, "Data", "cnes_estabelecimentos.json");
 
-                    using var archive = ZipFile.OpenRead(zipPath);
-                    var jsonEntry = archive.Entries.FirstOrDefault(entry => entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                        ?? throw new InvalidDataException("O arquivo oficial do CNES não contém um JSON.");
-                    await using var catalogStream = jsonEntry.Open();
-                    var catalogService = scope.ServiceProvider.GetRequiredService<ICnesCatalogoService>();
-                    var importResult = await catalogService.ImportarAsync(catalogStream, token);
-                    app.Logger.LogInformation("[CNES] Base oficial carregada: {Imported} registros, {Invalid} inválidos e {Duplicates} duplicados.",
-                        importResult.RegistrosImportados, importResult.RegistrosInvalidos, importResult.RegistrosDuplicados);
-                }
-                finally
-                {
-                    if (File.Exists(zipPath)) File.Delete(zipPath);
-                }
-            }
-            else if (!File.Exists(catalogPath))
+            if (!File.Exists(catalogPath))
             {
                 app.Logger.LogError("[CNES] Arquivo do catálogo não encontrado em {CatalogPath}.", catalogPath);
             }
@@ -533,7 +502,8 @@ _ = Task.Run(async () =>
 });
 
 // Configure the HTTP request pipeline.
-app.MapOpenApi("/openapi/{documentName}.json");
+if (app.Environment.IsDevelopment())
+    app.MapOpenApi("/openapi/{documentName}.json");
 
 app.UseCors("SaudeMemoraCors");
 app.Use(async (context, next) =>
@@ -616,7 +586,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
         return Results.BadRequest(new[] { "Email ou senha inválidos." });
     }
 
-    var expiresIn = GetJwtLifetime(config, context);
+    var expiresIn = GetJwtLifetime(config);
     var jwt = CreateJwtToken(paciente, config, expiresIn);
     SetAuthCookie(context, jwt, expiresIn);
 
@@ -645,7 +615,7 @@ app.MapPost("/api/auth/refresh", async (ClaimsPrincipal user, IPacienteRepositor
         return Results.Unauthorized();
     }
 
-    var expiresIn = GetJwtLifetime(config, context);
+    var expiresIn = GetJwtLifetime(config);
     var jwt = CreateJwtToken(paciente, config, expiresIn);
     SetAuthCookie(context, jwt, expiresIn);
 
@@ -708,7 +678,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
         return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
     }
 
-    var token = Guid.NewGuid().ToString("N");
+    var token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
     var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     
     paciente.ResetPasswordToken = tokenHash;
@@ -724,7 +694,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
 
     if (string.IsNullOrEmpty(brevoApiKey))
     {
-        logger.LogWarning("BREVO_API_KEY não configurada. O e-mail de redefinição não foi enviado para {Email}.", dto.Email);
+        logger.LogWarning("BREVO_API_KEY não configurada. O e-mail de redefinição não foi enviado.");
         return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
     }
 
@@ -824,7 +794,7 @@ app.MapPost("/api/auth/alterar-senha", async (ClaimsPrincipal user, IPacienteRep
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
 
     return Results.Ok(new { Message = "Senha alterada com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().Produces<ApiMessageResponse>();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().RequireRateLimiting("auth").Produces<ApiMessageResponse>();
 
 //  Paciente Endpoints 
 
@@ -915,12 +885,12 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     if (emailChanged)
     {
         await cache.SafeRemoveAsync($"secstamp_{userId}");
-        var expiresIn = GetJwtLifetime(config, context);
+        var expiresIn = GetJwtLifetime(config);
         SetAuthCookie(context, CreateJwtToken(paciente, config, expiresIn), expiresIn);
     }
 
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization().RequireRateLimiting("auth");
 
 // Atualiza telefone e endereço do paciente autenticado
 app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto, IDistributedCache cache) =>
@@ -938,7 +908,7 @@ app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPaciente
     await repo.UpdateAsync(paciente);
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
     return Results.Ok(new { Message = "Contato atualizado com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().Produces<ApiMessageResponse>();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().RequireRateLimiting("auth").Produces<ApiMessageResponse>();
 
 app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IOcrAiService ocr, IDistributedCache cache) =>
 {
@@ -1069,7 +1039,7 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     await cache.SafeRemoveAsync($"ficha_user_{userId}");
 
     return Results.Ok(new { message = "Sua conta foi agendada para exclusão e será removida em breve." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().Produces<ApiMessageResponse>();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().RequireRateLimiting("auth").Produces<ApiMessageResponse>();
 
 // --- Logs Endpoints
 

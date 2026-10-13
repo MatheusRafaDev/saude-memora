@@ -37,8 +37,6 @@ minimumReleaseAgeExclude:
 packages:
   - apps/*
   - packages/*
-  - lib/integrations/*
-  - scripts
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.21

@@ -75,13 +75,19 @@ public static class EmergenciaEndpoints
             logger.LogInformation("Acesso de emergência ao perfil do paciente {PacienteId}", paciente.Id);
 
             var ficha = await fichaRepo.GetByPacienteIdAsync(paciente.Id!);
-            
+            int? idade = null;
+            if (DateTime.TryParseExact(paciente.DataNascimento, new[] { "dd/MM/yyyy", "yyyy-MM-dd" },
+                System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dataNascimento))
+            {
+                var hoje = DateTime.UtcNow.Date;
+                idade = hoje.Year - dataNascimento.Year;
+                if (dataNascimento.Date > hoje.AddYears(-idade.Value)) idade--;
+            }
+
             var result = new EmergencyPublicResponse(
                 paciente.Nome,
-                paciente.DataNascimento,
+                idade,
                 paciente.Sexo,
-                paciente.PlanoSaude ?? string.Empty,
-                paciente.NumeroCarteirinha ?? string.Empty,
                 ficha?.TipoSanguineo ?? "Não informado",
                 ficha?.Alergias ?? new List<string>(),
                 (ficha?.DoencasCronicas ?? new List<string>())
@@ -93,11 +99,10 @@ public static class EmergenciaEndpoints
                 ficha?.MedicamentosContinuos ?? new List<string>(),
                 paciente.ContatoEmergencia ?? "Não informado",
                 ficha?.DoadorOrgaos,
-                ficha?.Cirurgias ?? string.Empty,
-                ficha?.Fuma,
-                ficha?.Bebe,
-                ficha?.HabitosGerais ?? string.Empty,
-                ficha?.HistoricoFamiliar ?? string.Empty);
+                ficha?.Cirurgias ?? string.Empty);
+
+            context.Response.Headers.CacheControl = "no-store";
+            context.Response.Headers["Referrer-Policy"] = "no-referrer";
 
             return Results.Ok(result);
         }).Produces<EmergencyPublicResponse>().AllowAnonymous().RequireRateLimiting("emergencia");
@@ -105,12 +110,12 @@ public static class EmergenciaEndpoints
 
     private static async Task<(string rawToken, DateTime? expiraEm)> GerarNovoTokenEmergenciaAsync(SaudeMemora.Domain.Entities.Paciente paciente, IPacienteRepository repo)
     {
-        var rawToken = Guid.NewGuid().ToString("N");
+        var rawToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
         var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
         var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
-        if (!int.TryParse(expirationDaysString, out var days) || days < 1 || days > 365)
+        if (!int.TryParse(expirationDaysString, out var days) || days < 1 || days > 30)
         {
-            days = 30;
+            days = 7;
         }
         var expiraEm = DateTime.UtcNow.AddDays(days);
         paciente.TokenEmergencia = tokenHash;
@@ -124,18 +129,12 @@ public record EmergencyStatusResponse(bool PossuiToken, DateTime? ExpiraEm);
 public record EmergencyTokenResponse(string Token, DateTime? ExpiraEm);
 public record EmergencyPublicResponse(
     string Nome,
-    string DataNascimento,
+    int? Idade,
     string Sexo,
-    string PlanoSaude,
-    string NumeroCarteirinha,
     string TipoSanguineo,
     List<string> Alergias,
     List<string> DoencasCronicas,
     List<string> MedicamentosContinuos,
     string ContatosEmergencia,
     bool? DoadorOrgaos,
-    string Cirurgias,
-    bool? Fuma,
-    bool? Bebe,
-    string HabitosGerais,
-    string HistoricoFamiliar);
+    string Cirurgias);
