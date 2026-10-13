@@ -72,7 +72,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
   useEffect(() => {
     if (user && !isUserLoading) {
-      setLocation('/visao-geral');
+      const justRegistered = new URLSearchParams(window.location.search).get('registered') === '1';
+      setLocation(justRegistered ? '/anamnese/inicio' : '/visao-geral');
     }
   }, [user, isUserLoading, setLocation]);
 
@@ -85,12 +86,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       setMode('login');
     }
   }, [defaultMode, location]);
-
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('registered') === '1') {
-      window.history.replaceState(null, '', '/entrar');
-    }
-  }, []);
 
   const handleModeChange = (newMode: 'login' | 'register') => {
     setMode(newMode);
@@ -117,7 +112,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
           queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
         ]);
-        setLocation('/visao-geral');
+        const justRegistered = new URLSearchParams(window.location.search).get('registered') === '1';
+        setLocation(justRegistered ? '/anamnese/inicio' : '/visao-geral');
       } else {
         if (!form.termsAccepted) {
           setError('Você precisa aceitar os Termos e a Política de Privacidade para continuar.');
@@ -135,6 +131,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         });
 
         setForm((prev) => ({ ...prev, password: '' }));
+        setMessage('Conta criada com sucesso. Entre com seu e-mail e senha para continuar.');
         setLocation('/entrar?registered=1');
       }
     } catch (err: any) {

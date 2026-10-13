@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useRoute, useLocation } from 'wouter';
 import {
+  ArrowLeft,
   Download,
   Trash2,
   ZoomIn,
@@ -20,6 +21,128 @@ import {
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+
+type MedicationEdit = { nome: string; dosagem: string; horario: string };
+type ExamResultEdit = {
+  nome: string;
+  nomeNormalizado: string;
+  valor: number | null;
+  valorTexto: string;
+  unidade: string;
+  refMin: number | null;
+  refMax: number | null;
+  referenciaTexto: string;
+  status: string;
+  confianca: number;
+  confirmacaoNecessaria: boolean;
+  motivoConfirmacao: string;
+};
+type IndentedContentEdit = { tipo: string; texto: string; chave: string; valor: string };
+type DocumentEditForm = {
+  titulo: string;
+  tipo: string;
+  medico: string;
+  clinica: string;
+  data: string;
+  resumo: string;
+  diagnostico: string;
+  crm: string;
+  cid: string;
+  cnes: string;
+  nomeExame: string;
+  tipoExame: string;
+  resultado: string;
+  especialidade: string;
+  tipoClinico: string;
+  conteudo: string;
+  conclusoes: string;
+  observacoes: string;
+  textoExtraido: string;
+  medicamentos: MedicationEdit[];
+  conteudoIndentado: IndentedContentEdit[];
+  resultadosExame: ExamResultEdit[];
+};
+type DocumentTextField = Exclude<
+  keyof DocumentEditForm,
+  'medicamentos' | 'conteudoIndentado' | 'resultadosExame'
+>;
+
+const documentTextFields: { key: DocumentTextField; label: string; multiline?: boolean }[] = [
+  { key: 'titulo', label: 'Título' },
+  { key: 'medico', label: 'Médico / solicitante' },
+  { key: 'crm', label: 'CRM' },
+  { key: 'clinica', label: 'Clínica' },
+  { key: 'data', label: 'Data' },
+  { key: 'cid', label: 'CID' },
+  { key: 'cnes', label: 'CNES' },
+  { key: 'nomeExame', label: 'Nome do exame' },
+  { key: 'tipoExame', label: 'Tipo de exame' },
+  { key: 'resultado', label: 'Resultado' },
+  { key: 'especialidade', label: 'Especialidade' },
+  { key: 'tipoClinico', label: 'Tipo clínico' },
+  { key: 'resumo', label: 'Resumo', multiline: true },
+  { key: 'diagnostico', label: 'Diagnóstico', multiline: true },
+  { key: 'conteudo', label: 'Conteúdo', multiline: true },
+  { key: 'conclusoes', label: 'Conclusões', multiline: true },
+  { key: 'observacoes', label: 'Observações', multiline: true },
+  { key: 'textoExtraido', label: 'Texto extraído', multiline: true },
+];
+
+function createDocumentEditForm(doc: any): DocumentEditForm {
+  const textValue = (value: unknown) => (typeof value === 'string' ? value : '');
+  return {
+    titulo: textValue(doc?.titulo),
+    tipo: textValue(doc?.tipo),
+    medico: textValue(doc?.medico),
+    clinica: textValue(doc?.clinica),
+    data: textValue(doc?.data),
+    resumo: textValue(doc?.resumo),
+    diagnostico: textValue(doc?.diagnostico),
+    crm: textValue(doc?.crm),
+    cid: textValue(doc?.cid),
+    cnes: textValue(doc?.cnes),
+    nomeExame: textValue(doc?.nomeExame),
+    tipoExame: textValue(doc?.tipoExame),
+    resultado: textValue(doc?.resultado),
+    especialidade: textValue(doc?.especialidade),
+    tipoClinico: textValue(doc?.tipoClinico),
+    conteudo: textValue(doc?.conteudo),
+    conclusoes: textValue(doc?.conclusoes),
+    observacoes: textValue(doc?.observacoes),
+    textoExtraido: textValue(doc?.textoExtraido),
+    medicamentos: Array.isArray(doc?.medicamentos)
+      ? doc.medicamentos.map((medication: any) => ({
+          nome: textValue(medication?.nome),
+          dosagem: textValue(medication?.dosagem),
+          horario: textValue(medication?.horario),
+        }))
+      : [],
+    conteudoIndentado: Array.isArray(doc?.conteudoIndentado)
+      ? doc.conteudoIndentado.map((item: any) => ({
+          tipo: textValue(item?.tipo),
+          texto: textValue(item?.texto),
+          chave: textValue(item?.chave),
+          valor: textValue(item?.valor),
+        }))
+      : [],
+    resultadosExame: Array.isArray(doc?.resultadosExame)
+      ? doc.resultadosExame.map((result: any) => ({
+          nome: textValue(result?.nome),
+          nomeNormalizado: textValue(result?.nomeNormalizado),
+          valor: typeof result?.valor === 'number' ? result.valor : null,
+          valorTexto: textValue(result?.valorTexto),
+          unidade: textValue(result?.unidade),
+          refMin: typeof result?.refMin === 'number' ? result.refMin : null,
+          refMax: typeof result?.refMax === 'number' ? result.refMax : null,
+          referenciaTexto: textValue(result?.referenciaTexto),
+          status: textValue(result?.status) || 'indefinido',
+          confianca: typeof result?.confianca === 'number' ? result.confianca : 1,
+          confirmacaoNecessaria: Boolean(result?.confirmacaoNecessaria),
+          motivoConfirmacao: textValue(result?.motivoConfirmacao),
+        }))
+      : [],
+  };
+}
 
 export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [, params] = useRoute('/documentos/:id');
@@ -46,19 +169,16 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
   const [isConfirmingRevisao, setIsConfirmingRevisao] = useState(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ titulo: '', tipo: '', medico: '', data: '' });
+  const [formData, setFormData] = useState<DocumentEditForm>(() => createDocumentEditForm(null));
 
   const doc = (docRaw as any) || null;
+  const hasMedicationTab = String(doc?.tipo ?? '').trim().toLowerCase() === 'receita';
 
   useEffect(() => {
     if (!doc) return;
-    setFormData({
-      titulo: doc.titulo || '',
-      tipo: doc.tipo || '',
-      medico: doc.medico || '',
-      data: doc.data || '',
-    });
-  }, [doc]);
+    if (!hasMedicationTab) setActiveTab('dados');
+    setFormData(createDocumentEditForm(doc));
+  }, [doc, hasMedicationTab]);
 
   const docTitle = doc?.titulo || 'Documento';
   const documentDate = doc?.data || doc?.criadoEm || doc?.createdAt;
@@ -125,6 +245,28 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     } catch {
       toast({ title: 'Erro ao salvar alterações', variant: 'destructive' });
     }
+  };
+
+  const updateTextField = (key: DocumentTextField, value: string) => {
+    setFormData((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const updateExamResultNumber = (
+    index: number,
+    field: 'valor' | 'refMin' | 'refMax' | 'confianca',
+    rawValue: string,
+  ) => {
+    setFormData((previous) => ({
+      ...previous,
+      resultadosExame: previous.resultadosExame.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+        if (field === 'confianca') return { ...item, confianca: Number(rawValue || 0) };
+        const value = rawValue === '' ? null : Number(rawValue);
+        if (field === 'valor') return { ...item, valor: value };
+        if (field === 'refMin') return { ...item, refMin: value };
+        return { ...item, refMax: value };
+      }),
+    }));
   };
 
   if (isLoading) {
@@ -263,20 +405,22 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 ['dados', 'Dados lidos'],
                 ['medicamentos', 'Medicamentos'],
                 ['alertas', 'Alertas'],
-              ] as const).map(([tab, label]) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`-mb-px cursor-pointer border-b-[3px] px-4 py-2.5 text-sm font-bold transition-colors ${
-                    activeTab === tab
-                      ? 'border-[#1f7fe0] text-[#1b3a60]'
-                      : 'border-transparent text-[#5a6a80] hover:text-[#1b3a60]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+              ] as const)
+                .filter(([tab]) => tab !== 'medicamentos' || hasMedicationTab)
+                .map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`-mb-px cursor-pointer border-b-[3px] px-4 py-2.5 text-sm font-bold transition-colors ${
+                      activeTab === tab
+                        ? 'border-[#1f7fe0] text-[#1b3a60]'
+                        : 'border-transparent text-[#5a6a80] hover:text-[#1b3a60]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
             </div>
 
             <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -331,7 +475,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </div>
             )}
 
-            {activeTab === 'medicamentos' && (
+            {hasMedicationTab && activeTab === 'medicamentos' && (
               <div className="space-y-3">
                 <h2 className="text-sm font-bold text-[#1d2a3d]">Medicamentos registrados</h2>
                 {medications.length === 0 ? (
@@ -401,31 +545,254 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       <DialogPrimitive.Root open={isEditingModalOpen} onOpenChange={setIsEditingModalOpen}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#dde3ec] bg-white p-6 shadow-2xl outline-none">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#dde3ec] bg-white p-6 shadow-2xl outline-none">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-bold text-[#1b3a60]">Editar dados do documento</h3>
               <DialogPrimitive.Close className="rounded-lg p-1 text-[#5a6a80] hover:bg-slate-100">
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>
-            <div className="space-y-4 text-sm">
-              {([
-                ['titulo', 'Título'],
-                ['tipo', 'Tipo'],
-                ['medico', 'Médico / Solicitante'],
-                ['data', 'Data'],
-              ] as const).map(([field, label]) => (
-                <div key={field}>
-                  <label className="mb-1 block font-semibold" htmlFor={`document-${field}`}>{label}</label>
-                  <input
-                    id={`document-${field}`}
-                    type="text"
-                    value={formData[field]}
-                    onChange={(event) => setFormData((previous) => ({ ...previous, [field]: event.target.value }))}
-                    className="h-11 w-full rounded-xl border border-[#c6cfdb] px-3 outline-none focus:border-[#1b3a60]"
-                  />
+            <div className="space-y-6 text-sm">
+              <section>
+                <h4 className="mb-3 font-bold text-[#1b3a60]">Identificação</h4>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block font-semibold" htmlFor="document-tipo">Tipo</label>
+                    <select
+                      id="document-tipo"
+                      value={formData.tipo}
+                      onChange={(event) => updateTextField('tipo', event.target.value)}
+                      className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 outline-none focus:border-[#1b3a60]"
+                    >
+                      {['exame', 'receita', 'laudo', 'atestado', 'vacina', 'encaminhamento', 'relatorio', 'outro'].map((type) => (
+                        <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {documentTextFields.map(({ key, label, multiline }) => (
+                    <div key={key} className={multiline ? 'sm:col-span-2' : undefined}>
+                      <label className="mb-1 block font-semibold" htmlFor={`document-${key}`}>{label}</label>
+                      {multiline ? (
+                        <textarea
+                          id={`document-${key}`}
+                          rows={key === 'textoExtraido' || key === 'conteudo' ? 5 : 3}
+                          value={formData[key]}
+                          onChange={(event) => updateTextField(key, event.target.value)}
+                          className="w-full rounded-xl border border-[#c6cfdb] p-3 outline-none focus:border-[#1b3a60]"
+                        />
+                      ) : (
+                        <input
+                          id={`document-${key}`}
+                          type="text"
+                          value={formData[key]}
+                          onChange={(event) => updateTextField(key, event.target.value)}
+                          className="h-11 w-full rounded-xl border border-[#c6cfdb] px-3 outline-none focus:border-[#1b3a60]"
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </section>
+
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="font-bold text-[#1b3a60]">Medicamentos</h4>
+                  <button
+                    type="button"
+                    onClick={() => setFormData((previous) => ({
+                      ...previous,
+                      medicamentos: [...previous.medicamentos, { nome: '', dosagem: '', horario: '' }],
+                    }))}
+                    className="rounded-lg border border-[#dde3ec] px-3 py-2 text-xs font-bold text-[#1b3a60] hover:bg-slate-50"
+                  >
+                    Adicionar medicamento
+                  </button>
+                </div>
+                {formData.medicamentos.length === 0 && (
+                  <p className="text-sm text-[#5a6a80]">Nenhum medicamento registrado.</p>
+                )}
+                <div className="space-y-3">
+                  {formData.medicamentos.map((medication, index) => (
+                    <div key={index} className="grid gap-3 rounded-xl border border-[#dde3ec] p-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+                      {([
+                        ['nome', 'Nome'],
+                        ['dosagem', 'Dosagem'],
+                        ['horario', 'Horário'],
+                      ] as const).map(([field, label]) => (
+                        <label key={field} className="block font-semibold">
+                          {label}
+                          <input
+                            value={medication[field]}
+                            onChange={(event) => setFormData((previous) => ({
+                              ...previous,
+                              medicamentos: previous.medicamentos.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, [field]: event.target.value } : item),
+                            }))}
+                            className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
+                          />
+                        </label>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setFormData((previous) => ({
+                          ...previous,
+                          medicamentos: previous.medicamentos.filter((_, itemIndex) => itemIndex !== index),
+                        }))}
+                        aria-label={`Remover medicamento ${index + 1}`}
+                        className="self-end rounded-lg px-3 py-2 font-bold text-[#a13a30] hover:bg-red-50"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="font-bold text-[#1b3a60]">Resultados de exames</h4>
+                  <button
+                    type="button"
+                    onClick={() => setFormData((previous) => ({
+                      ...previous,
+                      resultadosExame: [...previous.resultadosExame, {
+                        nome: '', nomeNormalizado: '', valor: null, valorTexto: '', unidade: '',
+                        refMin: null, refMax: null, referenciaTexto: '', status: 'indefinido',
+                        confianca: 1, confirmacaoNecessaria: false, motivoConfirmacao: '',
+                      }],
+                    }))}
+                    className="rounded-lg border border-[#dde3ec] px-3 py-2 text-xs font-bold text-[#1b3a60] hover:bg-slate-50"
+                  >
+                    Adicionar resultado
+                  </button>
+                </div>
+                {formData.resultadosExame.length === 0 && (
+                  <p className="text-sm text-[#5a6a80]">Nenhum resultado de exame registrado.</p>
+                )}
+                <div className="space-y-3">
+                  {formData.resultadosExame.map((result, index) => (
+                    <div key={index} className="space-y-3 rounded-xl border border-[#dde3ec] p-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {([
+                          ['nome', 'Exame'],
+                          ['nomeNormalizado', 'Nome normalizado'],
+                          ['valorTexto', 'Valor exibido'],
+                          ['unidade', 'Unidade'],
+                          ['referenciaTexto', 'Referência'],
+                          ['status', 'Status'],
+                          ['motivoConfirmacao', 'Motivo da confirmação'],
+                        ] as const).map(([field, label]) => (
+                          <label key={field} className="block font-semibold">
+                            {label}
+                            <input
+                              value={result[field]}
+                              onChange={(event) => setFormData((previous) => ({
+                                ...previous,
+                                resultadosExame: previous.resultadosExame.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, [field]: event.target.value } : item),
+                              }))}
+                              className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
+                            />
+                          </label>
+                        ))}
+                        {([
+                          ['valor', 'Valor numérico'],
+                          ['refMin', 'Referência mínima'],
+                          ['refMax', 'Referência máxima'],
+                          ['confianca', 'Confiança'],
+                        ] as const).map(([field, label]) => (
+                          <label key={field} className="block font-semibold">
+                            {label}
+                            <input
+                              type="number"
+                              step="any"
+                              value={result[field] ?? ''}
+                              onChange={(event) => updateExamResultNumber(index, field, event.target.value)}
+                              className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <label className="inline-flex items-center gap-2 font-semibold">
+                        <input
+                          type="checkbox"
+                          checked={result.confirmacaoNecessaria}
+                          onChange={(event) => setFormData((previous) => ({
+                            ...previous,
+                            resultadosExame: previous.resultadosExame.map((item, itemIndex) =>
+                              itemIndex === index ? { ...item, confirmacaoNecessaria: event.target.checked } : item),
+                          }))}
+                        />
+                        Requer confirmação
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((previous) => ({
+                          ...previous,
+                          resultadosExame: previous.resultadosExame.filter((_, itemIndex) => itemIndex !== index),
+                        }))}
+                        className="ml-4 rounded-lg px-3 py-2 font-bold text-[#a13a30] hover:bg-red-50"
+                      >
+                        Remover resultado
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="font-bold text-[#1b3a60]">Conteúdo estruturado</h4>
+                  <button
+                    type="button"
+                    onClick={() => setFormData((previous) => ({
+                      ...previous,
+                      conteudoIndentado: [...previous.conteudoIndentado, { tipo: '', texto: '', chave: '', valor: '' }],
+                    }))}
+                    className="rounded-lg border border-[#dde3ec] px-3 py-2 text-xs font-bold text-[#1b3a60] hover:bg-slate-50"
+                  >
+                    Adicionar campo
+                  </button>
+                </div>
+                {formData.conteudoIndentado.length === 0 && (
+                  <p className="text-sm text-[#5a6a80]">Nenhum campo estruturado registrado.</p>
+                )}
+                <div className="space-y-3">
+                  {formData.conteudoIndentado.map((item, index) => (
+                    <div key={index} className="grid gap-3 rounded-xl border border-[#dde3ec] p-3 sm:grid-cols-4">
+                      {([
+                        ['tipo', 'Tipo'],
+                        ['texto', 'Texto'],
+                        ['chave', 'Chave'],
+                        ['valor', 'Valor'],
+                      ] as const).map(([field, label]) => (
+                        <label key={field} className="block font-semibold">
+                          {label}
+                          <input
+                            value={item[field]}
+                            onChange={(event) => setFormData((previous) => ({
+                              ...previous,
+                              conteudoIndentado: previous.conteudoIndentado.map((row, itemIndex) =>
+                                itemIndex === index ? { ...row, [field]: event.target.value } : row),
+                            }))}
+                            className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
+                          />
+                        </label>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setFormData((previous) => ({
+                          ...previous,
+                          conteudoIndentado: previous.conteudoIndentado.filter((_, itemIndex) => itemIndex !== index),
+                        }))}
+                        className="justify-self-start rounded-lg px-3 py-2 font-bold text-[#a13a30] hover:bg-red-50 sm:col-span-4"
+                      >
+                        Remover campo
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
             <div className="mt-6 flex justify-end gap-2.5">
               <button
@@ -451,9 +818,22 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs animate-in fade-in" />
           <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#dde3ec] bg-white p-6 shadow-2xl outline-none">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-[#1b3a60]">Visualização ampliada</h3>
-              <DialogPrimitive.Close className="rounded-lg p-1 text-[#5a6a80] hover:bg-slate-100">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsZoomModalOpen(false);
+                  setLocation('/documentos');
+                }}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-slate-50"
+              >
+                <ArrowLeft size={17} />
+                Voltar aos documentos
+              </button>
+              <DialogPrimitive.Close
+                aria-label="Fechar visualização ampliada"
+                className="rounded-lg p-1 text-[#5a6a80] hover:bg-slate-100"
+              >
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>

@@ -30,6 +30,43 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+function DocumentThumbnail({
+  src,
+  title,
+}: {
+  src?: string;
+  title: string;
+}) {
+  const [hasLoadError, setHasLoadError] = useState(false);
+
+  return (
+    <div className="bg-[#f1f4f8] rounded-[14px] h-[150px] flex items-center justify-center relative overflow-hidden group-hover:bg-[#eaf0f7] transition-colors">
+      {src && !hasLoadError ? (
+        <img
+          src={src}
+          alt={`Prévia de ${title}`}
+          loading="lazy"
+          onError={() => setHasLoadError(true)}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          className="w-[86px] h-[112px] rounded-lg bg-white border border-[#dde3ec] p-2.5 shadow-xs flex flex-col justify-between"
+        >
+          <div className="space-y-1.5">
+            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[90%]" />
+            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[65%]" />
+            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[85%]" />
+            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[55%]" />
+          </div>
+          <div className="h-[5px] rounded-[3px] bg-[#1f7fe0]/40 w-[75%]" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Documents() {
   const { toast } = useToast();
   const { data: documentsRaw, refetch, isLoading, isError } = useGetApiDocuments();
@@ -69,9 +106,15 @@ export default function Documents() {
       else if (type.includes('laudo')) normalizedType = 'Laudo';
       else if (type.includes('atestado')) normalizedType = 'Atestado';
 
+      const imageUrls = Array.isArray(doc.urlImagens) ? doc.urlImagens : [];
+      const previewUrl = imageUrls.find(
+        (url: unknown): url is string => typeof url === 'string' && url.trim().length > 0,
+      ) || (typeof doc.fileUrl === 'string' ? doc.fileUrl : undefined);
+
       return {
         id: doc.id,
         titulo: doc.titulo || `${normalizedType} ${dateStr}`,
+        previewUrl,
         tipo: normalizedType,
         status: doc.status || 'pronto',
         revisaoPendente: Boolean(doc.revisaoPendente),
@@ -380,18 +423,7 @@ export default function Documents() {
                       className="bg-white border border-[#dde3ec] rounded-[20px] p-3.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] hover:shadow-md transition-shadow group flex flex-col justify-between"
                     >
                       <Link href={`/documentos/${doc.id}`} className="block">
-                        {/* Mini document sheet illustration */}
-                        <div className="bg-[#f1f4f8] rounded-[14px] h-[150px] flex items-center justify-center relative overflow-hidden group-hover:bg-[#eaf0f7] transition-colors">
-                          <div className="w-[86px] h-[112px] rounded-lg bg-white border border-[#dde3ec] p-2.5 shadow-xs flex flex-col justify-between">
-                            <div className="space-y-1.5">
-                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[90%]" />
-                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[65%]" />
-                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[85%]" />
-                              <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[55%]" />
-                            </div>
-                            <div className="h-[5px] rounded-[3px] bg-[#1f7fe0]/40 w-[75%]" />
-                          </div>
-                        </div>
+                        <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} />
 
                         {/* Title & Date */}
                         <div className="mt-3.5 text-[15px] font-bold text-[#1d2a3d] truncate">

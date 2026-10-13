@@ -1275,15 +1275,10 @@ app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user,
 
 
 // Lista todos os documentos do paciente autenticado
-app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, IImageStorageService storage) =>
+app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
-
-    var cacheKey = DocumentRepository.UserDocumentsCacheKey(userId);
-    string? cached = null;
-    try { cached = await cache.SafeGetStringAsync(cacheKey); } catch (Exception ex) { Console.Error.WriteLine("[Cache Ignorado] " + ex.Message); }
-    if (cached != null) return Results.Content(cached, "application/json");
 
     var docs = await repo.GetAllByPacienteIdAsync(userId);
 
@@ -1317,8 +1312,6 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
         revisadoEm = d.RevisadoEm
     }).OrderByDescending(d => d.criadoEm).ToList();
 
-    var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
-    try { await cache.SafeSetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) /* Reduzido de 10 para 5 min para não exceder URL assinada (15m) */ }); } catch (Exception ex) { Console.Error.WriteLine("[Cache Ignorado] " + ex.Message); }
     return Results.Ok(result);
 }).RequireAuthorization();
 
@@ -1526,7 +1519,9 @@ app.MapPut("/api/documents/{id}", async (
                 RefMax = r.RefMax,
                 ReferenciaTexto = r.ReferenciaTexto ?? "",
                 Status = status ?? "indefinido",
-                Confianca = r.Confianca
+                Confianca = r.Confianca,
+                ConfirmacaoNecessaria = r.ConfirmacaoNecessaria,
+                MotivoConfirmacao = r.MotivoConfirmacao ?? ""
             };
         }).ToList();
     }
@@ -1753,6 +1748,8 @@ public class ResultadoExameUpdateDto
     public string? ReferenciaTexto { get; set; }
     public string? Status { get; set; }
     public double Confianca { get; set; } = 1.0;
+    public bool ConfirmacaoNecessaria { get; set; }
+    public string? MotivoConfirmacao { get; set; }
 }
 
 // --- Helpers de Upload

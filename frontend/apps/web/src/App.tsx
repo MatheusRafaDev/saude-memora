@@ -31,6 +31,7 @@ const Documents = lazy(() => import('@/pages/Documents'));
 const Upload = lazy(() => import('@/pages/Upload'));
 const DocumentDetail = lazy(() => import('@/pages/DocumentDetail'));
 const Record = lazy(() => import('@/pages/Record'));
+const AnamneseEdit = lazy(() => import('@/pages/AnamneseEdit'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const Emergencia = lazy(() => import('@/pages/Emergencia'));
 const Chat = lazy(() => import('@/pages/Chat'));
@@ -336,7 +337,9 @@ function Router() {
             <Route path="/documentos">{() => <ProtectedRoute><Documents /></ProtectedRoute>}</Route>
             <Route path="/documentos/:id">{(params) => <ProtectedRoute><DocumentDetail id={params.id} /></ProtectedRoute>}</Route>
             <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
-            <Route path="/anamnese">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
+            <Route path="/anamnese">{() => <ProtectedRoute><AnamneseEdit /></ProtectedRoute>}</Route>
+            <Route path="/anamnese/inicio">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
+            <Route path="/anamnese/editar">{() => <ProtectedRoute><AnamneseEdit /></ProtectedRoute>}</Route>
             <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
             <Route path="/emergencia">{() => <ProtectedRoute><Emergencia /></ProtectedRoute>}</Route>
             <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>

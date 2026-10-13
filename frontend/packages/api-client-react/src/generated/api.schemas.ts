@@ -18,6 +18,19 @@ export interface ConsentimentoDto {
   aceito?: boolean;
 }
 
+export interface MedicamentoDocumentoUpdateDto {
+  nome?: string | null;
+  dosagem?: string | null;
+  horario?: string | null;
+}
+
+export interface LinhaIndentadaDocumentoUpdateDto {
+  tipo?: string | null;
+  texto?: string | null;
+  chave?: string | null;
+  valor?: string | null;
+}
+
 export interface ContatoDto {
   /** @nullable */
   telefone: string | null;
@@ -45,11 +58,16 @@ export interface ResultadoExameUpdateDto {
   /** @nullable */
   status?: string | null;
   confianca?: number;
+  confirmacaoNecessaria?: boolean;
+  /** @nullable */
+  motivoConfirmacao?: string | null;
 }
 
 export interface DocumentUpdateDto {
   /** @nullable */
   titulo?: string | null;
+  /** @nullable */
+  tipo?: string | null;
   /** @nullable */
   medico?: string | null;
   /** @nullable */
@@ -62,6 +80,32 @@ export interface DocumentUpdateDto {
   diagnostico?: string | null;
   /** @nullable */
   crm?: string | null;
+  /** @nullable */
+  cid?: string | null;
+  /** @nullable */
+  cnes?: string | null;
+  /** @nullable */
+  nomeExame?: string | null;
+  /** @nullable */
+  tipoExame?: string | null;
+  /** @nullable */
+  resultado?: string | null;
+  /** @nullable */
+  especialidade?: string | null;
+  /** @nullable */
+  tipoClinico?: string | null;
+  /** @nullable */
+  conteudo?: string | null;
+  /** @nullable */
+  conclusoes?: string | null;
+  /** @nullable */
+  observacoes?: string | null;
+  /** @nullable */
+  textoExtraido?: string | null;
+  /** @nullable */
+  medicamentos?: MedicamentoDocumentoUpdateDto[] | null;
+  /** @nullable */
+  conteudoIndentado?: LinhaIndentadaDocumentoUpdateDto[] | null;
   /** @nullable */
   resultadosExame?: ResultadoExameUpdateDto[] | null;
 }
@@ -130,4 +174,3 @@ export type GetApiExamesSerieParams = {
 analito: string;
 meses: number;
 };
-
