@@ -23,6 +23,7 @@ import {
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { QRCodeSVG } from 'qrcode.react';
+import { getEmergencyToken, rotateEmergencyToken } from '@/lib/emergency-token';
 
 export default function Emergencia({ token }: { token?: string } = {}) {
   const { toast } = useToast();
@@ -33,6 +34,8 @@ export default function Emergencia({ token }: { token?: string } = {}) {
   const [isCopied, setIsCopied] = useState(false);
   const [tokenError, setTokenError] = useState(false);
   const [hasRequestedToken, setHasRequestedToken] = useState(false);
+  const [needsTokenRotation, setNeedsTokenRotation] = useState(false);
+  const [isRotatingToken, setIsRotatingToken] = useState(false);
 
   // Authenticated user queries (enabled if no public token provided)
   const isPublicMode = Boolean(activeToken);
@@ -92,19 +95,33 @@ export default function Emergencia({ token }: { token?: string } = {}) {
   useEffect(() => {
     if (!isPublicMode && profileRaw && !hasRequestedToken) {
       setHasRequestedToken(true);
-      customFetch('/api/pacientes/me/emergencia', { method: 'POST' })
-        .then((res: any) => {
-          if (res?.token) {
-            setGeneratedToken(res.token);
-          } else {
-            setTokenError(true);
-          }
+      const patientId = (profileRaw as any).id;
+      getEmergencyToken(patientId)
+        .then(({ token, needsRotation }) => {
+          if (token) setGeneratedToken(token);
+          setNeedsTokenRotation(needsRotation);
         })
         .catch(() => {
           setTokenError(true);
         });
     }
   }, [isPublicMode, profileRaw, hasRequestedToken]);
+
+  const handleRotateToken = async () => {
+    const patientId = (profileRaw as any)?.id;
+    if (!patientId || isRotatingToken) return;
+    setIsRotatingToken(true);
+    setTokenError(false);
+    try {
+      setGeneratedToken(await rotateEmergencyToken(patientId));
+      setNeedsTokenRotation(false);
+    } catch {
+      setTokenError(true);
+      toast({ title: 'Não foi possível gerar um novo link', variant: 'destructive' });
+    } finally {
+      setIsRotatingToken(false);
+    }
+  };
 
   // Data resolution: either publicData or authenticated user data
   const user = (profileRaw as any) || {};
@@ -436,7 +453,9 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                   />
                 ) : (
                   <span className="px-4 text-sm text-[#5a6a80]">
-                    {tokenError ? 'Não foi possível gerar o link de emergência.' : 'Gerando link de emergência…'}
+                    {needsTokenRotation
+                      ? 'Já existe um link ativo, mas ele não está salvo neste navegador.'
+                      : tokenError ? 'Não foi possível carregar o link de emergência.' : 'Verificando link de emergência…'}
                   </span>
                 )}
               </div>
@@ -444,6 +463,17 @@ export default function Emergencia({ token }: { token?: string } = {}) {
               <p className="m-0 text-[13px] leading-relaxed text-[#5a6a80] mb-4">
                 Mostre este QR Code para quem for prestar socorro acessar esta ficha.
               </p>
+
+              {needsTokenRotation && (
+                <button
+                  type="button"
+                  onClick={handleRotateToken}
+                  disabled={isRotatingToken}
+                  className="mb-4 min-h-[44px] w-full rounded-xl bg-[#c0463a] px-3 text-sm font-bold text-white hover:bg-[#a13a30] disabled:opacity-60"
+                >
+                  {isRotatingToken ? 'Gerando novo link…' : 'Gerar novo link (invalidará o anterior)'}
+                </button>
+              )}
 
               <div className="mb-3.5 text-left">
                 <label

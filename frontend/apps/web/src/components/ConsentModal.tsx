@@ -4,8 +4,6 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useConsentimento, useSaveConsentimento } from '../hooks/useConsentimento';
 import { useGetApiPacientesMe } from '@workspace/api-client-react';
 
-const VERSAO_ATUAL = 'v1.0';
-
 export function ConsentModal() {
   const { data: user } = useGetApiPacientesMe();
   const { data, isLoading } = useConsentimento();
@@ -16,23 +14,33 @@ export function ConsentModal() {
   useEffect(() => {
     if (!user || isLoading) return;
 
-    if (!data?.versaoTermo || data.versaoTermo !== VERSAO_ATUAL) {
-      setOpen(true);
-    }
+    setOpen(Boolean(data?.mostrarModal));
 
     const handleEvent = () => setOpen(true);
     window.addEventListener('consentimento-necessario', handleEvent);
     return () => window.removeEventListener('consentimento-necessario', handleEvent);
   }, [user, data, isLoading]);
 
-  const handleConsent = (aceito: boolean) => {
-    saveConsent.mutate(aceito, {
+  const handleDismiss = () => {
+    saveConsent.mutate({ dispensar: true }, {
+      onSuccess: () => setOpen(false),
+    });
+  };
+
+  const handleConsent = () => {
+    saveConsent.mutate({ aceito: true }, {
       onSuccess: () => setOpen(false),
     });
   };
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+    <DialogPrimitive.Root open={open} onOpenChange={(nextOpen) => {
+      if (!nextOpen && open) {
+        handleDismiss();
+        return;
+      }
+      setOpen(nextOpen);
+    }}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-[99998] bg-[#0f1e3c]/60 backdrop-blur-xs animate-in fade-in" />
         <DialogPrimitive.Content
@@ -40,12 +48,15 @@ export function ConsentModal() {
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           {/* Close button */}
-          <DialogPrimitive.Close
-            onClick={() => handleConsent(false)}
+          <button
+            type="button"
+            onClick={handleDismiss}
+            disabled={saveConsent.isPending}
             className="absolute right-4 top-4 w-10 h-10 rounded-[13px] bg-[#f1f4f8] hover:bg-slate-200 transition-colors flex items-center justify-center text-[#5a6a80] cursor-pointer"
+            aria-label="Agora não"
           >
             <X size={20} />
-          </DialogPrimitive.Close>
+          </button>
 
           {/* Shield Icon */}
           <div className="w-14 h-14 rounded-[18px] bg-[#e5eefb] flex items-center justify-center shrink-0">
@@ -100,7 +111,8 @@ export function ConsentModal() {
           <div className="flex gap-2.5 justify-end">
             <button
               type="button"
-              onClick={() => handleConsent(false)}
+              onClick={handleDismiss}
+              disabled={saveConsent.isPending}
               className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Agora não
@@ -108,7 +120,7 @@ export function ConsentModal() {
             <button
               type="button"
               disabled={!acceptedTerms || saveConsent.isPending}
-              onClick={() => handleConsent(true)}
+              onClick={handleConsent}
               className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors cursor-pointer disabled:opacity-50"
             >
               Aceitar e continuar

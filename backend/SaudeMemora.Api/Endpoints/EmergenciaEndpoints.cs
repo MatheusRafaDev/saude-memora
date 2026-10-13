@@ -27,7 +27,7 @@ public static class EmergenciaEndpoints
                               (paciente.TokenEmergenciaExpiraEm == null || paciente.TokenEmergenciaExpiraEm > DateTime.UtcNow),
                 expiraEm = paciente.TokenEmergenciaExpiraEm
             });
-        }).RequireAuthorization();
+        }).Produces<EmergencyStatusResponse>().RequireAuthorization();
 
         // Gera token novo
         app.MapPost("/api/pacientes/me/emergencia", async (ClaimsPrincipal user, IPacienteRepository repo) =>
@@ -40,7 +40,7 @@ public static class EmergenciaEndpoints
 
             var (rawToken, expiraEm) = await GerarNovoTokenEmergenciaAsync(paciente, repo);
             return Results.Ok(new { token = rawToken, expiraEm });
-        }).RequireAuthorization();
+        }).Produces<EmergencyTokenResponse>().RequireAuthorization();
 
         // Rotaciona token (mesma lógica do POST)
         app.MapPost("/api/pacientes/me/emergencia/rotate", async (ClaimsPrincipal user, IPacienteRepository repo) =>
@@ -53,7 +53,7 @@ public static class EmergenciaEndpoints
 
             var (rawToken, expiraEm) = await GerarNovoTokenEmergenciaAsync(paciente, repo);
             return Results.Ok(new { token = rawToken, expiraEm });
-        }).RequireAuthorization();
+        }).Produces<EmergencyTokenResponse>().RequireAuthorization();
 
         // Endpoint público que retorna os dados a partir do token
         app.MapGet("/api/emergencia/{token}", async (
@@ -76,48 +76,66 @@ public static class EmergenciaEndpoints
 
             var ficha = await fichaRepo.GetByPacienteIdAsync(paciente.Id!);
             
-            var result = new
-            {
-                nome = paciente.Nome,
-                dataNascimento = paciente.DataNascimento,
-                sexo = paciente.Sexo,
-                planoSaude = paciente.PlanoSaude ?? string.Empty,
-                numeroCarteirinha = paciente.NumeroCarteirinha ?? string.Empty,
-                tipoSanguineo = ficha?.TipoSanguineo ?? "Não informado",
-                alergias = ficha?.Alergias ?? new List<string>(),
-                doencasCronicas = (ficha?.DoencasCronicas ?? new List<string>())
+            var result = new EmergencyPublicResponse(
+                paciente.Nome,
+                paciente.DataNascimento,
+                paciente.Sexo,
+                paciente.PlanoSaude ?? string.Empty,
+                paciente.NumeroCarteirinha ?? string.Empty,
+                ficha?.TipoSanguineo ?? "Não informado",
+                ficha?.Alergias ?? new List<string>(),
+                (ficha?.DoencasCronicas ?? new List<string>())
                     .Concat(ficha?.Condicoes?.Where(condicao => condicao.Tem).Select(condicao => condicao.Nome)
                         ?? Enumerable.Empty<string>())
                     .Where(condicao => !string.IsNullOrWhiteSpace(condicao))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList(),
-                medicamentosContinuos = ficha?.MedicamentosContinuos ?? new List<string>(),
-                contatosEmergencia = paciente.ContatoEmergencia ?? "Não informado",
-                doadorOrgaos = ficha?.DoadorOrgaos,
-                cirurgias = ficha?.Cirurgias ?? string.Empty,
-                fuma = ficha?.Fuma,
-                bebe = ficha?.Bebe,
-                habitosGerais = ficha?.HabitosGerais ?? string.Empty,
-                historicoFamiliar = ficha?.HistoricoFamiliar ?? string.Empty
-            };
+                ficha?.MedicamentosContinuos ?? new List<string>(),
+                paciente.ContatoEmergencia ?? "Não informado",
+                ficha?.DoadorOrgaos,
+                ficha?.Cirurgias ?? string.Empty,
+                ficha?.Fuma,
+                ficha?.Bebe,
+                ficha?.HabitosGerais ?? string.Empty,
+                ficha?.HistoricoFamiliar ?? string.Empty);
 
             return Results.Ok(result);
-        }).AllowAnonymous().RequireRateLimiting("emergencia");
+        }).Produces<EmergencyPublicResponse>().AllowAnonymous().RequireRateLimiting("emergencia");
     }
 
     private static async Task<(string rawToken, DateTime? expiraEm)> GerarNovoTokenEmergenciaAsync(SaudeMemora.Domain.Entities.Paciente paciente, IPacienteRepository repo)
     {
         var rawToken = Guid.NewGuid().ToString("N");
-        paciente.TokenEmergencia = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
-        
+        var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
         var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
         if (!int.TryParse(expirationDaysString, out var days) || days < 1 || days > 365)
         {
             days = 30;
         }
-        paciente.TokenEmergenciaExpiraEm = DateTime.UtcNow.AddDays(days);
-
+        var expiraEm = DateTime.UtcNow.AddDays(days);
+        paciente.TokenEmergencia = tokenHash;
+        paciente.TokenEmergenciaExpiraEm = expiraEm;
         await repo.UpdateAsync(paciente);
-        return (rawToken, paciente.TokenEmergenciaExpiraEm);
+        return (rawToken, expiraEm);
     }
 }
+
+public record EmergencyStatusResponse(bool PossuiToken, DateTime? ExpiraEm);
+public record EmergencyTokenResponse(string Token, DateTime? ExpiraEm);
+public record EmergencyPublicResponse(
+    string Nome,
+    string DataNascimento,
+    string Sexo,
+    string PlanoSaude,
+    string NumeroCarteirinha,
+    string TipoSanguineo,
+    List<string> Alergias,
+    List<string> DoencasCronicas,
+    List<string> MedicamentosContinuos,
+    string ContatosEmergencia,
+    bool? DoadorOrgaos,
+    string Cirurgias,
+    bool? Fuma,
+    bool? Bebe,
+    string HabitosGerais,
+    string HistoricoFamiliar);

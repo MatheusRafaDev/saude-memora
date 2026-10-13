@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Domain.Interfaces;
+using SaudeMemora.Infrastructure.Data;
 
 namespace SaudeMemora.Api.Endpoints;
 
@@ -31,7 +32,7 @@ public static class RevisaoEndpoints
             doc.RevisadoEm = DateTime.UtcNow;
             var paciente = await pacienteRepo.GetByIdAsync(userId);
             
-            if (paciente?.ConsentimentoIa?.Aceito == true)
+            if (paciente?.ConsentimentoIa?.HasOcrConsent() == true)
             {
                 var alertaService = sp.GetRequiredService<SaudeMemora.Application.Interfaces.IAlertaMedicamentoService>();
                 var fichaRepo = sp.GetRequiredService<SaudeMemora.Application.Interfaces.IFichaMedicaRepository>();
@@ -42,10 +43,10 @@ public static class RevisaoEndpoints
             }
 
             await repo.UpdateAsync(doc);
-            await cache.RemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentsCacheKey(userId));
-            await cache.RemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentCountCacheKey(userId));
+            await cache.SafeRemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentsCacheKey(userId));
+            await cache.SafeRemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentCountCacheKey(userId));
             
             return Results.Ok(new { message = "Revisão confirmada com sucesso." });
-        }).RequireAuthorization();
+        }).Produces<ApiMessageResponse>().RequireAuthorization();
     }
 }

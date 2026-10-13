@@ -22,7 +22,7 @@ export async function waitForDocumentProcessing(
   id: string,
   opts: { onProgress?: (progress: number) => void; isAborted?: () => boolean; timeoutMs?: number; intervalMs?: number } = {},
 ): Promise<ProcessingOutcome> {
-  const { onProgress, isAborted, timeoutMs = 120_000, intervalMs = 2500 } = opts;
+  const { onProgress, isAborted, timeoutMs = 5 * 60_000, intervalMs = 2500 } = opts;
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {

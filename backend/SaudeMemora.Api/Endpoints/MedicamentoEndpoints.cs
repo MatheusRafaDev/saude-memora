@@ -16,6 +16,6 @@ public static class MedicamentoEndpoints
             return descricao is null
                 ? Results.NotFound(new { message = "Descrição não encontrada." })
                 : Results.Ok(descricao);
-        }).RequireAuthorization();
+        }).Produces<string>().RequireAuthorization();
     }
 }

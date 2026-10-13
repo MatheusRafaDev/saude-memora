@@ -9,6 +9,9 @@ export type BodyType<T> = T;
 export type AuthTokenGetter = () => Promise<string | null> | string | null;
 
 const NO_BODY_STATUS = new Set([204, 205, 304]);
+const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const CSRF_HEADER_NAME = "X-Requested-With";
+const CSRF_HEADER_VALUE = "XMLHttpRequest";
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 // ---------------------------------------------------------------------------
@@ -347,6 +350,10 @@ export async function customFetch<T = unknown>(
   }
 
   const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
+
+  if (CSRF_PROTECTED_METHODS.has(method) && !headers.has(CSRF_HEADER_NAME)) {
+    headers.set(CSRF_HEADER_NAME, CSRF_HEADER_VALUE);
+  }
 
   if (
     typeof init.body === "string" &&

@@ -12,17 +12,19 @@ import {
   LoaderCircle,
   AlertTriangle,
   X,
+  Phone,
 } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   useGetApiPacientesMe,
   usePatchApiPacientesMePerfil,
-  useDeleteApiPacientesMe,
+  deleteApiPacientesMe,
   customFetch,
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { useConsentimento, useSaveConsentimento } from '@/hooks/useConsentimento';
 
 export default function Profile() {
   const { toast } = useToast();
@@ -33,8 +35,9 @@ export default function Profile() {
     isLoading: isProfileLoading,
     isError: profileError,
   } = useGetApiPacientesMe();
+  const { data: consentimento } = useConsentimento();
   const patchPerfil = usePatchApiPacientesMePerfil();
-  const deleteAccount = useDeleteApiPacientesMe();
+  const saveConsentimento = useSaveConsentimento();
 
   const [activeTab, setActiveTab] = useState<'dados' | 'carteirinha' | 'seguranca' | 'privacidade'>('dados');
 
@@ -45,6 +48,9 @@ export default function Profile() {
   const [nascimento, setNascimento] = useState('');
   const [sexo, setSexo] = useState('');
   const [contatoEmergencia, setContatoEmergencia] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [endereco, setEndereco] = useState('');
+  const [isSavingContact, setIsSavingContact] = useState(false);
   const [senhaAtualPerfil, setSenhaAtualPerfil] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [planoSaude, setPlanoSaude] = useState('');
@@ -64,6 +70,7 @@ export default function Profile() {
   // Delete account modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   useEffect(() => {
     if (!profileRaw) return;
@@ -78,25 +85,15 @@ export default function Profile() {
     setPlanoSaude(p.planoSaude || '');
     setNumeroCarteirinha(p.numeroCarteirinha || '');
     setUrlCarteirinha(p.urlCarteirinha || '');
-    if (p.consentimentoIa) {
-      setConsentOcr(Boolean(p.consentimentoIa.aceito));
-      setConsentChat(Boolean(p.consentimentoIa.aceito));
-    }
-
-    customFetch('/api/pacientes/me/consentimento')
-      .then((c: any) => {
-        if (c && c.aceito !== undefined) {
-          setConsentOcr(Boolean(c.aceito));
-          setConsentChat(Boolean(c.aceito));
-        }
-      })
-      .catch(() => {
-        toast({
-          title: 'Não foi possível carregar o consentimento',
-          variant: 'destructive',
-        });
-      });
+    setTelefone(p.telefone || '');
+    setEndereco(p.endereco || '');
   }, [profileRaw, toast]);
+
+  useEffect(() => {
+    if (!consentimento) return;
+    setConsentOcr(consentimento.ocrAceito);
+    setConsentChat(consentimento.chatAceito);
+  }, [consentimento]);
 
   // Initials
   const initials = nome
@@ -145,6 +142,23 @@ export default function Profile() {
       });
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleSaveContact = async () => {
+    setIsSavingContact(true);
+    try {
+      await customFetch('/api/pacientes/me/contato', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone: telefone.trim(), endereco: endereco.trim() }),
+      });
+      await refetch();
+      toast({ title: 'Telefone e endereço atualizados.' });
+    } catch (error) {
+      toast({ title: getApiErrorMessage(error, 'Não foi possível salvar o contato.'), variant: 'destructive' });
+    } finally {
+      setIsSavingContact(false);
     }
   };
 
@@ -228,19 +242,14 @@ export default function Profile() {
     }
   };
 
-  const handleToggleConsent = async (val: boolean) => {
+  const handleToggleConsent = async (finalidade: 'ocr' | 'chat', val: boolean) => {
     try {
-      await customFetch('/api/pacientes/me/consentimento', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aceito: val }),
-      });
-      setConsentOcr(val);
-      setConsentChat(val);
-      toast({ title: val ? 'Consentimento de IA ativado' : 'Consentimento de IA revogado' });
-      refetch();
-    } catch {
-      toast({ title: 'Erro ao atualizar consentimento', variant: 'destructive' });
+      await saveConsentimento.mutateAsync({ aceito: val, finalidade });
+      if (finalidade === 'ocr') setConsentOcr(val);
+      else setConsentChat(val);
+      toast({ title: val ? 'Consentimento atualizado' : 'Consentimento revogado' });
+    } catch (error) {
+      toast({ title: getApiErrorMessage(error, 'Erro ao atualizar consentimento.'), variant: 'destructive' });
     }
   };
 
@@ -274,9 +283,10 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
+    if (!deletePassword) return;
     setIsDeleting(true);
     try {
-      await deleteAccount.mutateAsync();
+      await deleteApiPacientesMe({ senha: deletePassword });
       toast({ title: 'Conta excluída com sucesso.' });
       signOut();
     } catch {
@@ -488,6 +498,42 @@ export default function Profile() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="profile-phone" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">Telefone</label>
+                      <input
+                        id="profile-phone"
+                        type="tel"
+                        autoComplete="tel"
+                        value={telefone}
+                        onChange={(event) => setTelefone(event.target.value)}
+                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm outline-none focus:border-[#1b3a60]"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="profile-address" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">Endereço</label>
+                      <input
+                        id="profile-address"
+                        type="text"
+                        autoComplete="street-address"
+                        value={endereco}
+                        onChange={(event) => setEndereco(event.target.value)}
+                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm outline-none focus:border-[#1b3a60]"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSaveContact}
+                      disabled={isSavingContact}
+                      className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {isSavingContact ? <LoaderCircle size={15} className="animate-spin" /> : <Phone size={15} />}
+                      Salvar telefone e endereço
+                    </button>
+                  </div>
+
                   <div className="pt-2 text-right">
                     <button
                       type="submit"
@@ -676,7 +722,10 @@ export default function Profile() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleToggleConsent(!consentOcr)}
+                      role="switch"
+                      aria-checked={consentOcr}
+                      disabled={saveConsentimento.isPending}
+                      onClick={() => void handleToggleConsent('ocr', !consentOcr)}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
                         consentOcr ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
                       }`}
@@ -701,7 +750,10 @@ export default function Profile() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleToggleConsent(!consentChat)}
+                      role="switch"
+                      aria-checked={consentChat}
+                      disabled={saveConsentimento.isPending}
+                      onClick={() => void handleToggleConsent('chat', !consentChat)}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
                         consentChat ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
                       }`}
@@ -764,10 +816,26 @@ export default function Profile() {
               Todos os seus exames, receitas, prontuários e acessos serão permanentemente apagados dos nossos servidores. Tem certeza?
             </p>
 
+            <label htmlFor="delete-account-password" className="mb-1.5 block text-sm font-bold text-[#1d2a3d]">
+              Confirme sua senha
+            </label>
+            <input
+              id="delete-account-password"
+              type="password"
+              autoComplete="current-password"
+              value={deletePassword}
+              onChange={(event) => setDeletePassword(event.target.value)}
+              className="mb-5 min-h-11 w-full rounded-xl border border-[#dde3ec] px-3 text-sm outline-none focus:border-[#1f7fe0]"
+              required
+            />
+
             <div className="flex gap-2.5 justify-end">
               <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletePassword('');
+                }}
                 className="px-4 py-2.5 rounded-xl border border-[#dde3ec] text-[#5a6a80] font-bold text-sm hover:bg-slate-50 cursor-pointer"
               >
                 Cancelar
@@ -775,7 +843,7 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={handleDeleteAccount}
-                disabled={isDeleting}
+                disabled={isDeleting || !deletePassword}
                 className="px-5 py-2.5 rounded-xl bg-[#c0463a] text-white font-bold text-sm hover:bg-[#a13a30] cursor-pointer disabled:opacity-60 flex items-center gap-2"
               >
                 {isDeleting && <LoaderCircle size={16} className="animate-spin" />}

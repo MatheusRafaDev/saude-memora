@@ -25,4 +25,7 @@ export interface ResultadoExameUpdateDto {
   /** @nullable */
   status?: string | null;
   confianca?: number;
+  confirmacaoNecessaria?: boolean;
+  /** @nullable */
+  motivoConfirmacao?: string | null;
 }

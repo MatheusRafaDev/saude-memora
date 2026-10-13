@@ -7,7 +7,7 @@ import {
   AlertTriangle,
   MessageSquare,
 } from 'lucide-react';
-import { customFetch, useGetApiDocuments } from '@workspace/api-client-react';
+import { customFetch, postApiChat, useGetApiDocuments } from '@workspace/api-client-react';
 import ReactMarkdown from 'react-markdown';
 
 type Citation = {
@@ -104,11 +104,7 @@ export default function Chat() {
     setIsLoading(true);
 
     try {
-      const res = await customFetch<{ response: string; citations?: Citation[] }>('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: textToSend }),
-      });
+      const res = await postApiChat({ message: textToSend });
       if (typeof res?.response !== 'string' || !res.response.trim()) {
         throw new Error('A API não retornou uma resposta válida.');
       }
@@ -326,7 +322,7 @@ export default function Chat() {
 
           {/* Right Column: Sources & Prompts (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-5">
-            {/* The API does not return citation metadata; show actual account documents instead. */}
+            {/* Keep account-wide document navigation separate from per-answer citations. */}
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">

@@ -35,6 +35,7 @@ const AnamneseEdit = lazy(() => import('@/pages/AnamneseEdit'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const Emergencia = lazy(() => import('@/pages/Emergencia'));
 const Chat = lazy(() => import('@/pages/Chat'));
+const Insights = lazy(() => import('@/pages/Insights'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ const queryClient = new QueryClient({
         (error?.status === 401 || error?.response?.status === 401) &&
         query.meta?.skipUnauthorizedRedirect !== true
       ) {
+        queryClient.clear();
         if (window.location.pathname !== '/entrar') {
           window.location.href = '/entrar';
         }
@@ -139,6 +141,7 @@ function SessionKeepAlive() {
     '/anamnese',
     '/perfil',
     '/chat',
+    '/analises',
   ].some((path) => location === path || location.startsWith(`${path}/`));
 
   const lastRefreshAt = useRef(0);
@@ -344,6 +347,7 @@ function Router() {
             <Route path="/emergencia">{() => <ProtectedRoute><Emergencia /></ProtectedRoute>}</Route>
             <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
             <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
+            <Route path="/analises">{() => <ProtectedRoute><Insights /></ProtectedRoute>}</Route>
             <Route component={NotFound} />
           </Switch>
         </div>

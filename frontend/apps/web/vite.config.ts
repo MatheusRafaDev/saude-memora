@@ -6,13 +6,13 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-export default defineConfig(async ({ mode }) => {
+export default defineConfig(async ({ mode, command }) => {
   const envDir = path.resolve(import.meta.dirname);
   const env = loadEnv(mode, envDir, '');
   const apiTarget = (env.VITE_API_URL || process.env.VITE_API_URL)?.trim();
 
-  if (!apiTarget) {
-    throw new Error(`Configure VITE_API_URL em ${path.join(envDir, '.env')} antes de iniciar ou publicar o frontend.`);
+  if (command === 'serve' && !apiTarget) {
+    throw new Error(`Configure VITE_API_URL em ${path.join(envDir, '.env')} antes de iniciar o frontend.`);
   }
 
   const rawPort = process.env.PORT || env.PORT || '5173';
@@ -44,7 +44,7 @@ export default defineConfig(async ({ mode }) => {
           name: 'SaúdeMemora',
           short_name: 'SaúdeMemora',
           description: 'Prontuário Médico Inteligente',
-          id: '/saude-memora/',
+          id: '/',
           scope: '/',
           start_url: '/',
           theme_color: '#1b3a60',
@@ -54,15 +54,15 @@ export default defineConfig(async ({ mode }) => {
           orientation: 'any',
           icons: [
             {
-              src: '/logo.png',
-              sizes: '808x768',
-              type: 'image/png',
+              src: '/pwa-192x192.jpg',
+              sizes: '192x192',
+              type: 'image/jpeg',
               purpose: 'any'
             },
             {
-              src: '/logo.png',
-              sizes: '808x768',
-              type: 'image/png',
+              src: '/pwa-512x512.jpg',
+              sizes: '512x512',
+              type: 'image/jpeg',
               purpose: 'any'
             }
           ],
@@ -72,7 +72,7 @@ export default defineConfig(async ({ mode }) => {
               short_name: 'Enviar',
               description: 'Envie um novo documento',
               url: '/enviar',
-              icons: [{ src: '/logo.png', sizes: '808x768', type: 'image/png' }]
+              icons: [{ src: '/pwa-192x192.jpg', sizes: '192x192', type: 'image/jpeg' }]
             }
           ]
         },
@@ -122,18 +122,25 @@ export default defineConfig(async ({ mode }) => {
       fs: {
         strict: true,
       },
-      proxy: {
+      proxy: apiTarget ? {
         '/api': {
           target: apiTarget,
           changeOrigin: true,
           secure: true,
         },
-      },
+      } : {},
     },
     preview: {
       port: previewPort,
       host: '0.0.0.0',
       allowedHosts: true,
+      proxy: apiTarget ? {
+        '/api': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: true,
+        },
+      } : {},
     },
   };
 });

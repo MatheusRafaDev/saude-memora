@@ -7,4 +7,7 @@
 
 export interface ConsentimentoDto {
   aceito?: boolean;
+  /** @nullable */
+  finalidade?: string | null;
+  dispensar?: boolean;
 }

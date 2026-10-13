@@ -6,6 +6,7 @@ import { ConsentModal } from '@/components/ConsentModal';
 import { EmergenciaModal } from '@/components/EmergenciaModal';
 import { BrandWordmark } from '@/components/BrandWordmark';
 import { useGetApiPacientesMe } from '@workspace/api-client-react';
+import { ChartNoAxesCombined } from 'lucide-react';
 
 const navItems = [
   {
@@ -25,6 +26,11 @@ const navItems = [
         <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
       </svg>
     ),
+  },
+  {
+    href: '/analises',
+    label: 'Análises',
+    icon: <ChartNoAxesCombined size={16} />,
   },
   {
     href: '/anamnese',

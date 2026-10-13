@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Application.Interfaces;
+using SaudeMemora.Domain.Entities;
 
 namespace SaudeMemora.Api.Endpoints;
 
@@ -40,7 +41,7 @@ public static class MedicamentoCatalogoEndpoints
                     m.SituacaoRegistro
                 })
             });
-        });
+        }).Produces<MedicamentoCatalogoSearchResponse>();
 
         group.MapPost("/importar", async (
             [FromForm] IFormFile file,
@@ -60,9 +61,21 @@ public static class MedicamentoCatalogoEndpoints
             await using var stream = file.OpenReadStream();
             var result = await service.ImportarAsync(stream, cancellationToken);
             return Results.Ok(result);
-        }).AddEndpointFilter<ImportacaoCatalogoFilter>();
+        }).Produces<ImportacaoCatalogoResult>().DisableAntiforgery().AddEndpointFilter<ImportacaoCatalogoFilter>();
     }
 }
+
+public record MedicamentoCatalogoItemResponse(
+    string ProcessoAnvisa,
+    string Nome,
+    string PrincipioAtivo,
+    string Descricao,
+    string Fabricante,
+    string TipoProduto,
+    string ClasseTerapeutica,
+    string RegistroAnvisa,
+    string SituacaoRegistro);
+public record MedicamentoCatalogoSearchResponse(string Query, int Count, MedicamentoCatalogoItemResponse[] Medicamentos);
 
 public class ImportacaoCatalogoFilter : IEndpointFilter
 {

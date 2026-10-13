@@ -15,6 +15,7 @@ import {
   Trash2,
   ExternalLink,
   ChevronRight,
+  RotateCw,
 } from 'lucide-react';
 import {
   useGetApiDocuments,
@@ -23,12 +24,28 @@ import {
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+const DOCUMENT_TYPES = [
+  { id: 'receita', label: 'Receitas' },
+  { id: 'exame', label: 'Exames' },
+  { id: 'laudo', label: 'Laudos' },
+  { id: 'atestado', label: 'Atestados' },
+  { id: 'vacina', label: 'Vacinas' },
+  { id: 'encaminhamento', label: 'Encaminhamentos' },
+  { id: 'relatorio', label: 'Relatórios' },
+  { id: 'outro', label: 'Outros' },
+];
+
+const DOCUMENT_TYPE_LABELS = Object.fromEntries(
+  DOCUMENT_TYPES.map(({ id, label }) => [id, label.replace(/s$/, '')]),
+) as Record<string, string>;
 
 function DocumentThumbnail({
   src,
@@ -77,6 +94,7 @@ export default function Documents() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   // Listen to document-uploaded event
   useEffect(() => {
@@ -99,12 +117,9 @@ export default function Documents() {
         ? date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')
         : 'Data não informada';
 
-      let normalizedType = 'Outro';
-      const type = (doc.tipo || '').toLowerCase();
-      if (type.includes('receita')) normalizedType = 'Receita';
-      else if (type.includes('exame')) normalizedType = 'Exame';
-      else if (type.includes('laudo')) normalizedType = 'Laudo';
-      else if (type.includes('atestado')) normalizedType = 'Atestado';
+      const rawType = String(doc.tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const typeKey = DOCUMENT_TYPE_LABELS[rawType] ? rawType : 'outro';
+      const normalizedType = DOCUMENT_TYPE_LABELS[typeKey];
 
       const imageUrls = Array.isArray(doc.urlImagens) ? doc.urlImagens : [];
       const previewUrl = imageUrls.find(
@@ -116,6 +131,7 @@ export default function Documents() {
         titulo: doc.titulo || `${normalizedType} ${dateStr}`,
         previewUrl,
         tipo: normalizedType,
+        tipoKey: typeKey,
         status: doc.status || 'pronto',
         revisaoPendente: Boolean(doc.revisaoPendente),
         dateStr,
@@ -146,9 +162,7 @@ export default function Documents() {
 
       // Category
       if (selectedCategory !== 'all') {
-        if (item.tipo.toLowerCase() !== selectedCategory.toLowerCase()) {
-          return false;
-        }
+        if (item.tipoKey !== selectedCategory) return false;
       }
 
       // Status
@@ -178,13 +192,10 @@ export default function Documents() {
 
   // Counts by category
   const counts = useMemo(() => {
-    const c = { all: allItems.length, receita: 0, exame: 0, laudo: 0, atestado: 0 };
+    const c: Record<string, number> = { all: allItems.length };
+    DOCUMENT_TYPES.forEach(({ id }) => { c[id] = 0; });
     allItems.forEach((i) => {
-      const t = i.tipo.toLowerCase();
-      if (t === 'receita') c.receita++;
-      else if (t === 'exame') c.exame++;
-      else if (t === 'laudo') c.laudo++;
-      else if (t === 'atestado') c.atestado++;
+      c[i.tipoKey]++;
     });
     return c;
   }, [allItems]);
@@ -215,6 +226,21 @@ export default function Documents() {
     }
   };
 
+  const handleRetry = async (id: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setRetryingId(id);
+    try {
+      await customFetch(`/api/documents/${id}/retry`, { method: 'POST' });
+      toast({ title: 'Documento recolocado na fila de processamento.' });
+      await refetch();
+    } catch (error) {
+      toast({ title: getApiErrorMessage(error, 'Não foi possível tentar novamente.'), variant: 'destructive' });
+    } finally {
+      setRetryingId(null);
+    }
+  };
+
   const renderBadge = (doc: { status: string; revisaoPendente: boolean }) => {
     if (doc.status === 'processing' || doc.status === 'pending') {
       return (
@@ -222,6 +248,9 @@ export default function Documents() {
           Processando
         </span>
       );
+    }
+    if (doc.status === 'failed') {
+      return <span className="inline-block whitespace-nowrap rounded-full bg-[#fde8e6] px-2.5 py-1 text-xs font-bold text-[#a13a30]">Falhou</span>;
     }
     if (doc.revisaoPendente || doc.status === 'revisar') {
       return (
@@ -343,46 +372,16 @@ export default function Documents() {
           >
             Todos {counts.all}
           </button>
-          <button
-            onClick={() => setSelectedCategory('receita')}
-            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-              selectedCategory === 'receita'
-                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
-                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
-            }`}
-          >
-            Receitas {counts.receita}
-          </button>
-          <button
-            onClick={() => setSelectedCategory('exame')}
-            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-              selectedCategory === 'exame'
-                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
-                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
-            }`}
-          >
-            Exames {counts.exame}
-          </button>
-          <button
-            onClick={() => setSelectedCategory('laudo')}
-            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-              selectedCategory === 'laudo'
-                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
-                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
-            }`}
-          >
-            Laudos {counts.laudo}
-          </button>
-          <button
-            onClick={() => setSelectedCategory('atestado')}
-            className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-              selectedCategory === 'atestado'
-                ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
-                : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
-            }`}
-          >
-            Atestados {counts.atestado}
-          </button>
+          {DOCUMENT_TYPES.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setSelectedCategory(id)}
+              className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${selectedCategory === id ? 'bg-[#1b3a60] text-white border border-[#1b3a60]' : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'}`}
+            >
+              {label} {counts[id]}
+            </button>
+          ))}
         </div>
 
         {/* Grouped Month Sections */}
@@ -455,6 +454,15 @@ export default function Documents() {
                                 <ExternalLink size={14} /> Abrir detalhes
                               </Link>
                             </DropdownMenuItem>
+                            {doc.status === 'failed' && (
+                              <DropdownMenuItem
+                                disabled={retryingId === doc.id}
+                                onClick={(event) => handleRetry(doc.id, event)}
+                                className="flex cursor-pointer items-center gap-2"
+                              >
+                                <RotateCw size={14} /> Tentar novamente
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => handleDelete(doc.id, e)}
                               className="text-red-600 focus:text-red-600 flex items-center gap-2 cursor-pointer"
@@ -495,6 +503,16 @@ export default function Documents() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {doc.status === 'failed' && (
+                          <button
+                            type="button"
+                            onClick={(event) => handleRetry(doc.id, event)}
+                            disabled={retryingId === doc.id}
+                            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#f0b8b2] px-3 text-xs font-bold text-[#a13a30] hover:bg-[#fff5f4] disabled:opacity-50"
+                          >
+                            <RotateCw size={14} /> Tentar novamente
+                          </button>
+                        )}
                         <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
                           {doc.tipo}
                         </span>

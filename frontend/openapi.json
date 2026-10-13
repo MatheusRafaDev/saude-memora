@@ -4,6 +4,11 @@
     "title": "SaudeMemora.Api | v1",
     "version": "1.0.0"
   },
+  "servers": [
+    {
+      "url": "http://localhost:5099"
+    }
+  ],
   "paths": {
     "/api/ping": {
       "get": {
@@ -12,7 +17,33 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PingResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -34,7 +65,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -56,7 +94,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -86,7 +131,43 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/medicamentos/{nome}/descricao": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "nome",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
@@ -98,7 +179,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyStatusResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -110,7 +198,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyTokenResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -122,7 +217,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyTokenResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -144,7 +246,33 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyPublicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/history": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -166,7 +294,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -188,7 +323,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -210,7 +352,33 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiAuthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiAuthResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -222,7 +390,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -244,7 +419,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -266,7 +448,43 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/alterar-senha": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlterarSenhaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -278,7 +496,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientProfileResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -298,7 +523,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -320,7 +552,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -342,7 +581,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -354,7 +600,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -376,7 +629,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaMedica"
+                }
+              }
+            }
           }
         }
       },
@@ -396,7 +656,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaMedica"
+                }
+              }
+            }
           }
         }
       }
@@ -408,7 +675,24 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -429,8 +713,15 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -442,7 +733,17 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentListItemResponse"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -454,7 +755,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCountResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -476,7 +784,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDetailResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -506,7 +821,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -526,7 +848,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessageResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -548,7 +877,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiReportResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -560,7 +896,14 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentimentoStatusResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -580,7 +923,14 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentimentoStatusResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -589,8 +939,233 @@
           "SaudeMemora.Api"
         ],
         "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/catalogo-medicamentos": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicamentoCatalogoSearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo-medicamentos/importar": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacaoCatalogoResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo-cid10": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSearchResponseOfCid10Registro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo-cid10/importar": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacaoCatalogoResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo-cnes": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogSearchResponseOfCnesRegistro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo-cnes/importar": {
+      "post": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "file"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacaoCatalogoResult"
+                }
+              }
+            }
           }
         }
       }
@@ -602,7 +1177,17 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AnalitoResponse"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -632,7 +1217,17 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResultadoSerieResponse"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -640,11 +1235,342 @@
   },
   "components": {
     "schemas": {
+      "AlertaDocumento": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "severidade": {
+            "type": "string"
+          },
+          "mensagem": {
+            "type": "string"
+          },
+          "medicamentos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "geradoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dispensado": {
+            "type": "boolean"
+          },
+          "retentavel": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AlterarSenhaDto": {
+        "required": [
+          "senhaAtual",
+          "novaSenha"
+        ],
+        "type": "object",
+        "properties": {
+          "senhaAtual": {
+            "type": "string"
+          },
+          "novaSenha": {
+            "type": "string"
+          }
+        }
+      },
+      "AnalitoResponse": {
+        "required": [
+          "nomeNormalizado",
+          "nome",
+          "unidade",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "nomeNormalizado": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "unidade": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiAuthResponse": {
+        "required": [
+          "user"
+        ],
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/ApiUserResponse"
+          }
+        }
+      },
+      "ApiMessageResponse": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiReportResponse": {
+        "required": [
+          "report"
+        ],
+        "type": "object",
+        "properties": {
+          "report": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ApiUserResponse": {
+        "required": [
+          "id",
+          "nome",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "CardResponse": {
+        "required": [
+          "url",
+          "planoSaude",
+          "numeroCarteirinha"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "planoSaude": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroCarteirinha": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CatalogSearchResponseOfCid10Registro": {
+        "required": [
+          "query",
+          "count",
+          "registros"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "registros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Cid10Registro"
+            }
+          }
+        }
+      },
+      "CatalogSearchResponseOfCnesRegistro": {
+        "required": [
+          "query",
+          "count",
+          "registros"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "registros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CnesRegistro"
+            }
+          }
+        }
+      },
+      "ChatCitation": {
+        "required": [
+          "id",
+          "titulo",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          }
+        }
+      },
+      "ChatHistoryMessage": {
+        "required": [
+          "id",
+          "role",
+          "content",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatHistoryResponse": {
+        "required": [
+          "messages"
+        ],
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatHistoryMessage"
+            }
+          }
+        }
+      },
       "ChatRequest": {
         "type": "object",
         "properties": {
           "message": {
             "type": "string"
+          }
+        }
+      },
+      "ChatResponse": {
+        "required": [
+          "response",
+          "citations"
+        ],
+        "type": "object",
+        "properties": {
+          "response": {
+            "type": "string"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatCitation"
+            }
+          }
+        }
+      },
+      "Cid10Registro": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "codigoNormalizado": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "descricaoNormalizada": {
+            "type": "string"
+          },
+          "nivel": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "origem": {
+            "type": "string"
+          },
+          "importadoEm": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CnesRegistro": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "codigoNormalizado": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "descricaoNormalizada": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "origem": {
+            "type": "string"
+          },
+          "importadoEm": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -666,6 +1592,141 @@
         "type": "object",
         "properties": {
           "aceito": {
+            "type": "boolean"
+          },
+          "finalidade": {
+            "type": "string",
+            "nullable": true
+          },
+          "dispensar": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ConsentimentoFinalidade": {
+        "type": "object",
+        "properties": {
+          "aceito": {
+            "type": "boolean"
+          },
+          "versaoTermo": {
+            "type": "string"
+          },
+          "aceitoEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revogadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "ipTruncado": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "nullable": true
+      },
+      "ConsentimentoHistorico": {
+        "type": "object",
+        "properties": {
+          "acao": {
+            "type": "string"
+          },
+          "dataHora": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ipTruncado": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ConsentimentoIa": {
+        "type": "object",
+        "properties": {
+          "aceito": {
+            "type": "boolean"
+          },
+          "versaoTermo": {
+            "type": "string"
+          },
+          "aceitoEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revogadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "ipTruncado": {
+            "type": "string",
+            "nullable": true
+          },
+          "historico": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsentimentoHistorico"
+            }
+          },
+          "ocr": {
+            "$ref": "#/components/schemas/ConsentimentoFinalidade"
+          },
+          "chat": {
+            "$ref": "#/components/schemas/ConsentimentoFinalidade"
+          },
+          "dispensadoAte": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "versaoDispensada": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "nullable": true
+      },
+      "ConsentimentoStatusResponse": {
+        "required": [
+          "aceito",
+          "ocrAceito",
+          "chatAceito",
+          "versaoTermo",
+          "aceitoEm",
+          "adiadoAte",
+          "mostrarModal"
+        ],
+        "type": "object",
+        "properties": {
+          "aceito": {
+            "type": "boolean"
+          },
+          "ocrAceito": {
+            "type": "boolean"
+          },
+          "chatAceito": {
+            "type": "boolean"
+          },
+          "versaoTermo": {
+            "type": "string"
+          },
+          "aceitoEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "adiadoAte": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "mostrarModal": {
             "type": "boolean"
           }
         }
@@ -703,6 +1764,352 @@
           }
         }
       },
+      "DocumentCountResponse": {
+        "required": [
+          "total",
+          "exames",
+          "receitas",
+          "laudos",
+          "atestados",
+          "vacinas",
+          "encaminhamentos",
+          "relatorios",
+          "outros",
+          "receitasAtivas"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "exames": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "receitas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "laudos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "atestados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vacinas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "encaminhamentos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "relatorios": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "outros": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "receitasAtivas": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DocumentDetailResponse": {
+        "required": [
+          "id",
+          "titulo",
+          "tipo",
+          "status",
+          "medico",
+          "crm",
+          "clinica",
+          "data",
+          "resumo",
+          "diagnostico",
+          "cid",
+          "cnes",
+          "medicamentos",
+          "nomeExame",
+          "tipoExame",
+          "resultado",
+          "especialidade",
+          "tipoClinico",
+          "conteudo",
+          "conclusoes",
+          "observacoes",
+          "urlImagens",
+          "textoExtraido",
+          "conteudoIndentado",
+          "resultadosExame",
+          "revisaoPendente",
+          "camposBaixaConfianca",
+          "progress",
+          "errorMessage",
+          "criadoEm",
+          "alertas",
+          "revisadoEm"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "medico": {
+            "type": "string"
+          },
+          "crm": {
+            "type": "string"
+          },
+          "clinica": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "resumo": {
+            "type": "string"
+          },
+          "diagnostico": {
+            "type": "string"
+          },
+          "cid": {
+            "type": "string"
+          },
+          "cnes": {
+            "type": "string"
+          },
+          "medicamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicamentoDocumento"
+            }
+          },
+          "nomeExame": {
+            "type": "string"
+          },
+          "tipoExame": {
+            "type": "string"
+          },
+          "resultado": {
+            "type": "string"
+          },
+          "especialidade": {
+            "type": "string"
+          },
+          "tipoClinico": {
+            "type": "string"
+          },
+          "conteudo": {
+            "type": "string"
+          },
+          "conclusoes": {
+            "type": "string"
+          },
+          "observacoes": {
+            "type": "string"
+          },
+          "urlImagens": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "textoExtraido": {
+            "type": "string"
+          },
+          "conteudoIndentado": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinhaIndentadaDocumento"
+            }
+          },
+          "resultadosExame": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResultadoExameItem"
+            }
+          },
+          "revisaoPendente": {
+            "type": "boolean"
+          },
+          "camposBaixaConfianca": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "alertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertaDocumento"
+            }
+          },
+          "revisadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "DocumentListExamResult": {
+        "required": [
+          "nome",
+          "nomeNormalizado"
+        ],
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "nomeNormalizado": {
+            "type": "string"
+          }
+        }
+      },
+      "DocumentListItemResponse": {
+        "required": [
+          "id",
+          "titulo",
+          "tipo",
+          "status",
+          "medico",
+          "crm",
+          "clinica",
+          "data",
+          "resumo",
+          "diagnostico",
+          "cid",
+          "cnes",
+          "medicamentos",
+          "nomeExame",
+          "tipoExame",
+          "resultadosExame",
+          "urlImagens",
+          "progress",
+          "errorMessage",
+          "criadoEm",
+          "revisaoPendente",
+          "alertas",
+          "revisadoEm"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "medico": {
+            "type": "string"
+          },
+          "crm": {
+            "type": "string"
+          },
+          "clinica": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "resumo": {
+            "type": "string"
+          },
+          "diagnostico": {
+            "type": "string"
+          },
+          "cid": {
+            "type": "string"
+          },
+          "cnes": {
+            "type": "string"
+          },
+          "medicamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicamentoDocumento"
+            }
+          },
+          "nomeExame": {
+            "type": "string"
+          },
+          "tipoExame": {
+            "type": "string"
+          },
+          "resultadosExame": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentListExamResult"
+            }
+          },
+          "urlImagens": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revisaoPendente": {
+            "type": "boolean"
+          },
+          "alertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertaDocumento"
+            }
+          },
+          "revisadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
       "DocumentUpdateDto": {
         "type": "object",
         "properties": {
@@ -735,6 +2142,14 @@
             "nullable": true
           },
           "crm": {
+            "type": "string",
+            "nullable": true
+          },
+          "cid": {
+            "type": "string",
+            "nullable": true
+          },
+          "cnes": {
             "type": "string",
             "nullable": true
           },
@@ -797,10 +2212,292 @@
           }
         }
       },
+      "DocumentUploadResponse": {
+        "required": [
+          "id",
+          "status",
+          "progress",
+          "duplicate",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "progress": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duplicate": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "EmergencyPublicResponse": {
+        "required": [
+          "nome",
+          "dataNascimento",
+          "sexo",
+          "planoSaude",
+          "numeroCarteirinha",
+          "tipoSanguineo",
+          "alergias",
+          "doencasCronicas",
+          "medicamentosContinuos",
+          "contatosEmergencia",
+          "doadorOrgaos",
+          "cirurgias",
+          "fuma",
+          "bebe",
+          "habitosGerais",
+          "historicoFamiliar"
+        ],
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "dataNascimento": {
+            "type": "string"
+          },
+          "sexo": {
+            "type": "string"
+          },
+          "planoSaude": {
+            "type": "string"
+          },
+          "numeroCarteirinha": {
+            "type": "string"
+          },
+          "tipoSanguineo": {
+            "type": "string"
+          },
+          "alergias": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "doencasCronicas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "medicamentosContinuos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contatosEmergencia": {
+            "type": "string"
+          },
+          "doadorOrgaos": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cirurgias": {
+            "type": "string"
+          },
+          "fuma": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "bebe": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "habitosGerais": {
+            "type": "string"
+          },
+          "historicoFamiliar": {
+            "type": "string"
+          }
+        }
+      },
+      "EmergencyStatusResponse": {
+        "required": [
+          "possuiToken",
+          "expiraEm"
+        ],
+        "type": "object",
+        "properties": {
+          "possuiToken": {
+            "type": "boolean"
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "EmergencyTokenResponse": {
+        "required": [
+          "token",
+          "expiraEm"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "FichaMedica": {
+        "required": [
+          "pacienteId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "historicoFamiliar": {
+            "type": "string"
+          },
+          "cirurgias": {
+            "type": "string"
+          },
+          "fuma": {
+            "type": "boolean"
+          },
+          "bebe": {
+            "type": "boolean"
+          },
+          "habitosGerais": {
+            "type": "string"
+          },
+          "observacoes": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "condicoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CondicaoMedica"
+            }
+          },
+          "outrasDoencas": {
+            "type": "string"
+          },
+          "tipoSanguineo": {
+            "type": "string",
+            "nullable": true
+          },
+          "doadorOrgaos": {
+            "type": "boolean"
+          },
+          "alergias": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "doencasCronicas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "medicamentosContinuos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ForgotPasswordDto": {
         "type": "object",
         "properties": {
           "email": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthResponse": {
+        "required": [
+          "status",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
+      },
+      "ImportacaoCatalogoResult": {
+        "required": [
+          "registrosImportados",
+          "registrosInvalidos",
+          "registrosDuplicados",
+          "importadoEm"
+        ],
+        "type": "object",
+        "properties": {
+          "registrosImportados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "registrosInvalidos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "registrosDuplicados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "importadoEm": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LinhaIndentadaDocumento": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "chave": {
+            "type": "string"
+          },
+          "valor": {
             "type": "string"
           }
         }
@@ -837,6 +2534,86 @@
           }
         }
       },
+      "MedicamentoCatalogoItemResponse": {
+        "required": [
+          "processoAnvisa",
+          "nome",
+          "principioAtivo",
+          "descricao",
+          "fabricante",
+          "tipoProduto",
+          "classeTerapeutica",
+          "registroAnvisa",
+          "situacaoRegistro"
+        ],
+        "type": "object",
+        "properties": {
+          "processoAnvisa": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "principioAtivo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "fabricante": {
+            "type": "string"
+          },
+          "tipoProduto": {
+            "type": "string"
+          },
+          "classeTerapeutica": {
+            "type": "string"
+          },
+          "registroAnvisa": {
+            "type": "string"
+          },
+          "situacaoRegistro": {
+            "type": "string"
+          }
+        }
+      },
+      "MedicamentoCatalogoSearchResponse": {
+        "required": [
+          "query",
+          "count",
+          "medicamentos"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "medicamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicamentoCatalogoItemResponse"
+            }
+          }
+        }
+      },
+      "MedicamentoDocumento": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "dosagem": {
+            "type": "string"
+          },
+          "horario": {
+            "type": "string"
+          }
+        }
+      },
       "MedicamentoDocumentoUpdateDto": {
         "type": "object",
         "properties": {
@@ -854,6 +2631,74 @@
           }
         }
       },
+      "PatientProfileResponse": {
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "dataNascimento",
+          "idade",
+          "sexo",
+          "telefone",
+          "endereco",
+          "planoSaude",
+          "numeroCarteirinha",
+          "contatoEmergencia",
+          "consentimentoIa",
+          "urlCarteirinha"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "dataNascimento": {
+            "type": "string"
+          },
+          "idade": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sexo": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefone": {
+            "type": "string",
+            "nullable": true
+          },
+          "endereco": {
+            "type": "string",
+            "nullable": true
+          },
+          "planoSaude": {
+            "type": "string",
+            "nullable": true
+          },
+          "numeroCarteirinha": {
+            "type": "string",
+            "nullable": true
+          },
+          "contatoEmergencia": {
+            "type": "string",
+            "nullable": true
+          },
+          "consentimentoIa": {
+            "$ref": "#/components/schemas/ConsentimentoIa"
+          },
+          "urlCarteirinha": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "PerfilUpdateDto": {
         "required": [
           "nome",
@@ -862,7 +2707,8 @@
           "planoSaude",
           "numeroCarteirinha",
           "senhaAtual",
-          "contatoEmergencia"
+          "contatoEmergencia",
+          "sexo"
         ],
         "type": "object",
         "properties": {
@@ -893,6 +2739,30 @@
           "contatoEmergencia": {
             "type": "string",
             "nullable": true
+          },
+          "sexo": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "PingResponse": {
+        "required": [
+          "status",
+          "message",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -923,6 +2793,54 @@
             "type": "string"
           },
           "senha": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultadoExameItem": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "nomeNormalizado": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "valorTexto": {
+            "type": "string"
+          },
+          "unidade": {
+            "type": "string"
+          },
+          "refMin": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "refMax": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "referenciaTexto": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "confianca": {
+            "type": "number",
+            "format": "double"
+          },
+          "confirmacaoNecessaria": {
+            "type": "boolean"
+          },
+          "motivoConfirmacao": {
             "type": "string"
           }
         }
@@ -972,6 +2890,62 @@
           "confianca": {
             "type": "number",
             "format": "double"
+          },
+          "confirmacaoNecessaria": {
+            "type": "boolean"
+          },
+          "motivoConfirmacao": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ResultadoSerieResponse": {
+        "required": [
+          "data",
+          "valor",
+          "unidade",
+          "refMin",
+          "refMax",
+          "status",
+          "documentoId",
+          "isOutlier",
+          "outlierMotivo"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "number",
+            "format": "double"
+          },
+          "unidade": {
+            "type": "string"
+          },
+          "refMin": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "refMax": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "status": {
+            "type": "string"
+          },
+          "documentoId": {
+            "type": "string"
+          },
+          "isOutlier": {
+            "type": "boolean"
+          },
+          "outlierMotivo": {
+            "type": "string",
+            "nullable": true
           }
         }
       },

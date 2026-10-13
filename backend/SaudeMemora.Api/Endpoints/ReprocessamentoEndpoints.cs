@@ -22,7 +22,7 @@ public static class ReprocessamentoEndpoints
             if (userId == null) return Results.Unauthorized();
 
             var paciente = await pacienteRepo.GetByIdAsync(userId);
-            if (paciente?.ConsentimentoIa?.Aceito != true)
+            if (paciente?.ConsentimentoIa?.HasOcrConsent() != true)
                 return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
             var doc = await repo.GetByIdAsync(id);
@@ -45,6 +45,6 @@ public static class ReprocessamentoEndpoints
             await cache.RemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentCountCacheKey(userId));
             
             return Results.Ok(new { message = "Documento enviado para reprocessamento na fila." });
-        }).RequireAuthorization().RequireRateLimiting("upload");
+        }).Produces<ApiMessageResponse>().RequireAuthorization().RequireRateLimiting("upload");
     }
 }

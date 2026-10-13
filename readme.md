@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/.NET%209-Backend-512BD4?style=for-the-badge&logo=dotnet" />
   <img src="https://img.shields.io/badge/MongoDB-NoSQL-47A248?style=for-the-badge&logo=mongodb" />
   <img src="https://img.shields.io/badge/Cloudinary-Image%20Storage-3448C5?style=for-the-badge&logo=cloudinary" />
-  <img src="https://img.shields.io/badge/Gemini%20AI-LLM-blueviolet?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Gemini%20%2B%20Groq-AI%20providers-blueviolet?style=for-the-badge" />
 </p>
 
 > **Digitalize, organize e acesse documentos médicos com inteligência.**  
@@ -64,7 +64,7 @@ Com o **SaúdeMemora**, o usuário pode:
 
 - **Frontend:** React + Vite, TailwindCSS (Vanilla UI), React Query (Cache e mutations), Wouter.
 - **Backend:** C# ASP.NET Core 9 Minimal API.
-- **Inteligência Artificial:** OCR.Space (Leitura ótica de textos complexos) + Gemini (Interpretação e extração estruturada json).
+- **Inteligência Artificial:** OCR.Space para leitura, Gemini para extração estruturada e relatórios, e Groq para o Chat e fallback de extração. Os IDs dos modelos são configurados por `GEMINI_MODEL` e `GROQ_MODEL`.
 - **Banco de Dados:** MongoDB para dados da aplicação.
 - **Storage:** Cloudinary para arquivos enviados, quando configurado.
 
@@ -74,5 +74,7 @@ Com o **SaúdeMemora**, o usuário pode:
 
 O SaúdeMemora organiza documentos e informações fornecidas pelo usuário. Não é um serviço de diagnóstico ou aconselhamento médico, não substitui avaliação profissional e não deve ser usado para decisões clínicas ou emergências. Em uma emergência, procure os serviços de emergência locais.
 
-Arquivos e dados de saúde são sensíveis. Conforme as integrações habilitadas, o processamento pode envolver Cloudinary para arquivos, OCR.Space/Groq para OCR, Google Gemini para interpretação e Brevo para e-mail. MongoDB guarda os dados estruturados. Confirme os fluxos, contratos, localização e políticas de retenção dos fornecedores da sua implantação; atualize os avisos de privacidade/consentimento com a configuração real e valide requisitos legais e de segurança aplicáveis antes do uso. A aplicação não é, por si só, certificação de conformidade legal ou clínica. Não use dados reais em desenvolvimento ou demonstrações.
+Arquivos e dados de saúde são sensíveis. Conforme as integrações habilitadas, o processamento pode envolver Cloudinary para arquivos, OCR.Space para leitura, Google Gemini para interpretação, Groq para o Chat e fallback de extração, e Brevo para e-mail. MongoDB guarda os dados estruturados. Configure `GEMINI_MODEL` e `GROQ_MODEL` com IDs atualmente suportados pelos respectivos provedores. Confirme os fluxos, contratos, localização e políticas de retenção dos fornecedores da sua implantação; atualize os avisos de privacidade/consentimento com a configuração real e valide requisitos legais e de segurança aplicáveis antes do uso. A aplicação não é, por si só, certificação de conformidade legal ou clínica. Não use dados reais em desenvolvimento ou demonstrações.
+
+Chamadas mutáveis à API (`POST`, `PUT`, `PATCH` e `DELETE`) devem incluir `X-Requested-With: XMLHttpRequest` como proteção contra CSRF. O cliente web adiciona esse header automaticamente; clientes externos precisam enviá-lo também.
 

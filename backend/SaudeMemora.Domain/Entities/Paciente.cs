@@ -85,6 +85,8 @@ public class Paciente
 
 public class ConsentimentoIa
 {
+    public const string VersaoTermoAtual = "v1.0";
+
     [BsonElement("aceito")]
     public bool Aceito { get; set; }
 
@@ -102,6 +104,49 @@ public class ConsentimentoIa
 
     [BsonElement("historico")]
     public List<ConsentimentoHistorico> Historico { get; set; } = new();
+
+    [BsonElement("ocr")]
+    public ConsentimentoFinalidade? Ocr { get; set; }
+
+    [BsonElement("chat")]
+    public ConsentimentoFinalidade? Chat { get; set; }
+
+    [BsonElement("dispensadoAte")]
+    public DateTime? DispensadoAte { get; set; }
+
+    [BsonElement("versaoDispensada")]
+    public string? VersaoDispensada { get; set; }
+
+    public bool HasOcrConsent() => Ocr is null
+        ? Aceito && VersaoTermo == VersaoTermoAtual
+        : Ocr.Aceito && Ocr.VersaoTermo == VersaoTermoAtual;
+
+    public bool HasChatConsent() => Chat is null
+        ? Aceito && VersaoTermo == VersaoTermoAtual
+        : Chat.Aceito && Chat.VersaoTermo == VersaoTermoAtual;
+
+    public bool ShouldShowPrompt(DateTime utcNow) =>
+        !(Aceito && VersaoTermo == VersaoTermoAtual)
+        && !(VersaoDispensada == VersaoTermoAtual && DispensadoAte > utcNow);
+}
+
+public class ConsentimentoFinalidade
+{
+    [BsonElement("aceito")]
+    public bool Aceito { get; set; }
+
+    [BsonElement("versaoTermo")]
+    public string VersaoTermo { get; set; } = string.Empty;
+
+    [BsonElement("aceitoEm")]
+    public DateTime? AceitoEm { get; set; }
+
+    [BsonElement("revogadoEm")]
+    public DateTime? RevogadoEm { get; set; }
+
+    [BsonElement("ipTruncado")]
+    public string? IpTruncado { get; set; }
+
 }
 
 public class ConsentimentoHistorico

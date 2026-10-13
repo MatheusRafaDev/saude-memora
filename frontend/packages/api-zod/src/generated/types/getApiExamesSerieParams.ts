@@ -7,5 +7,5 @@
 
 export type GetApiExamesSerieParams = {
 analito: string;
-meses: number;
+meses?: number;
 };

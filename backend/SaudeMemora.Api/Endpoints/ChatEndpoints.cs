@@ -40,8 +40,8 @@ public static class ChatEndpoints
                 new ChatHistoryMessage(item.Id + "-assistant", "assistant", item.Resposta, item.CriadoEm)
             });
 
-            return Results.Ok(new { messages });
-        }).RequireAuthorization();
+            return Results.Ok(new ChatHistoryResponse(messages.ToArray()));
+        }).Produces<ChatHistoryResponse>().RequireAuthorization();
 
         app.MapPost("/api/chat", async (
             ChatRequest req,
@@ -67,7 +67,8 @@ public static class ChatEndpoints
                 ?? config["GROQ_API_KEY"]
                 ?? config["Groq:ApiKey"]
                 ?? string.Empty;
-            const string groqModel = "openai/gpt-oss-120b";
+            var groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL")
+                ?? config["Groq:Model"];
             const string groqBaseUrl = "https://api.groq.com/openai/v1/";
 
             if (string.IsNullOrWhiteSpace(groqApiKey))
@@ -78,9 +79,16 @@ public static class ChatEndpoints
                     detail: "A chave do Groq não está configurada no servidor.",
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
+                    if (string.IsNullOrWhiteSpace(groqModel))
+                    {
+                    return Results.Problem(
+                        title: "Modelo de IA indisponível",
+                        detail: "GROQ_MODEL não está configurado no servidor.",
+                        statusCode: StatusCodes.Status503ServiceUnavailable);
+                    }
 
             var paciente = await pacienteRepo.GetByIdAsync(userId);
-            if (paciente?.ConsentimentoIa?.Aceito != true)
+            if (paciente?.ConsentimentoIa?.HasChatConsent() != true)
                 return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
             // Pega todo o histórico do paciente (docs extraídos e ficha médica)
@@ -115,7 +123,7 @@ public static class ChatEndpoints
             contextText.AppendLine("\n[Todos os documentos médicos salvos]");
             foreach (var d in docs.OrderByDescending(d => d.CriadoEm))
             {
-                contextText.AppendLine($"\nDocumento: {d.Titulo} | Data: {d.Data} | Tipo: {d.Tipo} | Status: {d.Status}");
+                contextText.AppendLine($"\nDocumento ID: {d.Id} | Título: {d.Titulo} | Data: {d.Data} | Tipo: {d.Tipo} | Status: {d.Status}");
                 contextText.AppendLine($"Médico: {d.Medico} | CRM: {d.Crm}");
                 contextText.AppendLine($"Medicamentos: {string.Join("; ", (d.Medicamentos ?? new()).Select(m => $"{m.Nome}, dosagem: {m.Dosagem}, horário: {m.Horario}"))}");
                 contextText.AppendLine($"Exame: {d.NomeExame} | Tipo: {d.TipoExame} | Clínica: {d.Clinica}");
@@ -161,6 +169,7 @@ INSTRUÇÕES DE RESPOSTA:
 - Seja conciso, mas inclua os detalhes relevantes que constam nos registros. Não repita a mesma conclusão em frases diferentes.
 - Responda como apoio para consultar os registros, sem substituir atendimento médico.
 - Não repita avisos sobre IA ou orientação médica no final das respostas; esse aviso já aparece fixo na interface.
+- Retorne somente um objeto JSON com as propriedades ""response"" (texto da resposta) e ""citationIds"" (lista de IDs dos documentos que sustentam diretamente a resposta; use lista vazia quando não houver documento relevante). Use somente os IDs fornecidos no contexto.
 ";
 
             var recentHistory = await chatHistoryRepo.GetRecentByPacienteIdAsync(userId, 10, cancellationToken);
@@ -179,7 +188,8 @@ INSTRUÇÕES DE RESPOSTA:
                 .Append(new { role = "user", content = req.Message })
                 .ToArray(),
                 temperature = 0.2,
-                max_tokens = 1024
+                max_tokens = 1024,
+                response_format = new { type = "json_object" }
             };
 
             using var httpClient = httpClientFactory.CreateClient();
@@ -208,12 +218,22 @@ INSTRUÇÕES DE RESPOSTA:
             }
 
             string reply;
+            string[] citationIds;
             try
             {
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
                 using var doc = JsonDocument.Parse(responseContent);
-                reply = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()
+                var modelContent = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()
                     ?? string.Empty;
+                using var answer = JsonDocument.Parse(modelContent);
+                reply = answer.RootElement.GetProperty("response").GetString() ?? string.Empty;
+                citationIds = answer.RootElement.TryGetProperty("citationIds", out var citationArray)
+                    && citationArray.ValueKind == JsonValueKind.Array
+                    ? citationArray.EnumerateArray()
+                        .Where(item => item.ValueKind == JsonValueKind.String)
+                        .Select(item => item.GetString()!)
+                        .ToArray()
+                    : Array.Empty<string>();
                 if (string.IsNullOrWhiteSpace(reply))
                     throw new InvalidOperationException("A resposta da IA estava vazia.");
             }
@@ -240,8 +260,13 @@ INSTRUÇÕES DE RESPOSTA:
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
 
-            return Results.Ok(new { response = reply });
-        }).RequireAuthorization().RequireRateLimiting("chat");
+            return Results.Ok(new ChatResponse(
+                reply,
+                docs
+                    .Where(document => citationIds.Contains(document.Id, StringComparer.Ordinal))
+                    .Select(document => new ChatCitation(document.Id!, document.Titulo, document.Data))
+                    .ToArray()));
+        }).Produces<ChatResponse>().RequireAuthorization().RequireRateLimiting("chat");
     }
 }
 
@@ -251,3 +276,6 @@ public class ChatRequest
 }
 
 public record ChatHistoryMessage(string Id, string Role, string Content, DateTime CreatedAt);
+public record ChatHistoryResponse(ChatHistoryMessage[] Messages);
+public record ChatCitation(string Id, string Titulo, string Data);
+public record ChatResponse(string Response, ChatCitation[] Citations);

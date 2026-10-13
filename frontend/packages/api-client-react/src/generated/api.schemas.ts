@@ -4,8 +4,116 @@
  * Api
  * OpenAPI spec version: 1.0.0
  */
+export interface AlertaDocumento {
+  id?: string;
+  tipo?: string;
+  severidade?: string;
+  mensagem?: string;
+  medicamentos?: string[];
+  geradoEm?: string;
+  dispensado?: boolean;
+  retentavel?: boolean;
+}
+
+export interface AlterarSenhaDto {
+  senhaAtual: string;
+  novaSenha: string;
+}
+
+export interface AnalitoResponse {
+  nomeNormalizado: string;
+  nome: string;
+  unidade: string;
+  count: number;
+}
+
+export interface ApiUserResponse {
+  /** @nullable */
+  id: string | null;
+  nome: string;
+  email: string;
+}
+
+export interface ApiAuthResponse {
+  user: ApiUserResponse;
+}
+
+export interface ApiMessageResponse {
+  message: string;
+}
+
+export interface ApiReportResponse {
+  /** @nullable */
+  report: string | null;
+}
+
+export interface CardResponse {
+  url: string;
+  /** @nullable */
+  planoSaude: string | null;
+  /** @nullable */
+  numeroCarteirinha: string | null;
+}
+
+export interface Cid10Registro {
+  id?: string;
+  codigo?: string;
+  codigoNormalizado?: string;
+  descricao?: string;
+  descricaoNormalizada?: string;
+  nivel?: string;
+  categoria?: string;
+  origem?: string;
+  importadoEm?: string;
+}
+
+export interface CatalogSearchResponseOfCid10Registro {
+  query: string;
+  count: number;
+  registros: Cid10Registro[];
+}
+
+export interface CnesRegistro {
+  id?: string;
+  codigo?: string;
+  codigoNormalizado?: string;
+  descricao?: string;
+  descricaoNormalizada?: string;
+  categoria?: string;
+  origem?: string;
+  importadoEm?: string;
+}
+
+export interface CatalogSearchResponseOfCnesRegistro {
+  query: string;
+  count: number;
+  registros: CnesRegistro[];
+}
+
+export interface ChatCitation {
+  id: string;
+  titulo: string;
+  data: string;
+}
+
+export interface ChatHistoryMessage {
+  id: string;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatHistoryMessage[];
+}
+
 export interface ChatRequest {
   message?: string;
+}
+
+export interface ChatResponse {
+  response: string;
+  citations: ChatCitation[];
 }
 
 export interface CondicaoMedica {
@@ -16,19 +124,63 @@ export interface CondicaoMedica {
 
 export interface ConsentimentoDto {
   aceito?: boolean;
+  /** @nullable */
+  finalidade?: string | null;
+  dispensar?: boolean;
 }
 
-export interface MedicamentoDocumentoUpdateDto {
-  nome?: string | null;
-  dosagem?: string | null;
-  horario?: string | null;
+/**
+ * @nullable
+ */
+export type ConsentimentoFinalidade = {
+  aceito?: boolean;
+  versaoTermo?: string;
+  /** @nullable */
+  aceitoEm?: string | null;
+  /** @nullable */
+  revogadoEm?: string | null;
+  /** @nullable */
+  ipTruncado?: string | null;
+} | null;
+
+export interface ConsentimentoHistorico {
+  acao?: string;
+  dataHora?: string;
+  /** @nullable */
+  ipTruncado?: string | null;
 }
 
-export interface LinhaIndentadaDocumentoUpdateDto {
-  tipo?: string | null;
-  texto?: string | null;
-  chave?: string | null;
-  valor?: string | null;
+/**
+ * @nullable
+ */
+export type ConsentimentoIa = {
+  aceito?: boolean;
+  versaoTermo?: string;
+  /** @nullable */
+  aceitoEm?: string | null;
+  /** @nullable */
+  revogadoEm?: string | null;
+  /** @nullable */
+  ipTruncado?: string | null;
+  historico?: ConsentimentoHistorico[];
+  ocr?: ConsentimentoFinalidade | null;
+  chat?: ConsentimentoFinalidade | null;
+  /** @nullable */
+  dispensadoAte?: string | null;
+  /** @nullable */
+  versaoDispensada?: string | null;
+} | null;
+
+export interface ConsentimentoStatusResponse {
+  aceito: boolean;
+  ocrAceito: boolean;
+  chatAceito: boolean;
+  versaoTermo: string;
+  /** @nullable */
+  aceitoEm: string | null;
+  /** @nullable */
+  adiadoAte: string | null;
+  mostrarModal: boolean;
 }
 
 export interface ContatoDto {
@@ -36,6 +188,146 @@ export interface ContatoDto {
   telefone: string | null;
   /** @nullable */
   endereco: string | null;
+  /** @nullable */
+  contatoEmergencia: string | null;
+}
+
+export interface DeleteAccountDto {
+  senha: string;
+}
+
+export interface DocumentCountResponse {
+  total: number;
+  exames: number;
+  receitas: number;
+  laudos: number;
+  atestados: number;
+  vacinas: number;
+  encaminhamentos: number;
+  relatorios: number;
+  outros: number;
+  receitasAtivas: number;
+}
+
+export interface MedicamentoDocumento {
+  nome?: string;
+  dosagem?: string;
+  horario?: string;
+}
+
+export interface LinhaIndentadaDocumento {
+  tipo?: string;
+  texto?: string;
+  chave?: string;
+  valor?: string;
+}
+
+export interface ResultadoExameItem {
+  nome?: string;
+  nomeNormalizado?: string;
+  /** @nullable */
+  valor?: number | null;
+  valorTexto?: string;
+  unidade?: string;
+  /** @nullable */
+  refMin?: number | null;
+  /** @nullable */
+  refMax?: number | null;
+  referenciaTexto?: string;
+  status?: string;
+  confianca?: number;
+  confirmacaoNecessaria?: boolean;
+  motivoConfirmacao?: string;
+}
+
+export interface DocumentDetailResponse {
+  /** @nullable */
+  id: string | null;
+  titulo: string;
+  tipo: string;
+  status: string;
+  medico: string;
+  crm: string;
+  clinica: string;
+  data: string;
+  resumo: string;
+  diagnostico: string;
+  cid: string;
+  cnes: string;
+  medicamentos: MedicamentoDocumento[];
+  nomeExame: string;
+  tipoExame: string;
+  resultado: string;
+  especialidade: string;
+  tipoClinico: string;
+  conteudo: string;
+  conclusoes: string;
+  observacoes: string;
+  urlImagens: string[];
+  textoExtraido: string;
+  conteudoIndentado: LinhaIndentadaDocumento[];
+  resultadosExame: ResultadoExameItem[];
+  revisaoPendente: boolean;
+  camposBaixaConfianca: string[];
+  progress: number;
+  errorMessage: string;
+  criadoEm: string;
+  alertas: AlertaDocumento[];
+  /** @nullable */
+  revisadoEm: string | null;
+}
+
+export interface DocumentListExamResult {
+  nome: string;
+  nomeNormalizado: string;
+}
+
+export interface DocumentListItemResponse {
+  /** @nullable */
+  id: string | null;
+  titulo: string;
+  tipo: string;
+  status: string;
+  medico: string;
+  crm: string;
+  clinica: string;
+  data: string;
+  resumo: string;
+  diagnostico: string;
+  cid: string;
+  cnes: string;
+  medicamentos: MedicamentoDocumento[];
+  nomeExame: string;
+  tipoExame: string;
+  resultadosExame: DocumentListExamResult[];
+  urlImagens: string[];
+  progress: number;
+  errorMessage: string;
+  criadoEm: string;
+  revisaoPendente: boolean;
+  alertas: AlertaDocumento[];
+  /** @nullable */
+  revisadoEm: string | null;
+}
+
+export interface MedicamentoDocumentoUpdateDto {
+  /** @nullable */
+  nome?: string | null;
+  /** @nullable */
+  dosagem?: string | null;
+  /** @nullable */
+  horario?: string | null;
+}
+
+export interface LinhaIndentadaDocumentoUpdateDto {
+  /** @nullable */
+  tipo?: string | null;
+  /** @nullable */
+  texto?: string | null;
+  /** @nullable */
+  chave?: string | null;
+  /** @nullable */
+  valor?: string | null;
 }
 
 export interface ResultadoExameUpdateDto {
@@ -110,6 +402,50 @@ export interface DocumentUpdateDto {
   resultadosExame?: ResultadoExameUpdateDto[] | null;
 }
 
+export interface DocumentUploadResponse {
+  id: string;
+  status: string;
+  progress: number;
+  /** @nullable */
+  duplicate: boolean | null;
+  /** @nullable */
+  message: string | null;
+}
+
+export interface EmergencyPublicResponse {
+  nome: string;
+  dataNascimento: string;
+  sexo: string;
+  planoSaude: string;
+  numeroCarteirinha: string;
+  tipoSanguineo: string;
+  alergias: string[];
+  doencasCronicas: string[];
+  medicamentosContinuos: string[];
+  contatosEmergencia: string;
+  /** @nullable */
+  doadorOrgaos: boolean | null;
+  cirurgias: string;
+  /** @nullable */
+  fuma: boolean | null;
+  /** @nullable */
+  bebe: boolean | null;
+  habitosGerais: string;
+  historicoFamiliar: string;
+}
+
+export interface EmergencyStatusResponse {
+  possuiToken: boolean;
+  /** @nullable */
+  expiraEm: string | null;
+}
+
+export interface EmergencyTokenResponse {
+  token: string;
+  /** @nullable */
+  expiraEm: string | null;
+}
+
 export interface FichaMedica {
   /** @nullable */
   id?: string | null;
@@ -135,9 +471,65 @@ export interface ForgotPasswordDto {
   email?: string;
 }
 
+export interface HealthResponse {
+  status: string;
+  timestamp: string;
+}
+
+export type IFormFile = Blob;
+
+export interface ImportacaoCatalogoResult {
+  registrosImportados: number;
+  registrosInvalidos: number;
+  registrosDuplicados: number;
+  importadoEm: string;
+}
+
 export interface LoginPacienteDto {
   email?: string;
   senha?: string;
+}
+
+export interface MedicamentoCatalogoItemResponse {
+  processoAnvisa: string;
+  nome: string;
+  principioAtivo: string;
+  descricao: string;
+  fabricante: string;
+  tipoProduto: string;
+  classeTerapeutica: string;
+  registroAnvisa: string;
+  situacaoRegistro: string;
+}
+
+export interface MedicamentoCatalogoSearchResponse {
+  query: string;
+  count: number;
+  medicamentos: MedicamentoCatalogoItemResponse[];
+}
+
+export interface PatientProfileResponse {
+  /** @nullable */
+  id: string | null;
+  nome: string;
+  email: string;
+  dataNascimento: string;
+  idade: number;
+  /** @nullable */
+  sexo: string | null;
+  /** @nullable */
+  telefone: string | null;
+  /** @nullable */
+  endereco: string | null;
+  /** @nullable */
+  planoSaude: string | null;
+  /** @nullable */
+  numeroCarteirinha: string | null;
+  /** @nullable */
+  contatoEmergencia: string | null;
+  consentimentoIa: ConsentimentoIa | null;
+  /** @nullable */
+  urlCarteirinha: string | null;
 }
 
 export interface PerfilUpdateDto {
@@ -151,6 +543,18 @@ export interface PerfilUpdateDto {
   planoSaude: string | null;
   /** @nullable */
   numeroCarteirinha: string | null;
+  /** @nullable */
+  senhaAtual: string | null;
+  /** @nullable */
+  contatoEmergencia: string | null;
+  /** @nullable */
+  sexo: string | null;
+}
+
+export interface PingResponse {
+  status: string;
+  message: string;
+  timestamp: string;
 }
 
 export interface RegisterPacienteDto {
@@ -166,11 +570,85 @@ export interface ResetPasswordDto {
   senha?: string;
 }
 
+export interface ResultadoSerieResponse {
+  data: string;
+  valor: number;
+  unidade: string;
+  /** @nullable */
+  refMin: number | null;
+  /** @nullable */
+  refMax: number | null;
+  status: string;
+  documentoId: string;
+  isOutlier: boolean;
+  /** @nullable */
+  outlierMotivo: string | null;
+}
+
+export interface UpdateFichaMedicaDto {
+  /** @nullable */
+  pacienteId?: string | null;
+  /** @nullable */
+  historicoFamiliar?: string | null;
+  /** @nullable */
+  cirurgias?: string | null;
+  /** @nullable */
+  fuma?: boolean | null;
+  /** @nullable */
+  bebe?: boolean | null;
+  /** @nullable */
+  habitosGerais?: string | null;
+  /** @nullable */
+  observacoes?: string | null;
+  /** @nullable */
+  outrasDoencas?: string | null;
+  /** @nullable */
+  tipoSanguineo?: string | null;
+  /** @nullable */
+  doadorOrgaos?: boolean | null;
+  /** @nullable */
+  alergias?: string[] | null;
+  /** @nullable */
+  doencasCronicas?: string[] | null;
+  /** @nullable */
+  medicamentosContinuos?: string[] | null;
+  /** @nullable */
+  condicoes?: CondicaoMedica[] | null;
+}
+
 export type GetApiReportsGenerateParams = {
-months: number;
+months?: number;
+};
+
+export type GetApiCatalogoMedicamentosParams = {
+query: string;
+limit: number;
+};
+
+export type PostApiCatalogoMedicamentosImportarBody = {
+  file: IFormFile;
+};
+
+export type GetApiCatalogoCid10Params = {
+query: string;
+limit: number;
+};
+
+export type PostApiCatalogoCid10ImportarBody = {
+  file: IFormFile;
+};
+
+export type GetApiCatalogoCnesParams = {
+query: string;
+limit: number;
+};
+
+export type PostApiCatalogoCnesImportarBody = {
+  file: IFormFile;
 };
 
 export type GetApiExamesSerieParams = {
 analito: string;
-meses: number;
+meses?: number;
 };
+

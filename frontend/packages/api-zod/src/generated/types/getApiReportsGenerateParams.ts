@@ -6,5 +6,5 @@
  */
 
 export type GetApiReportsGenerateParams = {
-months: number;
+months?: number;
 };

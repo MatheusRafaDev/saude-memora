@@ -87,7 +87,7 @@ public static class ExamesEndpoints
                 .ToList();
 
             return Results.Ok(analitos);
-        });
+        }).Produces<List<AnalitoResponse>>();
 
         // GET /api/exames/serie – série histórica de um analito com normalização e detecção de outlier
         group.MapGet("/serie", async (
@@ -203,6 +203,18 @@ public static class ExamesEndpoints
                 .ToList();
 
             return Results.Ok(serieOrdenada);
-        });
+        }).Produces<List<ResultadoSerieResponse>>();
     }
 }
+
+public record AnalitoResponse(string NomeNormalizado, string Nome, string Unidade, int Count);
+public record ResultadoSerieResponse(
+    string Data,
+    double Valor,
+    string Unidade,
+    double? RefMin,
+    double? RefMax,
+    string Status,
+    string DocumentoId,
+    bool IsOutlier,
+    string? OutlierMotivo);

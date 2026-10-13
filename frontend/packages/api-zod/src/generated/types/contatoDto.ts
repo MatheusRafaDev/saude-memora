@@ -10,4 +10,6 @@ export interface ContatoDto {
   telefone: string | null;
   /** @nullable */
   endereco: string | null;
+  /** @nullable */
+  contatoEmergencia: string | null;
 }

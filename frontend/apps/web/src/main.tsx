@@ -4,16 +4,10 @@ import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
-import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
-// Auth is cookie-backed. Send API requests to the configured backend origin
-// in both development and production.
+// Keep API requests on the app origin so production rewrites can proxy them.
 setAuthTokenGetter(() => null);
-const apiUrl = import.meta.env.VITE_API_URL?.trim();
-if (import.meta.env.PROD && !apiUrl) {
-  throw new Error('Configure VITE_API_URL com a URL da API antes de publicar o frontend.');
-}
-setBaseUrl(import.meta.env.DEV ? null : apiUrl || null);
 
 // Register PWA Service Worker
 if ('serviceWorker' in navigator) {

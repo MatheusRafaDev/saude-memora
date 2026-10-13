@@ -28,6 +28,9 @@ export default defineConfig({
       mode: "split",
       clean: true,
       override: {
+        query: {
+          version: 5,
+        },
         fetch: {
           includeHttpResponseReturnType: false,
         },
@@ -52,6 +55,7 @@ export default defineConfig({
       schemas: { path: "generated/types", type: "typescript" },
       mode: "split",
       clean: true,
+      indexFiles: false,
       override: {
         zod: {
           // Orval resolves `auto` from lib/api-spec/package.json, which has no

@@ -16,4 +16,10 @@ export interface PerfilUpdateDto {
   planoSaude: string | null;
   /** @nullable */
   numeroCarteirinha: string | null;
+  /** @nullable */
+  senhaAtual: string | null;
+  /** @nullable */
+  contatoEmergencia: string | null;
+  /** @nullable */
+  sexo: string | null;
 }

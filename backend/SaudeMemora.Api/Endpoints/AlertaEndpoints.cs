@@ -35,6 +35,6 @@ public static class AlertaEndpoints
             await cache.SafeRemoveAsync(SaudeMemora.Infrastructure.Repositories.DocumentRepository.UserDocumentCountCacheKey(userId));
 
             return Results.Ok(new { message = "Alerta dispensado com sucesso." });
-        }).RequireAuthorization();
+        }).Produces<ApiMessageResponse>().RequireAuthorization();
     }
 }

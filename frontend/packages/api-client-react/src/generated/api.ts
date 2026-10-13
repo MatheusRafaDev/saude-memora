@@ -9,9 +9,14 @@ import {
   useQuery
 } from '@tanstack/react-query';
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
+  QueryClient,
   QueryFunction,
   QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
@@ -19,18 +24,50 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AlterarSenhaDto,
+  AnalitoResponse,
+  ApiAuthResponse,
+  ApiMessageResponse,
+  ApiReportResponse,
+  CardResponse,
+  CatalogSearchResponseOfCid10Registro,
+  CatalogSearchResponseOfCnesRegistro,
+  ChatHistoryResponse,
   ChatRequest,
+  ChatResponse,
   ConsentimentoDto,
+  ConsentimentoStatusResponse,
   ContatoDto,
+  DeleteAccountDto,
+  DocumentCountResponse,
+  DocumentDetailResponse,
+  DocumentListItemResponse,
   DocumentUpdateDto,
+  DocumentUploadResponse,
+  EmergencyPublicResponse,
+  EmergencyStatusResponse,
+  EmergencyTokenResponse,
   FichaMedica,
   ForgotPasswordDto,
+  GetApiCatalogoCid10Params,
+  GetApiCatalogoCnesParams,
+  GetApiCatalogoMedicamentosParams,
   GetApiExamesSerieParams,
   GetApiReportsGenerateParams,
+  HealthResponse,
+  ImportacaoCatalogoResult,
   LoginPacienteDto,
+  MedicamentoCatalogoSearchResponse,
+  PatientProfileResponse,
   PerfilUpdateDto,
+  PingResponse,
+  PostApiCatalogoCid10ImportarBody,
+  PostApiCatalogoCnesImportarBody,
+  PostApiCatalogoMedicamentosImportarBody,
   RegisterPacienteDto,
-  ResetPasswordDto
+  ResetPasswordDto,
+  ResultadoSerieResponse,
+  UpdateFichaMedicaDto
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -68,9 +105,9 @@ export const getGetApiPingUrl = () => {
   return `/api/ping`
 }
 
-export const getApiPing = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiPing = async ( options?: Parameters<typeof customFetch>[1]): Promise<PingResponse> => {
 
-  return customFetch<void>(getGetApiPingUrl(),
+  return customFetch<PingResponse>(getGetApiPingUrl(),
   {
     ...options,
     method: 'GET'
@@ -90,7 +127,7 @@ export const getGetApiPingQueryKey = () => {
     }
 
 
-export const getGetApiPingQueryOptions = <TData = Awaited<ReturnType<typeof getApiPing>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiPingQueryOptions = <TData = Awaited<ReturnType<typeof getApiPing>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -105,22 +142,141 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiPingQueryResult = NonNullable<Awaited<ReturnType<typeof getApiPing>>>
 export type GetApiPingQueryError = ErrorType<unknown>
 
 
+export function useGetApiPing<TData = Awaited<ReturnType<typeof getApiPing>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPing>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPing>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPing<TData = Awaited<ReturnType<typeof getApiPing>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPing>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPing>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPing<TData = Awaited<ReturnType<typeof getApiPing>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiPing<TData = Awaited<ReturnType<typeof getApiPing>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPing>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiPingQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetHealthzUrl = () => {
+
+
+
+
+  return `/healthz`
+}
+
+export const getHealthz = async ( options?: Parameters<typeof customFetch>[1]): Promise<HealthResponse> => {
+
+  return customFetch<HealthResponse>(getGetHealthzUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHealthzQueryKey = () => {
+    return [
+    `/healthz`
+    ] as const;
+    }
+
+
+export const getGetHealthzQueryOptions = <TData = Awaited<ReturnType<typeof getHealthz>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthz>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHealthzQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHealthz>>> = ({ signal }) => getHealthz({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHealthz>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetHealthzQueryResult = NonNullable<Awaited<ReturnType<typeof getHealthz>>>
+export type GetHealthzQueryError = ErrorType<unknown>
+
+
+export function useGetHealthz<TData = Awaited<ReturnType<typeof getHealthz>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthz>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHealthz>>,
+          TError,
+          Awaited<ReturnType<typeof getHealthz>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHealthz<TData = Awaited<ReturnType<typeof getHealthz>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthz>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHealthz>>,
+          TError,
+          Awaited<ReturnType<typeof getHealthz>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHealthz<TData = Awaited<ReturnType<typeof getHealthz>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthz>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetHealthz<TData = Awaited<ReturnType<typeof getHealthz>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthz>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetHealthzQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -139,9 +295,9 @@ export const getPostApiDocumentsIdReprocessarUrl = (id: string,) => {
   return `/api/documents/${id}/reprocessar`
 }
 
-export const postApiDocumentsIdReprocessar = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiDocumentsIdReprocessar = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
-  return customFetch<void>(getPostApiDocumentsIdReprocessarUrl(id),
+  return customFetch<ApiMessageResponse>(getPostApiDocumentsIdReprocessarUrl(id),
   {
     ...options,
     method: 'POST'
@@ -190,13 +346,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiDocumentsIdReprocessar = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiDocumentsIdReprocessar>>, TError,PostApiDocumentsIdReprocessarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiDocumentsIdReprocessar>>,
         TError,
         PostApiDocumentsIdReprocessarMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiDocumentsIdReprocessarMutationOptions(options));
+      return useMutation(getPostApiDocumentsIdReprocessarMutationOptions(options), queryClient);
     }
 
 export const getPostApiDocumentsIdRevisaoConfirmarUrl = (id: string,) => {
@@ -207,9 +363,9 @@ export const getPostApiDocumentsIdRevisaoConfirmarUrl = (id: string,) => {
   return `/api/documents/${id}/revisao/confirmar`
 }
 
-export const postApiDocumentsIdRevisaoConfirmar = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiDocumentsIdRevisaoConfirmar = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
-  return customFetch<void>(getPostApiDocumentsIdRevisaoConfirmarUrl(id),
+  return customFetch<ApiMessageResponse>(getPostApiDocumentsIdRevisaoConfirmarUrl(id),
   {
     ...options,
     method: 'POST'
@@ -258,13 +414,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiDocumentsIdRevisaoConfirmar = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiDocumentsIdRevisaoConfirmar>>, TError,PostApiDocumentsIdRevisaoConfirmarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiDocumentsIdRevisaoConfirmar>>,
         TError,
         PostApiDocumentsIdRevisaoConfirmarMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiDocumentsIdRevisaoConfirmarMutationOptions(options));
+      return useMutation(getPostApiDocumentsIdRevisaoConfirmarMutationOptions(options), queryClient);
     }
 
 export const getPostApiDocumentsIdAlertasAlertaIdDispensarUrl = (id: string,
@@ -277,9 +433,9 @@ export const getPostApiDocumentsIdAlertasAlertaIdDispensarUrl = (id: string,
 }
 
 export const postApiDocumentsIdAlertasAlertaIdDispensar = async (id: string,
-    alertaId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+    alertaId: string, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
-  return customFetch<void>(getPostApiDocumentsIdAlertasAlertaIdDispensarUrl(id,alertaId),
+  return customFetch<ApiMessageResponse>(getPostApiDocumentsIdAlertasAlertaIdDispensarUrl(id,alertaId),
   {
     ...options,
     method: 'POST'
@@ -328,26 +484,26 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiDocumentsIdAlertasAlertaIdDispensar = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiDocumentsIdAlertasAlertaIdDispensar>>, TError,PostApiDocumentsIdAlertasAlertaIdDispensarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiDocumentsIdAlertasAlertaIdDispensar>>,
         TError,
         PostApiDocumentsIdAlertasAlertaIdDispensarMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiDocumentsIdAlertasAlertaIdDispensarMutationOptions(options));
+      return useMutation(getPostApiDocumentsIdAlertasAlertaIdDispensarMutationOptions(options), queryClient);
     }
 
-export const getGetApiPacientesMeEmergenciaUrl = () => {
+export const getGetApiMedicamentosNomeDescricaoUrl = (nome: string,) => {
 
 
 
 
-  return `/api/pacientes/me/emergencia`
+  return `/api/medicamentos/${nome}/descricao`
 }
 
-export const getApiPacientesMeEmergencia = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiMedicamentosNomeDescricao = async (nome: string, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
 
-  return customFetch<void>(getGetApiPacientesMeEmergenciaUrl(),
+  return customFetch<string>(getGetApiMedicamentosNomeDescricaoUrl(nome),
   {
     ...options,
     method: 'GET'
@@ -360,44 +516,68 @@ export const getApiPacientesMeEmergencia = async ( options?: Parameters<typeof c
 
 
 
-export const getGetApiPacientesMeEmergenciaQueryKey = () => {
+export const getGetApiMedicamentosNomeDescricaoQueryKey = (nome: string,) => {
     return [
-    `/api/pacientes/me/emergencia`
+    `/api/medicamentos/${nome}/descricao`
     ] as const;
     }
 
 
-export const getGetApiPacientesMeEmergenciaQueryOptions = <TData = Awaited<ReturnType<typeof getApiPacientesMeEmergencia>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergencia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiMedicamentosNomeDescricaoQueryOptions = <TData = Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError = ErrorType<unknown>>(nome: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetApiPacientesMeEmergenciaQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetApiMedicamentosNomeDescricaoQueryKey(nome);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiPacientesMeEmergencia>>> = ({ signal }) => getApiPacientesMeEmergencia({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>> = ({ signal }) => getApiMedicamentosNomeDescricao(nome, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergencia>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: nome !== null && nome !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GetApiPacientesMeEmergenciaQueryResult = NonNullable<Awaited<ReturnType<typeof getApiPacientesMeEmergencia>>>
-export type GetApiPacientesMeEmergenciaQueryError = ErrorType<unknown>
+export type GetApiMedicamentosNomeDescricaoQueryResult = NonNullable<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>>
+export type GetApiMedicamentosNomeDescricaoQueryError = ErrorType<unknown>
 
 
+export function useGetApiMedicamentosNomeDescricao<TData = Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError = ErrorType<unknown>>(
+ nome: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>,
+          TError,
+          Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiMedicamentosNomeDescricao<TData = Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError = ErrorType<unknown>>(
+ nome: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>,
+          TError,
+          Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiMedicamentosNomeDescricao<TData = Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError = ErrorType<unknown>>(
+ nome: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useGetApiPacientesMeEmergencia<TData = Awaited<ReturnType<typeof getApiPacientesMeEmergencia>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergencia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetApiMedicamentosNomeDescricao<TData = Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError = ErrorType<unknown>>(
+ nome: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiMedicamentosNomeDescricao>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetApiMedicamentosNomeDescricaoQueryOptions(nome,options)
 
-  const queryOptions = getGetApiPacientesMeEmergenciaQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -408,6 +588,237 @@ export function useGetApiPacientesMeEmergencia<TData = Awaited<ReturnType<typeof
 
 
 
+export const getGetApiPacientesMeEmergenciaStatusUrl = () => {
+
+
+
+
+  return `/api/pacientes/me/emergencia/status`
+}
+
+export const getApiPacientesMeEmergenciaStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<EmergencyStatusResponse> => {
+
+  return customFetch<EmergencyStatusResponse>(getGetApiPacientesMeEmergenciaStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiPacientesMeEmergenciaStatusQueryKey = () => {
+    return [
+    `/api/pacientes/me/emergencia/status`
+    ] as const;
+    }
+
+
+export const getGetApiPacientesMeEmergenciaStatusQueryOptions = <TData = Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiPacientesMeEmergenciaStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>> = ({ signal }) => getApiPacientesMeEmergenciaStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiPacientesMeEmergenciaStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>>
+export type GetApiPacientesMeEmergenciaStatusQueryError = ErrorType<unknown>
+
+
+export function useGetApiPacientesMeEmergenciaStatus<TData = Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPacientesMeEmergenciaStatus<TData = Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPacientesMeEmergenciaStatus<TData = Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetApiPacientesMeEmergenciaStatus<TData = Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeEmergenciaStatus>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiPacientesMeEmergenciaStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostApiPacientesMeEmergenciaUrl = () => {
+
+
+
+
+  return `/api/pacientes/me/emergencia`
+}
+
+export const postApiPacientesMeEmergencia = async ( options?: Parameters<typeof customFetch>[1]): Promise<EmergencyTokenResponse> => {
+
+  return customFetch<EmergencyTokenResponse>(getPostApiPacientesMeEmergenciaUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiPacientesMeEmergenciaMutationKey = () => ['postApiPacientesMeEmergencia'] as const;
+
+export const getPostApiPacientesMeEmergenciaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeEmergencia>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeEmergencia>>, TError,void, TContext> => {
+
+const mutationKey = getPostApiPacientesMeEmergenciaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiPacientesMeEmergencia>>, void> = () => {
+
+
+          return  postApiPacientesMeEmergencia(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiPacientesMeEmergenciaMutationResult = NonNullable<Awaited<ReturnType<typeof postApiPacientesMeEmergencia>>>
+
+    export type PostApiPacientesMeEmergenciaMutationError = ErrorType<unknown>
+
+
+    export const usePostApiPacientesMeEmergencia = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeEmergencia>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiPacientesMeEmergencia>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostApiPacientesMeEmergenciaMutationOptions(options), queryClient);
+    }
+
+export const getPostApiPacientesMeEmergenciaRotateUrl = () => {
+
+
+
+
+  return `/api/pacientes/me/emergencia/rotate`
+}
+
+export const postApiPacientesMeEmergenciaRotate = async ( options?: Parameters<typeof customFetch>[1]): Promise<EmergencyTokenResponse> => {
+
+  return customFetch<EmergencyTokenResponse>(getPostApiPacientesMeEmergenciaRotateUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiPacientesMeEmergenciaRotateMutationKey = () => ['postApiPacientesMeEmergenciaRotate'] as const;
+
+export const getPostApiPacientesMeEmergenciaRotateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeEmergenciaRotate>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeEmergenciaRotate>>, TError,void, TContext> => {
+
+const mutationKey = getPostApiPacientesMeEmergenciaRotateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiPacientesMeEmergenciaRotate>>, void> = () => {
+
+
+          return  postApiPacientesMeEmergenciaRotate(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiPacientesMeEmergenciaRotateMutationResult = NonNullable<Awaited<ReturnType<typeof postApiPacientesMeEmergenciaRotate>>>
+
+    export type PostApiPacientesMeEmergenciaRotateMutationError = ErrorType<unknown>
+
+
+    export const usePostApiPacientesMeEmergenciaRotate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeEmergenciaRotate>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiPacientesMeEmergenciaRotate>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostApiPacientesMeEmergenciaRotateMutationOptions(options), queryClient);
+    }
+
 export const getGetApiEmergenciaTokenUrl = (token: string,) => {
 
 
@@ -416,9 +827,9 @@ export const getGetApiEmergenciaTokenUrl = (token: string,) => {
   return `/api/emergencia/${token}`
 }
 
-export const getApiEmergenciaToken = async (token: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiEmergenciaToken = async (token: string, options?: Parameters<typeof customFetch>[1]): Promise<EmergencyPublicResponse> => {
 
-  return customFetch<void>(getGetApiEmergenciaTokenUrl(token),
+  return customFetch<EmergencyPublicResponse>(getGetApiEmergenciaTokenUrl(token),
   {
     ...options,
     method: 'GET'
@@ -438,7 +849,7 @@ export const getGetApiEmergenciaTokenQueryKey = (token: string,) => {
     }
 
 
-export const getGetApiEmergenciaTokenQueryOptions = <TData = Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError = ErrorType<unknown>>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiEmergenciaTokenQueryOptions = <TData = Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError = ErrorType<unknown>>(token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -453,22 +864,141 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: token !== null && token !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: token !== null && token !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiEmergenciaTokenQueryResult = NonNullable<Awaited<ReturnType<typeof getApiEmergenciaToken>>>
 export type GetApiEmergenciaTokenQueryError = ErrorType<unknown>
 
 
+export function useGetApiEmergenciaToken<TData = Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError = ErrorType<unknown>>(
+ token: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiEmergenciaToken>>,
+          TError,
+          Awaited<ReturnType<typeof getApiEmergenciaToken>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiEmergenciaToken<TData = Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError = ErrorType<unknown>>(
+ token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiEmergenciaToken>>,
+          TError,
+          Awaited<ReturnType<typeof getApiEmergenciaToken>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiEmergenciaToken<TData = Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError = ErrorType<unknown>>(
+ token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiEmergenciaToken<TData = Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError = ErrorType<unknown>>(
- token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiEmergenciaToken>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiEmergenciaTokenQueryOptions(token,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetApiChatHistoryUrl = () => {
+
+
+
+
+  return `/api/chat/history`
+}
+
+export const getApiChatHistory = async ( options?: Parameters<typeof customFetch>[1]): Promise<ChatHistoryResponse> => {
+
+  return customFetch<ChatHistoryResponse>(getGetApiChatHistoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiChatHistoryQueryKey = () => {
+    return [
+    `/api/chat/history`
+    ] as const;
+    }
+
+
+export const getGetApiChatHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiChatHistoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiChatHistory>>> = ({ signal }) => getApiChatHistory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiChatHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getApiChatHistory>>>
+export type GetApiChatHistoryQueryError = ErrorType<unknown>
+
+
+export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiChatHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getApiChatHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiChatHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getApiChatHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiChatHistoryQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -487,7 +1017,7 @@ export const getPostApiChatUrl = () => {
   return `/api/chat`
 }
 
-export const postApiChat = async (chatRequest: ChatRequest, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiChat = async (chatRequest: ChatRequest, options?: Parameters<typeof customFetch>[1]): Promise<ChatResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -503,7 +1033,7 @@ export const postApiChat = async (chatRequest: ChatRequest, options?: Parameters
     }
     return headers;
   };
-return customFetch<void>(getPostApiChatUrl(),
+return customFetch<ChatResponse>(getPostApiChatUrl(),
   {
     ...options,
     method: 'POST',
@@ -552,13 +1082,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiChat = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiChat>>, TError,PostApiChatMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiChat>>,
         TError,
         PostApiChatMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiChatMutationOptions(options));
+      return useMutation(getPostApiChatMutationOptions(options), queryClient);
     }
 
 export const getPostApiAuthRegisterUrl = () => {
@@ -569,7 +1099,7 @@ export const getPostApiAuthRegisterUrl = () => {
   return `/api/auth/register`
 }
 
-export const postApiAuthRegister = async (registerPacienteDto: RegisterPacienteDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiAuthRegister = async (registerPacienteDto: RegisterPacienteDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -585,7 +1115,7 @@ export const postApiAuthRegister = async (registerPacienteDto: RegisterPacienteD
     }
     return headers;
   };
-return customFetch<void>(getPostApiAuthRegisterUrl(),
+return customFetch<ApiMessageResponse>(getPostApiAuthRegisterUrl(),
   {
     ...options,
     method: 'POST',
@@ -634,13 +1164,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiAuthRegister = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthRegister>>, TError,PostApiAuthRegisterMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiAuthRegister>>,
         TError,
         PostApiAuthRegisterMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiAuthRegisterMutationOptions(options));
+      return useMutation(getPostApiAuthRegisterMutationOptions(options), queryClient);
     }
 
 export const getPostApiAuthLoginUrl = () => {
@@ -651,7 +1181,7 @@ export const getPostApiAuthLoginUrl = () => {
   return `/api/auth/login`
 }
 
-export const postApiAuthLogin = async (loginPacienteDto: LoginPacienteDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiAuthLogin = async (loginPacienteDto: LoginPacienteDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiAuthResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -667,7 +1197,7 @@ export const postApiAuthLogin = async (loginPacienteDto: LoginPacienteDto, optio
     }
     return headers;
   };
-return customFetch<void>(getPostApiAuthLoginUrl(),
+return customFetch<ApiAuthResponse>(getPostApiAuthLoginUrl(),
   {
     ...options,
     method: 'POST',
@@ -716,13 +1246,149 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiAuthLogin = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthLogin>>, TError,PostApiAuthLoginMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiAuthLogin>>,
         TError,
         PostApiAuthLoginMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiAuthLoginMutationOptions(options));
+      return useMutation(getPostApiAuthLoginMutationOptions(options), queryClient);
+    }
+
+export const getPostApiAuthRefreshUrl = () => {
+
+
+
+
+  return `/api/auth/refresh`
+}
+
+export const postApiAuthRefresh = async ( options?: Parameters<typeof customFetch>[1]): Promise<ApiAuthResponse> => {
+
+  return customFetch<ApiAuthResponse>(getPostApiAuthRefreshUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiAuthRefreshMutationKey = () => ['postApiAuthRefresh'] as const;
+
+export const getPostApiAuthRefreshMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthRefresh>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiAuthRefresh>>, TError,void, TContext> => {
+
+const mutationKey = getPostApiAuthRefreshMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiAuthRefresh>>, void> = () => {
+
+
+          return  postApiAuthRefresh(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiAuthRefreshMutationResult = NonNullable<Awaited<ReturnType<typeof postApiAuthRefresh>>>
+
+    export type PostApiAuthRefreshMutationError = ErrorType<unknown>
+
+
+    export const usePostApiAuthRefresh = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthRefresh>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiAuthRefresh>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostApiAuthRefreshMutationOptions(options), queryClient);
+    }
+
+export const getPostApiAuthLogoutUrl = () => {
+
+
+
+
+  return `/api/auth/logout`
+}
+
+export const postApiAuthLogout = async ( options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
+
+  return customFetch<ApiMessageResponse>(getPostApiAuthLogoutUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostApiAuthLogoutMutationKey = () => ['postApiAuthLogout'] as const;
+
+export const getPostApiAuthLogoutMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthLogout>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiAuthLogout>>, TError,void, TContext> => {
+
+const mutationKey = getPostApiAuthLogoutMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiAuthLogout>>, void> = () => {
+
+
+          return  postApiAuthLogout(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiAuthLogoutMutationResult = NonNullable<Awaited<ReturnType<typeof postApiAuthLogout>>>
+
+    export type PostApiAuthLogoutMutationError = ErrorType<unknown>
+
+
+    export const usePostApiAuthLogout = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthLogout>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiAuthLogout>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostApiAuthLogoutMutationOptions(options), queryClient);
     }
 
 export const getPostApiAuthForgotPasswordUrl = () => {
@@ -733,7 +1399,7 @@ export const getPostApiAuthForgotPasswordUrl = () => {
   return `/api/auth/forgot-password`
 }
 
-export const postApiAuthForgotPassword = async (forgotPasswordDto: ForgotPasswordDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiAuthForgotPassword = async (forgotPasswordDto: ForgotPasswordDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -749,7 +1415,7 @@ export const postApiAuthForgotPassword = async (forgotPasswordDto: ForgotPasswor
     }
     return headers;
   };
-return customFetch<void>(getPostApiAuthForgotPasswordUrl(),
+return customFetch<ApiMessageResponse>(getPostApiAuthForgotPasswordUrl(),
   {
     ...options,
     method: 'POST',
@@ -798,13 +1464,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiAuthForgotPassword = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthForgotPassword>>, TError,PostApiAuthForgotPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiAuthForgotPassword>>,
         TError,
         PostApiAuthForgotPasswordMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiAuthForgotPasswordMutationOptions(options));
+      return useMutation(getPostApiAuthForgotPasswordMutationOptions(options), queryClient);
     }
 
 export const getPostApiAuthResetPasswordUrl = () => {
@@ -815,7 +1481,7 @@ export const getPostApiAuthResetPasswordUrl = () => {
   return `/api/auth/reset-password`
 }
 
-export const postApiAuthResetPassword = async (resetPasswordDto: ResetPasswordDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiAuthResetPassword = async (resetPasswordDto: ResetPasswordDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -831,7 +1497,7 @@ export const postApiAuthResetPassword = async (resetPasswordDto: ResetPasswordDt
     }
     return headers;
   };
-return customFetch<void>(getPostApiAuthResetPasswordUrl(),
+return customFetch<ApiMessageResponse>(getPostApiAuthResetPasswordUrl(),
   {
     ...options,
     method: 'POST',
@@ -880,13 +1546,95 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiAuthResetPassword = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthResetPassword>>, TError,PostApiAuthResetPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiAuthResetPassword>>,
         TError,
         PostApiAuthResetPasswordMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiAuthResetPasswordMutationOptions(options));
+      return useMutation(getPostApiAuthResetPasswordMutationOptions(options), queryClient);
+    }
+
+export const getPostApiAuthAlterarSenhaUrl = () => {
+
+
+
+
+  return `/api/auth/alterar-senha`
+}
+
+export const postApiAuthAlterarSenha = async (alterarSenhaDto: AlterarSenhaDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ApiMessageResponse>(getPostApiAuthAlterarSenhaUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(alterarSenhaDto)
+  }
+);}
+
+
+
+
+
+export const getPostApiAuthAlterarSenhaMutationKey = () => ['postApiAuthAlterarSenha'] as const;
+
+export const getPostApiAuthAlterarSenhaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthAlterarSenha>>, TError,PostApiAuthAlterarSenhaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiAuthAlterarSenha>>, TError,PostApiAuthAlterarSenhaMutationVariables, TContext> => {
+
+const mutationKey = getPostApiAuthAlterarSenhaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiAuthAlterarSenha>>, PostApiAuthAlterarSenhaMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  postApiAuthAlterarSenha(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiAuthAlterarSenhaMutationResult = NonNullable<Awaited<ReturnType<typeof postApiAuthAlterarSenha>>>
+    export type PostApiAuthAlterarSenhaMutationBody = BodyType<AlterarSenhaDto>
+    export type PostApiAuthAlterarSenhaMutationError = ErrorType<unknown>
+    export type PostApiAuthAlterarSenhaMutationVariables = {data: BodyType<AlterarSenhaDto>}
+
+    export const usePostApiAuthAlterarSenha = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiAuthAlterarSenha>>, TError,PostApiAuthAlterarSenhaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiAuthAlterarSenha>>,
+        TError,
+        PostApiAuthAlterarSenhaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPostApiAuthAlterarSenhaMutationOptions(options), queryClient);
     }
 
 export const getGetApiPacientesMeUrl = () => {
@@ -897,9 +1645,9 @@ export const getGetApiPacientesMeUrl = () => {
   return `/api/pacientes/me`
 }
 
-export const getApiPacientesMe = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiPacientesMe = async ( options?: Parameters<typeof customFetch>[1]): Promise<PatientProfileResponse> => {
 
-  return customFetch<void>(getGetApiPacientesMeUrl(),
+  return customFetch<PatientProfileResponse>(getGetApiPacientesMeUrl(),
   {
     ...options,
     method: 'GET'
@@ -919,7 +1667,7 @@ export const getGetApiPacientesMeQueryKey = () => {
     }
 
 
-export const getGetApiPacientesMeQueryOptions = <TData = Awaited<ReturnType<typeof getApiPacientesMe>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiPacientesMeQueryOptions = <TData = Awaited<ReturnType<typeof getApiPacientesMe>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -934,22 +1682,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiPacientesMeQueryResult = NonNullable<Awaited<ReturnType<typeof getApiPacientesMe>>>
 export type GetApiPacientesMeQueryError = ErrorType<unknown>
 
 
+export function useGetApiPacientesMe<TData = Awaited<ReturnType<typeof getApiPacientesMe>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPacientesMe>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPacientesMe>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPacientesMe<TData = Awaited<ReturnType<typeof getApiPacientesMe>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPacientesMe>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPacientesMe>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPacientesMe<TData = Awaited<ReturnType<typeof getApiPacientesMe>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiPacientesMe<TData = Awaited<ReturnType<typeof getApiPacientesMe>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiPacientesMeQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -968,75 +1740,7 @@ export const getDeleteApiPacientesMeUrl = () => {
   return `/api/pacientes/me`
 }
 
-export const deleteApiPacientesMe = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
-
-  return customFetch<void>(getDeleteApiPacientesMeUrl(),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-
-export const getDeleteApiPacientesMeMutationKey = () => ['deleteApiPacientesMe'] as const;
-
-export const getDeleteApiPacientesMeMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMe>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMe>>, TError,void, TContext> => {
-
-const mutationKey = getDeleteApiPacientesMeMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiPacientesMe>>, void> = () => {
-
-
-          return  deleteApiPacientesMe(requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteApiPacientesMeMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiPacientesMe>>>
-
-    export type DeleteApiPacientesMeMutationError = ErrorType<unknown>
-
-
-    export const useDeleteApiPacientesMe = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMe>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteApiPacientesMe>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return useMutation(getDeleteApiPacientesMeMutationOptions(options));
-    }
-
-export const getPatchApiPacientesMePerfilUrl = () => {
-
-
-
-
-  return `/api/pacientes/me/perfil`
-}
-
-export const patchApiPacientesMePerfil = async (perfilUpdateDto: PerfilUpdateDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const deleteApiPacientesMe = async (deleteAccountDto: DeleteAccountDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1052,7 +1756,89 @@ export const patchApiPacientesMePerfil = async (perfilUpdateDto: PerfilUpdateDto
     }
     return headers;
   };
-return customFetch<void>(getPatchApiPacientesMePerfilUrl(),
+return customFetch<ApiMessageResponse>(getDeleteApiPacientesMeUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(deleteAccountDto)
+  }
+);}
+
+
+
+
+
+export const getDeleteApiPacientesMeMutationKey = () => ['deleteApiPacientesMe'] as const;
+
+export const getDeleteApiPacientesMeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMe>>, TError,DeleteApiPacientesMeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMe>>, TError,DeleteApiPacientesMeMutationVariables, TContext> => {
+
+const mutationKey = getDeleteApiPacientesMeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteApiPacientesMe>>, DeleteApiPacientesMeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  deleteApiPacientesMe(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteApiPacientesMeMutationResult = NonNullable<Awaited<ReturnType<typeof deleteApiPacientesMe>>>
+    export type DeleteApiPacientesMeMutationBody = BodyType<DeleteAccountDto>
+    export type DeleteApiPacientesMeMutationError = ErrorType<unknown>
+    export type DeleteApiPacientesMeMutationVariables = {data: BodyType<DeleteAccountDto>}
+
+    export const useDeleteApiPacientesMe = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMe>>, TError,DeleteApiPacientesMeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteApiPacientesMe>>,
+        TError,
+        DeleteApiPacientesMeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteApiPacientesMeMutationOptions(options), queryClient);
+    }
+
+export const getPatchApiPacientesMePerfilUrl = () => {
+
+
+
+
+  return `/api/pacientes/me/perfil`
+}
+
+export const patchApiPacientesMePerfil = async (perfilUpdateDto: PerfilUpdateDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ApiMessageResponse>(getPatchApiPacientesMePerfilUrl(),
   {
     ...options,
     method: 'PATCH',
@@ -1101,13 +1887,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePatchApiPacientesMePerfil = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiPacientesMePerfil>>, TError,PatchApiPacientesMePerfilMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchApiPacientesMePerfil>>,
         TError,
         PatchApiPacientesMePerfilMutationVariables,
         TContext
       > => {
-      return useMutation(getPatchApiPacientesMePerfilMutationOptions(options));
+      return useMutation(getPatchApiPacientesMePerfilMutationOptions(options), queryClient);
     }
 
 export const getPatchApiPacientesMeContatoUrl = () => {
@@ -1118,7 +1904,7 @@ export const getPatchApiPacientesMeContatoUrl = () => {
   return `/api/pacientes/me/contato`
 }
 
-export const patchApiPacientesMeContato = async (contatoDto: ContatoDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const patchApiPacientesMeContato = async (contatoDto: ContatoDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1134,7 +1920,7 @@ export const patchApiPacientesMeContato = async (contatoDto: ContatoDto, options
     }
     return headers;
   };
-return customFetch<void>(getPatchApiPacientesMeContatoUrl(),
+return customFetch<ApiMessageResponse>(getPatchApiPacientesMeContatoUrl(),
   {
     ...options,
     method: 'PATCH',
@@ -1183,13 +1969,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePatchApiPacientesMeContato = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiPacientesMeContato>>, TError,PatchApiPacientesMeContatoMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchApiPacientesMeContato>>,
         TError,
         PatchApiPacientesMeContatoMutationVariables,
         TContext
       > => {
-      return useMutation(getPatchApiPacientesMeContatoMutationOptions(options));
+      return useMutation(getPatchApiPacientesMeContatoMutationOptions(options), queryClient);
     }
 
 export const getPostApiPacientesMeCarteirinhaUrl = () => {
@@ -1200,9 +1986,9 @@ export const getPostApiPacientesMeCarteirinhaUrl = () => {
   return `/api/pacientes/me/carteirinha`
 }
 
-export const postApiPacientesMeCarteirinha = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiPacientesMeCarteirinha = async ( options?: Parameters<typeof customFetch>[1]): Promise<CardResponse> => {
 
-  return customFetch<void>(getPostApiPacientesMeCarteirinhaUrl(),
+  return customFetch<CardResponse>(getPostApiPacientesMeCarteirinhaUrl(),
   {
     ...options,
     method: 'POST'
@@ -1251,13 +2037,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiPacientesMeCarteirinha = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeCarteirinha>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiPacientesMeCarteirinha>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getPostApiPacientesMeCarteirinhaMutationOptions(options));
+      return useMutation(getPostApiPacientesMeCarteirinhaMutationOptions(options), queryClient);
     }
 
 export const getDeleteApiPacientesMeCarteirinhaUrl = () => {
@@ -1319,13 +2105,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const useDeleteApiPacientesMeCarteirinha = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMeCarteirinha>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteApiPacientesMeCarteirinha>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getDeleteApiPacientesMeCarteirinhaMutationOptions(options));
+      return useMutation(getDeleteApiPacientesMeCarteirinhaMutationOptions(options), queryClient);
     }
 
 export const getGetApiFichaMedicaMeUrl = () => {
@@ -1336,9 +2122,9 @@ export const getGetApiFichaMedicaMeUrl = () => {
   return `/api/ficha-medica/me`
 }
 
-export const getApiFichaMedicaMe = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiFichaMedicaMe = async ( options?: Parameters<typeof customFetch>[1]): Promise<FichaMedica> => {
 
-  return customFetch<void>(getGetApiFichaMedicaMeUrl(),
+  return customFetch<FichaMedica>(getGetApiFichaMedicaMeUrl(),
   {
     ...options,
     method: 'GET'
@@ -1358,7 +2144,7 @@ export const getGetApiFichaMedicaMeQueryKey = () => {
     }
 
 
-export const getGetApiFichaMedicaMeQueryOptions = <TData = Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiFichaMedicaMeQueryOptions = <TData = Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1373,22 +2159,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiFichaMedicaMeQueryResult = NonNullable<Awaited<ReturnType<typeof getApiFichaMedicaMe>>>
 export type GetApiFichaMedicaMeQueryError = ErrorType<unknown>
 
 
+export function useGetApiFichaMedicaMe<TData = Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiFichaMedicaMe>>,
+          TError,
+          Awaited<ReturnType<typeof getApiFichaMedicaMe>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiFichaMedicaMe<TData = Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiFichaMedicaMe>>,
+          TError,
+          Awaited<ReturnType<typeof getApiFichaMedicaMe>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiFichaMedicaMe<TData = Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiFichaMedicaMe<TData = Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiFichaMedicaMe>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiFichaMedicaMeQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -1407,7 +2217,7 @@ export const getPatchApiFichaMedicaMeUrl = () => {
   return `/api/ficha-medica/me`
 }
 
-export const patchApiFichaMedicaMe = async (fichaMedica: FichaMedica, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const patchApiFichaMedicaMe = async (updateFichaMedicaDto: UpdateFichaMedicaDto, options?: Parameters<typeof customFetch>[1]): Promise<FichaMedica> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1423,12 +2233,12 @@ export const patchApiFichaMedicaMe = async (fichaMedica: FichaMedica, options?: 
     }
     return headers;
   };
-return customFetch<void>(getPatchApiFichaMedicaMeUrl(),
+return customFetch<FichaMedica>(getPatchApiFichaMedicaMeUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(fichaMedica)
+    body: JSON.stringify(updateFichaMedicaDto)
   }
 );}
 
@@ -1466,19 +2276,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PatchApiFichaMedicaMeMutationResult = NonNullable<Awaited<ReturnType<typeof patchApiFichaMedicaMe>>>
-    export type PatchApiFichaMedicaMeMutationBody = BodyType<FichaMedica>
+    export type PatchApiFichaMedicaMeMutationBody = BodyType<UpdateFichaMedicaDto>
     export type PatchApiFichaMedicaMeMutationError = ErrorType<unknown>
-    export type PatchApiFichaMedicaMeMutationVariables = {data: BodyType<FichaMedica>}
+    export type PatchApiFichaMedicaMeMutationVariables = {data: BodyType<UpdateFichaMedicaDto>}
 
     export const usePatchApiFichaMedicaMe = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchApiFichaMedicaMe>>, TError,PatchApiFichaMedicaMeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchApiFichaMedicaMe>>,
         TError,
         PatchApiFichaMedicaMeMutationVariables,
         TContext
       > => {
-      return useMutation(getPatchApiFichaMedicaMeMutationOptions(options));
+      return useMutation(getPatchApiFichaMedicaMeMutationOptions(options), queryClient);
     }
 
 export const getPostApiDocumentsUploadUrl = () => {
@@ -1489,9 +2299,9 @@ export const getPostApiDocumentsUploadUrl = () => {
   return `/api/documents/upload`
 }
 
-export const postApiDocumentsUpload = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiDocumentsUpload = async ( options?: Parameters<typeof customFetch>[1]): Promise<DocumentUploadResponse> => {
 
-  return customFetch<void>(getPostApiDocumentsUploadUrl(),
+  return customFetch<DocumentUploadResponse>(getPostApiDocumentsUploadUrl(),
   {
     ...options,
     method: 'POST'
@@ -1540,13 +2350,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiDocumentsUpload = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiDocumentsUpload>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiDocumentsUpload>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getPostApiDocumentsUploadMutationOptions(options));
+      return useMutation(getPostApiDocumentsUploadMutationOptions(options), queryClient);
     }
 
 export const getPostApiDocumentsIdRetryUrl = (id: string,) => {
@@ -1557,9 +2367,9 @@ export const getPostApiDocumentsIdRetryUrl = (id: string,) => {
   return `/api/documents/${id}/retry`
 }
 
-export const postApiDocumentsIdRetry = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiDocumentsIdRetry = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<DocumentUploadResponse> => {
 
-  return customFetch<void>(getPostApiDocumentsIdRetryUrl(id),
+  return customFetch<DocumentUploadResponse>(getPostApiDocumentsIdRetryUrl(id),
   {
     ...options,
     method: 'POST'
@@ -1608,13 +2418,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiDocumentsIdRetry = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiDocumentsIdRetry>>, TError,PostApiDocumentsIdRetryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiDocumentsIdRetry>>,
         TError,
         PostApiDocumentsIdRetryMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiDocumentsIdRetryMutationOptions(options));
+      return useMutation(getPostApiDocumentsIdRetryMutationOptions(options), queryClient);
     }
 
 export const getGetApiDocumentsUrl = () => {
@@ -1625,9 +2435,9 @@ export const getGetApiDocumentsUrl = () => {
   return `/api/documents`
 }
 
-export const getApiDocuments = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiDocuments = async ( options?: Parameters<typeof customFetch>[1]): Promise<DocumentListItemResponse[]> => {
 
-  return customFetch<void>(getGetApiDocumentsUrl(),
+  return customFetch<DocumentListItemResponse[]>(getGetApiDocumentsUrl(),
   {
     ...options,
     method: 'GET'
@@ -1647,7 +2457,7 @@ export const getGetApiDocumentsQueryKey = () => {
     }
 
 
-export const getGetApiDocumentsQueryOptions = <TData = Awaited<ReturnType<typeof getApiDocuments>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiDocumentsQueryOptions = <TData = Awaited<ReturnType<typeof getApiDocuments>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1662,22 +2472,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiDocumentsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiDocuments>>>
 export type GetApiDocumentsQueryError = ErrorType<unknown>
 
 
+export function useGetApiDocuments<TData = Awaited<ReturnType<typeof getApiDocuments>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiDocuments>>,
+          TError,
+          Awaited<ReturnType<typeof getApiDocuments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiDocuments<TData = Awaited<ReturnType<typeof getApiDocuments>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiDocuments>>,
+          TError,
+          Awaited<ReturnType<typeof getApiDocuments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiDocuments<TData = Awaited<ReturnType<typeof getApiDocuments>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiDocuments<TData = Awaited<ReturnType<typeof getApiDocuments>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocuments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiDocumentsQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -1696,9 +2530,9 @@ export const getGetApiDocumentsCountUrl = () => {
   return `/api/documents/count`
 }
 
-export const getApiDocumentsCount = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiDocumentsCount = async ( options?: Parameters<typeof customFetch>[1]): Promise<DocumentCountResponse> => {
 
-  return customFetch<void>(getGetApiDocumentsCountUrl(),
+  return customFetch<DocumentCountResponse>(getGetApiDocumentsCountUrl(),
   {
     ...options,
     method: 'GET'
@@ -1718,7 +2552,7 @@ export const getGetApiDocumentsCountQueryKey = () => {
     }
 
 
-export const getGetApiDocumentsCountQueryOptions = <TData = Awaited<ReturnType<typeof getApiDocumentsCount>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiDocumentsCountQueryOptions = <TData = Awaited<ReturnType<typeof getApiDocumentsCount>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1733,22 +2567,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiDocumentsCountQueryResult = NonNullable<Awaited<ReturnType<typeof getApiDocumentsCount>>>
 export type GetApiDocumentsCountQueryError = ErrorType<unknown>
 
 
+export function useGetApiDocumentsCount<TData = Awaited<ReturnType<typeof getApiDocumentsCount>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiDocumentsCount>>,
+          TError,
+          Awaited<ReturnType<typeof getApiDocumentsCount>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiDocumentsCount<TData = Awaited<ReturnType<typeof getApiDocumentsCount>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiDocumentsCount>>,
+          TError,
+          Awaited<ReturnType<typeof getApiDocumentsCount>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiDocumentsCount<TData = Awaited<ReturnType<typeof getApiDocumentsCount>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiDocumentsCount<TData = Awaited<ReturnType<typeof getApiDocumentsCount>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsCount>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiDocumentsCountQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -1767,9 +2625,9 @@ export const getGetApiDocumentsIdUrl = (id: string,) => {
   return `/api/documents/${id}`
 }
 
-export const getApiDocumentsId = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiDocumentsId = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<DocumentDetailResponse> => {
 
-  return customFetch<void>(getGetApiDocumentsIdUrl(id),
+  return customFetch<DocumentDetailResponse>(getGetApiDocumentsIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -1789,7 +2647,7 @@ export const getGetApiDocumentsIdQueryKey = (id: string,) => {
     }
 
 
-export const getGetApiDocumentsIdQueryOptions = <TData = Awaited<ReturnType<typeof getApiDocumentsId>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiDocumentsIdQueryOptions = <TData = Awaited<ReturnType<typeof getApiDocumentsId>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1804,22 +2662,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiDocumentsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getApiDocumentsId>>>
 export type GetApiDocumentsIdQueryError = ErrorType<unknown>
 
 
+export function useGetApiDocumentsId<TData = Awaited<ReturnType<typeof getApiDocumentsId>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiDocumentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiDocumentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiDocumentsId<TData = Awaited<ReturnType<typeof getApiDocumentsId>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiDocumentsId>>,
+          TError,
+          Awaited<ReturnType<typeof getApiDocumentsId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiDocumentsId<TData = Awaited<ReturnType<typeof getApiDocumentsId>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiDocumentsId<TData = Awaited<ReturnType<typeof getApiDocumentsId>>, TError = ErrorType<unknown>>(
- id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiDocumentsId>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiDocumentsIdQueryOptions(id,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -1839,7 +2721,7 @@ export const getPutApiDocumentsIdUrl = (id: string,) => {
 }
 
 export const putApiDocumentsId = async (id: string,
-    documentUpdateDto: DocumentUpdateDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+    documentUpdateDto: DocumentUpdateDto, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1855,7 +2737,7 @@ export const putApiDocumentsId = async (id: string,
     }
     return headers;
   };
-return customFetch<void>(getPutApiDocumentsIdUrl(id),
+return customFetch<ApiMessageResponse>(getPutApiDocumentsIdUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -1904,13 +2786,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePutApiDocumentsId = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putApiDocumentsId>>, TError,PutApiDocumentsIdMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof putApiDocumentsId>>,
         TError,
         PutApiDocumentsIdMutationVariables,
         TContext
       > => {
-      return useMutation(getPutApiDocumentsIdMutationOptions(options));
+      return useMutation(getPutApiDocumentsIdMutationOptions(options), queryClient);
     }
 
 export const getDeleteApiDocumentsIdUrl = (id: string,) => {
@@ -1921,9 +2803,9 @@ export const getDeleteApiDocumentsIdUrl = (id: string,) => {
   return `/api/documents/${id}`
 }
 
-export const deleteApiDocumentsId = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const deleteApiDocumentsId = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ApiMessageResponse> => {
 
-  return customFetch<void>(getDeleteApiDocumentsIdUrl(id),
+  return customFetch<ApiMessageResponse>(getDeleteApiDocumentsIdUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -1972,16 +2854,16 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const useDeleteApiDocumentsId = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiDocumentsId>>, TError,DeleteApiDocumentsIdMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteApiDocumentsId>>,
         TError,
         DeleteApiDocumentsIdMutationVariables,
         TContext
       > => {
-      return useMutation(getDeleteApiDocumentsIdMutationOptions(options));
+      return useMutation(getDeleteApiDocumentsIdMutationOptions(options), queryClient);
     }
 
-export const getGetApiReportsGenerateUrl = (params: GetApiReportsGenerateParams,) => {
+export const getGetApiReportsGenerateUrl = (params?: GetApiReportsGenerateParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1996,9 +2878,9 @@ export const getGetApiReportsGenerateUrl = (params: GetApiReportsGenerateParams,
   return stringifiedParams.length > 0 ? `/api/reports/generate?${stringifiedParams}` : `/api/reports/generate`
 }
 
-export const getApiReportsGenerate = async (params: GetApiReportsGenerateParams, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiReportsGenerate = async (params?: GetApiReportsGenerateParams, options?: Parameters<typeof customFetch>[1]): Promise<ApiReportResponse> => {
 
-  return customFetch<void>(getGetApiReportsGenerateUrl(params),
+  return customFetch<ApiReportResponse>(getGetApiReportsGenerateUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2018,7 +2900,7 @@ export const getGetApiReportsGenerateQueryKey = (params?: GetApiReportsGenerateP
     }
 
 
-export const getGetApiReportsGenerateQueryOptions = <TData = Awaited<ReturnType<typeof getApiReportsGenerate>>, TError = ErrorType<unknown>>(params: GetApiReportsGenerateParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiReportsGenerateQueryOptions = <TData = Awaited<ReturnType<typeof getApiReportsGenerate>>, TError = ErrorType<unknown>>(params?: GetApiReportsGenerateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2033,22 +2915,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiReportsGenerateQueryResult = NonNullable<Awaited<ReturnType<typeof getApiReportsGenerate>>>
 export type GetApiReportsGenerateQueryError = ErrorType<unknown>
 
 
+export function useGetApiReportsGenerate<TData = Awaited<ReturnType<typeof getApiReportsGenerate>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetApiReportsGenerateParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiReportsGenerate>>,
+          TError,
+          Awaited<ReturnType<typeof getApiReportsGenerate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiReportsGenerate<TData = Awaited<ReturnType<typeof getApiReportsGenerate>>, TError = ErrorType<unknown>>(
+ params?: GetApiReportsGenerateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiReportsGenerate>>,
+          TError,
+          Awaited<ReturnType<typeof getApiReportsGenerate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiReportsGenerate<TData = Awaited<ReturnType<typeof getApiReportsGenerate>>, TError = ErrorType<unknown>>(
+ params?: GetApiReportsGenerateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiReportsGenerate<TData = Awaited<ReturnType<typeof getApiReportsGenerate>>, TError = ErrorType<unknown>>(
- params: GetApiReportsGenerateParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ params?: GetApiReportsGenerateParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiReportsGenerate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiReportsGenerateQueryOptions(params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -2067,9 +2973,9 @@ export const getGetApiPacientesMeConsentimentoUrl = () => {
   return `/api/pacientes/me/consentimento`
 }
 
-export const getApiPacientesMeConsentimento = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiPacientesMeConsentimento = async ( options?: Parameters<typeof customFetch>[1]): Promise<ConsentimentoStatusResponse> => {
 
-  return customFetch<void>(getGetApiPacientesMeConsentimentoUrl(),
+  return customFetch<ConsentimentoStatusResponse>(getGetApiPacientesMeConsentimentoUrl(),
   {
     ...options,
     method: 'GET'
@@ -2089,7 +2995,7 @@ export const getGetApiPacientesMeConsentimentoQueryKey = () => {
     }
 
 
-export const getGetApiPacientesMeConsentimentoQueryOptions = <TData = Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiPacientesMeConsentimentoQueryOptions = <TData = Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2104,22 +3010,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiPacientesMeConsentimentoQueryResult = NonNullable<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>>
 export type GetApiPacientesMeConsentimentoQueryError = ErrorType<unknown>
 
 
+export function useGetApiPacientesMeConsentimento<TData = Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPacientesMeConsentimento<TData = Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>,
+          TError,
+          Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiPacientesMeConsentimento<TData = Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiPacientesMeConsentimento<TData = Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiPacientesMeConsentimento>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiPacientesMeConsentimentoQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -2138,7 +3068,7 @@ export const getPostApiPacientesMeConsentimentoUrl = () => {
   return `/api/pacientes/me/consentimento`
 }
 
-export const postApiPacientesMeConsentimento = async (consentimentoDto: ConsentimentoDto, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const postApiPacientesMeConsentimento = async (consentimentoDto: ConsentimentoDto, options?: Parameters<typeof customFetch>[1]): Promise<ConsentimentoStatusResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2154,7 +3084,7 @@ export const postApiPacientesMeConsentimento = async (consentimentoDto: Consenti
     }
     return headers;
   };
-return customFetch<void>(getPostApiPacientesMeConsentimentoUrl(),
+return customFetch<ConsentimentoStatusResponse>(getPostApiPacientesMeConsentimentoUrl(),
   {
     ...options,
     method: 'POST',
@@ -2203,13 +3133,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const usePostApiPacientesMeConsentimento = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiPacientesMeConsentimento>>, TError,PostApiPacientesMeConsentimentoMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postApiPacientesMeConsentimento>>,
         TError,
         PostApiPacientesMeConsentimentoMutationVariables,
         TContext
       > => {
-      return useMutation(getPostApiPacientesMeConsentimentoMutationOptions(options));
+      return useMutation(getPostApiPacientesMeConsentimentoMutationOptions(options), queryClient);
     }
 
 export const getDeleteApiPacientesMeConsentimentoUrl = () => {
@@ -2271,13 +3201,529 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export const useDeleteApiPacientesMeConsentimento = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteApiPacientesMeConsentimento>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
+ , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteApiPacientesMeConsentimento>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getDeleteApiPacientesMeConsentimentoMutationOptions(options));
+      return useMutation(getDeleteApiPacientesMeConsentimentoMutationOptions(options), queryClient);
+    }
+
+export const getGetApiCatalogoMedicamentosUrl = (params: GetApiCatalogoMedicamentosParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/catalogo-medicamentos?${stringifiedParams}` : `/api/catalogo-medicamentos`
+}
+
+export const getApiCatalogoMedicamentos = async (params: GetApiCatalogoMedicamentosParams, options?: Parameters<typeof customFetch>[1]): Promise<MedicamentoCatalogoSearchResponse> => {
+
+  return customFetch<MedicamentoCatalogoSearchResponse>(getGetApiCatalogoMedicamentosUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiCatalogoMedicamentosQueryKey = (params?: GetApiCatalogoMedicamentosParams,) => {
+    return [
+    `/api/catalogo-medicamentos`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiCatalogoMedicamentosQueryOptions = <TData = Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError = ErrorType<unknown>>(params: GetApiCatalogoMedicamentosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiCatalogoMedicamentosQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>> = ({ signal }) => getApiCatalogoMedicamentos(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiCatalogoMedicamentosQueryResult = NonNullable<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>>
+export type GetApiCatalogoMedicamentosQueryError = ErrorType<unknown>
+
+
+export function useGetApiCatalogoMedicamentos<TData = Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoMedicamentosParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>,
+          TError,
+          Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiCatalogoMedicamentos<TData = Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoMedicamentosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>,
+          TError,
+          Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiCatalogoMedicamentos<TData = Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoMedicamentosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetApiCatalogoMedicamentos<TData = Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoMedicamentosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoMedicamentos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiCatalogoMedicamentosQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostApiCatalogoMedicamentosImportarUrl = () => {
+
+
+
+
+  return `/api/catalogo-medicamentos/importar`
+}
+
+export const postApiCatalogoMedicamentosImportar = async (postApiCatalogoMedicamentosImportarBody: PostApiCatalogoMedicamentosImportarBody, options?: Parameters<typeof customFetch>[1]): Promise<ImportacaoCatalogoResult> => {
+    const formData = new FormData();
+formData.append(`file`, postApiCatalogoMedicamentosImportarBody.file);
+
+  return customFetch<ImportacaoCatalogoResult>(getPostApiCatalogoMedicamentosImportarUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiCatalogoMedicamentosImportarMutationKey = () => ['postApiCatalogoMedicamentosImportar'] as const;
+
+export const getPostApiCatalogoMedicamentosImportarMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoMedicamentosImportar>>, TError,PostApiCatalogoMedicamentosImportarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoMedicamentosImportar>>, TError,PostApiCatalogoMedicamentosImportarMutationVariables, TContext> => {
+
+const mutationKey = getPostApiCatalogoMedicamentosImportarMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiCatalogoMedicamentosImportar>>, PostApiCatalogoMedicamentosImportarMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  postApiCatalogoMedicamentosImportar(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiCatalogoMedicamentosImportarMutationResult = NonNullable<Awaited<ReturnType<typeof postApiCatalogoMedicamentosImportar>>>
+    export type PostApiCatalogoMedicamentosImportarMutationBody = BodyType<PostApiCatalogoMedicamentosImportarBody>
+    export type PostApiCatalogoMedicamentosImportarMutationError = ErrorType<unknown>
+    export type PostApiCatalogoMedicamentosImportarMutationVariables = {data: BodyType<PostApiCatalogoMedicamentosImportarBody>}
+
+    export const usePostApiCatalogoMedicamentosImportar = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoMedicamentosImportar>>, TError,PostApiCatalogoMedicamentosImportarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiCatalogoMedicamentosImportar>>,
+        TError,
+        PostApiCatalogoMedicamentosImportarMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPostApiCatalogoMedicamentosImportarMutationOptions(options), queryClient);
+    }
+
+export const getGetApiCatalogoCid10Url = (params: GetApiCatalogoCid10Params,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/catalogo-cid10?${stringifiedParams}` : `/api/catalogo-cid10`
+}
+
+export const getApiCatalogoCid10 = async (params: GetApiCatalogoCid10Params, options?: Parameters<typeof customFetch>[1]): Promise<CatalogSearchResponseOfCid10Registro> => {
+
+  return customFetch<CatalogSearchResponseOfCid10Registro>(getGetApiCatalogoCid10Url(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiCatalogoCid10QueryKey = (params?: GetApiCatalogoCid10Params,) => {
+    return [
+    `/api/catalogo-cid10`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiCatalogoCid10QueryOptions = <TData = Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError = ErrorType<unknown>>(params: GetApiCatalogoCid10Params, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiCatalogoCid10QueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiCatalogoCid10>>> = ({ signal }) => getApiCatalogoCid10(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiCatalogoCid10QueryResult = NonNullable<Awaited<ReturnType<typeof getApiCatalogoCid10>>>
+export type GetApiCatalogoCid10QueryError = ErrorType<unknown>
+
+
+export function useGetApiCatalogoCid10<TData = Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCid10Params, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiCatalogoCid10>>,
+          TError,
+          Awaited<ReturnType<typeof getApiCatalogoCid10>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiCatalogoCid10<TData = Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCid10Params, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiCatalogoCid10>>,
+          TError,
+          Awaited<ReturnType<typeof getApiCatalogoCid10>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiCatalogoCid10<TData = Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCid10Params, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetApiCatalogoCid10<TData = Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCid10Params, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCid10>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiCatalogoCid10QueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostApiCatalogoCid10ImportarUrl = () => {
+
+
+
+
+  return `/api/catalogo-cid10/importar`
+}
+
+export const postApiCatalogoCid10Importar = async (postApiCatalogoCid10ImportarBody: PostApiCatalogoCid10ImportarBody, options?: Parameters<typeof customFetch>[1]): Promise<ImportacaoCatalogoResult> => {
+    const formData = new FormData();
+formData.append(`file`, postApiCatalogoCid10ImportarBody.file);
+
+  return customFetch<ImportacaoCatalogoResult>(getPostApiCatalogoCid10ImportarUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiCatalogoCid10ImportarMutationKey = () => ['postApiCatalogoCid10Importar'] as const;
+
+export const getPostApiCatalogoCid10ImportarMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoCid10Importar>>, TError,PostApiCatalogoCid10ImportarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoCid10Importar>>, TError,PostApiCatalogoCid10ImportarMutationVariables, TContext> => {
+
+const mutationKey = getPostApiCatalogoCid10ImportarMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiCatalogoCid10Importar>>, PostApiCatalogoCid10ImportarMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  postApiCatalogoCid10Importar(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiCatalogoCid10ImportarMutationResult = NonNullable<Awaited<ReturnType<typeof postApiCatalogoCid10Importar>>>
+    export type PostApiCatalogoCid10ImportarMutationBody = BodyType<PostApiCatalogoCid10ImportarBody>
+    export type PostApiCatalogoCid10ImportarMutationError = ErrorType<unknown>
+    export type PostApiCatalogoCid10ImportarMutationVariables = {data: BodyType<PostApiCatalogoCid10ImportarBody>}
+
+    export const usePostApiCatalogoCid10Importar = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoCid10Importar>>, TError,PostApiCatalogoCid10ImportarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiCatalogoCid10Importar>>,
+        TError,
+        PostApiCatalogoCid10ImportarMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPostApiCatalogoCid10ImportarMutationOptions(options), queryClient);
+    }
+
+export const getGetApiCatalogoCnesUrl = (params: GetApiCatalogoCnesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/catalogo-cnes?${stringifiedParams}` : `/api/catalogo-cnes`
+}
+
+export const getApiCatalogoCnes = async (params: GetApiCatalogoCnesParams, options?: Parameters<typeof customFetch>[1]): Promise<CatalogSearchResponseOfCnesRegistro> => {
+
+  return customFetch<CatalogSearchResponseOfCnesRegistro>(getGetApiCatalogoCnesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiCatalogoCnesQueryKey = (params?: GetApiCatalogoCnesParams,) => {
+    return [
+    `/api/catalogo-cnes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiCatalogoCnesQueryOptions = <TData = Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError = ErrorType<unknown>>(params: GetApiCatalogoCnesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiCatalogoCnesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiCatalogoCnes>>> = ({ signal }) => getApiCatalogoCnes(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiCatalogoCnesQueryResult = NonNullable<Awaited<ReturnType<typeof getApiCatalogoCnes>>>
+export type GetApiCatalogoCnesQueryError = ErrorType<unknown>
+
+
+export function useGetApiCatalogoCnes<TData = Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCnesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiCatalogoCnes>>,
+          TError,
+          Awaited<ReturnType<typeof getApiCatalogoCnes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiCatalogoCnes<TData = Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCnesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiCatalogoCnes>>,
+          TError,
+          Awaited<ReturnType<typeof getApiCatalogoCnes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiCatalogoCnes<TData = Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCnesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetApiCatalogoCnes<TData = Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError = ErrorType<unknown>>(
+ params: GetApiCatalogoCnesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiCatalogoCnes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiCatalogoCnesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostApiCatalogoCnesImportarUrl = () => {
+
+
+
+
+  return `/api/catalogo-cnes/importar`
+}
+
+export const postApiCatalogoCnesImportar = async (postApiCatalogoCnesImportarBody: PostApiCatalogoCnesImportarBody, options?: Parameters<typeof customFetch>[1]): Promise<ImportacaoCatalogoResult> => {
+    const formData = new FormData();
+formData.append(`file`, postApiCatalogoCnesImportarBody.file);
+
+  return customFetch<ImportacaoCatalogoResult>(getPostApiCatalogoCnesImportarUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getPostApiCatalogoCnesImportarMutationKey = () => ['postApiCatalogoCnesImportar'] as const;
+
+export const getPostApiCatalogoCnesImportarMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoCnesImportar>>, TError,PostApiCatalogoCnesImportarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoCnesImportar>>, TError,PostApiCatalogoCnesImportarMutationVariables, TContext> => {
+
+const mutationKey = getPostApiCatalogoCnesImportarMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiCatalogoCnesImportar>>, PostApiCatalogoCnesImportarMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  postApiCatalogoCnesImportar(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostApiCatalogoCnesImportarMutationResult = NonNullable<Awaited<ReturnType<typeof postApiCatalogoCnesImportar>>>
+    export type PostApiCatalogoCnesImportarMutationBody = BodyType<PostApiCatalogoCnesImportarBody>
+    export type PostApiCatalogoCnesImportarMutationError = ErrorType<unknown>
+    export type PostApiCatalogoCnesImportarMutationVariables = {data: BodyType<PostApiCatalogoCnesImportarBody>}
+
+    export const usePostApiCatalogoCnesImportar = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiCatalogoCnesImportar>>, TError,PostApiCatalogoCnesImportarMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postApiCatalogoCnesImportar>>,
+        TError,
+        PostApiCatalogoCnesImportarMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPostApiCatalogoCnesImportarMutationOptions(options), queryClient);
     }
 
 export const getGetApiExamesAnalitosUrl = () => {
@@ -2288,9 +3734,9 @@ export const getGetApiExamesAnalitosUrl = () => {
   return `/api/exames/analitos`
 }
 
-export const getApiExamesAnalitos = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiExamesAnalitos = async ( options?: Parameters<typeof customFetch>[1]): Promise<AnalitoResponse[]> => {
 
-  return customFetch<void>(getGetApiExamesAnalitosUrl(),
+  return customFetch<AnalitoResponse[]>(getGetApiExamesAnalitosUrl(),
   {
     ...options,
     method: 'GET'
@@ -2310,7 +3756,7 @@ export const getGetApiExamesAnalitosQueryKey = () => {
     }
 
 
-export const getGetApiExamesAnalitosQueryOptions = <TData = Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiExamesAnalitosQueryOptions = <TData = Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2325,22 +3771,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiExamesAnalitosQueryResult = NonNullable<Awaited<ReturnType<typeof getApiExamesAnalitos>>>
 export type GetApiExamesAnalitosQueryError = ErrorType<unknown>
 
 
+export function useGetApiExamesAnalitos<TData = Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiExamesAnalitos>>,
+          TError,
+          Awaited<ReturnType<typeof getApiExamesAnalitos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiExamesAnalitos<TData = Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiExamesAnalitos>>,
+          TError,
+          Awaited<ReturnType<typeof getApiExamesAnalitos>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiExamesAnalitos<TData = Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiExamesAnalitos<TData = Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesAnalitos>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiExamesAnalitosQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
@@ -2366,9 +3836,9 @@ export const getGetApiExamesSerieUrl = (params: GetApiExamesSerieParams,) => {
   return stringifiedParams.length > 0 ? `/api/exames/serie?${stringifiedParams}` : `/api/exames/serie`
 }
 
-export const getApiExamesSerie = async (params: GetApiExamesSerieParams, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const getApiExamesSerie = async (params: GetApiExamesSerieParams, options?: Parameters<typeof customFetch>[1]): Promise<ResultadoSerieResponse[]> => {
 
-  return customFetch<void>(getGetApiExamesSerieUrl(params),
+  return customFetch<ResultadoSerieResponse[]>(getGetApiExamesSerieUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2388,7 +3858,7 @@ export const getGetApiExamesSerieQueryKey = (params?: GetApiExamesSerieParams,) 
     }
 
 
-export const getGetApiExamesSerieQueryOptions = <TData = Awaited<ReturnType<typeof getApiExamesSerie>>, TError = ErrorType<unknown>>(params: GetApiExamesSerieParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiExamesSerieQueryOptions = <TData = Awaited<ReturnType<typeof getApiExamesSerie>>, TError = ErrorType<unknown>>(params: GetApiExamesSerieParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2403,22 +3873,46 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetApiExamesSerieQueryResult = NonNullable<Awaited<ReturnType<typeof getApiExamesSerie>>>
 export type GetApiExamesSerieQueryError = ErrorType<unknown>
 
 
+export function useGetApiExamesSerie<TData = Awaited<ReturnType<typeof getApiExamesSerie>>, TError = ErrorType<unknown>>(
+ params: GetApiExamesSerieParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiExamesSerie>>,
+          TError,
+          Awaited<ReturnType<typeof getApiExamesSerie>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiExamesSerie<TData = Awaited<ReturnType<typeof getApiExamesSerie>>, TError = ErrorType<unknown>>(
+ params: GetApiExamesSerieParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiExamesSerie>>,
+          TError,
+          Awaited<ReturnType<typeof getApiExamesSerie>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiExamesSerie<TData = Awaited<ReturnType<typeof getApiExamesSerie>>, TError = ErrorType<unknown>>(
+ params: GetApiExamesSerieParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiExamesSerie<TData = Awaited<ReturnType<typeof getApiExamesSerie>>, TError = ErrorType<unknown>>(
- params: GetApiExamesSerieParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+ params: GetApiExamesSerieParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiExamesSerie>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetApiExamesSerieQueryOptions(params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   return withQueryKey(query, queryOptions.queryKey);
 }

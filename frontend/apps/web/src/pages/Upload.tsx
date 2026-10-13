@@ -22,6 +22,7 @@ type UploadQueueItem = {
   progress: number;
   status: 'pronto' | 'processando' | 'fila' | 'falha';
   statusText: string;
+  documentId?: string;
   error?: string;
   previewUrl?: string;
 };
@@ -32,6 +33,9 @@ const DOC_TYPES = [
   { id: 'exame', label: 'Exame' },
   { id: 'laudo', label: 'Laudo' },
   { id: 'atestado', label: 'Atestado' },
+  { id: 'vacina', label: 'Vacina' },
+  { id: 'encaminhamento', label: 'Encaminhamento' },
+  { id: 'relatorio', label: 'Relatório' },
 ];
 const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 
@@ -99,6 +103,8 @@ export default function Upload() {
           body: formData as any,
         })) as any;
 
+        setQueue((prev) => prev.map((item) => item.id === tempId ? { ...item, documentId: res.id } : item));
+
         void queryClient.invalidateQueries({ queryKey: getGetApiDocumentsQueryKey() });
         window.dispatchEvent(new CustomEvent('document-uploaded'));
 
@@ -152,6 +158,13 @@ export default function Upload() {
             )
           );
           toast({ title: 'Documento concluído e catalogado!' });
+        } else if (outcome.status === 'timeout') {
+          setQueue((prev) =>
+            prev.map((item) => item.id === tempId
+              ? { ...item, status: 'fila', statusText: 'Continua no acervo', error: undefined }
+              : item)
+          );
+          toast({ title: 'O processamento continua', description: 'Acompanhe o documento no seu acervo; não é necessário reenviá-lo.' });
         } else {
           setQueue((prev) =>
             prev.map((item) =>
@@ -384,6 +397,11 @@ export default function Upload() {
                           <RotateCw size={14} />
                           {item.error}
                         </div>
+                      )}
+                      {item.documentId && item.status === 'fila' && (
+                        <Link href={`/documentos/${item.documentId}`} className="mt-2 inline-flex text-[13px] font-bold text-[#1f7fe0] hover:underline">
+                          Acompanhar no acervo
+                        </Link>
                       )}
                     </div>
                   </div>

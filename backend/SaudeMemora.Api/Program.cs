@@ -512,13 +512,25 @@ _ = Task.Run(async () =>
 app.MapOpenApi("/openapi/{documentName}.json");
 
 app.UseCors("SaudeMemoraCors");
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api")
+        && !CsrfRequestGuard.IsValid(context.Request.Method, context.Request.Headers[CsrfRequestGuard.HeaderName].ToString()))
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new { message = "csrf_validation_failed" });
+        return;
+    }
+
+    await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
 // --- Health / Ping
-app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).AllowAnonymous();
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok", timestamp = DateTime.UtcNow })).AllowAnonymous();
+app.MapGet("/api/ping", () => Results.Ok(new { status = "ok", message = "pong", timestamp = DateTime.UtcNow })).Produces<PingResponse>().AllowAnonymous();
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok", timestamp = DateTime.UtcNow })).Produces<HealthResponse>().AllowAnonymous();
 
 app.MapConsentimentoEndpoints();
 app.MapReprocessamentoEndpoints();
@@ -563,7 +575,7 @@ app.MapPost("/api/auth/register", async (RegisterPacienteDto dto, IPacienteRepos
         return Results.BadRequest(new[] { "Email já cadastrado." });
     }
     return Results.Ok(new { Message = "Paciente registrado com sucesso!" });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("register");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("register").Produces<ApiMessageResponse>();
 
 app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository repo, IConfiguration config, HttpContext context) =>
 {
@@ -587,7 +599,7 @@ app.MapPost("/api/auth/login", async (LoginPacienteDto dto, IPacienteRepository 
     return Results.Ok(new {
         User = new { paciente.Id, paciente.Nome, paciente.Email }
     });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("login");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("login").Produces<ApiAuthResponse>();
 
 app.MapPost("/api/auth/refresh", async (ClaimsPrincipal user, IPacienteRepository repo, IConfiguration config, HttpContext context) =>
 {
@@ -614,7 +626,7 @@ app.MapPost("/api/auth/refresh", async (ClaimsPrincipal user, IPacienteRepositor
     SetAuthCookie(context, jwt, expiresIn);
 
     return Results.Ok(new { User = new { paciente.Id, paciente.Nome, paciente.Email } });
-}).RequireAuthorization().RequireRateLimiting("refresh");
+}).Produces<ApiAuthResponse>().RequireAuthorization().RequireRateLimiting("refresh");
 
 app.MapPost("/api/auth/logout", async (
     ClaimsPrincipal user,
@@ -658,7 +670,7 @@ app.MapPost("/api/auth/logout", async (
     });
 
     return Results.Ok(new { Message = "Logout realizado com sucesso." });
-});
+}).Produces<ApiMessageResponse>();
 
 app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPacienteRepository repo, IConfiguration config, ILogger<Program> logger, HttpContext context, IHttpClientFactory httpClientFactory) =>
 {
@@ -732,7 +744,7 @@ app.MapPost("/api/auth/forgot-password", async (ForgotPasswordDto dto, IPaciente
     }
 
     return Results.Ok(new { Message = "Se o e-mail estiver cadastrado, você receberá um link de recuperação." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("passwordRecovery");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("passwordRecovery").Produces<ApiMessageResponse>();
 
 app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
@@ -759,7 +771,7 @@ app.MapPost("/api/auth/reset-password", async (ResetPasswordDto dto, IPacienteRe
     await cache.SafeRemoveAsync($"secstamp_{paciente.Id}");
 
     return Results.Ok(new { Message = "Sua senha foi redefinida com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("passwordReset");
+}).AddEndpointFilter<GlobalValidationFilter>().RequireRateLimiting("passwordReset").Produces<ApiMessageResponse>();
 
 // Altera a senha do paciente autenticado
 app.MapPost("/api/auth/alterar-senha", async (ClaimsPrincipal user, IPacienteRepository repo, AlterarSenhaDto dto, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
@@ -788,7 +800,7 @@ app.MapPost("/api/auth/alterar-senha", async (ClaimsPrincipal user, IPacienteRep
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
 
     return Results.Ok(new { Message = "Senha alterada com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().Produces<ApiMessageResponse>();
 
 //  Paciente Endpoints 
 
@@ -832,7 +844,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     await cache.SafeSetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) /* Reduzido de 10 para 5 min para não exceder URL assinada (15m) */ });
     return Results.Ok(result);
-}).RequireAuthorization();
+}).Produces<PatientProfileResponse>().RequireAuthorization();
 
 // Atualiza informações do paciente autenticado (Nome, DataNascimento, Email)
 app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto, IDistributedCache cache, IConfiguration config, HttpContext context) =>
@@ -884,7 +896,7 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     }
 
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 
 // Atualiza telefone e endereço do paciente autenticado
 app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPacienteRepository repo, ContatoDto dto, IDistributedCache cache) =>
@@ -902,7 +914,7 @@ app.MapPatch("/api/pacientes/me/contato", async (ClaimsPrincipal user, IPaciente
     await repo.UpdateAsync(paciente);
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
     return Results.Ok(new { Message = "Contato atualizado com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().Produces<ApiMessageResponse>();
 
 app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IOcrAiService ocr, IDistributedCache cache) =>
 {
@@ -912,7 +924,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     var paciente = await repo.GetByIdAsync(userId);
     if (paciente == null) return Results.NotFound();
 
-    if (paciente.ConsentimentoIa?.Aceito != true)
+    if (paciente.ConsentimentoIa?.HasOcrConsent() != true)
         return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
     if (!context.Request.HasFormContentType)
@@ -977,7 +989,7 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
         app.Logger.LogError(ex, "Erro ao processar carteirinha para usuário {UserId}", userId);
         return Results.Problem("Falha ao processar carteirinha.", statusCode: 500);
     }
-}).RequireAuthorization().RequireRateLimiting("upload").DisableAntiforgery().WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(10L * 1024 * 1024));
+}).Produces<CardResponse>().RequireAuthorization().RequireRateLimiting("upload").DisableAntiforgery().WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(10L * 1024 * 1024));
 
 app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPacienteRepository repo, IImageStorageService storage, IDistributedCache cache) =>
 {
@@ -996,7 +1008,7 @@ app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPac
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
 
     return Results.Ok();
-}).RequireAuthorization();
+}).Produces(StatusCodes.Status200OK).RequireAuthorization();
 
 // Exclui a conta do paciente e todos os seus dados em cascata
 app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IImageStorageService storage, ISistemaLogRepository logRepo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
@@ -1033,7 +1045,7 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     await cache.SafeRemoveAsync($"ficha_user_{userId}");
 
     return Results.Ok(new { message = "Sua conta foi agendada para exclusão e será removida em breve." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().Produces<ApiMessageResponse>();
 
 // --- Logs Endpoints
 
@@ -1071,7 +1083,7 @@ app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepo
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     await cache.SafeSetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) /* Reduzido de 10 para 5 min para não exceder URL assinada (15m) */ });
     return Results.Ok(result);
-}).RequireAuthorization();
+}).Produces<SaudeMemora.Domain.Entities.FichaMedica>().RequireAuthorization();
 
 app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, UpdateFichaMedicaDto dto, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
@@ -1121,7 +1133,7 @@ app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRe
     await repo.UpdateAsync(ficha);
     await cache.SafeRemoveAsync($"ficha_v2_{userId}");
     return Results.Ok(ficha);
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().Produces<SaudeMemora.Domain.Entities.FichaMedica>().RequireAuthorization();
 
 //  Document Endpoints 
 
@@ -1133,7 +1145,7 @@ app.MapPost("/api/documents/upload", async (HttpContext context, ClaimsPrincipal
 
     var pacienteRepo = context.RequestServices.GetRequiredService<IPacienteRepository>();
     var paciente = await pacienteRepo.GetByIdAsync(userId);
-    if (paciente == null || paciente.ConsentimentoIa?.Aceito != true)
+    if (paciente == null || paciente.ConsentimentoIa?.HasOcrConsent() != true)
         return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
     if (!context.Request.HasFormContentType)
@@ -1254,7 +1266,7 @@ if (!tiposValidos.Contains(docTipo)) docTipo = "outro";
 
     return Results.Accepted($"/api/documents/{savedDoc.Id}",
         new { id = savedDoc.Id, status = savedDoc.Status, progress = savedDoc.Progress, duplicate = false, message = "Documento recebido na fila de processamento!" });
-}).RequireAuthorization().RequireRateLimiting("upload").DisableAntiforgery().WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(UploadHelpers.MaxFilesPerUpload * UploadHelpers.MaxFileSizeBytes + 500_000));
+}).Produces<DocumentUploadResponse>().Produces<DocumentUploadResponse>(StatusCodes.Status202Accepted).RequireAuthorization().RequireRateLimiting("upload").DisableAntiforgery().WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(UploadHelpers.MaxFilesPerUpload * UploadHelpers.MaxFileSizeBytes + 500_000));
 
 // Recoloca na fila um documento cujo processamento falhou (botão "Tentar novamente")
 app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDistributedCache cache) =>
@@ -1271,7 +1283,7 @@ app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user,
 
     await UploadHelpers.InvalidateDocumentListCachesAsync(cache, userId);
     return Results.Accepted($"/api/documents/{id}", new { id, status = "pending", progress = 25 });
-}).RequireAuthorization().RequireRateLimiting("upload");
+}).Produces<DocumentUploadResponse>(StatusCodes.Status202Accepted).RequireAuthorization().RequireRateLimiting("upload");
 
 
 // Lista todos os documentos do paciente autenticado
@@ -1305,7 +1317,7 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
             .Where(url => !string.IsNullOrWhiteSpace(url))
             .ToList() : new List<string>(),
         progress = d.Progress,
-        errorMessage = d.ErrorMessage,
+        errorMessage = PublicDocumentErrorMessage(d.ErrorMessage),
         criadoEm = d.CriadoEm,
         revisaoPendente = d.RevisaoPendente,
         alertas = d.Alertas ?? new(),
@@ -1313,7 +1325,7 @@ app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository re
     }).OrderByDescending(d => d.criadoEm).ToList();
 
     return Results.Ok(result);
-}).RequireAuthorization();
+}).Produces<List<DocumentListItemResponse>>().RequireAuthorization();
 
 
 // Contagens de documentos por tipo (para métricas do dashboard)
@@ -1349,7 +1361,7 @@ app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentReposit
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     await cache.SafeSetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) /* Reduzido de 10 para 5 min para não exceder URL assinada (15m) */ });
     return Results.Ok(result);
-}).RequireAuthorization();
+}).Produces<DocumentCountResponse>().RequireAuthorization();
 
 // Busca documento por ID
 app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, IDistributedCache cache) =>
@@ -1409,12 +1421,12 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         revisaoPendente = doc.RevisaoPendente,
         camposBaixaConfianca = doc.CamposBaixaConfianca ?? new(),
         progress = doc.Progress,
-        errorMessage = doc.ErrorMessage,
+        errorMessage = PublicDocumentErrorMessage(doc.ErrorMessage),
         criadoEm = doc.CriadoEm,
         alertas = doc.Alertas ?? new(),
         revisadoEm = doc.RevisadoEm
     });
-}).RequireAuthorization();
+}).Produces<DocumentDetailResponse>().RequireAuthorization();
 
 // Editar um documento
 app.MapPut("/api/documents/{id}", async (
@@ -1531,10 +1543,20 @@ app.MapPut("/api/documents/{id}", async (
     if (!doc.RevisaoPendente)
     {
         var paciente = await pacienteRepo.GetByIdAsync(userId);
-        if (paciente?.ConsentimentoIa?.Aceito == true)
+        if (paciente?.ConsentimentoIa?.HasOcrConsent() == true)
         {
             var ficha = await fichaRepo.GetByPacienteIdAsync(userId);
-            doc.Alertas = await alertaService.GerarAlertasAsync(doc, ficha ?? new SaudeMemora.Domain.Entities.FichaMedica());
+            var dismissedAlertKeys = (doc.Alertas ?? new List<AlertaDocumento>())
+                .Where(alerta => alerta.Dispensado)
+                .Select(alerta => $"{alerta.Tipo.Trim()}|{string.Join("|", alerta.Medicamentos.OrderBy(medicamento => medicamento, StringComparer.OrdinalIgnoreCase))}|{alerta.Mensagem.Trim()}")
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var regeneratedAlerts = await alertaService.GerarAlertasAsync(doc, ficha ?? new SaudeMemora.Domain.Entities.FichaMedica());
+            foreach (var alert in regeneratedAlerts)
+            {
+                var alertKey = $"{alert.Tipo.Trim()}|{string.Join("|", alert.Medicamentos.OrderBy(medicamento => medicamento, StringComparer.OrdinalIgnoreCase))}|{alert.Mensagem.Trim()}";
+                alert.Dispensado = dismissedAlertKeys.Contains(alertKey);
+            }
+            doc.Alertas = regeneratedAlerts;
         }
         else
         {
@@ -1546,7 +1568,7 @@ app.MapPut("/api/documents/{id}", async (
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     return Results.Ok(new { message = "Documento atualizado com sucesso." });
-}).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 
 // Exclui documento por ID (e remove do Cloudinary)
 app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
@@ -1573,7 +1595,7 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     return Results.Ok(new { message = "Documento deletado com sucesso." });
-}).RequireAuthorization();
+}).Produces<ApiMessageResponse>().RequireAuthorization();
 
 //  Relatório Endpoints 
 
@@ -1583,7 +1605,7 @@ app.MapGet("/api/reports/generate", async (int? months, ClaimsPrincipal user, IP
     if (userId == null) return Results.Unauthorized();
 
     var paciente = await repo.GetByIdAsync(userId);
-    if (paciente == null || paciente.ConsentimentoIa?.Aceito != true)
+    if (paciente == null || paciente.ConsentimentoIa?.HasChatConsent() != true)
         return Results.Json(new { message = "consentimento_necessario" }, statusCode: 403);
 
     var culture = System.Globalization.CultureInfo.InvariantCulture;
@@ -1647,12 +1669,14 @@ Obs: {ficha?.Observacoes}
     prompt += "\n\nCrie um relatório médico coeso, profissional e bem formatado em Markdown destacando os pontos principais, evolução e estado atual. Seja direto.";
 
     var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
+    var geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"];
     if (string.IsNullOrEmpty(geminiKey)) return Results.BadRequest("GEMINI_API_KEY não configurada.");
+    if (string.IsNullOrWhiteSpace(geminiModel)) return Results.Problem("GEMINI_MODEL não configurado.", statusCode: StatusCodes.Status503ServiceUnavailable);
 
     using var http = httpClientFactory.CreateClient();
     var payload = new
     {
-        model = "gemini-3.8-flash",
+        model = geminiModel,
         messages = new[] { new { role = "user", content = prompt } },
         temperature = 0.3
     };
@@ -1673,7 +1697,11 @@ Obs: {ficha?.Observacoes}
     var report = json.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
 
     return Results.Ok(new { Report = report });
-}).RequireAuthorization().RequireRateLimiting("chat");
+}).Produces<ApiReportResponse>().RequireAuthorization().RequireRateLimiting("chat");
+
+string PublicDocumentErrorMessage(string? errorMessage) => string.IsNullOrWhiteSpace(errorMessage)
+    ? string.Empty
+    : "Não foi possível processar este documento. Você pode tentar novamente mais tarde.";
 
 app.Run();
 
@@ -1694,6 +1722,97 @@ public record ContatoDto(string? Telefone, string? Endereco, string? ContatoEmer
 public record PerfilUpdateDto(string? Nome, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha, string? SenhaAtual, string? ContatoEmergencia, string? Sexo);
 public record AlterarSenhaDto(string SenhaAtual, string NovaSenha);
 public record DeleteAccountDto(string Senha);
+public record ApiMessageResponse(string Message);
+public record ApiUserResponse(string? Id, string Nome, string Email);
+public record ApiAuthResponse(ApiUserResponse User);
+public record PatientProfileResponse(
+    string? Id,
+    string Nome,
+    string Email,
+    string DataNascimento,
+    int Idade,
+    string? Sexo,
+    string? Telefone,
+    string? Endereco,
+    string? PlanoSaude,
+    string? NumeroCarteirinha,
+    string? ContatoEmergencia,
+    ConsentimentoIa? ConsentimentoIa,
+    string? UrlCarteirinha);
+public record PingResponse(string Status, string Message, DateTime Timestamp);
+public record HealthResponse(string Status, DateTime Timestamp);
+public record CardResponse(string Url, string? PlanoSaude, string? NumeroCarteirinha);
+public record DocumentUploadResponse(string Id, string Status, int Progress, bool? Duplicate, string? Message);
+public record DocumentCountResponse(
+    int Total,
+    int Exames,
+    int Receitas,
+    int Laudos,
+    int Atestados,
+    int Vacinas,
+    int Encaminhamentos,
+    int Relatorios,
+    int Outros,
+    int ReceitasAtivas);
+public record DocumentListExamResult(string Nome, string NomeNormalizado);
+public record DocumentListItemResponse(
+    string? Id,
+    string Titulo,
+    string Tipo,
+    string Status,
+    string Medico,
+    string Crm,
+    string Clinica,
+    string Data,
+    string Resumo,
+    string Diagnostico,
+    string Cid,
+    string Cnes,
+    List<MedicamentoDocumento> Medicamentos,
+    string NomeExame,
+    string TipoExame,
+    List<DocumentListExamResult> ResultadosExame,
+    List<string> UrlImagens,
+    int Progress,
+    string ErrorMessage,
+    DateTime CriadoEm,
+    bool RevisaoPendente,
+    List<AlertaDocumento> Alertas,
+    DateTime? RevisadoEm);
+public record DocumentDetailResponse(
+    string? Id,
+    string Titulo,
+    string Tipo,
+    string Status,
+    string Medico,
+    string Crm,
+    string Clinica,
+    string Data,
+    string Resumo,
+    string Diagnostico,
+    string Cid,
+    string Cnes,
+    List<MedicamentoDocumento> Medicamentos,
+    string NomeExame,
+    string TipoExame,
+    string Resultado,
+    string Especialidade,
+    string TipoClinico,
+    string Conteudo,
+    string Conclusoes,
+    string Observacoes,
+    List<string> UrlImagens,
+    string TextoExtraido,
+    List<LinhaIndentadaDocumento> ConteudoIndentado,
+    List<ResultadoExameItem> ResultadosExame,
+    bool RevisaoPendente,
+    List<string> CamposBaixaConfianca,
+    int Progress,
+    string ErrorMessage,
+    DateTime CriadoEm,
+    List<AlertaDocumento> Alertas,
+    DateTime? RevisadoEm);
+public record ApiReportResponse(string? Report);
 
 public class DocumentUpdateDto
 {

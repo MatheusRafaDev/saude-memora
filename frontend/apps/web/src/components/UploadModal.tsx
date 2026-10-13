@@ -36,6 +36,9 @@ const TYPE_OPTIONS = [
   { id: 'exame', label: 'Exame' },
   { id: 'laudo', label: 'Laudo' },
   { id: 'atestado', label: 'Atestado' },
+  { id: 'vacina', label: 'Vacina' },
+  { id: 'encaminhamento', label: 'Encaminhamento' },
+  { id: 'relatorio', label: 'Relatório' },
 ];
 const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 
@@ -55,7 +58,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   const [filePreviews, setFilePreviews] = useState<FilePreviewItem[]>([]);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; name: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'done' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'done' | 'error' | 'timeout'>('idle');
   const [progress, setProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [resultId, setResultId] = useState<string | null>(null);
@@ -216,6 +219,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
         setProgress(100);
         setStatus('done');
         if (onSuccess) onSuccess(res.id);
+      } else if (outcome.status === 'timeout') {
+        setStatus('timeout');
+        setErrorMessage('O processamento continua no acervo. Não é necessário enviar o arquivo novamente.');
       } else {
         setStatus('error');
         setErrorMessage('message' in outcome ? (outcome as any).message : 'Não foi possível ler o documento.');
@@ -633,6 +639,27 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 Tentar novamente
               </button>
             </div>
+          </div>
+        )}
+
+        {status === 'timeout' && (
+          <div className="py-6 text-center space-y-4">
+            <LoaderCircle size={42} className="mx-auto animate-spin text-[#1f7fe0]" />
+            <div>
+              <b className="block text-lg text-[#1d2a3d]">Ainda estamos processando</b>
+              <p className="mt-1 text-sm text-[#5a6a80]">{errorMessage}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                handleClose();
+                if (resultId) setLocation(`/documentos/${resultId}`);
+                else setLocation('/documentos');
+              }}
+              className="min-h-[44px] rounded-xl bg-[#1b3a60] px-6 text-sm font-bold text-white hover:bg-[#24507f]"
+            >
+              Acompanhar documento
+            </button>
           </div>
         )}
       </div>

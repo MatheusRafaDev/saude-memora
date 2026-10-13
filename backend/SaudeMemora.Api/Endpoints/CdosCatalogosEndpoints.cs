@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Application.Interfaces;
+using SaudeMemora.Domain.Entities;
 
 namespace SaudeMemora.Api.Endpoints;
 
@@ -21,7 +22,7 @@ public static class CdosCatalogosEndpoints
 
             var registros = await service.BuscarAsync(query, limit > 0 ? limit : 20, cancellationToken);
             return Results.Ok(new { query = query.Trim(), count = registros.Count, registros });
-        });
+        }).Produces<CatalogSearchResponse<Cid10Registro>>();
 
         cid10.MapPost("/importar", async (
             [FromForm] IFormFile file,
@@ -32,7 +33,7 @@ public static class CdosCatalogosEndpoints
             if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)) return Results.BadRequest(new { message = "Apenas arquivos CSV são aceitos." });
             await using var stream = file.OpenReadStream();
             return Results.Ok(await service.ImportarAsync(stream, cancellationToken));
-        }).AddEndpointFilter<ImportacaoCatalogoFilter>();
+        }).Produces<ImportacaoCatalogoResult>().DisableAntiforgery().AddEndpointFilter<ImportacaoCatalogoFilter>();
 
         var cnes = app.MapGroup("/api/catalogo-cnes").RequireAuthorization();
         cnes.MapGet("", async (
@@ -48,7 +49,7 @@ public static class CdosCatalogosEndpoints
 
             var registros = await service.BuscarAsync(query, limit > 0 ? limit : 20, cancellationToken);
             return Results.Ok(new { query = query.Trim(), count = registros.Count, registros });
-        });
+        }).Produces<CatalogSearchResponse<CnesRegistro>>();
 
         cnes.MapPost("/importar", async (
             [FromForm] IFormFile file,
@@ -63,6 +64,8 @@ public static class CdosCatalogosEndpoints
             }
             await using var stream = file.OpenReadStream();
             return Results.Ok(await service.ImportarAsync(stream, cancellationToken));
-        }).AddEndpointFilter<ImportacaoCatalogoFilter>();
+        }).Produces<ImportacaoCatalogoResult>().DisableAntiforgery().AddEndpointFilter<ImportacaoCatalogoFilter>();
     }
 }
+
+public record CatalogSearchResponse<T>(string Query, int Count, IReadOnlyList<T> Registros);

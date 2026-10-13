@@ -112,7 +112,7 @@ public class DocumentProcessingWorker : BackgroundService
             // Verifica o consentimento
             var pacienteRepo = scope.ServiceProvider.GetRequiredService<IPacienteRepository>();
             var paciente = await pacienteRepo.GetByIdAsync(doc.PacienteId);
-            if (paciente == null || paciente.ConsentimentoIa?.Aceito != true)
+            if (paciente == null || paciente.ConsentimentoIa?.HasOcrConsent() != true)
             {
                 throw new ConsentimentoNecessarioException();
             }
@@ -243,7 +243,7 @@ public class DocumentProcessingWorker : BackgroundService
             }
 
             // FASE 4: Alerta de interação e alergia
-            if (!doc.RevisaoPendente && paciente.ConsentimentoIa?.Aceito == true)
+            if (!doc.RevisaoPendente && paciente.ConsentimentoIa?.HasOcrConsent() == true)
             {
                 var alertaService = scope.ServiceProvider.GetRequiredService<IAlertaMedicamentoService>();
                 var fichaRepo = scope.ServiceProvider.GetRequiredService<IFichaMedicaRepository>();
@@ -377,7 +377,7 @@ public class DocumentProcessingWorker : BackgroundService
             });
             
             doc.Attempts++;
-            doc.ErrorMessage = ex.Message;
+            doc.ErrorMessage = "Não foi possível processar este documento. Você pode tentar novamente mais tarde.";
             doc.LockedBy = string.Empty;
             doc.LockedUntil = null;
             if (doc.Attempts >= 3)

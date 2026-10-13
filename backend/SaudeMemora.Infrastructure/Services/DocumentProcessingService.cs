@@ -18,6 +18,8 @@ public class DocumentProcessingService : IOcrAiService
     private readonly string? _ocrSpaceApiKey;
     private readonly string? _geminiApiKey;
     private readonly string? _groqApiKey;
+    private readonly string? _geminiModel;
+    private readonly string? _groqModel;
 
     private readonly ILogger<DocumentProcessingService> _logger;
 
@@ -27,9 +29,15 @@ public class DocumentProcessingService : IOcrAiService
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
+        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"];
+        _groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL") ?? config["Groq:Model"];
 
         _logger = logger;
     }
+
+    private string GetGeminiModel() => !string.IsNullOrWhiteSpace(_geminiModel)
+        ? _geminiModel
+        : throw new InvalidOperationException("GEMINI_MODEL não está configurado.");
 
     public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType, CancellationToken cancellationToken = default)
     {
@@ -122,7 +130,7 @@ public class DocumentProcessingService : IOcrAiService
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "gemini-3.8-flash",
+            model = GetGeminiModel(),
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             max_tokens = 8192,
@@ -216,7 +224,7 @@ public class DocumentProcessingService : IOcrAiService
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "gemini-3.8-flash",
+            model = GetGeminiModel(),
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0
         };
@@ -320,7 +328,7 @@ public class DocumentProcessingService : IOcrAiService
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
-            model = "gemini-3.8-flash",
+            model = GetGeminiModel(),
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             max_tokens = 8192,
@@ -352,7 +360,7 @@ public class DocumentProcessingService : IOcrAiService
             var err = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
             
-            if (!string.IsNullOrWhiteSpace(_groqApiKey))
+            if (!string.IsNullOrWhiteSpace(_groqApiKey) && !string.IsNullOrWhiteSpace(_groqModel))
             {
                 _logger.LogInformation("Tentando extração estruturada via fallback Groq.");
                 try 
@@ -360,7 +368,7 @@ public class DocumentProcessingService : IOcrAiService
                     var groqApiUrl = "https://api.groq.com/openai/v1/chat/completions";
                     var groqPayload = new
                     {
-                        model = "llama3-8b-8192",
+                        model = _groqModel,
                         messages = new[] { new { role = "user", content = prompt } },
                         temperature = 0.0,
                         response_format = new { type = "json_object" }

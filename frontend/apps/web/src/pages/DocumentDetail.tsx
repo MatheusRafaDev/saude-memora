@@ -14,6 +14,7 @@ import {
   LoaderCircle,
   ChevronDown,
   Copy,
+  RotateCw,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -23,6 +24,7 @@ import {
   customFetch,
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
 type MedicationEdit = { nome: string; dosagem: string; horario: string };
@@ -165,12 +167,18 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     query: {
       queryKey: getGetApiDocumentsIdQueryKey(id || ''),
       enabled: isMongoId,
+      refetchInterval: (query) => {
+        const status = (query.state.data as any)?.status;
+        return status === 'pending' || status === 'processing' ? 4000 : false;
+      },
     },
   });
 
   const [activeTab, setActiveTab] = useState<'dados' | 'medicamentos' | 'alertas'>('dados');
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
   const [isConfirmingRevisao, setIsConfirmingRevisao] = useState(false);
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [dismissingAlertId, setDismissingAlertId] = useState<string | null>(null);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
   const [showExtractedText, setShowExtractedText] = useState(false);
   const [hasCopiedExtractedText, setHasCopiedExtractedText] = useState(false);
@@ -198,6 +206,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const examResults = Array.isArray(doc?.resultadosExame) ? doc.resultadosExame : [];
   const medications = Array.isArray(doc?.medicamentos) ? doc.medicamentos : [];
   const alerts = Array.isArray(doc?.alertas) ? doc.alertas : [];
+  const activeAlerts = alerts.filter((alert: any) => alert.dispensado !== true);
   const indentedContent: any[] = Array.isArray(doc?.conteudoIndentado) ? doc.conteudoIndentado : [];
   const lowConfidenceFields = Array.isArray(doc?.camposBaixaConfianca)
     ? doc.camposBaixaConfianca
@@ -245,6 +254,35 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       toast({ title: 'Erro ao confirmar revisão', variant: 'destructive' });
     } finally {
       setIsConfirmingRevisao(false);
+    }
+  };
+
+  const handleReprocess = async () => {
+    if (!doc || !id || !isMongoId || isReprocessing) return;
+    setIsReprocessing(true);
+    const path = doc.status === 'failed' ? 'retry' : 'reprocessar';
+    try {
+      await customFetch(`/api/documents/${id}/${path}`, { method: 'POST' });
+      await refetch();
+      toast({ title: path === 'retry' ? 'Documento recolocado na fila.' : 'Reprocessamento iniciado.' });
+    } catch (error) {
+      toast({ title: getApiErrorMessage(error, 'Não foi possível reprocessar o documento.'), variant: 'destructive' });
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
+
+  const handleDismissAlert = async (alertId: string) => {
+    if (!id || !isMongoId || dismissingAlertId) return;
+    setDismissingAlertId(alertId);
+    try {
+      await customFetch(`/api/documents/${id}/alertas/${alertId}/dispensar`, { method: 'POST' });
+      await refetch();
+      toast({ title: 'Alerta dispensado.' });
+    } catch (error) {
+      toast({ title: getApiErrorMessage(error, 'Não foi possível dispensar o alerta.'), variant: 'destructive' });
+    } finally {
+      setDismissingAlertId(null);
     }
   };
 
@@ -337,6 +375,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               <span className="whitespace-nowrap rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1f7fe0]">
                 {doc.tipo || 'Tipo não informado'}
               </span>
+              {['processing', 'pending'].includes(doc.status) && <span className="whitespace-nowrap rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1b3a60]">Processando</span>}
+              {doc.status === 'failed' && <span className="whitespace-nowrap rounded-full bg-[#fde8e6] px-2.5 py-1 text-xs font-bold text-[#a13a30]">Falhou</span>}
               {isReviewPending && (
                 <span className="whitespace-nowrap rounded-full bg-[#fdf3d8] px-2.5 py-1 text-xs font-bold text-[#6b4208]">
                   Revisar
@@ -347,6 +387,17 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
 
           <div className="flex gap-2.5">
+            {!['processing', 'pending'].includes(doc.status) && (
+              <button
+                type="button"
+                onClick={handleReprocess}
+                disabled={isReprocessing}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] shadow-xs transition-colors hover:bg-slate-50 disabled:opacity-50"
+              >
+                {isReprocessing ? <LoaderCircle size={16} className="animate-spin" /> : <RotateCw size={16} />}
+                {doc.status === 'failed' ? 'Tentar novamente' : 'Reprocessar'}
+              </button>
+            )}
             {fileUrl ? (
               <a
                 href={fileUrl}
@@ -376,6 +427,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             </button>
           </div>
         </div>
+
+        {doc.errorMessage && (
+          <div role="status" className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] px-4 py-3 text-sm text-[#8a3028]">
+            {doc.errorMessage}
+          </div>
+        )}
 
         {isReviewPending && (
           <div className="mb-5 flex items-center gap-3.5 rounded-2xl border border-[#e3b95a] bg-[#fdf3d8] p-4 text-[#4a2c0a] sm:p-5">
@@ -752,14 +809,29 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             {activeTab === 'alertas' && (
               <div className="space-y-3">
                 <h2 className="text-sm font-bold text-[#1d2a3d]">Alertas registrados</h2>
-                {alerts.length === 0 ? (
+                {activeAlerts.length === 0 ? (
                   <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
-                    Não há alertas registrados neste documento.
+                    Não há alertas ativos neste documento.
                   </p>
-                ) : alerts.map((alert: any, index: number) => (
+                ) : activeAlerts.map((alert: any, index: number) => (
                   <div key={`${alert.tipo || 'alerta'}-${index}`} className="rounded-2xl border border-[#f0b8b2] bg-[#fff5f4] p-4 text-[#a13a30]">
-                    <b className="block text-sm">{alert.tipo || 'Alerta'}{alert.severidade ? ` · ${alert.severidade}` : ''}</b>
-                    {alert.mensagem && <p className="mb-0 mt-1 text-xs leading-relaxed text-[#1d2a3d]">{alert.mensagem}</p>}
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <b className="block text-sm">{alert.tipo || 'Alerta'}{alert.severidade ? ` · ${alert.severidade}` : ''}</b>
+                        {alert.mensagem && <p className="mb-0 mt-1 text-xs leading-relaxed text-[#1d2a3d]">{alert.mensagem}</p>}
+                      </div>
+                      {alert.id && (
+                        <button
+                          type="button"
+                          onClick={() => void handleDismissAlert(alert.id)}
+                          disabled={dismissingAlertId !== null}
+                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#f0b8b2] bg-white px-2.5 text-xs font-bold text-[#8a3028] hover:bg-[#fff5f4] disabled:opacity-50"
+                        >
+                          {dismissingAlertId === alert.id ? <LoaderCircle size={14} className="animate-spin" /> : <Check size={14} />}
+                          Dispensar
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

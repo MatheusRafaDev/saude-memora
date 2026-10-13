@@ -21,6 +21,7 @@ import {
   useGetApiPacientesMe,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import { getEmergencyToken, rotateEmergencyToken } from "@/lib/emergency-token";
 
 interface EmergenciaModalProps {
   open: boolean;
@@ -66,6 +67,8 @@ export function EmergenciaModal({
   const [generatedToken, setGeneratedToken] = useState("");
   const [tokenError, setTokenError] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [needsTokenRotation, setNeedsTokenRotation] = useState(false);
+  const [isRotatingToken, setIsRotatingToken] = useState(false);
 
   const handleClose = () => {
     onClose?.();
@@ -113,19 +116,33 @@ export function EmergenciaModal({
 
   useEffect(() => {
     if (!open || !profileRaw || generatedToken || tokenError) return;
-
-    customFetch("/api/pacientes/me/emergencia", { method: "POST" })
-      .then((result: any) => {
-        if (typeof result?.token !== "string" || !result.token) {
-          throw new Error("A API não retornou o token da ficha de emergência.");
-        }
-        setGeneratedToken(result.token);
+    const patientId = (profileRaw as any).id;
+    getEmergencyToken(patientId)
+      .then(({ token, needsRotation }) => {
+        if (token) setGeneratedToken(token);
+        setNeedsTokenRotation(needsRotation);
       })
       .catch((error) => {
-        console.error("Erro ao gerar link de emergência:", error);
+        console.error("Erro ao carregar link de emergência:", error);
         setTokenError(true);
       });
   }, [open, profileRaw, generatedToken, tokenError]);
+
+  const handleRotateToken = async () => {
+    const patientId = (profileRaw as any)?.id;
+    if (!patientId || isRotatingToken) return;
+    setIsRotatingToken(true);
+    setTokenError(false);
+    try {
+      setGeneratedToken(await rotateEmergencyToken(patientId));
+      setNeedsTokenRotation(false);
+    } catch {
+      setTokenError(true);
+      toast({ title: "Não foi possível gerar um novo link", variant: "destructive" });
+    } finally {
+      setIsRotatingToken(false);
+    }
+  };
 
   if (!open) return null;
 
@@ -408,8 +425,10 @@ export function EmergenciaModal({
               ) : (
                 <span className="px-3 text-xs text-[#5a6a80]">
                   {tokenError
-                    ? "Não foi possível gerar o link da ficha."
-                    : "Gerando link de emergência…"}
+                    ? "Não foi possível carregar o link da ficha."
+                    : needsTokenRotation
+                      ? "Já existe um link ativo, mas ele não está salvo neste navegador."
+                      : "Verificando link de emergência…"}
                 </span>
               )}
             </div>
@@ -417,6 +436,17 @@ export function EmergenciaModal({
               Mostre este QR Code para quem for prestar socorro acessar esta
               ficha.
             </p>
+
+            {needsTokenRotation && (
+              <button
+                type="button"
+                onClick={handleRotateToken}
+                disabled={isRotatingToken}
+                className="mb-3 min-h-11 w-full rounded-xl bg-[#c0463a] px-3 text-sm font-bold text-white hover:bg-[#a13a30] disabled:opacity-60"
+              >
+                {isRotatingToken ? "Gerando novo link…" : "Gerar novo link (invalidará o anterior)"}
+              </button>
+            )}
 
             <label
               htmlFor="emergency-modal-share-link"

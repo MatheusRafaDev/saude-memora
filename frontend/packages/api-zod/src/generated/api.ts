@@ -7,21 +7,35 @@
 import * as zod from 'zod';
 
 
-export const GetApiPingResponse = zod.unknown()
+export const GetApiPingResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string(),
+  "timestamp": zod.coerce.date()
+})
+
+
+export const GetHealthzResponse = zod.object({
+  "status": zod.string(),
+  "timestamp": zod.coerce.date()
+})
 
 
 export const PostApiDocumentsIdReprocessarParams = zod.object({
   "id": zod.coerce.string()
 })
 
-export const PostApiDocumentsIdReprocessarResponse = zod.unknown()
+export const PostApiDocumentsIdReprocessarResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const PostApiDocumentsIdRevisaoConfirmarParams = zod.object({
   "id": zod.coerce.string()
 })
 
-export const PostApiDocumentsIdRevisaoConfirmarResponse = zod.unknown()
+export const PostApiDocumentsIdRevisaoConfirmarResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const PostApiDocumentsIdAlertasAlertaIdDispensarParams = zod.object({
@@ -29,24 +43,82 @@ export const PostApiDocumentsIdAlertasAlertaIdDispensarParams = zod.object({
   "alertaId": zod.coerce.string()
 })
 
-export const PostApiDocumentsIdAlertasAlertaIdDispensarResponse = zod.unknown()
+export const PostApiDocumentsIdAlertasAlertaIdDispensarResponse = zod.object({
+  "message": zod.string()
+})
 
 
-export const GetApiPacientesMeEmergenciaResponse = zod.unknown()
+export const GetApiMedicamentosNomeDescricaoParams = zod.object({
+  "nome": zod.coerce.string()
+})
+
+export const GetApiMedicamentosNomeDescricaoResponse = zod.string()
+
+
+export const GetApiPacientesMeEmergenciaStatusResponse = zod.object({
+  "possuiToken": zod.boolean(),
+  "expiraEm": zod.coerce.date().nullable()
+})
+
+
+export const PostApiPacientesMeEmergenciaResponse = zod.object({
+  "token": zod.string(),
+  "expiraEm": zod.coerce.date().nullable()
+})
+
+
+export const PostApiPacientesMeEmergenciaRotateResponse = zod.object({
+  "token": zod.string(),
+  "expiraEm": zod.coerce.date().nullable()
+})
 
 
 export const GetApiEmergenciaTokenParams = zod.object({
   "token": zod.coerce.string()
 })
 
-export const GetApiEmergenciaTokenResponse = zod.unknown()
+export const GetApiEmergenciaTokenResponse = zod.object({
+  "nome": zod.string(),
+  "dataNascimento": zod.string(),
+  "sexo": zod.string(),
+  "planoSaude": zod.string(),
+  "numeroCarteirinha": zod.string(),
+  "tipoSanguineo": zod.string(),
+  "alergias": zod.array(zod.string()),
+  "doencasCronicas": zod.array(zod.string()),
+  "medicamentosContinuos": zod.array(zod.string()),
+  "contatosEmergencia": zod.string(),
+  "doadorOrgaos": zod.boolean().nullable(),
+  "cirurgias": zod.string(),
+  "fuma": zod.boolean().nullable(),
+  "bebe": zod.boolean().nullable(),
+  "habitosGerais": zod.string(),
+  "historicoFamiliar": zod.string()
+})
+
+
+export const GetApiChatHistoryResponse = zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "role": zod.string(),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
 
 
 export const PostApiChatBody = zod.object({
   "message": zod.string().optional()
 })
 
-export const PostApiChatResponse = zod.unknown()
+export const PostApiChatResponse = zod.object({
+  "response": zod.string(),
+  "citations": zod.array(zod.object({
+  "id": zod.string(),
+  "titulo": zod.string(),
+  "data": zod.string()
+}))
+})
 
 
 export const PostApiAuthRegisterBody = zod.object({
@@ -57,7 +129,9 @@ export const PostApiAuthRegisterBody = zod.object({
   "senha": zod.string().optional()
 })
 
-export const PostApiAuthRegisterResponse = zod.unknown()
+export const PostApiAuthRegisterResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const PostApiAuthLoginBody = zod.object({
@@ -65,14 +139,36 @@ export const PostApiAuthLoginBody = zod.object({
   "senha": zod.string().optional()
 })
 
-export const PostApiAuthLoginResponse = zod.unknown()
+export const PostApiAuthLoginResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().nullable(),
+  "nome": zod.string(),
+  "email": zod.string()
+})
+})
+
+
+export const PostApiAuthRefreshResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().nullable(),
+  "nome": zod.string(),
+  "email": zod.string()
+})
+})
+
+
+export const PostApiAuthLogoutResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const PostApiAuthForgotPasswordBody = zod.object({
   "email": zod.string().optional()
 })
 
-export const PostApiAuthForgotPasswordResponse = zod.unknown()
+export const PostApiAuthForgotPasswordResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const PostApiAuthResetPasswordBody = zod.object({
@@ -80,13 +176,72 @@ export const PostApiAuthResetPasswordBody = zod.object({
   "senha": zod.string().optional()
 })
 
-export const PostApiAuthResetPasswordResponse = zod.unknown()
+export const PostApiAuthResetPasswordResponse = zod.object({
+  "message": zod.string()
+})
 
 
-export const GetApiPacientesMeResponse = zod.unknown()
+export const PostApiAuthAlterarSenhaBody = zod.object({
+  "senhaAtual": zod.string(),
+  "novaSenha": zod.string()
+})
+
+export const PostApiAuthAlterarSenhaResponse = zod.object({
+  "message": zod.string()
+})
 
 
-export const DeleteApiPacientesMeResponse = zod.unknown()
+export const GetApiPacientesMeResponse = zod.object({
+  "id": zod.string().nullable(),
+  "nome": zod.string(),
+  "email": zod.string(),
+  "dataNascimento": zod.string(),
+  "idade": zod.number().int(),
+  "sexo": zod.string().nullable(),
+  "telefone": zod.string().nullable(),
+  "endereco": zod.string().nullable(),
+  "planoSaude": zod.string().nullable(),
+  "numeroCarteirinha": zod.string().nullable(),
+  "contatoEmergencia": zod.string().nullable(),
+  "consentimentoIa": zod.object({
+  "aceito": zod.boolean().optional(),
+  "versaoTermo": zod.string().optional(),
+  "aceitoEm": zod.coerce.date().nullish(),
+  "revogadoEm": zod.coerce.date().nullish(),
+  "ipTruncado": zod.string().nullish(),
+  "historico": zod.array(zod.object({
+  "acao": zod.string().optional(),
+  "dataHora": zod.coerce.date().optional(),
+  "ipTruncado": zod.string().nullish()
+})).optional(),
+  "ocr": zod.object({
+  "aceito": zod.boolean().optional(),
+  "versaoTermo": zod.string().optional(),
+  "aceitoEm": zod.coerce.date().nullish(),
+  "revogadoEm": zod.coerce.date().nullish(),
+  "ipTruncado": zod.string().nullish()
+}).nullish(),
+  "chat": zod.object({
+  "aceito": zod.boolean().optional(),
+  "versaoTermo": zod.string().optional(),
+  "aceitoEm": zod.coerce.date().nullish(),
+  "revogadoEm": zod.coerce.date().nullish(),
+  "ipTruncado": zod.string().nullish()
+}).nullish(),
+  "dispensadoAte": zod.coerce.date().nullish(),
+  "versaoDispensada": zod.string().nullish()
+}).nullable(),
+  "urlCarteirinha": zod.string().nullable()
+})
+
+
+export const DeleteApiPacientesMeBody = zod.object({
+  "senha": zod.string()
+})
+
+export const DeleteApiPacientesMeResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const PatchApiPacientesMePerfilBody = zod.object({
@@ -94,30 +249,39 @@ export const PatchApiPacientesMePerfilBody = zod.object({
   "dataNascimento": zod.string().nullable(),
   "email": zod.string().nullable(),
   "planoSaude": zod.string().nullable(),
-  "numeroCarteirinha": zod.string().nullable()
+  "numeroCarteirinha": zod.string().nullable(),
+  "senhaAtual": zod.string().nullable(),
+  "contatoEmergencia": zod.string().nullable(),
+  "sexo": zod.string().nullable()
 })
 
-export const PatchApiPacientesMePerfilResponse = zod.unknown()
+export const PatchApiPacientesMePerfilResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const PatchApiPacientesMeContatoBody = zod.object({
   "telefone": zod.string().nullable(),
-  "endereco": zod.string().nullable()
+  "endereco": zod.string().nullable(),
+  "contatoEmergencia": zod.string().nullable()
 })
 
-export const PatchApiPacientesMeContatoResponse = zod.unknown()
+export const PatchApiPacientesMeContatoResponse = zod.object({
+  "message": zod.string()
+})
 
 
-export const PostApiPacientesMeCarteirinhaResponse = zod.unknown()
+export const PostApiPacientesMeCarteirinhaResponse = zod.object({
+  "url": zod.string(),
+  "planoSaude": zod.string().nullable(),
+  "numeroCarteirinha": zod.string().nullable()
+})
 
 
 export const DeleteApiPacientesMeCarteirinhaResponse = zod.unknown()
 
 
-export const GetApiFichaMedicaMeResponse = zod.unknown()
-
-
-export const PatchApiFichaMedicaMeBody = zod.object({
+export const GetApiFichaMedicaMeResponse = zod.object({
   "id": zod.string().nullish(),
   "pacienteId": zod.string(),
   "historicoFamiliar": zod.string().optional(),
@@ -140,30 +304,201 @@ export const PatchApiFichaMedicaMeBody = zod.object({
   "medicamentosContinuos": zod.array(zod.string()).optional()
 })
 
-export const PatchApiFichaMedicaMeResponse = zod.unknown()
+
+export const PatchApiFichaMedicaMeBody = zod.object({
+  "pacienteId": zod.string().nullish(),
+  "historicoFamiliar": zod.string().nullish(),
+  "cirurgias": zod.string().nullish(),
+  "fuma": zod.boolean().nullish(),
+  "bebe": zod.boolean().nullish(),
+  "habitosGerais": zod.string().nullish(),
+  "observacoes": zod.string().nullish(),
+  "outrasDoencas": zod.string().nullish(),
+  "tipoSanguineo": zod.string().nullish(),
+  "doadorOrgaos": zod.boolean().nullish(),
+  "alergias": zod.array(zod.string()).nullish(),
+  "doencasCronicas": zod.array(zod.string()).nullish(),
+  "medicamentosContinuos": zod.array(zod.string()).nullish(),
+  "condicoes": zod.array(zod.object({
+  "nome": zod.string().optional(),
+  "tem": zod.boolean().optional(),
+  "detalhes": zod.string().optional()
+})).nullish()
+})
+
+export const PatchApiFichaMedicaMeResponse = zod.object({
+  "id": zod.string().nullish(),
+  "pacienteId": zod.string(),
+  "historicoFamiliar": zod.string().optional(),
+  "cirurgias": zod.string().optional(),
+  "fuma": zod.boolean().optional(),
+  "bebe": zod.boolean().optional(),
+  "habitosGerais": zod.string().optional(),
+  "observacoes": zod.string().optional(),
+  "updatedAt": zod.coerce.date().optional(),
+  "condicoes": zod.array(zod.object({
+  "nome": zod.string().optional(),
+  "tem": zod.boolean().optional(),
+  "detalhes": zod.string().optional()
+})).optional(),
+  "outrasDoencas": zod.string().optional(),
+  "tipoSanguineo": zod.string().nullish(),
+  "doadorOrgaos": zod.boolean().optional(),
+  "alergias": zod.array(zod.string()).optional(),
+  "doencasCronicas": zod.array(zod.string()).optional(),
+  "medicamentosContinuos": zod.array(zod.string()).optional()
+})
 
 
-export const PostApiDocumentsUploadResponse = zod.unknown()
+export const PostApiDocumentsUploadResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.string(),
+  "progress": zod.number().int(),
+  "duplicate": zod.boolean().nullable(),
+  "message": zod.string().nullable()
+})
 
 
 export const PostApiDocumentsIdRetryParams = zod.object({
   "id": zod.coerce.string()
 })
 
-export const PostApiDocumentsIdRetryResponse = zod.unknown()
+export const PostApiDocumentsIdRetryResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.string(),
+  "progress": zod.number().int(),
+  "duplicate": zod.boolean().nullable(),
+  "message": zod.string().nullable()
+})
 
 
-export const GetApiDocumentsResponse = zod.unknown()
+export const GetApiDocumentsResponseItem = zod.object({
+  "id": zod.string().nullable(),
+  "titulo": zod.string(),
+  "tipo": zod.string(),
+  "status": zod.string(),
+  "medico": zod.string(),
+  "crm": zod.string(),
+  "clinica": zod.string(),
+  "data": zod.string(),
+  "resumo": zod.string(),
+  "diagnostico": zod.string(),
+  "cid": zod.string(),
+  "cnes": zod.string(),
+  "medicamentos": zod.array(zod.object({
+  "nome": zod.string().optional(),
+  "dosagem": zod.string().optional(),
+  "horario": zod.string().optional()
+})),
+  "nomeExame": zod.string(),
+  "tipoExame": zod.string(),
+  "resultadosExame": zod.array(zod.object({
+  "nome": zod.string(),
+  "nomeNormalizado": zod.string()
+})),
+  "urlImagens": zod.array(zod.string()),
+  "progress": zod.number().int(),
+  "errorMessage": zod.string(),
+  "criadoEm": zod.coerce.date(),
+  "revisaoPendente": zod.boolean(),
+  "alertas": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "tipo": zod.string().optional(),
+  "severidade": zod.string().optional(),
+  "mensagem": zod.string().optional(),
+  "medicamentos": zod.array(zod.string()).optional(),
+  "geradoEm": zod.coerce.date().optional(),
+  "dispensado": zod.boolean().optional(),
+  "retentavel": zod.boolean().optional()
+})),
+  "revisadoEm": zod.coerce.date().nullable()
+})
+export const GetApiDocumentsResponse = zod.array(GetApiDocumentsResponseItem)
 
 
-export const GetApiDocumentsCountResponse = zod.unknown()
+export const GetApiDocumentsCountResponse = zod.object({
+  "total": zod.number().int(),
+  "exames": zod.number().int(),
+  "receitas": zod.number().int(),
+  "laudos": zod.number().int(),
+  "atestados": zod.number().int(),
+  "vacinas": zod.number().int(),
+  "encaminhamentos": zod.number().int(),
+  "relatorios": zod.number().int(),
+  "outros": zod.number().int(),
+  "receitasAtivas": zod.number().int()
+})
 
 
 export const GetApiDocumentsIdParams = zod.object({
   "id": zod.coerce.string()
 })
 
-export const GetApiDocumentsIdResponse = zod.unknown()
+export const GetApiDocumentsIdResponse = zod.object({
+  "id": zod.string().nullable(),
+  "titulo": zod.string(),
+  "tipo": zod.string(),
+  "status": zod.string(),
+  "medico": zod.string(),
+  "crm": zod.string(),
+  "clinica": zod.string(),
+  "data": zod.string(),
+  "resumo": zod.string(),
+  "diagnostico": zod.string(),
+  "cid": zod.string(),
+  "cnes": zod.string(),
+  "medicamentos": zod.array(zod.object({
+  "nome": zod.string().optional(),
+  "dosagem": zod.string().optional(),
+  "horario": zod.string().optional()
+})),
+  "nomeExame": zod.string(),
+  "tipoExame": zod.string(),
+  "resultado": zod.string(),
+  "especialidade": zod.string(),
+  "tipoClinico": zod.string(),
+  "conteudo": zod.string(),
+  "conclusoes": zod.string(),
+  "observacoes": zod.string(),
+  "urlImagens": zod.array(zod.string()),
+  "textoExtraido": zod.string(),
+  "conteudoIndentado": zod.array(zod.object({
+  "tipo": zod.string().optional(),
+  "texto": zod.string().optional(),
+  "chave": zod.string().optional(),
+  "valor": zod.string().optional()
+})),
+  "resultadosExame": zod.array(zod.object({
+  "nome": zod.string().optional(),
+  "nomeNormalizado": zod.string().optional(),
+  "valor": zod.number().nullish(),
+  "valorTexto": zod.string().optional(),
+  "unidade": zod.string().optional(),
+  "refMin": zod.number().nullish(),
+  "refMax": zod.number().nullish(),
+  "referenciaTexto": zod.string().optional(),
+  "status": zod.string().optional(),
+  "confianca": zod.number().optional(),
+  "confirmacaoNecessaria": zod.boolean().optional(),
+  "motivoConfirmacao": zod.string().optional()
+})),
+  "revisaoPendente": zod.boolean(),
+  "camposBaixaConfianca": zod.array(zod.string()),
+  "progress": zod.number().int(),
+  "errorMessage": zod.string(),
+  "criadoEm": zod.coerce.date(),
+  "alertas": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "tipo": zod.string().optional(),
+  "severidade": zod.string().optional(),
+  "mensagem": zod.string().optional(),
+  "medicamentos": zod.array(zod.string()).optional(),
+  "geradoEm": zod.coerce.date().optional(),
+  "dispensado": zod.boolean().optional(),
+  "retentavel": zod.boolean().optional()
+})),
+  "revisadoEm": zod.coerce.date().nullable()
+})
 
 
 export const PutApiDocumentsIdParams = zod.object({
@@ -172,12 +507,35 @@ export const PutApiDocumentsIdParams = zod.object({
 
 export const PutApiDocumentsIdBody = zod.object({
   "titulo": zod.string().nullish(),
+  "tipo": zod.string().nullish(),
   "medico": zod.string().nullish(),
   "clinica": zod.string().nullish(),
   "data": zod.string().nullish(),
   "resumo": zod.string().nullish(),
   "diagnostico": zod.string().nullish(),
   "crm": zod.string().nullish(),
+  "cid": zod.string().nullish(),
+  "cnes": zod.string().nullish(),
+  "nomeExame": zod.string().nullish(),
+  "tipoExame": zod.string().nullish(),
+  "resultado": zod.string().nullish(),
+  "especialidade": zod.string().nullish(),
+  "tipoClinico": zod.string().nullish(),
+  "conteudo": zod.string().nullish(),
+  "conclusoes": zod.string().nullish(),
+  "observacoes": zod.string().nullish(),
+  "textoExtraido": zod.string().nullish(),
+  "medicamentos": zod.array(zod.object({
+  "nome": zod.string().nullish(),
+  "dosagem": zod.string().nullish(),
+  "horario": zod.string().nullish()
+})).nullish(),
+  "conteudoIndentado": zod.array(zod.object({
+  "tipo": zod.string().nullish(),
+  "texto": zod.string().nullish(),
+  "chave": zod.string().nullish(),
+  "valor": zod.string().nullish()
+})).nullish(),
   "resultadosExame": zod.array(zod.object({
   "nome": zod.string().nullish(),
   "nomeNormalizado": zod.string().nullish(),
@@ -188,48 +546,192 @@ export const PutApiDocumentsIdBody = zod.object({
   "refMax": zod.number().nullish(),
   "referenciaTexto": zod.string().nullish(),
   "status": zod.string().nullish(),
-  "confianca": zod.number().optional()
+  "confianca": zod.number().optional(),
+  "confirmacaoNecessaria": zod.boolean().optional(),
+  "motivoConfirmacao": zod.string().nullish()
 })).nullish()
 })
 
-export const PutApiDocumentsIdResponse = zod.unknown()
+export const PutApiDocumentsIdResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const DeleteApiDocumentsIdParams = zod.object({
   "id": zod.coerce.string()
 })
 
-export const DeleteApiDocumentsIdResponse = zod.unknown()
+export const DeleteApiDocumentsIdResponse = zod.object({
+  "message": zod.string()
+})
 
 
 export const GetApiReportsGenerateQueryParams = zod.object({
-  "months": zod.coerce.number().int()
+  "months": zod.coerce.number().int().optional()
 })
 
-export const GetApiReportsGenerateResponse = zod.unknown()
+export const GetApiReportsGenerateResponse = zod.object({
+  "report": zod.string().nullable()
+})
 
 
-export const GetApiPacientesMeConsentimentoResponse = zod.unknown()
+export const GetApiPacientesMeConsentimentoResponse = zod.object({
+  "aceito": zod.boolean(),
+  "ocrAceito": zod.boolean(),
+  "chatAceito": zod.boolean(),
+  "versaoTermo": zod.string(),
+  "aceitoEm": zod.coerce.date().nullable(),
+  "adiadoAte": zod.coerce.date().nullable(),
+  "mostrarModal": zod.boolean()
+})
 
 
 export const PostApiPacientesMeConsentimentoBody = zod.object({
-  "aceito": zod.boolean().optional()
+  "aceito": zod.boolean().optional(),
+  "finalidade": zod.string().nullish(),
+  "dispensar": zod.boolean().optional()
 })
 
-export const PostApiPacientesMeConsentimentoResponse = zod.unknown()
+export const PostApiPacientesMeConsentimentoResponse = zod.object({
+  "aceito": zod.boolean(),
+  "ocrAceito": zod.boolean(),
+  "chatAceito": zod.boolean(),
+  "versaoTermo": zod.string(),
+  "aceitoEm": zod.coerce.date().nullable(),
+  "adiadoAte": zod.coerce.date().nullable(),
+  "mostrarModal": zod.boolean()
+})
 
 
-export const DeleteApiPacientesMeConsentimentoResponse = zod.unknown()
+export const DeleteApiPacientesMeConsentimentoResponse = zod.void()
 
 
-export const GetApiExamesAnalitosResponse = zod.unknown()
+export const GetApiCatalogoMedicamentosQueryParams = zod.object({
+  "query": zod.coerce.string(),
+  "limit": zod.coerce.number().int()
+})
+
+export const GetApiCatalogoMedicamentosResponse = zod.object({
+  "query": zod.string(),
+  "count": zod.number().int(),
+  "medicamentos": zod.array(zod.object({
+  "processoAnvisa": zod.string(),
+  "nome": zod.string(),
+  "principioAtivo": zod.string(),
+  "descricao": zod.string(),
+  "fabricante": zod.string(),
+  "tipoProduto": zod.string(),
+  "classeTerapeutica": zod.string(),
+  "registroAnvisa": zod.string(),
+  "situacaoRegistro": zod.string()
+}))
+})
+
+
+export const PostApiCatalogoMedicamentosImportarBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const PostApiCatalogoMedicamentosImportarResponse = zod.object({
+  "registrosImportados": zod.number().int(),
+  "registrosInvalidos": zod.number().int(),
+  "registrosDuplicados": zod.number().int(),
+  "importadoEm": zod.coerce.date()
+})
+
+
+export const GetApiCatalogoCid10QueryParams = zod.object({
+  "query": zod.coerce.string(),
+  "limit": zod.coerce.number().int()
+})
+
+export const GetApiCatalogoCid10Response = zod.object({
+  "query": zod.string(),
+  "count": zod.number().int(),
+  "registros": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "codigo": zod.string().optional(),
+  "codigoNormalizado": zod.string().optional(),
+  "descricao": zod.string().optional(),
+  "descricaoNormalizada": zod.string().optional(),
+  "nivel": zod.string().optional(),
+  "categoria": zod.string().optional(),
+  "origem": zod.string().optional(),
+  "importadoEm": zod.coerce.date().optional()
+}))
+})
+
+
+export const PostApiCatalogoCid10ImportarBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const PostApiCatalogoCid10ImportarResponse = zod.object({
+  "registrosImportados": zod.number().int(),
+  "registrosInvalidos": zod.number().int(),
+  "registrosDuplicados": zod.number().int(),
+  "importadoEm": zod.coerce.date()
+})
+
+
+export const GetApiCatalogoCnesQueryParams = zod.object({
+  "query": zod.coerce.string(),
+  "limit": zod.coerce.number().int()
+})
+
+export const GetApiCatalogoCnesResponse = zod.object({
+  "query": zod.string(),
+  "count": zod.number().int(),
+  "registros": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "codigo": zod.string().optional(),
+  "codigoNormalizado": zod.string().optional(),
+  "descricao": zod.string().optional(),
+  "descricaoNormalizada": zod.string().optional(),
+  "categoria": zod.string().optional(),
+  "origem": zod.string().optional(),
+  "importadoEm": zod.coerce.date().optional()
+}))
+})
+
+
+export const PostApiCatalogoCnesImportarBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const PostApiCatalogoCnesImportarResponse = zod.object({
+  "registrosImportados": zod.number().int(),
+  "registrosInvalidos": zod.number().int(),
+  "registrosDuplicados": zod.number().int(),
+  "importadoEm": zod.coerce.date()
+})
+
+
+export const GetApiExamesAnalitosResponseItem = zod.object({
+  "nomeNormalizado": zod.string(),
+  "nome": zod.string(),
+  "unidade": zod.string(),
+  "count": zod.number().int()
+})
+export const GetApiExamesAnalitosResponse = zod.array(GetApiExamesAnalitosResponseItem)
 
 
 export const GetApiExamesSerieQueryParams = zod.object({
   "analito": zod.coerce.string(),
-  "meses": zod.coerce.number().int()
+  "meses": zod.coerce.number().int().optional()
 })
 
-export const GetApiExamesSerieResponse = zod.unknown()
+export const GetApiExamesSerieResponseItem = zod.object({
+  "data": zod.string(),
+  "valor": zod.number(),
+  "unidade": zod.string(),
+  "refMin": zod.number().nullable(),
+  "refMax": zod.number().nullable(),
+  "status": zod.string(),
+  "documentoId": zod.string(),
+  "isOutlier": zod.boolean(),
+  "outlierMotivo": zod.string().nullable()
+})
+export const GetApiExamesSerieResponse = zod.array(GetApiExamesSerieResponseItem)
 
 
