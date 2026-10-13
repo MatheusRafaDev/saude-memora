@@ -6,9 +6,8 @@ import {
   Droplets,
   AlertTriangle,
   Pill,
-  Share2,
-  Activity,
   QrCode,
+  Activity,
   Copy,
   Check,
   RefreshCw,
@@ -188,25 +187,6 @@ export default function Emergencia({ token }: { token?: string } = {}) {
       } catch {
         toast({ title: 'Não foi possível copiar o link', variant: 'destructive' });
       }
-    }
-  };
-
-  const handleShareLink = async () => {
-    if (!shareUrl) return;
-    if (!navigator.share) {
-      await handleCopyLink();
-      return;
-    }
-
-    try {
-      await navigator.share({
-        title: 'Minha ficha de emergência — SaúdeMemora',
-        text: 'Acesse minhas informações médicas de emergência.',
-        url: shareUrl,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      toast({ title: 'Não foi possível compartilhar o link', variant: 'destructive' });
     }
   };
 
@@ -439,9 +419,9 @@ export default function Emergencia({ token }: { token?: string } = {}) {
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] text-center">
               <div className="flex items-center gap-2.5 mb-4 text-left">
                 <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                  <Share2 size={18} className="text-[#1b3a60]" />
+                  <QrCode size={18} className="text-[#1b3a60]" />
                 </div>
-                <b className="text-base text-[#1d2a3d] flex-1">Compartilhar com socorrista</b>
+                <b className="text-base text-[#1d2a3d] flex-1">Acesso à ficha de emergência</b>
               </div>
 
               <div className="w-[170px] h-[170px] border border-[#dde3ec] rounded-2xl mx-auto mb-3.5 flex flex-col items-center justify-center bg-[#f7f9fc] p-2 overflow-hidden shadow-xs">
@@ -478,23 +458,6 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                 </button>
               )}
 
-              <div className="mb-3.5 text-left">
-                <label
-                  htmlFor="emergency-share-link"
-                  className="mb-1.5 block text-xs font-bold text-[#5a6a80]"
-                >
-                  Link da ficha de emergência
-                </label>
-                <input
-                  id="emergency-share-link"
-                  type="url"
-                  readOnly
-                  value={shareUrl}
-                  placeholder={tokenError ? 'Não foi possível gerar o link' : 'Gerando link…'}
-                  className="min-h-[44px] w-full rounded-xl border border-[#dde3ec] bg-[#f7f9fc] px-3 text-xs text-[#1d2a3d] outline-none focus:border-[#1f7fe0]"
-                />
-              </div>
-
               <button
                 type="button"
                 onClick={handleCopyLink}
@@ -504,16 +467,8 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                 {isCopied ? <Check size={16} className="text-[#1f7fe0]" /> : <Copy size={16} />}
                 {isCopied ? 'Link copiado!' : 'Copiar link de socorro'}
               </button>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={handleShareLink}
-                  disabled={!shareUrl}
-                  className="min-h-[44px] rounded-xl border border-[#dde3ec] bg-white px-2 text-[#1b3a60] text-xs font-bold inline-flex items-center justify-center gap-1.5 hover:bg-[#f7f9fc] disabled:opacity-50"
-                >
-                  <Share2 size={15} />
-                  Compartilhar
-                </button>
+              <div className="mt-2 grid grid-cols-1 gap-2">
+                
                 <a
                   href={shareUrl || undefined}
                   target="_blank"

@@ -6,11 +6,13 @@ import {
   Pill,
   Plus,
   Shield,
-  LoaderCircle,
   ArrowRight,
   Activity,
   X,
-  Maximize2
+  Maximize2,
+  Copy,
+  Check,
+  Stethoscope
 } from 'lucide-react';
 import {
   useGetApiPacientesMe,
@@ -34,6 +36,7 @@ function uniqueLabels(values: unknown[]): string[] {
 
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
+  const [summaryCopied, setSummaryCopied] = useState(false);
 
   const { data: profile, isLoading: isProfileLoading, isError: profileError } = useGetApiPacientesMe();
   const { data: documentsRaw, isLoading: isDocumentsLoading, isError: documentsError } = useGetApiDocuments();
@@ -78,33 +81,44 @@ export default function Dashboard() {
     Array.isArray(ficha.medicamentosContinuos) ? ficha.medicamentosContinuos : []
   );
 
+  const valueOrUnknown = (value: unknown) =>
+    typeof value === 'string' && value.trim() ? value.trim() : 'Não informado';
+  const yesNoOrUnknown = (value: unknown) =>
+    value === true ? 'Sim' : value === false ? 'Não' : 'Não informado';
+  const clinicalSummary = [
+    'RESUMO DE SAÚDE PARA CONSULTA',
+    `Paciente: ${valueOrUnknown(user.nome)}`,
+    `Nascimento: ${birthDateFormatted}${age !== null ? ` (${age} anos)` : ''}`,
+    `Sexo: ${valueOrUnknown(user.sexo || user.sexoBiologico)}`,
+    `Tipo sanguíneo: ${valueOrUnknown(ficha.tipoSanguineo)}`,
+    `Alergias: ${allergiesDisplay}`,
+    `Condições de saúde: ${conditionsDisplay}`,
+    `Medicamentos contínuos: ${continuousMeds.join(', ') || 'Não informado'}`,
+    `Cirurgias: ${valueOrUnknown(ficha.cirurgias)}`,
+    `Tabagismo: ${yesNoOrUnknown(ficha.fuma)}`,
+    `Consumo de álcool: ${yesNoOrUnknown(ficha.bebe)}`,
+    `Hábitos e rotina: ${valueOrUnknown(ficha.habitosGerais)}`,
+    `Histórico familiar: ${valueOrUnknown(ficha.historicoFamiliar)}`,
+    `Contato de emergência: ${valueOrUnknown(user.contatoEmergencia)}`,
+    `Plano de saúde: ${valueOrUnknown(healthPlan)}`,
+    `Carteirinha: ${valueOrUnknown(insuranceCardNumber)}`,
+    `Medicamentos identificados nos documentos: ${frequentMeds.map((item) => `${item.nome} (${item.count})`).join(', ') || 'Não informado'}`,
+    `Exames identificados nos documentos: ${frequentExams.map((item) => `${item.nome} (${item.count})`).join(', ') || 'Não informado'}`,
+    '',
+    'Resumo montado com informações cadastradas pelo paciente. Confirmar dados e atualizações durante a consulta.',
+  ].join('\n');
 
-
-  const displayRecentDocs = docs.slice(0, 4).map((d: any) => {
-    let badge = 'Pronto';
-    let badgeClass = 'bg-[#e5eefb] text-[#1b3a60]';
-    if (d.status === 'processing' || d.status === 'pending') {
-      badge = `Processando ${d.progress ?? 0}%`;
-    } else if (d.status === 'failed') {
-      badge = 'Falha';
-      badgeClass = 'bg-[#fde8e6] text-[#a13a30]';
-    } else if (d.revisaoPendente) {
-      badge = 'Revisar';
-      badgeClass = 'bg-[#fdf3d8] text-[#6b4208]';
+  const copyClinicalSummary = async () => {
+    try {
+      await navigator.clipboard.writeText(clinicalSummary);
+      setSummaryCopied(true);
+      window.setTimeout(() => setSummaryCopied(false), 2500);
+    } catch {
+      setSummaryCopied(false);
     }
-    const createdAt = d.criadoEm || d.createdAt;
-    const parsedDate = createdAt ? new Date(createdAt) : null;
-    return {
-      id: d.id,
-      titulo: d.titulo || d.tipo || 'Documento',
-      data: parsedDate && !Number.isNaN(parsedDate.getTime())
-        ? parsedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
-        : 'Data não informada',
-      status: d.status,
-      badge,
-      badgeClass,
-    };
-  });
+  };
+
+
 
   const getFrequencies = (values: unknown[]) => {
     const counts = new Map<string, number>();
@@ -130,8 +144,10 @@ export default function Dashboard() {
 
   if (isProfileLoading || isDocumentsLoading || isFichaLoading) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center text-[#5a6a80]">
-        <LoaderCircle size={22} className="mr-2 animate-spin" /> Carregando seus dados…
+      <div className="mx-auto w-full max-w-[1240px] space-y-5 px-5 pb-16 pt-9 sm:px-10" aria-busy="true" aria-label="Carregando visão geral">
+        <div className="space-y-2"><div className="animate-shimmer h-3 w-32 rounded-lg" /><div className="animate-shimmer h-9 w-56 max-w-full rounded-lg" /><div className="animate-shimmer h-4 w-72 max-w-full rounded-lg" /></div>
+        <div className="grid gap-5 lg:grid-cols-3"><div className="animate-shimmer h-72 rounded-[24px] lg:col-span-2" /><div className="animate-shimmer h-24 rounded-[20px]" /></div>
+        <div className="grid gap-5 sm:grid-cols-2"><div className="animate-shimmer h-52 rounded-[20px]" /><div className="animate-shimmer h-52 rounded-[20px]" /></div>
       </div>
     );
   }
@@ -271,57 +287,6 @@ export default function Dashboard() {
         {/* Documentos e tendências */}
         <div className="grid grid-cols-1 items-start gap-5">
           <div className="flex flex-col gap-5">
-            {/* Recent Documents Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                  <FileText size={18} className="text-[#1b3a60]" />
-                </div>
-                <b className="text-base text-[#1d2a3d] flex-1">Documentos recentes</b>
-                <Link
-                  href="/documentos"
-                  className="text-[13px] font-bold text-[#1b3a60] hover:underline"
-                >
-                  Ver todos
-                </Link>
-              </div>
-
-              <div className="divide-y divide-[#dde3ec]">
-                {displayRecentDocs.length === 0 ? (
-                  <p className="py-5 text-sm text-[#5a6a80]">
-                    Você ainda não adicionou documentos.
-                  </p>
-                ) : displayRecentDocs.map((doc) => (
-                  <Link
-                    key={doc.id}
-                    href={`/documentos/${doc.id}`}
-                    className="flex items-center gap-3.5 py-3.5 hover:bg-slate-50/60 rounded-xl px-1 transition-colors"
-                  >
-                    <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                      {doc.titulo.toLowerCase().includes('receita') ? (
-                        <Pill size={22} className="text-[#1b3a60]" />
-                      ) : (
-                        <FileText size={22} className="text-[#1b3a60]" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[15px] font-bold text-[#1d2a3d] truncate">
-                        {doc.titulo}
-                      </div>
-                      <div className="text-[13px] text-[#5a6a80]">
-                        {doc.data}
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${doc.badgeClass}`}
-                    >
-                      {doc.badge}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
             {/* Horizontal Charts Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* Most Frequent Medications */}
@@ -389,6 +354,50 @@ export default function Dashboard() {
           </div>
 
         </div>
+
+        <section aria-labelledby="doctor-summary-title" className="mt-7 rounded-[20px] border border-[#cbd9e8] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf3fc] text-[#1b3a60]">
+                <Stethoscope size={20} />
+              </div>
+              <div>
+                <h2 id="doctor-summary-title" className="m-0 text-lg font-extrabold text-[#1b3a60]">Resumo para consulta médica</h2>
+                <p className="mb-0 mt-1 max-w-2xl text-sm text-[#5a6a80]">Reúna os principais dados de saúde para compartilhar com o profissional durante a consulta.</p>
+              </div>
+            </div>
+            <button type="button" onClick={copyClinicalSummary} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1b3a60] px-4 text-sm font-bold text-white transition-colors hover:bg-[#24507f]">
+              {summaryCopied ? <Check size={16} /> : <Copy size={16} />}
+              {summaryCopied ? 'Resumo copiado' : 'Copiar resumo'}
+            </button>
+          </div>
+          <dl className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-[#e4eaf1] pt-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              ['Paciente', valueOrUnknown(user.nome)],
+              ['Nascimento e idade', `${birthDateFormatted}${age !== null ? ` · ${age} anos` : ''}`],
+              ['Sexo', valueOrUnknown(user.sexo || user.sexoBiologico)],
+              ['Tipo sanguíneo', valueOrUnknown(ficha.tipoSanguineo)],
+              ['Alergias', allergiesDisplay],
+              ['Condições de saúde', conditionsDisplay],
+              ['Medicamentos contínuos', continuousMeds.join(' · ') || 'Não informado'],
+              ['Cirurgias', valueOrUnknown(ficha.cirurgias)],
+              ['Tabagismo / álcool', `${yesNoOrUnknown(ficha.fuma)} / ${yesNoOrUnknown(ficha.bebe)}`],
+              ['Hábitos e rotina', valueOrUnknown(ficha.habitosGerais)],
+              ['Histórico familiar', valueOrUnknown(ficha.historicoFamiliar)],
+              ['Contato de emergência', valueOrUnknown(user.contatoEmergencia)],
+              ['Plano de saúde', valueOrUnknown(healthPlan)],
+              ['Número da carteirinha', valueOrUnknown(insuranceCardNumber)],
+              ['Medicamentos nos documentos', frequentMeds.map((item) => `${item.nome} (${item.count})`).join(' · ') || 'Não informado'],
+              ['Exames nos documentos', frequentExams.map((item) => `${item.nome} (${item.count})`).join(' · ') || 'Não informado'],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0">
+                <dt className="text-xs font-bold uppercase tracking-wide text-[#718096]">{label}</dt>
+                <dd className="mb-0 mt-1 break-words text-sm font-semibold text-[#26384f]">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mb-0 mt-5 border-t border-[#e4eaf1] pt-4 text-xs leading-relaxed text-[#718096]">Dados informados pelo paciente; confirme as informações e se continuam atualizadas durante a consulta.</p>
+        </section>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
           Informações organizadas com segurança para o seu acompanhamento contínuo.

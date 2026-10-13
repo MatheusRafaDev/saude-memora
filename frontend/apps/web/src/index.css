@@ -324,7 +324,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-logo-arrival, .brand-logo-animated, .legal-document-section { animation: none; }
+  .page-transition-enter, .home-logo-arrival, .brand-logo-animated, .legal-document-section { animation: none; }
   .legal-document-dialog, .legal-document-overlay { animation: none !important; transition: none !important; }
 }
 

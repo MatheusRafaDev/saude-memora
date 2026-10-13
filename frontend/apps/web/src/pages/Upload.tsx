@@ -235,7 +235,7 @@ export default function Upload() {
               Adicionar documento
             </h1>
             <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
-              Envie fotos ou PDFs e acompanhe a leitura em tempo real.
+              Selecione vários arquivos: cada um será salvo como um documento, e o tipo será identificado automaticamente.
             </p>
           </div>
         </div>
@@ -292,9 +292,10 @@ export default function Upload() {
 
             {/* Document Type Selector Card */}
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="text-sm font-bold text-[#1d2a3d] mb-3">
-                Tipo de documento
+              <div className="text-sm font-bold text-[#1d2a3d] mb-1">
+                Tipo dos documentos
               </div>
+              <p className="mb-3 text-xs text-[#5a6a80]">No modo automático, a IA identifica o tipo de cada arquivo separadamente.</p>
               <div className="flex gap-2.5 flex-wrap">
                 {DOC_TYPES.map((t) => (
                   <button

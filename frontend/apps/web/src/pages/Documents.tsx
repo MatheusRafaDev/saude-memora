@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import {
   Search,
   Plus,
+  UploadCloud,
   LayoutGrid,
   List,
   FileText,
@@ -50,36 +51,31 @@ const DOCUMENT_TYPE_LABELS = Object.fromEntries(
 function DocumentThumbnail({
   src,
   title,
+  type,
+  compact = false,
 }: {
   src?: string;
   title: string;
+  type: string;
+  compact?: boolean;
 }) {
   const [hasLoadError, setHasLoadError] = useState(false);
+  useEffect(() => setHasLoadError(false), [src]);
+  const TypeIcon = type.toLowerCase().includes('receita') ? Pill : type.toLowerCase().includes('exame') ? Activity : FileText;
 
   return (
-    <div className="bg-[#f1f4f8] rounded-[14px] h-[150px] flex items-center justify-center relative overflow-hidden group-hover:bg-[#eaf0f7] transition-colors">
+    <div className={`group relative flex shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[#e5eaf1] bg-gradient-to-br from-[#f7f9fc] to-[#eaf0f7] transition-colors hover:from-[#f1f6fc] hover:to-[#e1ebf8] ${compact ? 'h-16 w-16 sm:h-[72px] sm:w-[72px]' : 'h-[150px] w-full'}`}>
       {src && !hasLoadError ? (
-        <img
-          src={src}
-          alt={`Prévia de ${title}`}
-          loading="lazy"
-          onError={() => setHasLoadError(true)}
-          className="h-full w-full object-cover"
-        />
+        <img src={src} alt={`Prévia de ${title}`} loading="lazy" onError={() => setHasLoadError(true)} className="h-full w-full object-cover" />
       ) : (
-        <div
-          aria-hidden="true"
-          className="w-[86px] h-[112px] rounded-lg bg-white border border-[#dde3ec] p-2.5 shadow-xs flex flex-col justify-between"
-        >
-          <div className="space-y-1.5">
-            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[90%]" />
-            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[65%]" />
-            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[85%]" />
-            <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[55%]" />
-          </div>
-          <div className="h-[5px] rounded-[3px] bg-[#1f7fe0]/40 w-[75%]" />
+        <div className={`flex flex-col items-center justify-center gap-1.5 text-[#1b3a60] ${compact ? '' : 'px-4'}`}>
+          <span className={`flex items-center justify-center rounded-xl bg-white/90 shadow-sm ${compact ? 'h-8 w-8' : 'h-14 w-14 rounded-2xl'}`}>
+            <TypeIcon size={compact ? 17 : 25} strokeWidth={1.8} />
+          </span>
+          <span className={`font-semibold text-[#718096] ${compact ? 'text-[9px]' : 'text-[11px]'}`}>Sem imagem</span>
         </div>
       )}
+      {src && !hasLoadError && !compact && <span className="absolute bottom-2 left-2 rounded-md bg-black/55 px-2 py-1 text-[10px] font-semibold text-white">Prévia</span>}
     </div>
   );
 }
@@ -186,6 +182,7 @@ export default function Documents() {
         if (selectedStatus === 'revisar' && !item.revisaoPendente && item.status !== 'revisar') return false;
         if (selectedStatus === 'pronto' && item.status !== 'pronto') return false;
         if (selectedStatus === 'processing' && item.status !== 'processing' && item.status !== 'pending') return false;
+        if (selectedStatus === 'failed' && item.status !== 'failed') return false;
       }
 
       if (selectedPeriod !== 'all' && item.createdAt) {
@@ -299,100 +296,95 @@ export default function Documents() {
             </p>
           </div>
 
-          <button
-            onClick={() => triggerUploadModal()}
-            className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors shadow-sm cursor-pointer"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            Adicionar documento
-          </button>
-        </div>
-
-        {/* Filter bar: Search + Selects + Layout toggle */}
-        <div className="flex gap-3 flex-wrap items-center mb-4.5">
-          {/* Search Input */}
-          <div className="h-[46px] w-full min-w-0 flex-1 sm:w-[420px] border border-[#c6cfdb] rounded-xl bg-white flex items-center gap-2 px-3.5 text-sm text-[#5a6a80] focus-within:border-[#1b3a60] focus-within:ring-1 focus-within:ring-[#1b3a60] transition-all">
-            <Search size={18} className="text-[#5a6a80] shrink-0" />
-            <input
-              type="text"
-              placeholder="Buscar por título, tipo ou conteúdo"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-[#1d2a3d] placeholder:text-[#5a6a80] text-sm"
-            />
-          </div>
-
-          {/* Status Select */}
-          <div className="h-[46px] w-[160px] border border-[#c6cfdb] rounded-xl bg-white flex items-center px-3.5 text-sm text-[#5a6a80]">
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-sm text-[#5a6a80] cursor-pointer"
-            >
-              <option value="all">Status: todos</option>
-              <option value="pronto">Status: pronto</option>
-              <option value="revisar">Status: revisar</option>
-              <option value="processing">Status: processando</option>
-            </select>
-          </div>
-
-          {/* Period Select */}
-          <div className="h-[46px] w-[180px] border border-[#c6cfdb] rounded-xl bg-white flex items-center px-3.5 text-sm text-[#5a6a80]">
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="w-full bg-transparent border-none outline-none text-sm text-[#5a6a80] cursor-pointer"
-            >
-              <option value="all">Período: todos</option>
-              <option value="30days">Período: 30 dias</option>
-              <option value="thisyear">Período: este ano</option>
-            </select>
-          </div>
-
-          {/* Grid / List View Toggle */}
-          <div className="ml-auto flex gap-1.5">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <button
-              onClick={() => setViewMode('grid')}
-              className={`w-11 h-11 rounded-[14px] flex items-center justify-center transition-colors cursor-pointer ${
-                viewMode === 'grid'
-                  ? 'bg-[#1b3a60] text-white shadow-xs'
-                  : 'bg-white text-[#5a6a80] border border-[#c6cfdb] hover:bg-slate-50'
-              }`}
-              title="Visualização em Grade"
+              onClick={() => triggerUploadModal()}
+              className="min-h-[44px] w-full rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#24507f] sm:w-auto"
             >
-              <LayoutGrid size={20} />
+              <span className="inline-flex items-center gap-2"><Plus size={16} strokeWidth={2.5} /> Adicionar documento</span>
             </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`w-11 h-11 rounded-[14px] flex items-center justify-center transition-colors cursor-pointer ${
-                viewMode === 'list'
-                  ? 'bg-[#1b3a60] text-white shadow-xs'
-                  : 'bg-white text-[#5a6a80] border border-[#c6cfdb] hover:bg-slate-50'
-              }`}
-              title="Visualização em Lista"
+            <Link
+              href="/upload"
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-5 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f1f4f8] sm:w-auto"
             >
-              <List size={20} />
-            </button>
+              <UploadCloud size={16} /> Enviar em lote
+            </Link>
           </div>
         </div>
 
-        {/* Document type filter */}
-        <div className="mb-7 w-full sm:max-w-xs">
-          <label htmlFor="document-type-filter" className="mb-1.5 block text-sm font-semibold text-[#1d2a3d]">
-            Tipo de documento
-          </label>
-          <select
-            id="document-type-filter"
-            value={selectedCategory}
-            onChange={(event) => setSelectedCategory(event.target.value)}
-            className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-sm text-[#1d2a3d] outline-none transition-colors focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]"
-          >
-            <option value="all">Todos os tipos ({counts.all})</option>
-            {DOCUMENT_TYPES.map(({ id, label }) => (
-              <option key={id} value={id}>{label} ({counts[id]})</option>
-            ))}
-          </select>
-        </div>
+        <section aria-label="Filtros de documentos" className="mb-7 rounded-2xl border border-[#dde3ec] bg-white p-3 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#c6cfdb] bg-[#fbfcfe] px-3.5 text-sm text-[#5a6a80] transition-colors focus-within:border-[#1b3a60] focus-within:ring-1 focus-within:ring-[#1b3a60]">
+              <Search size={18} className="shrink-0" />
+              <input
+                type="search"
+                aria-label="Buscar documentos"
+                placeholder="Buscar por título, tipo ou conteúdo"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="w-full min-w-0 bg-transparent text-sm text-[#1d2a3d] outline-none placeholder:text-[#7b8798]"
+              />
+            </label>
+
+            <div className="flex h-11 shrink-0 items-center justify-between rounded-xl border border-[#dde3ec] bg-[#f7f9fc] p-1 sm:justify-start">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                aria-label="Visualizar em grade"
+                aria-pressed={viewMode === 'grid'}
+                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-bold transition-colors sm:flex-none ${viewMode === 'grid' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1b3a60]'}`}
+              >
+                <LayoutGrid size={16} /> <span>Grade</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                aria-label="Visualizar em lista"
+                aria-pressed={viewMode === 'list'}
+                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-bold transition-colors sm:flex-none ${viewMode === 'list' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1b3a60]'}`}
+              >
+                <List size={16} /> <span>Lista</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="block min-w-0">
+              <span className="mb-1 block text-xs font-semibold text-[#52627a]">Tipo</span>
+              <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)} className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]">
+                <option value="all">Todos os tipos ({counts.all})</option>
+                {DOCUMENT_TYPES.map(({ id, label }) => <option key={id} value={id}>{label} ({counts[id]})</option>)}
+              </select>
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1 block text-xs font-semibold text-[#52627a]">Status</span>
+              <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]">
+                <option value="all">Todos os status</option>
+                <option value="pronto">Pronto</option>
+                <option value="revisar">Revisar</option>
+                <option value="processing">Processando</option>
+                <option value="failed">Falhou</option>
+              </select>
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1 block text-xs font-semibold text-[#52627a]">Período</span>
+              <select value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)} className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]">
+                <option value="all">Qualquer período</option>
+                <option value="30days">Últimos 30 dias</option>
+                <option value="thisyear">Este ano</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#edf0f5] pt-3 text-xs text-[#718096]">
+            <span>{filteredItems.length} {filteredItems.length === 1 ? 'documento encontrado' : 'documentos encontrados'}</span>
+            {(search || selectedCategory !== 'all' || selectedStatus !== 'all' || selectedPeriod !== 'all') && (
+              <button type="button" onClick={() => { setSearch(''); setSelectedCategory('all'); setSelectedStatus('all'); setSelectedPeriod('all'); }} className="min-h-9 rounded-lg px-3 font-bold text-[#1f7fe0] hover:bg-[#f1f6fc]">
+                Limpar filtros
+              </button>
+            )}
+          </div>
+        </section>
 
         {/* Grouped Month Sections */}
         {isLoading ? (
@@ -432,7 +424,7 @@ export default function Documents() {
                       className="bg-white border border-[#dde3ec] rounded-[20px] p-3.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] hover:shadow-md transition-shadow group flex flex-col justify-between"
                     >
                       <Link href={`/documentos/${doc.id}`} className="block">
-                        <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} />
+                        <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} type={doc.tipo} />
 
                         {/* Title & Date */}
                         <div className="mt-3.5 text-[15px] font-bold text-[#1d2a3d] truncate">
@@ -509,15 +501,11 @@ export default function Documents() {
                   {docs.map((doc) => (
                     <div
                       key={doc.id}
-                      className="p-4 flex items-center gap-4 hover:bg-slate-50/70 transition-colors"
+                      className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-3 p-3 transition-colors hover:bg-slate-50/70 sm:grid-cols-[72px_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-4 sm:p-4"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                        {doc.tipo === 'Receita' ? (
-                          <Pill size={20} className="text-[#1b3a60]" />
-                        ) : (
-                          <FileText size={20} className="text-[#1b3a60]" />
-                        )}
-                      </div>
+                      <Link href={`/documentos/${doc.id}`} aria-label={`Abrir ${doc.titulo}`} className="group block">
+                        <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} type={doc.tipo} compact />
+                      </Link>
 
                       <div className="flex-1 min-w-0">
                         <Link href={`/documentos/${doc.id}`} className="block">
@@ -538,7 +526,7 @@ export default function Documents() {
                         </Link>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="col-span-2 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-[#edf0f5] pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
                         {doc.quantidadeAlertas > 0 && <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800"><AlertTriangle size={14} />{doc.quantidadeAlertas}</span>}
                         {doc.status === 'failed' && (
                           <button
@@ -556,7 +544,7 @@ export default function Documents() {
                         {renderBadge(doc)}
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="hidden items-center gap-2 sm:flex">
                         <Link
                           href={`/documentos/${doc.id}`}
                           className="p-2 text-[#5a6a80] hover:text-[#1b3a60] hover:bg-slate-100 rounded-lg transition-colors"

@@ -206,7 +206,7 @@ export function EmergenciaModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0f1e3c]/65 p-2 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#f7f9fc] p-2 sm:p-4"
       onClick={handleClose}
     >
       <section
@@ -406,20 +406,7 @@ export function EmergenciaModal({
             </p>
 {shareUrl && (
               <>
-<label
-              htmlFor="emergency-modal-share-link"
-              className="mb-1.5 block text-left text-xs font-bold text-[#5a6a80]"
-            >
-              Link da ficha de emergência
-            </label>
-            <input
-              id="emergency-modal-share-link"
-              type="url"
-              readOnly
-              value={shareUrl}
-              className="min-h-11 w-full rounded-xl border border-[#dde3ec] bg-[#f7f9fc] px-3 text-xs text-[#1d2a3d] outline-none focus:border-[#1f7fe0]"
-            />
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+<div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={handleCopyLink}

@@ -11,9 +11,9 @@ import {
   Check,
   LoaderCircle,
   AlertTriangle,
-  X,
-  Phone,
-  LogOut,
+  X,  LogOut,
+  ArrowLeft,
+  ChevronRight,
 } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
@@ -41,6 +41,8 @@ export default function Profile() {
   const saveConsentimento = useSaveConsentimento();
 
   const [activeTab, setActiveTab] = useState<'dados' | 'carteirinha' | 'seguranca' | 'privacidade'>('dados');
+  const [mobileSectionOpen, setMobileSectionOpen] = useState(false);
+  const sectionTitles = { dados: 'Dados pessoais', carteirinha: 'Carteirinha', seguranca: 'Segurança', privacidade: 'Privacidade' } as const;
 
   // Form State
   const [nome, setNome] = useState('');
@@ -48,11 +50,7 @@ export default function Profile() {
   const [originalEmail, setOriginalEmail] = useState('');
   const [nascimento, setNascimento] = useState('');
   const [sexo, setSexo] = useState('');
-  const [contatoEmergencia, setContatoEmergencia] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [endereco, setEndereco] = useState('');
-  const [isSavingContact, setIsSavingContact] = useState(false);
-  const [senhaAtualPerfil, setSenhaAtualPerfil] = useState('');
+  const [contatoEmergencia, setContatoEmergencia] = useState('');  const [senhaAtualPerfil, setSenhaAtualPerfil] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [planoSaude, setPlanoSaude] = useState('');
   const [numeroCarteirinha, setNumeroCarteirinha] = useState('');
@@ -85,10 +83,7 @@ export default function Profile() {
     setContatoEmergencia(p.contatoEmergencia || '');
     setPlanoSaude(p.planoSaude || '');
     setNumeroCarteirinha(p.numeroCarteirinha || '');
-    setUrlCarteirinha(p.urlCarteirinha || '');
-    setTelefone(p.telefone || '');
-    setEndereco(p.endereco || '');
-  }, [profileRaw, toast]);
+    setUrlCarteirinha(p.urlCarteirinha || '');  }, [profileRaw, toast]);
 
   useEffect(() => {
     if (!consentimento) return;
@@ -143,23 +138,6 @@ export default function Profile() {
       });
     } finally {
       setIsSavingProfile(false);
-    }
-  };
-
-  const handleSaveContact = async () => {
-    setIsSavingContact(true);
-    try {
-      await customFetch('/api/pacientes/me/contato', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefone: telefone.trim(), endereco: endereco.trim() }),
-      });
-      await refetch();
-      toast({ title: 'Telefone e endereço atualizados.' });
-    } catch (error) {
-      toast({ title: getApiErrorMessage(error, 'Não foi possível salvar o contato.'), variant: 'destructive' });
-    } finally {
-      setIsSavingContact(false);
     }
   };
 
@@ -326,7 +304,7 @@ export default function Profile() {
     <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
         {/* Header Title */}
-        <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
+        <div className={`flex justify-between items-end gap-5 mb-7 flex-wrap ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
           <div>
             <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
               Perfil
@@ -343,34 +321,34 @@ export default function Profile() {
         {/* 2-col Layout */}
         <div className="flex gap-7 flex-wrap items-start">
           {/* Left Sidebar Tabs (240px) */}
-          <div className="w-full sm:w-[240px] flex flex-col gap-1 shrink-0">
+          <div className={`w-full sm:w-[240px] flex flex-col gap-1 shrink-0 ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
             <button
-              onClick={() => setActiveTab('dados')}
-              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left ${
+              onClick={() => { setActiveTab('dados'); setMobileSectionOpen(true); }}
+              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'dados'
                   ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
                   : 'text-[#5a6a80] hover:bg-slate-50'
               }`}
             >
               <User size={18} className={activeTab === 'dados' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
-              Dados pessoais
+              <span className="flex-1">Dados pessoais</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
             </button>
 
             <button
-              onClick={() => setActiveTab('carteirinha')}
-              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left ${
+              onClick={() => { setActiveTab('carteirinha'); setMobileSectionOpen(true); }}
+              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'carteirinha'
                   ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
                   : 'text-[#5a6a80] hover:bg-slate-50'
               }`}
             >
               <CreditCard size={18} className={activeTab === 'carteirinha' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
-              Carteirinha
+              <span className="flex-1">Carteirinha</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
             </button>
 
             <button
-              onClick={() => setActiveTab('seguranca')}
-              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left ${
+              onClick={() => { setActiveTab('seguranca'); setMobileSectionOpen(true); }}
+              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'seguranca'
                   ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
                   : 'text-[#5a6a80] hover:bg-slate-50'
@@ -381,20 +359,26 @@ export default function Profile() {
             </button>
 
             <button
-              onClick={() => setActiveTab('privacidade')}
-              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left ${
+              onClick={() => { setActiveTab('privacidade'); setMobileSectionOpen(true); }}
+              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'privacidade'
                   ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
                   : 'text-[#5a6a80] hover:bg-slate-50'
               }`}
             >
               <Shield size={18} className={activeTab === 'privacidade' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
-              Privacidade
+              <span className="flex-1">Privacidade</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
             </button>
           </div>
 
           {/* Right Column: Cards (flex: 1) */}
-          <div className="w-full min-w-0 flex-1 flex flex-col gap-5">
+          <div className={`w-full min-w-0 flex-1 flex-col gap-5 ${mobileSectionOpen ? 'flex animate-in fade-in slide-in-from-right-2 duration-200' : 'hidden'} sm:flex`}>
+            <div className="mb-1 flex items-center gap-3 sm:hidden">
+              <button type="button" onClick={() => setMobileSectionOpen(false)} aria-label="Voltar às opções do perfil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dde3ec] bg-white text-[#1b3a60] shadow-sm transition-colors hover:bg-[#f1f4f8]">
+                <ArrowLeft size={19} />
+              </button>
+              <h2 className="m-0 text-xl font-bold text-[#1b3a60]">{sectionTitles[activeTab]}</h2>
+            </div>
             {/* Card 1: Dados pessoais */}
             {activeTab === 'dados' && (
               <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
@@ -497,42 +481,6 @@ export default function Profile() {
                       placeholder="Nome e telefone do contato"
                       className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="profile-phone" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">Telefone</label>
-                      <input
-                        id="profile-phone"
-                        type="tel"
-                        autoComplete="tel"
-                        value={telefone}
-                        onChange={(event) => setTelefone(event.target.value)}
-                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm outline-none focus:border-[#1b3a60]"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="profile-address" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">Endereço</label>
-                      <input
-                        id="profile-address"
-                        type="text"
-                        autoComplete="street-address"
-                        value={endereco}
-                        onChange={(event) => setEndereco(event.target.value)}
-                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm outline-none focus:border-[#1b3a60]"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={handleSaveContact}
-                      disabled={isSavingContact}
-                      className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      {isSavingContact ? <LoaderCircle size={15} className="animate-spin" /> : <Phone size={15} />}
-                      Salvar telefone e endereço
-                    </button>
                   </div>
 
                   <div className="pt-2 text-right">
@@ -770,29 +718,7 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Card 4: Excluir conta Danger Card */}
-            {activeTab === 'dados' && (
-              <div className="bg-[#fff5f4] border border-[#f0b8b2] rounded-[20px] p-4 sm:p-7 flex gap-4.5 items-center flex-wrap">
-                <div className="w-12 h-12 rounded-2xl bg-[#fde8e6] flex items-center justify-center shrink-0">
-                  <Trash2 size={24} className="text-[#a13a30]" strokeWidth={2} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <b className="text-[17px] text-[#7a2a22] block leading-tight">
-                    Excluir conta
-                  </b>
-                  <div className="text-sm text-[#7a2a22] mt-1 leading-relaxed">
-                    Apaga sua conta e seus documentos. Essa ação não pode ser desfeita.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="min-h-[44px] px-5 rounded-xl bg-[#c0463a] hover:bg-[#a13a30] text-white font-bold text-sm inline-flex items-center transition-colors shadow-xs cursor-pointer"
-                >
-                  Solicitar exclusão
-                </button>
-              </div>
-            )}
+
           </div>
         </div>
 
@@ -811,6 +737,30 @@ export default function Profile() {
             {isSigningOut ? 'Saindo...' : 'Sair da conta'}
           </button>
         </section>
+
+            {/* Exclusão da conta fica abaixo da opção de sair. */}
+            {activeTab === 'dados' && (
+              <div className="mt-4 flex flex-wrap items-center gap-4.5 rounded-[20px] border border-[#f0b8b2] bg-[#fff5f4] p-4 sm:p-7">
+                <div className="w-12 h-12 rounded-2xl bg-[#fde8e6] flex items-center justify-center shrink-0">
+                  <Trash2 size={24} className="text-[#a13a30]" strokeWidth={2} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <b className="text-[17px] text-[#7a2a22] block leading-tight">
+                    Excluir conta
+                  </b>
+                  <div className="text-sm text-[#7a2a22] mt-1 leading-relaxed">
+                    Apaga sua conta e seus documentos. Essa ação não pode ser desfeita.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="min-h-[44px] px-5 rounded-xl bg-[#c0463a] hover:bg-[#a13a30] text-white font-bold text-sm inline-flex items-center transition-colors shadow-xs cursor-pointer"
+                >
+                  Excluir conta
+                </button>
+              </div>
+            )}
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
           Os dados e preferências exibidos pertencem à sua conta.
