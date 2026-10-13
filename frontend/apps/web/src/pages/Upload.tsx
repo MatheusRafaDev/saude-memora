@@ -32,6 +32,7 @@ const DOC_TYPES = [
   { id: 'laudo', label: 'Laudo' },
   { id: 'atestado', label: 'Atestado' },
 ];
+const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 
 export default function Upload() {
   const [, setLocation] = useLocation();
@@ -42,47 +43,22 @@ export default function Upload() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Queue of uploaded items
-  const [queue, setQueue] = useState<UploadQueueItem[]>([
-    {
-      id: 'mock-1',
-      name: 'receita-dr-silva.jpg',
-      sizeStr: '1,2 MB · enviado',
-      progress: 100,
-      status: 'pronto',
-      statusText: 'Pronto',
-    },
-    {
-      id: 'mock-2',
-      name: 'hemograma.pdf',
-      sizeStr: '840 KB · lendo informações',
-      progress: 60,
-      status: 'processando',
-      statusText: 'Processando 60%',
-    },
-    {
-      id: 'mock-3',
-      name: 'laudo-ultrassom.png',
-      sizeStr: '2,4 MB · aguardando',
-      progress: 15,
-      status: 'fila',
-      statusText: 'Na fila',
-    },
-    {
-      id: 'mock-4',
-      name: 'exame-borrado.jpg',
-      sizeStr: '3,1 MB · não foi possível ler',
-      progress: 100,
-      status: 'falha',
-      statusText: 'Falhou',
-      error: 'Tentar novamente · dica: fotografe com boa luz',
-    },
-  ]);
+  const [queue, setQueue] = useState<UploadQueueItem[]>([]);
 
   const handleFiles = async (files: File[]) => {
     if (files.length === 0) return;
 
     for (const file of files) {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      if (!extension || !SUPPORTED_FILE_EXTENSIONS.has(extension)) {
+        toast({
+          title: 'Formato não suportado',
+          description: `${file.name}: envie um arquivo PDF, JPG ou PNG.`,
+          variant: 'destructive',
+        });
+        continue;
+      }
+
       if (file.size > 10 * 1024 * 1024) {
         toast({
           title: 'Arquivo muito grande',
@@ -234,7 +210,7 @@ export default function Upload() {
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
               Envio de arquivos
             </div>
             <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
@@ -256,7 +232,7 @@ export default function Upload() {
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-[24px] bg-gradient-to-br from-[#f4f8fd] to-[#e8f4f2] py-14 px-6 text-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-[24px] bg-gradient-to-br from-[#f4f8fd] to-[#e5eefb] py-14 px-6 text-center cursor-pointer transition-all ${
                 isDragging ? 'border-[#1b3a60] bg-blue-50/80 scale-[1.01]' : 'border-[#9fb4d0] hover:border-[#1b3a60]'
               }`}
             >
@@ -264,7 +240,7 @@ export default function Upload() {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,image/jpeg,image/png,image/webp"
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 className="hidden"
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
@@ -341,14 +317,14 @@ export default function Upload() {
                         <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[65%]" />
                         <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[85%]" />
                       </div>
-                      <div className="h-[4px] rounded-[2px] bg-[#2f7a70]/50 w-[70%]" />
+                      <div className="h-[4px] rounded-[2px] bg-[#1f7fe0]/50 w-[70%]" />
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-0.5">
                         <b className="text-[15px] text-[#1d2a3d] truncate">{item.name}</b>
                         {item.status === 'pronto' && (
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e6f4ec] text-[#1f7a4d] text-xs font-bold whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
                             Pronto
                           </span>
                         )}
@@ -378,7 +354,7 @@ export default function Upload() {
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
                             item.status === 'pronto'
-                              ? 'bg-[#2f7a70]'
+                              ? 'bg-[#1f7fe0]'
                               : item.status === 'processando'
                               ? 'bg-[#1f7fe0]'
                               : item.status === 'fila'
@@ -453,8 +429,8 @@ export default function Upload() {
             </div>
 
             {/* Boas práticas Card */}
-            <div className="bg-[#e8f4f2] border border-[#b9dcd6] rounded-[20px] p-5.5">
-              <div className="flex gap-2.5 items-center font-extrabold text-[#2f7a70] mb-2.5 text-base">
+            <div className="bg-[#e5eefb] border border-[#bfd8f7] rounded-[20px] p-5.5">
+              <div className="flex gap-2.5 items-center font-extrabold text-[#1f7fe0] mb-2.5 text-base">
                 <Shield size={20} strokeWidth={2} />
                 Boas práticas
               </div>
@@ -478,7 +454,7 @@ export default function Upload() {
         </div>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
-          Tela de design com dados de exemplo.
+          A fila mostra somente os arquivos enviados nesta sessão.
         </p>
       </main>
     </div>

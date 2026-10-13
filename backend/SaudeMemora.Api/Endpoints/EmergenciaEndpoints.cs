@@ -79,11 +79,26 @@ public static class EmergenciaEndpoints
             var result = new
             {
                 nome = paciente.Nome,
+                dataNascimento = paciente.DataNascimento,
+                sexo = paciente.Sexo,
+                planoSaude = paciente.PlanoSaude ?? string.Empty,
+                numeroCarteirinha = paciente.NumeroCarteirinha ?? string.Empty,
                 tipoSanguineo = ficha?.TipoSanguineo ?? "Não informado",
                 alergias = ficha?.Alergias ?? new List<string>(),
-                doencasCronicas = ficha?.DoencasCronicas ?? new List<string>(),
+                doencasCronicas = (ficha?.DoencasCronicas ?? new List<string>())
+                    .Concat(ficha?.Condicoes?.Where(condicao => condicao.Tem).Select(condicao => condicao.Nome)
+                        ?? Enumerable.Empty<string>())
+                    .Where(condicao => !string.IsNullOrWhiteSpace(condicao))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
                 medicamentosContinuos = ficha?.MedicamentosContinuos ?? new List<string>(),
-                contatosEmergencia = paciente.ContatoEmergencia ?? "Não informado"
+                contatosEmergencia = paciente.ContatoEmergencia ?? "Não informado",
+                doadorOrgaos = ficha?.DoadorOrgaos,
+                cirurgias = ficha?.Cirurgias ?? string.Empty,
+                fuma = ficha?.Fuma,
+                bebe = ficha?.Bebe,
+                habitosGerais = ficha?.HabitosGerais ?? string.Empty,
+                historicoFamiliar = ficha?.HistoricoFamiliar ?? string.Empty
             };
 
             return Results.Ok(result);

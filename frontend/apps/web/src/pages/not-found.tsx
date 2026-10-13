@@ -1,16 +1,15 @@
 import { Link } from 'wouter';
+import { BrandWordmark } from '@/components/BrandWordmark';
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col items-center justify-center text-center p-8 bg-[radial-gradient(700px_400px_at_50%_0,#e6eef9,transparent_60%),#fff]">
       <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[20px] text-[#1b3a60] tracking-[-0.03em]">
-        <img src="/logo.svg" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
-        <span>
-          saúde<span className="font-semibold text-[#2f7a70]">memora</span>
-        </span>
+        <img src="/logo.png" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
+        <BrandWordmark />
       </Link>
 
-      <div className="mt-6 text-[120px] sm:text-[150px] font-extrabold leading-none tracking-[-0.06em] bg-gradient-to-br from-[#1b3a60] to-[#2f7a70] bg-clip-text text-transparent select-none">
+      <div className="mt-6 text-[120px] sm:text-[150px] font-extrabold leading-none tracking-[-0.06em] bg-gradient-to-br from-[#1b3a60] to-[#1f7fe0] bg-clip-text text-transparent select-none">
         404
       </div>
 

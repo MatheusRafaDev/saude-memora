@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
+import { BrandWordmark } from '@/components/BrandWordmark';
 
 export function PublicPageHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,10 +16,8 @@ export function PublicPageHeader() {
     <header className="sticky top-0 z-40 w-full border-b border-[#dde3ec] bg-white">
       <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between px-6 sm:px-12">
         <Link href="/" className="flex items-center gap-2.5" aria-label="SaúdeMemora — início">
-          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
-          <span className="text-[18px] font-extrabold tracking-[-0.03em] text-[#1d2a3d]">
-            saúde<span className="font-semibold text-[#2f7a70]">memora</span>
-          </span>
+          <img src="/logo.png" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+          <BrandWordmark className="text-[18px] tracking-[-0.03em] text-[#1d2a3d]" />
         </Link>
 
         <nav aria-label="Navegação principal" className="hidden items-center gap-9 md:flex">

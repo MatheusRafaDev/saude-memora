@@ -25,6 +25,7 @@ const TYPE_OPTIONS = [
   { id: 'laudo', label: 'Laudo' },
   { id: 'atestado', label: 'Atestado' },
 ];
+const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 
 export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSuccess }: UploadModalProps) {
   const [, setLocation] = useLocation();
@@ -56,6 +57,18 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
 
+  const validateFiles = (picked: File[]) => {
+    if (picked.some((file) => file.size > 10 * 1024 * 1024)) {
+      setErrorMessage('O tamanho máximo permitido por arquivo é 10 MB.');
+      return false;
+    }
+    if (picked.some((file) => !SUPPORTED_FILE_EXTENSIONS.has(file.name.split('.').pop()?.toLowerCase() || ''))) {
+      setErrorMessage('Formato não suportado. Envie arquivos PDF, JPG ou PNG.');
+      return false;
+    }
+    return true;
+  };
+
   const handleClose = () => {
     setInternalOpen(false);
     if (externalOnClose) externalOnClose();
@@ -65,10 +78,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     const picked = Array.from(e.target.files || []);
     e.target.value = '';
     if (picked.length) {
-      if (picked.some((f) => f.size > 10 * 1024 * 1024)) {
-        setErrorMessage('O tamanho máximo permitido por arquivo é 10 MB.');
-        return;
-      }
+      if (!validateFiles(picked)) return;
       setErrorMessage('');
       setFiles(picked);
     }
@@ -79,10 +89,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     setIsDragging(false);
     const picked = Array.from(e.dataTransfer.files || []);
     if (picked.length) {
-      if (picked.some((f) => f.size > 10 * 1024 * 1024)) {
-        setErrorMessage('O tamanho máximo permitido por arquivo é 10 MB.');
-        return;
-      }
+      if (!validateFiles(picked)) return;
       setErrorMessage('');
       setFiles(picked);
     }
@@ -186,7 +193,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,image/jpeg,image/png,image/webp"
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 className="hidden"
                 onChange={handleFilePicked}
               />
@@ -272,7 +279,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
         {status === 'done' && (
           <div className="py-6 text-center space-y-4">
-            <CheckCircle2 size={42} className="mx-auto text-[#1f7a4d]" />
+            <CheckCircle2 size={42} className="mx-auto text-[#1b3a60]" />
             <div>
               <b className="text-lg text-[#1d2a3d] block">Documento processado com sucesso!</b>
               <p className="text-sm text-[#5a6a80] mt-1">

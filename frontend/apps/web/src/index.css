@@ -57,8 +57,8 @@
   --muted:               214 33% 96%;
   --muted-foreground:    215 17% 43%;
 
-  /* Accent = Teal #2f7a70 */
-  --accent:              172 44% 33%;
+  /* Accent = Blue #1f7fe0 */
+  --accent:              211 76% 50%;
   --accent-foreground:   0 0% 100%;
 
   /* Destructive = Red #c0463a / #a13a30 */
@@ -72,16 +72,14 @@
   /* Specific Design System Palette */
   --color-navy: #1b3a60;
   --color-navy-hover: #244d7e;
-  --color-teal: #2f7a70;
-  --color-teal-light: #e8f4f2;
-  --color-teal-border: #b9dcd6;
+  --color-blue: #1f7fe0;
+  --color-blue-light: #e5eefb;
+  --color-blue-border: #bfd8f7;
   --color-sky: #1f7fe0;
   --color-sky-light: #7cc4e6;
   --color-bg-neutral: #f7f9fc;
   --color-card-border: #dde3ec;
   --color-input-border: #c6cfdb;
-  --color-badge-green-bg: #e6f4ec;
-  --color-badge-green-text: #1f7a4d;
   --color-badge-amber-bg: #fdf3d8;
   --color-badge-amber-text: #6b4208;
   --color-badge-amber-border: #e3b95a;
@@ -110,7 +108,7 @@
   --secondary-foreground:213 56% 24%;
   --muted:               214 33% 96%;
   --muted-foreground:    215 17% 43%;
-  --accent:              172 44% 33%;
+  --accent:              211 76% 50%;
   --accent-foreground:   0 0% 100%;
   --destructive:         5 53% 49%;
   --destructive-foreground: 0 0% 100%;

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Caching.Distributed;
 using SaudeMemora.Api.Helpers;
+using SaudeMemora.Application.DTOs;
 using SaudeMemora.Domain.Entities;
 using SaudeMemora.Domain.Interfaces;
 using System.Collections.Concurrent;
@@ -121,6 +122,61 @@ public class AuthFlowTests
         var password = "123";
 
         Assert.True(password.Length < 8);
+    }
+
+    [Fact]
+    public void RegisterPacienteDtoValidator_RequiresValidBirthDateAndSex()
+    {
+        var validator = new RegisterPacienteDtoValidator();
+        var dto = new RegisterPacienteDto
+        {
+            Nome = "Usuário Teste",
+            Email = "usuario@teste.com",
+            Senha = "senha-segura",
+            DataNascimento = "",
+            Sexo = ""
+        };
+
+        var result = validator.Validate(dto);
+
+        Assert.Contains(result.Errors, error => error.PropertyName == nameof(dto.DataNascimento));
+        Assert.Contains(result.Errors, error => error.PropertyName == nameof(dto.Sexo));
+    }
+
+    [Fact]
+    public void RegisterPacienteDtoValidator_AcceptsValidBirthDateAndSex()
+    {
+        var validator = new RegisterPacienteDtoValidator();
+        var dto = new RegisterPacienteDto
+        {
+            Nome = "Usuário Teste",
+            Email = "usuario@teste.com",
+            Senha = "senha-segura",
+            DataNascimento = "2000-01-01",
+            Sexo = "Outro"
+        };
+
+        var result = validator.Validate(dto);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void RegisterPacienteDtoValidator_RejectsFutureBirthDate()
+    {
+        var validator = new RegisterPacienteDtoValidator();
+        var dto = new RegisterPacienteDto
+        {
+            Nome = "Usuário Teste",
+            Email = "usuario@teste.com",
+            Senha = "senha-segura",
+            DataNascimento = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1).ToString("yyyy-MM-dd"),
+            Sexo = "Feminino"
+        };
+
+        var result = validator.Validate(dto);
+
+        Assert.Contains(result.Errors, error => error.PropertyName == nameof(dto.DataNascimento));
     }
 
     [Fact]

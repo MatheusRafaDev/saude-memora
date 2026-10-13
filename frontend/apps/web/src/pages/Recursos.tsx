@@ -9,15 +9,15 @@ export default function Recursos() {
 
       <main className="flex-1">
         {/* ── Hero Section ────────────────────────────────────────── */}
-        <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e8f4f2] px-6 py-16 sm:px-12 md:py-20">
+        <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 py-16 sm:px-12 md:py-20">
           <div className="mx-auto flex max-w-[1100px] flex-wrap items-center gap-14">
             <div className="flex-1 min-w-[320px]">
-              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                 Recursos da plataforma
               </div>
               <h1 className="mt-4 text-[38px] sm:text-[46px] lg:text-[50px] font-extrabold leading-[1.08] tracking-[-0.04em] text-[#1d2a3d]">
                 Suas informações de saúde, mais fáceis de{' '}
-                <span className="text-[#2f7a70]">organizar e encontrar.</span>
+                <span className="text-[#1f7fe0]">organizar e encontrar.</span>
               </h1>
               <p className="mt-5 mb-7 text-[17px] sm:text-[18px] leading-[1.65] text-[#5a6a80]">
                 Conheça as ferramentas do SaúdeMemora para reunir documentos, laudos e receitas em um espaço seguro com suporte de inteligência artificial.
@@ -31,7 +31,7 @@ export default function Recursos() {
             </div>
 
             <div className="flex-1 min-w-[320px]">
-              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e8f4f2] to-[#dfe9f5] p-5 shadow-sm">
+              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-5 shadow-sm">
                 <img
                   src="/recursos-illustration.svg"
                   alt="Ilustração recursos"
@@ -45,7 +45,7 @@ export default function Recursos() {
         {/* ── Funcionalidades ─────────────────────────────────────── */}
         <section className="px-6 py-16 sm:px-12">
           <div className="mx-auto max-w-[1100px]">
-            <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
               Funcionalidades
             </div>
             <h2 className="mt-2.5 text-[30px] sm:text-[34px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#1d2a3d]">
@@ -65,9 +65,9 @@ export default function Recursos() {
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-[#dde3ec] bg-[#e8f4f2] p-8 md:col-span-2">
+              <div className="rounded-[24px] border border-[#dde3ec] bg-[#e5eefb] p-8 md:col-span-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 16V5M7 10l5-5 5 5M5 19h14" />
                   </svg>
                 </div>
@@ -204,7 +204,7 @@ export default function Recursos() {
         </section>
       </main>
 
-      <PublicPageFooter variant="compact" />
+      <PublicPageFooter />
     </div>
   );
 }

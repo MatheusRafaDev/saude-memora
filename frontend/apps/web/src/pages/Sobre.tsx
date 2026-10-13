@@ -9,14 +9,14 @@ export default function Sobre() {
 
       <main className="flex-1">
         {/* ── Hero Section ────────────────────────────────────────── */}
-        <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e8f4f2] px-6 py-20 sm:px-12">
+        <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 py-20 sm:px-12">
           <div className="mx-auto max-w-[1000px]">
-            <span className="inline-block rounded-full bg-[#e8f4f2] px-3.5 py-1.5 text-[12px] font-bold text-[#2f7a70]">
+            <span className="inline-block rounded-full bg-[#e5eefb] px-3.5 py-1.5 text-[12px] font-bold text-[#1f7fe0]">
               Sobre o SaúdeMemora
             </span>
             <h1 className="mt-5 text-[40px] sm:text-[50px] lg:text-[54px] font-extrabold leading-[1.06] tracking-[-0.04em] text-[#1d2a3d] max-w-[780px]">
               Sua história de saúde merece estar{' '}
-              <span className="text-[#2f7a70]">organizada e ao seu alcance.</span>
+              <span className="text-[#1f7fe0]">organizada e ao seu alcance.</span>
             </h1>
             <p className="mt-5 text-[18px] leading-[1.65] text-[#5a6a80] max-w-[620px]">
               O SaúdeMemora nasceu para facilitar a organização de exames, receitas e informações importantes em um espaço digital pessoal.
@@ -28,7 +28,7 @@ export default function Sobre() {
         <section className="px-6 py-16 sm:px-12">
           <div className="mx-auto flex max-w-[1000px] flex-wrap gap-14">
             <div className="flex-[1.2] min-w-[320px] text-[16px] leading-[1.8] text-[#5a6a80]">
-              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                 Nossa história
               </div>
               <h2 className="mt-2.5 mb-5 text-[30px] sm:text-[34px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#1d2a3d]">
@@ -51,7 +51,7 @@ export default function Sobre() {
 
             <div className="flex-1 min-w-[320px]">
               <div className="rounded-[32px] border border-[#dde3ec] bg-white p-3 shadow-sm">
-                <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e8f4f2] to-[#dfe9f5] p-5">
+                <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-5">
                   <img
                     src="/sobre-illustration.svg"
                     alt="Ilustração missão"
@@ -59,7 +59,7 @@ export default function Sobre() {
                   />
                 </div>
                 <div className="p-5">
-                  <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+                  <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                     NOSSA MISSÃO
                   </div>
                   <h3 className="mt-2 text-[19px] font-bold leading-snug">
@@ -74,7 +74,7 @@ export default function Sobre() {
         {/* ── O que orienta o projeto ─────────────────────────────── */}
         <section className="border-t border-b border-[#dde3ec] bg-[#f1f4f8] px-6 py-16 sm:px-12">
           <div className="mx-auto max-w-[1000px]">
-            <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
               O que orienta o projeto
             </div>
             <h2 className="mt-2.5 text-[30px] sm:text-[34px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#1d2a3d]">
@@ -124,11 +124,11 @@ export default function Sobre() {
         {/* ── Quem criou ──────────────────────────────────────────── */}
         <section className="px-6 py-16 sm:px-12">
           <div className="mx-auto flex max-w-[1000px] flex-wrap items-center gap-7 rounded-[32px] border border-[#dde3ec] bg-white p-10 shadow-sm">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#2f7a70] to-[#1b3a60] text-[26px] font-extrabold text-white shadow-md">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-[26px] font-extrabold text-white shadow-md">
               MR
             </div>
             <div className="flex-1 min-w-[280px]">
-              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
+              <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
                 Quem criou
               </div>
               <h2 className="mt-1 text-[26px] font-bold">Matheus Rafael</h2>
@@ -168,7 +168,7 @@ export default function Sobre() {
         </section>
       </main>
 
-      <PublicPageFooter variant="compact" />
+      <PublicPageFooter />
     </div>
   );
 }

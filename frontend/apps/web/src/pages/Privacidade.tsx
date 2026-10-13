@@ -38,9 +38,9 @@ export default function Privacidade() {
 
       <main className="flex-1">
         {/* ── Hero Section ────────────────────────────────────────── */}
-        <section className="border-b border-[#dde3ec] bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e8f4f2] px-6 py-16 sm:px-12">
+        <section className="border-b border-[#dde3ec] bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 py-16 sm:px-12">
           <div className="mx-auto max-w-[1000px]">
-            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">
               DOCUMENTO LEGAL
             </div>
             <h1 className="mt-2.5 mb-2 text-[38px] sm:text-[46px] font-extrabold tracking-[-0.04em] text-[#1d2a3d]">
@@ -89,7 +89,7 @@ export default function Privacidade() {
         </div>
       </main>
 
-      <PublicPageFooter variant="compact" />
+      <PublicPageFooter />
     </div>
   );
 }

@@ -6,15 +6,14 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import './index.css';
 import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 
-// Auth is cookie-backed. In development, requests go to the same origin and are proxied by Vite.
-// In production, if VITE_API_URL is provided, it is prepended.
+// Auth is cookie-backed. Send API requests to the configured backend origin
+// in both development and production.
 setAuthTokenGetter(() => null);
-const apiUrl = import.meta.env.VITE_API_URL;
-if (import.meta.env.PROD && apiUrl) {
-  setBaseUrl(apiUrl);
-} else {
-  setBaseUrl(null);
+const apiUrl = import.meta.env.VITE_API_URL?.trim();
+if (import.meta.env.PROD && !apiUrl) {
+  throw new Error('Configure VITE_API_URL com a URL da API antes de publicar o frontend.');
 }
+setBaseUrl(import.meta.env.DEV ? null : apiUrl || null);
 
 // Register PWA Service Worker
 if ('serviceWorker' in navigator) {
@@ -35,4 +34,3 @@ createRoot(document.getElementById('root')!, {
     <App />
   </ErrorBoundary>,
 );
-

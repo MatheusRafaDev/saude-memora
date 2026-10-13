@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
 import { EmergenciaModal } from '@/components/EmergenciaModal';
-import { useGetApiPacientesMe, useGetApiFichaMedicaMe } from '@workspace/api-client-react';
+import { BrandWordmark } from '@/components/BrandWordmark';
+import { useGetApiPacientesMe } from '@workspace/api-client-react';
 
 const navItems = [
   {
@@ -46,23 +47,14 @@ const navItems = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showEmergenciaModal, setShowEmergenciaModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { signOut } = useAuth();
 
   const { data: profileRaw } = useGetApiPacientesMe();
-  const { data: fichaRaw, isLoading: isFichaLoading } = useGetApiFichaMedicaMe();
-  const profile = (profileRaw as unknown as any) || { nome: 'Ana Souza', email: '' };
-
-  const isAnamnesePending = !isFichaLoading && fichaRaw !== undefined && Object.keys(fichaRaw as any).length === 0;
-
-  useEffect(() => {
-    if (isAnamnesePending && location !== '/anamnese') {
-      setLocation('/anamnese');
-    }
-  }, [isAnamnesePending, location, setLocation]);
+  const profile = (profileRaw as unknown as any) || { nome: '', email: '' };
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -83,10 +75,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         .slice(0, 2)
         .join('')
         .toUpperCase()
-    : 'AS';
+    : '—';
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] flex flex-col font-sans text-[#1d2a3d]">
+    <div className="min-h-screen min-h-[100dvh] bg-[#f7f9fc] flex flex-col font-sans text-[#1d2a3d]">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-[60] focus:rounded-lg focus:bg-[#1b3a60] focus:px-4 focus:py-3 focus:text-white"
@@ -97,19 +89,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ── Desktop Header ─────────────────────────────────────── */}
       <header className="sticky top-0 z-40 flex h-[72px] items-center gap-7 border-b border-[#dde3ec] bg-white px-6 sm:px-10">
         <Link
-          href={isAnamnesePending ? '/anamnese' : '/visao-geral'}
+          href="/visao-geral"
           className="flex items-center gap-2.5 shrink-0 text-[#1b3a60] font-extrabold text-[18px] tracking-[-0.03em]"
         >
-          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
-          <span>
-            saúde<span className="font-semibold text-[#2f7a70]">memora</span>
-          </span>
+          <img src="/logo.png" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+          <BrandWordmark />
         </Link>
 
         {/* Navigation center */}
         <nav aria-label="Navegação principal" className="hidden md:flex flex-1 items-center justify-center gap-1">
-          {!isAnamnesePending &&
-            navItems.map(({ href, label, icon }) => {
+          {navItems.map(({ href, label, icon }) => {
               const isActive = activeHref === href;
               return (
                 <Link
@@ -125,7 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <span>{label}</span>
                 </Link>
               );
-            })}
+          })}
         </nav>
 
         {/* Right side actions */}
@@ -141,8 +130,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span>Emergência</span>
           </button>
 
-          {!isAnamnesePending && (
-            <button
+          <button
               type="button"
               onClick={triggerUploadModal}
               className="hidden sm:inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
@@ -151,8 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <path d="M12 5v14M5 12h14" />
               </svg>
               <span>Adicionar</span>
-            </button>
-          )}
+          </button>
 
           {/* User Avatar & Dropdown */}
           <div className="relative" ref={menuRef}>
@@ -160,7 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
               aria-label="Menu do usuário"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#2f7a70] to-[#1b3a60] text-[14px] font-bold text-white transition-transform hover:scale-105"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-[14px] font-bold text-white transition-transform hover:scale-105"
             >
               {initials}
             </button>
@@ -168,7 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {userMenuOpen && (
               <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-[#dde3ec] bg-white p-2 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="border-b border-[#dde3ec] px-3 py-2.5">
-                  <div className="text-[14px] font-bold text-[#1d2a3d] truncate">{profile.nome}</div>
+                  <div className="text-[14px] font-bold text-[#1d2a3d] truncate">{profile.nome || 'Nome não informado'}</div>
                   <div className="text-[12px] text-[#5a6a80] truncate">{profile.email}</div>
                 </div>
 
@@ -216,37 +203,40 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* Main page content */}
-      <div id="main-content" className="flex-1 pb-20 md:pb-8">
+      <div
+        id="main-content"
+        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8"
+      >
         {children}
       </div>
 
       {/* ── Mobile Bottom Navigation Bar (as per Mobile reference) ── */}
       <nav
-        aria-label="Navegação móvel inferior"
-        className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-[#dde3ec] bg-white px-2 md:hidden"
-      >
-        {!isAnamnesePending &&
-          navItems.map(({ href, label, icon }) => {
+          aria-label="Navegação móvel inferior"
+          className="fixed inset-x-0 bottom-0 z-40 flex min-h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-[#dde3ec] bg-white px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_rgba(27,58,96,0.45)] md:hidden"
+        >
+        {navItems.map(({ href, label, icon }) => {
             const isActive = activeHref === href;
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center justify-center gap-1 px-3 py-1 text-[11px] font-medium transition-colors ${
-                  isActive ? 'text-[#1b3a60] font-bold' : 'text-[#5a6a80]'
+                aria-current={isActive ? 'page' : undefined}
+                className={`flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-[11px] leading-tight transition-colors focus-visible:outline-offset-[-2px] ${
+                  isActive ? 'font-bold text-[#1b3a60]' : 'font-medium text-[#5a6a80]'
                 }`}
               >
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-xl ${
-                    isActive ? 'bg-[#f1f4f8] text-[#1b3a60]' : 'text-[#5a6a80]'
+                  className={`flex h-8 w-10 items-center justify-center rounded-xl ${
+                    isActive ? 'bg-[#e5eefb] text-[#1b3a60]' : 'text-[#5a6a80]'
                   }`}
                 >
-                  {icon}
+                  <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
                 </div>
-                <span>{label}</span>
+                <span className="max-w-full truncate">{label}</span>
               </Link>
             );
-          })}
+        })}
       </nav>
 
       {/* Modals */}

@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'wouter';
 import {
   Send,
   LoaderCircle,
   FileText,
   AlertTriangle,
-  Pill,
   MessageSquare,
-  Sparkles,
 } from 'lucide-react';
-import { customFetch } from '@workspace/api-client-react';
+import { customFetch, useGetApiDocuments } from '@workspace/api-client-react';
 import ReactMarkdown from 'react-markdown';
 
 type Citation = {
@@ -22,25 +21,16 @@ type Message = {
   role: 'user' | 'assistant';
   content: string;
   citations?: Citation[];
+  sendFailed?: boolean;
 };
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: 'msg-1',
-    role: 'user',
-    content: 'Quais medicamentos aparecem nas minhas últimas receitas?',
-  },
-  {
-    id: 'msg-2',
-    role: 'assistant',
-    content:
-      'Pelas suas receitas, há 2 medicamentos registrados:\n\n* **Dipirona 500 mg** · a cada 6 horas\n* **Losartana 50 mg** · 1 vez ao dia',
-    citations: [
-      { id: '1', titulo: 'Receita · Dr. Silva', data: '12/09' },
-      { id: '2', titulo: 'Receita · Dra. Lima', data: '21/08' },
-    ],
-  },
-];
+type ChatDocument = {
+  id: string;
+  titulo?: string;
+  tipo?: string;
+  criadoEm?: string;
+  createdAt?: string;
+};
 
 const SUGGESTIONS = [
   'Quando fiz meu último hemograma?',
@@ -55,10 +45,20 @@ const SIDEBAR_PROMPTS = [
 ];
 
 export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState(false);
+  const [sendError, setSendError] = useState(false);
+  const {
+    data: documentsRaw,
+    isLoading: isLoadingDocuments,
+    isError: documentsError,
+  } = useGetApiDocuments();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const documents = Array.isArray(documentsRaw) ? documentsRaw as ChatDocument[] : [];
+  const hasInvalidDocumentsResponse = documentsRaw !== undefined && !Array.isArray(documentsRaw);
 
   // Load chat history from API if available
   useEffect(() => {
@@ -66,11 +66,16 @@ export default function Chat() {
     const loadHistory = async () => {
       try {
         const result = await customFetch<{ messages: Message[] }>('/api/chat/history');
-        if (isMounted && result.messages && result.messages.length > 0) {
+        if (isMounted) {
+          if (!Array.isArray(result?.messages)) {
+            throw new Error('A API retornou um histórico de conversa inválido.');
+          }
           setMessages(result.messages);
         }
       } catch {
-        // Fallback to initial messages
+        if (isMounted) setHistoryError(true);
+      } finally {
+        if (isMounted) setIsLoadingHistory(false);
       }
     };
     void loadHistory();
@@ -88,6 +93,7 @@ export default function Chat() {
     if (!textToSend || isLoading) return;
 
     setInput('');
+    setSendError(false);
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -103,26 +109,23 @@ export default function Chat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: textToSend }),
       });
+      if (typeof res?.response !== 'string' || !res.response.trim()) {
+        throw new Error('A API não retornou uma resposta válida.');
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: res.response,
-        citations: res.citations || [
-          { titulo: 'Receita · Dr. Silva', data: '12/09' },
-        ],
+        citations: res.citations || [],
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
-      const fallbackMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content:
-          'Com base no seu histórico cadastrado, verifiquei que suas últimas receitas trazem Dipirona 500mg e Losartana 50mg. Lembre-se sempre de conferir com o documento original.',
-        citations: [{ titulo: 'Documentos do acervo', data: 'Recente' }],
-      };
-      setMessages((prev) => [...prev, fallbackMessage]);
+      setMessages((current) => current.map((message) =>
+        message.id === userMessage.id ? { ...message, sendFailed: true } : message
+      ));
+      setSendError(true);
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +137,7 @@ export default function Chat() {
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
               Converse com seu histórico
             </div>
             <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
@@ -173,7 +176,7 @@ export default function Chat() {
                   Assistente do seu histórico de saúde
                 </div>
               </div>
-              <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
+              <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
                 Respostas com fontes
               </span>
             </div>
@@ -188,6 +191,26 @@ export default function Chat() {
 
             {/* Messages Thread */}
             <div className="flex-1 overflow-y-auto py-3 space-y-5.5 min-h-[300px]">
+              {isLoadingHistory && (
+                <div className="flex justify-center py-8 text-sm text-[#5a6a80]">
+                  <LoaderCircle size={18} className="mr-2 animate-spin" /> Carregando conversa…
+                </div>
+              )}
+              {historyError && (
+                <div role="alert" className="rounded-xl bg-[#fff5f4] p-3 text-sm text-[#a13a30]">
+                  Não foi possível carregar o histórico do chat. Tente atualizar a página.
+                </div>
+              )}
+              {sendError && (
+                <div role="alert" className="rounded-xl bg-[#fff5f4] p-3 text-sm text-[#a13a30]">
+                  Não foi possível enviar sua pergunta. Tente novamente.
+                </div>
+              )}
+              {!isLoadingHistory && !historyError && messages.length === 0 && (
+                <div className="py-8 text-center text-sm text-[#5a6a80]">
+                  Ainda não há mensagens nesta conversa. Faça uma pergunta sobre os dados registrados na sua conta.
+                </div>
+              )}
               {messages.map((msg) => (
                 <div key={msg.id}>
                   {msg.role === 'user' ? (
@@ -195,6 +218,11 @@ export default function Chat() {
                     <div className="flex justify-end mb-4">
                       <div className="max-w-[480px] bg-[#1b3a60] text-white rounded-[18px] rounded-tr-[6px] px-4.5 py-3.5 text-[15px] leading-relaxed shadow-xs">
                         {msg.content}
+                        {msg.sendFailed && (
+                          <div className="mt-2 border-t border-white/20 pt-2 text-xs text-white/80">
+                            Não enviada ao servidor.
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -226,7 +254,7 @@ export default function Chat() {
                             {msg.citations.map((c, i) => (
                               <span
                                 key={i}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold"
                               >
                                 <FileText size={13} strokeWidth={2} />
                                 {c.titulo} {c.data ? `· ${c.data}` : ''}
@@ -298,45 +326,57 @@ export default function Chat() {
 
           {/* Right Column: Sources & Prompts (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-5">
-            {/* Fontes desta conversa Card */}
+            {/* The API does not return citation metadata; show actual account documents instead. */}
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               <div className="flex items-center gap-2.5 mb-4">
                 <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
                   <FileText size={18} className="text-[#1b3a60]" />
                 </div>
-                <b className="text-base text-[#1d2a3d] flex-1">Fontes desta conversa</b>
+                <b className="text-base text-[#1d2a3d] flex-1">Documentos recentes</b>
               </div>
 
               <div className="divide-y divide-[#dde3ec]">
-                <div className="flex items-center gap-3.5 py-3.5">
-                  <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                    <Pill size={22} className="text-[#1b3a60]" />
+                {isLoadingDocuments && (
+                  <div className="py-4 text-sm text-[#5a6a80]" role="status">
+                    Carregando documentos…
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[15px] font-bold text-[#1d2a3d] truncate">
-                      Receita · Dr. Silva
-                    </div>
-                    <div className="text-[13px] text-[#5a6a80]">12 set 2026</div>
+                )}
+                {(documentsError || hasInvalidDocumentsResponse) && (
+                  <div className="py-4 text-sm text-[#a13a30]" role="alert">
+                    Não foi possível carregar seus documentos.
                   </div>
-                  <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
-                    Usada
-                  </span>
-                </div>
+                )}
+                {!isLoadingDocuments && !documentsError && !hasInvalidDocumentsResponse && documents.length === 0 && (
+                  <div className="py-4 text-sm text-[#5a6a80]">
+                    Você ainda não adicionou documentos à sua conta.
+                  </div>
+                )}
+                {!isLoadingDocuments && !documentsError && !hasInvalidDocumentsResponse && documents.slice(0, 4).map((doc) => {
+                  const createdAt = doc.criadoEm || doc.createdAt;
+                  const parsedDate = createdAt ? new Date(createdAt) : null;
+                  const dateLabel = parsedDate && !Number.isNaN(parsedDate.getTime())
+                    ? parsedDate.toLocaleDateString('pt-BR')
+                    : 'Data não informada';
 
-                <div className="flex items-center gap-3.5 py-3.5">
-                  <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                    <Pill size={22} className="text-[#1b3a60]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[15px] font-bold text-[#1d2a3d] truncate">
-                      Receita · Dra. Lima
-                    </div>
-                    <div className="text-[13px] text-[#5a6a80]">21 ago 2026</div>
-                  </div>
-                  <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
-                    Usada
-                  </span>
-                </div>
+                  return (
+                    <Link
+                      key={doc.id}
+                      href={`/documentos/${doc.id}`}
+                      className="flex items-center gap-3.5 py-3.5"
+                    >
+                      <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
+                        <FileText size={22} className="text-[#1b3a60]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[15px] font-bold text-[#1d2a3d] truncate">
+                          {doc.titulo || doc.tipo || 'Documento'}
+                        </div>
+                        <div className="text-[13px] text-[#5a6a80]">{dateLabel}</div>
+                      </div>
+                      <span className="text-xs font-semibold text-[#1f7fe0]">Abrir</span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
@@ -365,7 +405,7 @@ export default function Chat() {
         </div>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
-          Tela de design com dados de exemplo.
+          As respostas dependem dos dados disponíveis na sua conta e nos seus documentos.
         </p>
       </main>
     </div>

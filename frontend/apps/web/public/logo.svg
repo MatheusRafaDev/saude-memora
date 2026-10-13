@@ -2,8 +2,8 @@
   <defs>
     <linearGradient id="sm-g1" x1="6" y1="18" x2="58" y2="44" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#1b3a60" />
-      <stop offset="60%" stop-color="#2f7a70" />
-      <stop offset="100%" stop-color="#3d9a8c" />
+      <stop offset="60%" stop-color="#1f7fe0" />
+      <stop offset="100%" stop-color="#338de6" />
     </linearGradient>
   </defs>
   <path d="M8 34 H15 C15 24 23 16 31 23 C39 16 47 24 47 34 C47 43 33 53 31 54 C29 53 19 46 16 39" stroke="url(#sm-g1)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>

@@ -17,8 +17,21 @@ import {
   usePatchApiFichaMedicaMe,
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  ALLERGY_SUGGESTIONS,
+  appendAnamneseEntry,
+  CONDITION_SUGGESTIONS,
+  FAMILY_HISTORY_SUGGESTIONS,
+  findAnamneseSuggestions,
+  getAnamneseQuery,
+  HABIT_SUGGESTIONS,
+  normalizeAnamneseTerm,
+  SURGERY_SUGGESTIONS,
+  type AnamneseSuggestion,
+} from '@/lib/anamnese-dictionary';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const CONDITION_OPTIONS = CONDITION_SUGGESTIONS.slice(0, 5).map(({ label }) => label);
 
 const STEPS = [
   { id: 1, name: 'Dados gerais' },
@@ -28,66 +41,150 @@ const STEPS = [
   { id: 5, name: 'Revisão' },
 ];
 
+function SuggestionButtons({
+  query,
+  dictionary,
+  onSelect,
+  label,
+}: {
+  query: string;
+  dictionary: AnamneseSuggestion[];
+  onSelect: (suggestion: AnamneseSuggestion) => void;
+  label: string;
+}) {
+  const suggestions = findAnamneseSuggestions(query, dictionary);
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div className="mt-2" role="group" aria-label={label}>
+      <div className="mb-1.5 text-xs text-[#5a6a80]">Sugestões — selecione para adicionar:</div>
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((suggestion) => (
+          <button
+            key={suggestion.label}
+            type="button"
+            onClick={() => onSelect(suggestion)}
+            className="rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-left text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
+          >
+            {suggestion.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SuggestedTextarea({
+  value,
+  onChange,
+  dictionary,
+  rows,
+  placeholder,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  dictionary: AnamneseSuggestion[];
+  rows: number;
+  placeholder: string;
+  label: string;
+}) {
+  return (
+    <>
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-[#c6cfdb] p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+      />
+      <SuggestionButtons
+        query={getAnamneseQuery(value)}
+        dictionary={dictionary}
+        label={`Sugestões para ${label}`}
+        onSelect={({ label: suggestion }) =>
+          onChange(appendAnamneseEntry(value, suggestion))
+        }
+      />
+    </>
+  );
+}
+
 export default function Record() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { data: fichaRaw, refetch } = useGetApiFichaMedicaMe();
+  const { data: fichaRaw, refetch, isLoading, isError } = useGetApiFichaMedicaMe();
   const patchFicha = usePatchApiFichaMedicaMe();
 
-  const [currentStep, setCurrentStep] = useState(3);
+  const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSavedText, setLastSavedText] = useState('Salvo automaticamente');
+  const [lastSavedText, setLastSavedText] = useState('Alterações pendentes');
 
   // Form State
-  const [bloodType, setBloodType] = useState('O+');
-  const [allergies, setAllergies] = useState<string[]>(['Dipirona', 'Penicilina']);
+  const [bloodType, setBloodType] = useState('');
+  const [allergies, setAllergies] = useState<string[]>([]);
   const [allergyInput, setAllergyInput] = useState('');
+  const [conditionInput, setConditionInput] = useState('');
 
-  const [medications, setMedications] = useState<Array<{ nome: string; posologia: string }>>([
-    { nome: 'Losartana 50 mg', posologia: '1 vez ao dia' },
-    { nome: 'Vitamina D', posologia: '1 vez por semana' },
-  ]);
+  const [medications, setMedications] = useState<Array<{ nome: string }>>([]);
   const [newMedNome, setNewMedNome] = useState('');
-  const [newMedPosologia, setNewMedPosologia] = useState('');
   const [isAddingMed, setIsAddingMed] = useState(false);
 
-  const [isDonor, setIsDonor] = useState(true);
+  const [isDonor, setIsDonor] = useState(false);
   const [isSmoker, setIsSmoker] = useState(false);
   const [isAlcohol, setIsAlcohol] = useState(false);
 
   // Conditions
-  const [conditionsList, setConditionsList] = useState<Array<{ nome: string; tem: boolean }>>([
-    { nome: 'Hipertensão arterial', tem: true },
-    { nome: 'Diabetes Mellitus', tem: false },
-    { nome: 'Asma / Bronquite', tem: false },
-    { nome: 'Doença cardíaca', tem: false },
-    { nome: 'Colesterol alto', tem: false },
-  ]);
+  const [conditionsList, setConditionsList] = useState<Array<{ nome: string; tem: boolean; detalhes?: string }>>(
+    CONDITION_OPTIONS.map((nome) => ({ nome, tem: false }))
+  );
 
-  // General data
-  const [altura, setAltura] = useState('1.68');
-  const [peso, setPeso] = useState('65');
-  const [habitosGerais, setHabitosGerais] = useState('Caminhada 3x por semana, 7h de sono.');
-  const [historicoFamiliar, setHistoricoFamiliar] = useState('Hipertensão materna.');
+  const [cirurgias, setCirurgias] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  const [habitosGerais, setHabitosGerais] = useState('');
+  const [historicoFamiliar, setHistoricoFamiliar] = useState('');
 
   // Load from API
   useEffect(() => {
     if (fichaRaw) {
       const f = fichaRaw as any;
-      if (f.tipoSanguineo) setBloodType(f.tipoSanguineo);
-      if (Array.isArray(f.alergias) && f.alergias.length > 0) setAllergies(f.alergias);
-      if (f.doadorOrgaos !== undefined) setIsDonor(Boolean(f.doadorOrgaos));
-      if (f.fuma !== undefined) setIsSmoker(Boolean(f.fuma));
-      if (f.bebe !== undefined) setIsAlcohol(Boolean(f.bebe));
-      if (f.habitosGerais) setHabitosGerais(f.habitosGerais);
-      if (f.historicoFamiliar) setHistoricoFamiliar(f.historicoFamiliar);
-      if (Array.isArray(f.medicamentosContinuos) && f.medicamentosContinuos.length > 0) {
-        setMedications(
-          f.medicamentosContinuos.map((m: any) =>
-            typeof m === 'string' ? { nome: m, posologia: 'Uso contínuo' } : m
-          )
-        );
-      }
+      setBloodType(f.tipoSanguineo || '');
+      setAllergies(Array.isArray(f.alergias) ? f.alergias : []);
+      setIsDonor(Boolean(f.doadorOrgaos));
+      setIsSmoker(Boolean(f.fuma));
+      setIsAlcohol(Boolean(f.bebe));
+      setHabitosGerais(f.habitosGerais || '');
+      setHistoricoFamiliar(f.historicoFamiliar || '');
+      setCirurgias(f.cirurgias || '');
+      setObservacoes(f.observacoes || '');
+      setMedications(
+        Array.isArray(f.medicamentosContinuos)
+          ? f.medicamentosContinuos.map((m: any) =>
+              typeof m === 'string' ? { nome: m } : { nome: m.nome }
+            )
+          : []
+      );
+
+      const storedConditions = Array.isArray(f.condicoes) ? f.condicoes : [];
+      const chronicDiseases = Array.isArray(f.doencasCronicas) ? f.doencasCronicas : [];
+      const storedByName = new Map(
+        storedConditions.map((condition: any) => [condition.nome, condition])
+      );
+      const allConditionNames = new Set([
+        ...CONDITION_OPTIONS,
+        ...chronicDiseases,
+        ...storedConditions.map((condition: any) => condition.nome),
+      ]);
+      setConditionsList(
+        Array.from(allConditionNames, (nome) => {
+          const stored = storedByName.get(nome) as any;
+          return {
+            nome,
+            tem: stored ? Boolean(stored.tem) : chronicDiseases.includes(nome),
+            detalhes: stored?.detalhes || '',
+          };
+        })
+      );
     }
   }, [fichaRaw]);
 
@@ -95,26 +192,51 @@ export default function Record() {
   const handleAddAllergy = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && allergyInput.trim()) {
       e.preventDefault();
-      const val = allergyInput.trim();
-      if (!allergies.includes(val)) {
-        setAllergies([...allergies, val]);
-      }
-      setAllergyInput('');
+      addAllergy(allergyInput);
     }
+  };
+
+  const addAllergy = (value: string) => {
+    const allergy = value.trim();
+    if (!allergy) return;
+    if (!allergies.some((item) => normalizeAnamneseTerm(item) === normalizeAnamneseTerm(allergy))) {
+      setAllergies((current) => [...current, allergy]);
+      setLastSavedText('Alterações pendentes');
+    }
+    setAllergyInput('');
+  };
+
+  const addCondition = (name: string) => {
+    const conditionName = name.trim();
+    if (!conditionName) return;
+    setConditionsList((current) => {
+      const existingIndex = current.findIndex(
+        (condition) => normalizeAnamneseTerm(condition.nome) === normalizeAnamneseTerm(conditionName),
+      );
+      if (existingIndex >= 0) {
+        return current.map((condition, index) =>
+          index === existingIndex ? { ...condition, tem: true } : condition,
+        );
+      }
+      return [...current, { nome: conditionName, tem: true }];
+    });
+    setConditionInput('');
+    setLastSavedText('Alterações pendentes');
   };
 
   const removeAllergy = (item: string) => {
     setAllergies(allergies.filter((a) => a !== item));
+    setLastSavedText('Alterações pendentes');
   };
 
   const handleAddMed = () => {
     if (newMedNome.trim()) {
       setMedications([
         ...medications,
-        { nome: newMedNome.trim(), posologia: newMedPosologia.trim() || 'Uso contínuo' },
+        { nome: newMedNome.trim() },
       ]);
+      setLastSavedText('Alterações pendentes');
       setNewMedNome('');
-      setNewMedPosologia('');
       setIsAddingMed(false);
     }
   };
@@ -127,31 +249,37 @@ export default function Record() {
           tipoSanguineo: bloodType as any,
           alergias: allergies,
           medicamentosContinuos: medications.map((m) => m.nome),
+          doencasCronicas: conditionsList.filter((condition) => condition.tem).map((condition) => condition.nome),
           doadorOrgaos: isDonor,
           fuma: isSmoker,
           bebe: isAlcohol,
           habitosGerais,
           historicoFamiliar,
+          cirurgias,
+          observacoes,
           condicoes: conditionsList,
         } as any,
       });
       setLastSavedText('Salvo agora');
       toast({ title: 'Anamnese atualizada com sucesso!' });
-      refetch();
+      await refetch();
+      return true;
     } catch {
+      setLastSavedText('Não foi possível salvar');
       toast({ title: 'Erro ao salvar alterações', variant: 'destructive' });
+      return false;
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleNext = async () => {
-    await handleSaveToApi();
+    if (!(await handleSaveToApi())) return;
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     } else {
       toast({ title: 'Anamnese concluída com sucesso!' });
-      setLocation('/dashboard');
+      setLocation('/visao-geral');
     }
   };
 
@@ -163,13 +291,25 @@ export default function Record() {
 
   const progressPercent = Math.round((currentStep / 5) * 100);
 
+  if (isLoading) {
+    return <div className="p-12 text-center text-[#5a6a80]">Carregando sua anamnese…</div>;
+  }
+
+  if (isError) {
+    return (
+      <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center text-[#a13a30]">
+        Não foi possível carregar sua anamnese. Tente novamente mais tarde.
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
               Ficha de saúde
             </div>
             <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
@@ -194,7 +334,7 @@ export default function Record() {
                     onClick={() => setCurrentStep(s.id)}
                     className={`w-[34px] h-[34px] rounded-full font-bold flex items-center justify-center text-sm shrink-0 cursor-pointer transition-colors ${
                       isPassed
-                        ? 'bg-[#2f7a70] text-white border border-[#2f7a70]'
+                        ? 'bg-[#1f7fe0] text-white border border-[#1f7fe0]'
                         : isCurrent
                         ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
                         : 'bg-white text-[#5a6a80] border border-[#dde3ec]'
@@ -216,7 +356,7 @@ export default function Record() {
                   {idx < STEPS.length - 1 && (
                     <div
                       className={`flex-1 h-[2px] transition-colors ${
-                        isPassed ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'
+                        isPassed ? 'bg-[#1f7fe0]' : 'bg-[#dde3ec]'
                       }`}
                     />
                   )}
@@ -233,39 +373,49 @@ export default function Record() {
             {/* Step 1: Dados gerais */}
             {currentStep === 1 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
                   Passo 1 de 5
                 </div>
                 <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
                   Dados gerais de saúde
                 </h2>
                 <p className="m-0 mb-6 text-[#5a6a80] text-sm">
-                  Dados corporais e medidas básicas para acompanhamento médico.
+                  Registre cirurgias anteriores e observações relevantes para sua ficha.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div className="space-y-4 mb-6">
                   <div>
                     <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
-                      Altura (metros)
+                      Cirurgias anteriores
                     </label>
-                    <input
-                      type="text"
-                      value={altura}
-                      onChange={(e) => setAltura(e.target.value)}
-                      placeholder="Ex: 1.70"
-                      className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                    <SuggestedTextarea
+                      value={cirurgias}
+                      onChange={(value) => {
+                        setCirurgias(value);
+                        setLastSavedText('Alterações pendentes');
+                      }}
+                      dictionary={SURGERY_SUGGESTIONS}
+                      rows={3}
+                      placeholder="Informe cirurgias e, se souber, o ano."
+                      label="cirurgias"
                     />
+                    <p className="mt-1.5 text-xs text-[#5a6a80]">
+                      Sugestões aparecem conforme você digita; inclua o ano ou detalhes que lembrar.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
-                      Peso aproximado (kg)
+                      Observações
                     </label>
-                    <input
-                      type="text"
-                      value={peso}
-                      onChange={(e) => setPeso(e.target.value)}
-                      placeholder="Ex: 70"
-                      className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                    <textarea
+                      rows={3}
+                      value={observacoes}
+                      onChange={(e) => {
+                        setObservacoes(e.target.value);
+                        setLastSavedText('Alterações pendentes');
+                      }}
+                      placeholder="Outras informações de saúde que deseja registrar."
+                      className="w-full p-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
                     />
                   </div>
                 </div>
@@ -275,7 +425,7 @@ export default function Record() {
             {/* Step 2: Condições */}
             {currentStep === 2 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
                   Passo 2 de 5
                 </div>
                 <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
@@ -295,11 +445,15 @@ export default function Record() {
                         type="checkbox"
                         checked={cond.tem}
                         onChange={(e) => {
-                          const updated = [...conditionsList];
-                          updated[idx].tem = e.target.checked;
+                          const updated = conditionsList.map((condition, conditionIndex) =>
+                            conditionIndex === idx
+                              ? { ...condition, tem: e.target.checked }
+                              : condition
+                          );
                           setConditionsList(updated);
+                          setLastSavedText('Alterações pendentes');
                         }}
-                        className="w-4 h-4 rounded text-[#2f7a70] focus:ring-[#2f7a70]"
+                        className="w-4 h-4 rounded text-[#1f7fe0] focus:ring-[#1f7fe0]"
                       />
                       <span className="text-sm font-semibold text-[#1d2a3d]">
                         {cond.nome}
@@ -307,13 +461,54 @@ export default function Record() {
                     </label>
                   ))}
                 </div>
+                <div>
+                  <label
+                    htmlFor="condition-search"
+                    className="mb-1.5 block text-sm font-bold text-[#1d2a3d]"
+                  >
+                    Buscar ou adicionar outra condição
+                  </label>
+                  <input
+                    id="condition-search"
+                    type="text"
+                    value={conditionInput}
+                    onChange={(event) => setConditionInput(event.target.value)}
+                    placeholder="Ex.: enxaqueca, tireoide, pressão alta"
+                    autoComplete="off"
+                    className="w-full rounded-xl border border-[#c6cfdb] p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+                  />
+                  <SuggestionButtons
+                    query={conditionInput}
+                    dictionary={CONDITION_SUGGESTIONS}
+                    label="Sugestões de condições de saúde"
+                    onSelect={({ label }) => addCondition(label)}
+                  />
+                  {conditionInput.trim().length >= 2 &&
+                    findAnamneseSuggestions(conditionInput, CONDITION_SUGGESTIONS).length === 0 &&
+                    !conditionsList.some(
+                      (condition) =>
+                        normalizeAnamneseTerm(condition.nome) ===
+                        normalizeAnamneseTerm(conditionInput),
+                    ) && (
+                      <button
+                        type="button"
+                        onClick={() => addCondition(conditionInput)}
+                        className="mt-2 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
+                      >
+                        Adicionar “{conditionInput.trim()}”
+                      </button>
+                    )}
+                  <p className="mt-1.5 text-xs text-[#5a6a80]">
+                    Marque apenas condições que tenham sido diagnosticadas por um profissional de saúde.
+                  </p>
+                </div>
               </div>
             )}
 
             {/* Step 3: Alergias e remédios */}
             {currentStep === 3 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
                   Passo 3 de 5
                 </div>
                 <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
@@ -330,7 +525,10 @@ export default function Record() {
                     <button
                       key={type}
                       type="button"
-                      onClick={() => setBloodType(type)}
+                      onClick={() => {
+                        setBloodType(type);
+                        setLastSavedText('Alterações pendentes');
+                      }}
                       className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer transition-colors ${
                         bloodType === type
                           ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs'
@@ -355,6 +553,15 @@ export default function Record() {
                     className="w-full bg-transparent border-none outline-none text-[#1d2a3d] placeholder:text-[#5a6a80] text-sm"
                   />
                 </div>
+                <SuggestionButtons
+                  query={allergyInput}
+                  dictionary={ALLERGY_SUGGESTIONS}
+                  label="Sugestões de alergias"
+                  onSelect={({ label }) => addAllergy(label)}
+                />
+                <p className="mt-1.5 text-xs text-[#5a6a80]">
+                  Informe alergias conhecidas; as sugestões são apenas opções para preencher.
+                </p>
 
                 {/* Tag Pills */}
                 <div className="flex gap-2 flex-wrap my-3 mb-6.5">
@@ -396,13 +603,6 @@ export default function Record() {
                       onChange={(e) => setNewMedNome(e.target.value)}
                       className="w-full h-10 px-3 border border-[#c6cfdb] rounded-lg text-sm bg-white"
                     />
-                    <input
-                      type="text"
-                      placeholder="Posologia (Ex: 1 comprimido ao dia)"
-                      value={newMedPosologia}
-                      onChange={(e) => setNewMedPosologia(e.target.value)}
-                      className="w-full h-10 px-3 border border-[#c6cfdb] rounded-lg text-sm bg-white"
-                    />
                     <div className="flex gap-2 justify-end">
                       <button
                         type="button"
@@ -423,6 +623,9 @@ export default function Record() {
                 )}
 
                 <div className="divide-y divide-[#dde3ec] mb-4">
+                  {medications.length === 0 && (
+                    <p className="py-3 text-sm text-[#5a6a80]">Nenhum medicamento contínuo informado.</p>
+                  )}
                   {medications.map((med, index) => (
                     <div key={index} className="flex items-center gap-3.5 py-3.5">
                       <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
@@ -430,9 +633,8 @@ export default function Record() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[15px] font-bold text-[#1d2a3d]">{med.nome}</div>
-                        <div className="text-[13px] text-[#5a6a80]">{med.posologia}</div>
                       </div>
-                      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
+                      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
                         Contínuo
                       </span>
                     </div>
@@ -445,9 +647,12 @@ export default function Record() {
                     <span>Doador de órgãos</span>
                     <button
                       type="button"
-                      onClick={() => setIsDonor(!isDonor)}
+                      onClick={() => {
+                        setIsDonor(!isDonor);
+                        setLastSavedText('Alterações pendentes');
+                      }}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
-                        isDonor ? 'bg-[#2f7a70]' : 'bg-[#c6cfdb]'
+                        isDonor ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
                       }`}
                     >
                       <span
@@ -462,14 +667,37 @@ export default function Record() {
                     <span>Fumante</span>
                     <button
                       type="button"
-                      onClick={() => setIsSmoker(!isSmoker)}
+                      onClick={() => {
+                        setIsSmoker(!isSmoker);
+                        setLastSavedText('Alterações pendentes');
+                      }}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
-                        isSmoker ? 'bg-[#2f7a70]' : 'bg-[#c6cfdb]'
+                        isSmoker ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
                       }`}
                     >
                       <span
                         className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white transition-all shadow-xs ${
                           isSmoker ? 'right-[3px]' : 'left-[3px]'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex justify-between items-center py-3.5 text-[15px] font-semibold">
+                    <span>Consome bebidas alcoólicas</span>
+                    <button
+                      type="button"
+                      aria-pressed={isAlcohol}
+                      onClick={() => {
+                        setIsAlcohol(!isAlcohol);
+                        setLastSavedText('Alterações pendentes');
+                      }}
+                      className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
+                        isAlcohol ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white transition-all shadow-xs ${
+                          isAlcohol ? 'right-[3px]' : 'left-[3px]'
                         }`}
                       />
                     </button>
@@ -481,7 +709,7 @@ export default function Record() {
             {/* Step 4: Hábitos */}
             {currentStep === 4 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
                   Passo 4 de 5
                 </div>
                 <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
@@ -496,11 +724,16 @@ export default function Record() {
                     <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
                       Hábitos gerais (Sono, alimentação, atividade física)
                     </label>
-                    <textarea
-                      rows={3}
+                    <SuggestedTextarea
                       value={habitosGerais}
-                      onChange={(e) => setHabitosGerais(e.target.value)}
-                      className="w-full p-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                      onChange={(value) => {
+                        setHabitosGerais(value);
+                        setLastSavedText('Alterações pendentes');
+                      }}
+                      dictionary={HABIT_SUGGESTIONS}
+                      rows={3}
+                      placeholder="Descreva sua alimentação, atividade física, sono e outros hábitos."
+                      label="hábitos e rotina"
                     />
                   </div>
 
@@ -508,12 +741,16 @@ export default function Record() {
                     <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
                       Histórico familiar de saúde
                     </label>
-                    <textarea
-                      rows={2}
+                    <SuggestedTextarea
                       value={historicoFamiliar}
-                      onChange={(e) => setHistoricoFamiliar(e.target.value)}
+                      onChange={(value) => {
+                        setHistoricoFamiliar(value);
+                        setLastSavedText('Alterações pendentes');
+                      }}
+                      dictionary={FAMILY_HISTORY_SUGGESTIONS}
+                      rows={2}
                       placeholder="Ex: Diabetes paterno, Hipertensão materna"
-                      className="w-full p-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                      label="histórico familiar"
                     />
                   </div>
                 </div>
@@ -523,7 +760,7 @@ export default function Record() {
             {/* Step 5: Revisão */}
             {currentStep === 5 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#2f7a70] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
                   Passo 5 de 5
                 </div>
                 <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
@@ -536,15 +773,15 @@ export default function Record() {
                 <div className="space-y-3 bg-[#f7f9fc] p-5 rounded-2xl border border-[#dde3ec] mb-6 text-sm">
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-[#5a6a80]">Tipo Sanguíneo:</span>
-                    <strong className="text-[#1b3a60]">{bloodType}</strong>
+                    <strong className="text-[#1b3a60]">{bloodType || 'Não informado'}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-[#5a6a80]">Alergias:</span>
-                    <strong>{allergies.join(', ') || 'Nenhuma'}</strong>
+                    <strong>{allergies.join(', ') || 'Não informado'}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-[#5a6a80]">Remédios contínuos:</span>
-                    <strong>{medications.map((m) => m.nome).join(', ') || 'Nenhum'}</strong>
+                    <strong>{medications.map((m) => m.nome).join(', ') || 'Não informado'}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-[#5a6a80]">Doador de órgãos:</span>
@@ -592,11 +829,11 @@ export default function Record() {
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               <div className="flex justify-between font-bold text-sm">
                 <span>Progresso</span>
-                <span className="text-[#2f7a70]">{progressPercent}%</span>
+                <span className="text-[#1f7fe0]">{progressPercent}%</span>
               </div>
               <div className="h-2 rounded-full bg-[#f1f4f8] my-2.5 mb-4 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-[#2f7a70] transition-all duration-300"
+                  className="h-full rounded-full bg-[#1f7fe0] transition-all duration-300"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -621,7 +858,7 @@ export default function Record() {
                       <div
                         className={`w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 ${
                           isDone
-                            ? 'bg-[#e8f4f2] text-[#2f7a70]'
+                            ? 'bg-[#e5eefb] text-[#1f7fe0]'
                             : isCurrent
                             ? 'bg-[#1b3a60] text-white'
                             : 'bg-[#f1f4f8] text-[#5a6a80]'
@@ -643,8 +880,8 @@ export default function Record() {
             {/* Auto-save Card */}
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               <div className="flex gap-3 items-center">
-                <div className="w-11 h-11 rounded-[14px] bg-[#e8f4f2] flex items-center justify-center shrink-0">
-                  <Shield size={22} className="text-[#2f7a70]" strokeWidth={2} />
+                <div className="w-11 h-11 rounded-[14px] bg-[#e5eefb] flex items-center justify-center shrink-0">
+                  <Shield size={22} className="text-[#1f7fe0]" strokeWidth={2} />
                 </div>
                 <div>
                   <b className="text-[15px] text-[#1d2a3d] block leading-tight">
@@ -660,7 +897,7 @@ export default function Record() {
         </div>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
-          Tela de design com dados de exemplo.
+          As alterações são enviadas ao servidor ao avançar ou concluir cada etapa.
         </p>
       </main>
     </div>

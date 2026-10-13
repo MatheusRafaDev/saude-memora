@@ -40,30 +40,34 @@ function uniqueLabels(values: unknown[]): string[] {
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
 
-  const { data: profile } = useGetApiPacientesMe();
-  const { data: documentsRaw } = useGetApiDocuments();
-  const { data: fichaRaw } = useGetApiFichaMedicaMe();
+  const { data: profile, isLoading: isProfileLoading, isError: profileError } = useGetApiPacientesMe();
+  const { data: documentsRaw, isLoading: isDocumentsLoading, isError: documentsError } = useGetApiDocuments();
+  const { data: fichaRaw, isLoading: isFichaLoading, isError: fichaError } = useGetApiFichaMedicaMe();
 
   const user = (profile as any) || {};
   const docs = (documentsRaw as unknown as any[]) || [];
   const ficha = (fichaRaw as any) || {};
 
-  // First name fallback
-  const firstName = user.nome ? user.nome.split(' ')[0] : 'Ana';
-  const fullName = user.nome || 'Ana Souza';
+  const firstName = user.nome ? user.nome.trim().split(/\s+/)[0] : '';
+  const fullName = user.nome || 'Nome não informado';
+  const healthPlan = typeof user.planoSaude === 'string' ? user.planoSaude.trim() : '';
+  const insuranceCardNumber = typeof user.numeroCarteirinha === 'string'
+    ? user.numeroCarteirinha.trim()
+    : '';
+  const registeredCardUrl = typeof user.urlCarteirinha === 'string' ? user.urlCarteirinha : '';
 
-  // Age calculation
-  const birthDateFormatted = user.dataNascimento
-    ? new Date(user.dataNascimento).toLocaleDateString('pt-BR')
-    : '14/03/1992';
-  const age = user.dataNascimento
-    ? Math.floor((Date.now() - new Date(user.dataNascimento).getTime()) / (365.25 * 86400000))
-    : 34;
+  const birthDate = user.dataNascimento ? new Date(user.dataNascimento) : null;
+  const hasValidBirthDate = birthDate !== null && !Number.isNaN(birthDate.getTime());
+  const birthDateFormatted = hasValidBirthDate
+    ? birthDate.toLocaleDateString('pt-BR')
+    : 'Não informado';
+  const age = hasValidBirthDate
+    ? Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 86400000))
+    : null;
 
-  // Anamnese info
-  const bloodType = ficha.tipoSanguineo || 'O+';
+  const bloodType = ficha.tipoSanguineo || 'Não informado';
   const allergiesList = uniqueLabels(Array.isArray(ficha.alergias) ? ficha.alergias : []);
-  const allergiesDisplay = allergiesList.length > 0 ? allergiesList.join(' · ') : 'Dipirona · Penicilina';
+  const allergiesDisplay = allergiesList.length > 0 ? allergiesList.join(' · ') : 'Não informado';
 
   const chronicDiseases = uniqueLabels(Array.isArray(ficha.doencasCronicas) ? ficha.doencasCronicas : []);
   const conditions = (ficha.condicoes as any[]) || [];
@@ -73,79 +77,87 @@ export default function Dashboard() {
     ...positiveConditions.map((c: any) => c.nome),
     ficha.outrasDoencas,
   ]);
-  const conditionsDisplay = allConditions.length > 0 ? allConditions.join(' · ') : 'Hipertensão';
+  const conditionsDisplay = allConditions.length > 0 ? allConditions.join(' · ') : 'Não informado';
 
   const continuousMeds = uniqueLabels(
     Array.isArray(ficha.medicamentosContinuos) ? ficha.medicamentosContinuos : []
   );
-  const continuousMedsCount = continuousMeds.length > 0 ? continuousMeds.length : 2;
 
-  // Counts and stats
-  const totalDocs = docs.length > 0 ? docs.length : 12;
   const examDocs = docs.filter((d: any) => (d.tipo || '').toLowerCase().includes('exame'));
-  const totalExams = docs.length > 0 ? examDocs.length : 7;
   const prescriptionDocs = docs.filter((d: any) => (d.tipo || '').toLowerCase().includes('receita'));
-  const totalPrescriptions = docs.length > 0 ? prescriptionDocs.length : 5;
-  const totalMeds = continuousMeds.length > 0 ? continuousMeds.length : 4;
+  const totalExams = examDocs.length;
+  const totalPrescriptions = prescriptionDocs.length;
 
-  // Alerts
   const reviewDocs = docs.filter((d: any) => d.revisaoPendente);
   const processingDocs = docs.filter((d: any) => d.status === 'pending' || d.status === 'processing');
-  const reviewCount = docs.length > 0 ? reviewDocs.length : 1;
-  const reviewItemName = reviewDocs[0]?.titulo || 'Hemograma completo';
-  const processingCount = docs.length > 0 ? processingDocs.length : 1;
-  const processingItemName = processingDocs[0]?.titulo ? `${processingDocs[0].titulo} · ${processingDocs[0].progress || 60}%` : 'Laudo de imagem · 60%';
 
   const medicalAlerts = docs
     .flatMap((doc: any) => (doc.alertas || []).map((a: any) => ({ ...a, docId: doc.id })))
     .filter((a: any) => !a.dispensado);
-  const medicalAlertsCount = docs.length > 0 ? medicalAlerts.length : 2;
 
-  // Recent docs
-  const sampleDocs = [
-    { id: 'sample-1', titulo: 'Receita · Dr. Silva', data: '12 set 2026', status: 'pronto', badge: 'Pronto', badgeClass: 'bg-[#e6f4ec] text-[#1f7a4d]' },
-    { id: 'sample-2', titulo: 'Hemograma completo', data: '10 set 2026', status: 'revisar', badge: 'Revisar', badgeClass: 'bg-[#fdf3d8] text-[#6b4208]' },
-    { id: 'sample-3', titulo: 'Laudo de imagem', data: '09 set 2026', status: 'processing', badge: 'Processando 60%', badgeClass: 'bg-[#e5eefb] text-[#1b3a60]' },
-    { id: 'sample-4', titulo: 'Atestado médico', data: '28 ago 2026', status: 'pronto', badge: 'Pronto', badgeClass: 'bg-[#e6f4ec] text-[#1f7a4d]' },
-  ];
+  const displayRecentDocs = docs.slice(0, 4).map((d: any) => {
+    let badge = 'Pronto';
+    let badgeClass = 'bg-[#e5eefb] text-[#1b3a60]';
+    if (d.status === 'processing' || d.status === 'pending') {
+      badge = `Processando ${d.progress ?? 0}%`;
+    } else if (d.status === 'failed') {
+      badge = 'Falha';
+      badgeClass = 'bg-[#fde8e6] text-[#a13a30]';
+    } else if (d.revisaoPendente) {
+      badge = 'Revisar';
+      badgeClass = 'bg-[#fdf3d8] text-[#6b4208]';
+    }
+    const createdAt = d.criadoEm || d.createdAt;
+    const parsedDate = createdAt ? new Date(createdAt) : null;
+    return {
+      id: d.id,
+      titulo: d.titulo || d.tipo || 'Documento',
+      data: parsedDate && !Number.isNaN(parsedDate.getTime())
+        ? parsedDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+        : 'Data não informada',
+      status: d.status,
+      badge,
+      badgeClass,
+    };
+  });
 
-  const displayRecentDocs = docs.length > 0
-    ? docs.slice(0, 4).map((d: any) => {
-        let badge = 'Pronto';
-        let badgeClass = 'bg-[#e6f4ec] text-[#1f7a4d]';
-        if (d.status === 'processing' || d.status === 'pending') {
-          badge = `Processando ${d.progress || 0}%`;
-          badgeClass = 'bg-[#e5eefb] text-[#1b3a60]';
-        } else if (d.status === 'failed') {
-          badge = 'Falha';
-          badgeClass = 'bg-[#fde8e6] text-[#a13a30]';
-        } else if (d.revisaoPendente) {
-          badge = 'Revisar';
-          badgeClass = 'bg-[#fdf3d8] text-[#6b4208]';
-        }
-        return {
-          id: d.id,
-          titulo: d.titulo || `${d.tipo || 'Documento'}`,
-          data: d.createdAt ? new Date(d.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recente',
-          status: d.status,
-          badge,
-          badgeClass,
-        };
-      })
-    : sampleDocs;
+  const getFrequencies = (values: unknown[]) => {
+    const counts = new Map<string, number>();
+    values.forEach((value) => {
+      const label = typeof value === 'string'
+        ? value.trim()
+        : value && typeof value === 'object'
+          ? String((value as any).nome || (value as any).nomeNormalizado || '').trim()
+          : '';
+      if (label) counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    const sorted = Array.from(counts, ([nome, count]) => ({ nome, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+    const max = sorted[0]?.count || 1;
+    return sorted.map((item) => ({ ...item, pct: Math.round((item.count / max) * 100) }));
+  };
+  const frequentMeds = getFrequencies(docs.flatMap((doc: any) => doc.medicamentos || []));
+  const frequentExams = getFrequencies(docs.flatMap((doc: any) => [
+    ...(doc.resultadosExame || []),
+    doc.nomeExame,
+  ]));
 
-  // Frequências
-  const frequentMeds = [
-    { nome: 'Dipirona', count: 4, pct: 80 },
-    { nome: 'Losartana', count: 3, pct: 60 },
-    { nome: 'Amoxicilina', count: 2, pct: 40 },
-  ];
+  if (isProfileLoading || isDocumentsLoading || isFichaLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center text-[#5a6a80]">
+        <LoaderCircle size={22} className="mr-2 animate-spin" /> Carregando seus dados…
+      </div>
+    );
+  }
 
-  const frequentExams = [
-    { nome: 'Hemograma', count: 3, pct: 60 },
-    { nome: 'Glicemia', count: 2, pct: 40 },
-    { nome: 'Colesterol', count: 2, pct: 40 },
-  ];
+  if (profileError || documentsError || fichaError) {
+    return (
+      <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center text-[#a13a30]">
+        Não foi possível carregar os dados da sua conta. Atualize a página ou tente novamente mais tarde.
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
@@ -153,11 +165,11 @@ export default function Dashboard() {
         {/* Header Title & Action */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-7">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
               Seu espaço de saúde
             </div>
             <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
-              Olá, {firstName}
+              Olá{firstName ? `, ${firstName}` : ''}
             </h1>
             <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
               Veja o que precisa de atenção e seus dados em um só lugar.
@@ -173,19 +185,19 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* 3 Action Alert Cards */}
+        {/* Alerts are only shown when the API reports items that need attention. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-5">
           {/* Alert 1 */}
-          <div className="flex items-center gap-3.5 bg-[#fff5f4] border border-[#f0b8b2] rounded-[18px] p-4.5">
+          {medicalAlerts.length > 0 && <div className="flex items-center gap-3.5 bg-[#fff5f4] border border-[#f0b8b2] rounded-[18px] p-4.5">
             <div className="w-11 h-11 rounded-[14px] bg-white flex items-center justify-center shrink-0 shadow-xs">
               <AlertTriangle size={22} className="text-[#a13a30]" strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
               <b className="text-[15px] text-[#1d2a3d] block leading-tight">
-                {medicalAlertsCount} avisos médicos
+                {medicalAlerts.length} avisos médicos
               </b>
               <div className="text-[13px] text-[#5a6a80] mt-0.5 truncate">
-                Confira as interações
+                {medicalAlerts[0]?.mensagem || 'Confira os alertas dos seus documentos'}
               </div>
             </div>
             <Link
@@ -194,19 +206,19 @@ export default function Dashboard() {
             >
               Ver →
             </Link>
-          </div>
+          </div>}
 
           {/* Alert 2 */}
-          <div className="flex items-center gap-3.5 bg-[#fdf3d8] border border-[#e3b95a] rounded-[18px] p-4.5">
+          {reviewDocs.length > 0 && <div className="flex items-center gap-3.5 bg-[#fdf3d8] border border-[#e3b95a] rounded-[18px] p-4.5">
             <div className="w-11 h-11 rounded-[14px] bg-white flex items-center justify-center shrink-0 shadow-xs">
               <FileText size={22} className="text-[#6b4208]" strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
               <b className="text-[15px] text-[#1d2a3d] block leading-tight">
-                {reviewCount} documento para revisar
+                {reviewDocs.length} documento(s) para revisar
               </b>
               <div className="text-[13px] text-[#5a6a80] mt-0.5 truncate">
-                {reviewItemName}
+                {reviewDocs[0]?.titulo || 'Documento sem título'}
               </div>
             </div>
             <Link
@@ -215,19 +227,19 @@ export default function Dashboard() {
             >
               Ver →
             </Link>
-          </div>
+          </div>}
 
           {/* Alert 3 */}
-          <div className="flex items-center gap-3.5 bg-[#e5eefb] border border-[#b8cdee] rounded-[18px] p-4.5">
+          {processingDocs.length > 0 && <div className="flex items-center gap-3.5 bg-[#e5eefb] border border-[#b8cdee] rounded-[18px] p-4.5">
             <div className="w-11 h-11 rounded-[14px] bg-white flex items-center justify-center shrink-0 shadow-xs">
               <LoaderCircle size={22} className="text-[#1b3a60] animate-spin" strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
               <b className="text-[15px] text-[#1d2a3d] block leading-tight">
-                {processingCount} em processamento
+                {processingDocs.length} em processamento
               </b>
               <div className="text-[13px] text-[#5a6a80] mt-0.5 truncate">
-                {processingItemName}
+                {processingDocs[0]?.titulo || 'Documento'} · {processingDocs[0]?.progress ?? 0}%
               </div>
             </div>
             <Link
@@ -236,7 +248,7 @@ export default function Dashboard() {
             >
               Ver →
             </Link>
-          </div>
+          </div>}
         </div>
 
         {/* 4 KPI Counters */}
@@ -244,7 +256,7 @@ export default function Dashboard() {
           <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
             <div className="text-[13px] text-[#5a6a80] font-semibold">Documentos</div>
             <div className="text-3xl sm:text-[34px] font-extrabold tracking-[-0.03em] mt-1 text-[#1d2a3d]">
-              {totalDocs}
+              {docs.length}
             </div>
           </div>
 
@@ -265,7 +277,7 @@ export default function Dashboard() {
           <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
             <div className="text-[13px] text-[#5a6a80] font-semibold">Medicamentos</div>
             <div className="text-3xl sm:text-[34px] font-extrabold tracking-[-0.03em] mt-1 text-[#1d2a3d]">
-              {totalMeds}
+              {continuousMeds.length}
             </div>
           </div>
         </div>
@@ -290,7 +302,11 @@ export default function Dashboard() {
               </div>
 
               <div className="divide-y divide-[#dde3ec]">
-                {displayRecentDocs.map((doc) => (
+                {displayRecentDocs.length === 0 ? (
+                  <p className="py-5 text-sm text-[#5a6a80]">
+                    Você ainda não adicionou documentos.
+                  </p>
+                ) : displayRecentDocs.map((doc) => (
                   <Link
                     key={doc.id}
                     href={`/documentos/${doc.id}`}
@@ -335,7 +351,9 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  {frequentMeds.map((med) => (
+                  {frequentMeds.length === 0 ? (
+                    <p className="text-sm text-[#5a6a80]">Não há medicamentos registrados nos documentos.</p>
+                  ) : frequentMeds.map((med) => (
                     <div key={med.nome}>
                       <div className="flex justify-between text-[13px] mb-1.5">
                         <span className="font-semibold text-[#1d2a3d]">{med.nome}</span>
@@ -343,7 +361,7 @@ export default function Dashboard() {
                       </div>
                       <div className="h-2 rounded-full bg-[#f1f4f8] overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[#2f7a70]"
+                          className="h-full rounded-full bg-[#1f7fe0]"
                           style={{ width: `${med.pct}%` }}
                         />
                       </div>
@@ -364,7 +382,9 @@ export default function Dashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  {frequentExams.map((exam) => (
+                  {frequentExams.length === 0 ? (
+                    <p className="text-sm text-[#5a6a80]">Não há resultados de exames registrados nos documentos.</p>
+                  ) : frequentExams.map((exam) => (
                     <div key={exam.nome}>
                       <div className="flex justify-between text-[13px] mb-1.5">
                         <span className="font-semibold text-[#1d2a3d]">{exam.nome}</span>
@@ -372,7 +392,7 @@ export default function Dashboard() {
                       </div>
                       <div className="h-2 rounded-full bg-[#f1f4f8] overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[#2f7a70]"
+                          className="h-full rounded-full bg-[#1f7fe0]"
                           style={{ width: `${exam.pct}%` }}
                         />
                       </div>
@@ -396,7 +416,12 @@ export default function Dashboard() {
                 {fullName}
               </div>
               <div className="text-[13px] text-[#c9d6e8]">
-                Nascimento {birthDateFormatted} · {age} anos
+                Nascimento {birthDateFormatted}{age !== null ? ` · ${age} anos` : ''}
+              </div>
+              <div className="mt-2 text-[13px] text-white">
+                <span className="font-bold">Plano:</span> {healthPlan || 'Não cadastrado'}
+                <span className="mx-1.5 text-[#9fc3ea]">·</span>
+                <span className="font-bold">Carteirinha:</span> {insuranceCardNumber || 'Não informada'}
               </div>
 
               <div className="flex gap-2.5 mt-5">
@@ -418,7 +443,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-3.5 text-[13px] text-[#c9d6e8]">
-                Condições: {conditionsDisplay} · Medicamentos contínuos: {continuousMedsCount}
+                Condições: {conditionsDisplay} · Medicamentos contínuos: {continuousMeds.length}
               </div>
 
               <button
@@ -427,6 +452,12 @@ export default function Dashboard() {
               >
                 <Maximize2 size={13} /> Ver detalhes da carteirinha
               </button>
+              <Link
+                href="/perfil"
+                className="mt-2 block text-center text-xs font-bold text-[#c9d6e8] underline-offset-2 hover:text-white hover:underline"
+              >
+                Cadastrar ou atualizar carteirinha
+              </Link>
             </div>
 
             {/* Quick Emergency Card */}
@@ -450,27 +481,6 @@ export default function Dashboard() {
               </div>
             </Link>
 
-            {/* Anamnese Progress Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="flex justify-between text-sm font-bold">
-                <span className="text-[#1d2a3d]">Anamnese completa</span>
-                <span className="text-[#2f7a70]">80%</span>
-              </div>
-              <div className="h-2 rounded-full bg-[#f1f4f8] mt-2.5 overflow-hidden">
-                <div className="h-full rounded-full bg-[#2f7a70] w-[80%]" />
-              </div>
-              <div className="flex items-center justify-between mt-2.5">
-                <p className="m-0 text-[13px] text-[#5a6a80]">
-                  Falta preencher hábitos.
-                </p>
-                <Link
-                  href="/anamnese"
-                  className="text-xs font-bold text-[#1b3a60] hover:underline"
-                >
-                  Completar →
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -485,7 +495,7 @@ export default function Dashboard() {
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs animate-in fade-in" />
           <DialogPrimitive.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-[#dde3ec] outline-none">
             <div className="flex justify-between items-center mb-4">
-              <div className="text-xs font-bold tracking-widest text-[#2f7a70] uppercase">
+              <div className="text-xs font-bold tracking-widest text-[#1f7fe0] uppercase">
                 Carteirinha de Saúde
               </div>
               <DialogPrimitive.Close className="p-1 rounded-lg text-[#5a6a80] hover:bg-slate-100 transition-colors">
@@ -499,7 +509,7 @@ export default function Dashboard() {
               </div>
               <div className="text-2xl font-black mt-2">{fullName}</div>
               <div className="text-xs text-[#c9d6e8] mt-1">
-                Nascimento: {birthDateFormatted} · Idade: {age} anos
+                Nascimento: {birthDateFormatted}{age !== null ? ` · Idade: ${age} anos` : ''}
               </div>
 
               <div className="grid grid-cols-2 gap-3 mt-4">
@@ -519,8 +529,34 @@ export default function Dashboard() {
                 <div><strong className="text-white">Alergias:</strong> {allergiesDisplay}</div>
                 <div><strong className="text-white">Condições:</strong> {conditionsDisplay}</div>
                 <div><strong className="text-white">Remédios contínuos:</strong> {continuousMeds.join(', ') || 'Nenhum'}</div>
+                <div><strong className="text-white">Plano de saúde:</strong> {healthPlan || 'Não cadastrado'}</div>
+                <div><strong className="text-white">Número da carteirinha:</strong> {insuranceCardNumber || 'Não informado'}</div>
               </div>
             </div>
+
+            {registeredCardUrl && (
+              <div className="mb-4 overflow-hidden rounded-xl border border-[#dde3ec] bg-[#f7f9fc]">
+                {/\.pdf(?:[?#]|$)/i.test(registeredCardUrl) ? (
+                  <a
+                    href={registeredCardUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex min-h-14 items-center gap-2 px-4 text-sm font-semibold text-[#1b3a60] hover:bg-[#f1f4f8]"
+                  >
+                    <FileText size={18} />
+                    Abrir carteirinha cadastrada
+                  </a>
+                ) : (
+                  <a href={registeredCardUrl} target="_blank" rel="noreferrer" aria-label="Abrir carteirinha de plano cadastrada">
+                    <img
+                      src={registeredCardUrl}
+                      alt="Carteirinha do plano de saúde cadastrada"
+                      className="max-h-56 w-full object-contain"
+                    />
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Link

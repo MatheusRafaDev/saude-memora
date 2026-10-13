@@ -335,8 +335,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
-// Configure Caching (Redis or Memory Fallback)
-var redisConn = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? builder.Configuration.GetConnectionString("Redis");
+// Redis is required in production; memory cache is only suitable for local/test environments.
+var redisConn = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
+if (string.IsNullOrWhiteSpace(redisConn))
+{
+    redisConn = builder.Configuration.GetConnectionString("Redis");
+}
+
 if (!string.IsNullOrWhiteSpace(redisConn))
 {
     builder.Services.AddStackExchangeRedisCache(options =>
@@ -344,6 +349,10 @@ if (!string.IsNullOrWhiteSpace(redisConn))
         options.Configuration = redisConn;
         options.InstanceName = "SaudeMemora_";
     });
+}
+else if (builder.Environment.IsProduction())
+{
+    throw new InvalidOperationException("Configure REDIS_CONNECTION_STRING (or ConnectionStrings:Redis) in production.");
 }
 else
 {
@@ -826,7 +835,7 @@ app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository
 }).RequireAuthorization();
 
 // Atualiza informações do paciente autenticado (Nome, DataNascimento, Email)
-app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto, IDistributedCache cache) =>
+app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteRepository repo, PerfilUpdateDto dto, IDistributedCache cache, IConfiguration config, HttpContext context) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -838,8 +847,10 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
     if (!string.IsNullOrWhiteSpace(dto.DataNascimento)) paciente.DataNascimento = dto.DataNascimento;
     if (!string.IsNullOrWhiteSpace(dto.Sexo)) paciente.Sexo = dto.Sexo;
     if (dto.ContatoEmergencia != null) paciente.ContatoEmergencia = dto.ContatoEmergencia;
-    
-    if (!string.IsNullOrWhiteSpace(dto.Email) && !string.Equals(dto.Email, paciente.Email, StringComparison.OrdinalIgnoreCase))
+
+    var emailChanged = false;
+    if (!string.IsNullOrWhiteSpace(dto.Email) &&
+        !string.Equals(dto.Email, paciente.Email, StringComparison.OrdinalIgnoreCase))
     {
         if (string.IsNullOrWhiteSpace(dto.SenhaAtual) || !BCrypt.Net.BCrypt.Verify(dto.SenhaAtual, paciente.Senha))
         {
@@ -858,12 +869,20 @@ app.MapPatch("/api/pacientes/me/perfil", async (ClaimsPrincipal user, IPacienteR
         }
         paciente.Email = newEmail;
         paciente.SecurityStamp = Guid.NewGuid().ToString("N"); // Invalidate tokens
+        emailChanged = true;
     }
     if (dto.PlanoSaude != null) paciente.PlanoSaude = dto.PlanoSaude;
     if (dto.NumeroCarteirinha != null) paciente.NumeroCarteirinha = dto.NumeroCarteirinha;
 
     await repo.UpdateAsync(paciente);
     await cache.SafeRemoveAsync($"paciente_v2_{userId}");
+    if (emailChanged)
+    {
+        await cache.SafeRemoveAsync($"secstamp_{userId}");
+        var expiresIn = GetJwtLifetime(config, context);
+        SetAuthCookie(context, CreateJwtToken(paciente, config, expiresIn), expiresIn);
+    }
+
     return Results.Ok(new { Message = "Perfil atualizado com sucesso." });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization();
 

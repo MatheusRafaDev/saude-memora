@@ -30,93 +30,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Sample fallback documents matching the design board
-const SAMPLE_DOCS = [
-  {
-    id: 'sample-1',
-    titulo: 'Receita · Dr. Silva',
-    tipo: 'Receita',
-    status: 'pronto',
-    revisaoPendente: false,
-    dateStr: '12 set',
-    monthGroup: 'Setembro 2026',
-    createdAt: new Date('2026-09-12').toISOString(),
-  },
-  {
-    id: 'sample-2',
-    titulo: 'Hemograma completo',
-    tipo: 'Exame',
-    status: 'revisar',
-    revisaoPendente: true,
-    dateStr: '10 set',
-    monthGroup: 'Setembro 2026',
-    createdAt: new Date('2026-09-10').toISOString(),
-  },
-  {
-    id: 'sample-3',
-    titulo: 'Laudo de imagem',
-    tipo: 'Laudo',
-    status: 'processing',
-    revisaoPendente: false,
-    dateStr: '09 set',
-    monthGroup: 'Setembro 2026',
-    createdAt: new Date('2026-09-09').toISOString(),
-  },
-  {
-    id: 'sample-4',
-    titulo: 'Glicemia de jejum',
-    tipo: 'Exame',
-    status: 'pronto',
-    revisaoPendente: false,
-    dateStr: '02 set',
-    monthGroup: 'Setembro 2026',
-    createdAt: new Date('2026-09-02').toISOString(),
-  },
-  {
-    id: 'sample-5',
-    titulo: 'Atestado médico',
-    tipo: 'Atestado',
-    status: 'pronto',
-    revisaoPendente: false,
-    dateStr: '28 ago',
-    monthGroup: 'Agosto 2026',
-    createdAt: new Date('2026-08-28').toISOString(),
-  },
-  {
-    id: 'sample-6',
-    titulo: 'Receita · Dra. Lima',
-    tipo: 'Receita',
-    status: 'pronto',
-    revisaoPendente: false,
-    dateStr: '21 ago',
-    monthGroup: 'Agosto 2026',
-    createdAt: new Date('2026-08-21').toISOString(),
-  },
-  {
-    id: 'sample-7',
-    titulo: 'Colesterol total',
-    tipo: 'Exame',
-    status: 'pronto',
-    revisaoPendente: false,
-    dateStr: '15 ago',
-    monthGroup: 'Agosto 2026',
-    createdAt: new Date('2026-08-15').toISOString(),
-  },
-  {
-    id: 'sample-8',
-    titulo: 'Ultrassom',
-    tipo: 'Laudo',
-    status: 'pronto',
-    revisaoPendente: false,
-    dateStr: '04 ago',
-    monthGroup: 'Agosto 2026',
-    createdAt: new Date('2026-08-04').toISOString(),
-  },
-];
-
 export default function Documents() {
   const { toast } = useToast();
-  const { data: documentsRaw, refetch } = useGetApiDocuments();
+  const { data: documentsRaw, refetch, isLoading, isError } = useGetApiDocuments();
   const deleteMutation = useDeleteApiDocumentsId();
 
   const [search, setSearch] = useState('');
@@ -124,7 +40,6 @@ export default function Documents() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   // Listen to document-uploaded event
   useEffect(() => {
@@ -133,48 +48,55 @@ export default function Documents() {
     return () => window.removeEventListener('document-uploaded', handler);
   }, [refetch]);
 
-  const rawDocs = (documentsRaw as unknown as any[]) || [];
-  const activeDocs = rawDocs.filter((d: any) => !deletedIds.has(d.id));
-
-  // Determine whether to use real docs or fallback docs
-  const hasRealDocs = activeDocs.length > 0;
+  const activeDocs = (documentsRaw as unknown as any[]) || [];
 
   const allItems = useMemo(() => {
-    if (hasRealDocs) {
-      return activeDocs.map((doc: any) => {
-        const d = doc.createdAt ? new Date(doc.createdAt) : new Date();
-        const monthGroup = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-        const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
-        
-        let normalizedType = 'Outro';
-        const t = (doc.tipo || '').toLowerCase();
-        if (t.includes('receita')) normalizedType = 'Receita';
-        else if (t.includes('exame')) normalizedType = 'Exame';
-        else if (t.includes('laudo')) normalizedType = 'Laudo';
-        else if (t.includes('atestado')) normalizedType = 'Atestado';
+    return activeDocs.map((doc: any) => {
+      const createdAt = doc.criadoEm || doc.createdAt;
+      const date = createdAt ? new Date(createdAt) : null;
+      const hasValidDate = date !== null && !Number.isNaN(date.getTime());
+      const monthGroup = hasValidDate
+        ? date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+        : 'Data não informada';
+      const dateStr = hasValidDate
+        ? date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')
+        : 'Data não informada';
 
-        return {
-          id: doc.id,
-          titulo: doc.titulo || `${normalizedType} ${dateStr}`,
-          tipo: normalizedType,
-          status: doc.status || 'pronto',
-          revisaoPendente: Boolean(doc.revisaoPendente),
-          dateStr,
-          monthGroup: monthGroup.charAt(0).toUpperCase() + monthGroup.slice(1),
-          createdAt: doc.createdAt,
-        };
-      });
-    }
-    return SAMPLE_DOCS;
-  }, [hasRealDocs, activeDocs]);
+      let normalizedType = 'Outro';
+      const type = (doc.tipo || '').toLowerCase();
+      if (type.includes('receita')) normalizedType = 'Receita';
+      else if (type.includes('exame')) normalizedType = 'Exame';
+      else if (type.includes('laudo')) normalizedType = 'Laudo';
+      else if (type.includes('atestado')) normalizedType = 'Atestado';
+
+      return {
+        id: doc.id,
+        titulo: doc.titulo || `${normalizedType} ${dateStr}`,
+        tipo: normalizedType,
+        status: doc.status || 'pronto',
+        revisaoPendente: Boolean(doc.revisaoPendente),
+        dateStr,
+        monthGroup: monthGroup.charAt(0).toUpperCase() + monthGroup.slice(1),
+        createdAt: hasValidDate ? date.toISOString() : undefined,
+        searchText: [
+          doc.titulo,
+          doc.tipo,
+          doc.nomeExame,
+          doc.tipoExame,
+          doc.resumo,
+          doc.diagnostico,
+        ].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR'),
+      };
+    });
+  }, [activeDocs]);
 
   // Filtering
   const filteredItems = useMemo(() => {
     return allItems.filter((item) => {
       // Search
       if (search.trim()) {
-        const q = search.toLowerCase();
-        if (!item.titulo.toLowerCase().includes(q) && !item.tipo.toLowerCase().includes(q)) {
+        const q = search.toLocaleLowerCase('pt-BR');
+        if (!item.searchText.includes(q)) {
           return false;
         }
       }
@@ -188,14 +110,28 @@ export default function Documents() {
 
       // Status
       if (selectedStatus !== 'all') {
-        if (selectedStatus === 'revisar' && !item.revisaoPendente) return false;
+        if (selectedStatus === 'revisar' && !item.revisaoPendente && item.status !== 'revisar') return false;
         if (selectedStatus === 'pronto' && item.status !== 'pronto') return false;
         if (selectedStatus === 'processing' && item.status !== 'processing' && item.status !== 'pending') return false;
       }
 
+      if (selectedPeriod !== 'all' && item.createdAt) {
+        const createdAt = new Date(item.createdAt);
+        const now = new Date();
+        if (selectedPeriod === '30days') {
+          const cutoff = new Date();
+          cutoff.setDate(now.getDate() - 30);
+          if (createdAt < cutoff || createdAt > now) return false;
+        } else if (selectedPeriod === 'thisyear' && createdAt.getFullYear() !== now.getFullYear()) {
+          return false;
+        }
+      } else if (selectedPeriod !== 'all') {
+        return false;
+      }
+
       return true;
     });
-  }, [allItems, search, selectedCategory, selectedStatus]);
+  }, [allItems, search, selectedCategory, selectedStatus, selectedPeriod]);
 
   // Counts by category
   const counts = useMemo(() => {
@@ -227,15 +163,8 @@ export default function Documents() {
     e.stopPropagation();
     if (!confirm('Deseja realmente excluir este documento?')) return;
 
-    if (id.startsWith('sample-')) {
-      setDeletedIds((prev) => new Set([...prev, id]));
-      toast({ title: 'Documento excluído' });
-      return;
-    }
-
     try {
       await deleteMutation.mutateAsync({ id });
-      setDeletedIds((prev) => new Set([...prev, id]));
       toast({ title: 'Documento excluído com sucesso' });
       refetch();
     } catch {
@@ -259,7 +188,7 @@ export default function Documents() {
       );
     }
     return (
-      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e6f4ec] text-[#1f7a4d] text-xs font-bold whitespace-nowrap">
+      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
         Pronto
       </span>
     );
@@ -271,7 +200,7 @@ export default function Documents() {
         {/* Header Title & CTA */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-7">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
               Seu acervo
             </div>
             <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
@@ -298,7 +227,7 @@ export default function Documents() {
             <Search size={18} className="text-[#5a6a80] shrink-0" />
             <input
               type="text"
-              placeholder="Buscar por título ou conteúdo"
+              placeholder="Buscar por título, tipo ou conteúdo"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent border-none outline-none text-[#1d2a3d] placeholder:text-[#5a6a80] text-sm"
@@ -326,7 +255,7 @@ export default function Documents() {
               onChange={(e) => setSelectedPeriod(e.target.value)}
               className="w-full bg-transparent border-none outline-none text-sm text-[#5a6a80] cursor-pointer"
             >
-              <option value="all">Período: 6 meses</option>
+              <option value="all">Período: todos</option>
               <option value="30days">Período: 30 dias</option>
               <option value="thisyear">Período: este ano</option>
             </select>
@@ -414,11 +343,26 @@ export default function Documents() {
         </div>
 
         {/* Grouped Month Sections */}
-        {Object.keys(groupedByMonth).length === 0 ? (
+        {isLoading ? (
+          <div className="bg-white rounded-2xl p-12 text-center border border-[#dde3ec] text-[#5a6a80]">
+            <LoaderCircle size={24} className="mx-auto animate-spin mb-3" />
+            Carregando documentos…
+          </div>
+        ) : isError ? (
+          <div role="alert" className="bg-white rounded-2xl p-12 text-center border border-[#f0b8b2] text-[#a13a30]">
+            Não foi possível carregar seus documentos. Tente novamente mais tarde.
+          </div>
+        ) : Object.keys(groupedByMonth).length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center border border-[#dde3ec]">
             <FileText size={40} className="mx-auto text-[#5a6a80] opacity-40 mb-3" />
-            <h3 className="text-lg font-bold text-[#1b3a60]">Nenhum documento encontrado</h3>
-            <p className="text-sm text-[#5a6a80] mt-1">Tente ajustar a busca ou os filtros acima.</p>
+            <h3 className="text-lg font-bold text-[#1b3a60]">
+              {activeDocs.length === 0 ? 'Você ainda não tem documentos' : 'Nenhum documento encontrado'}
+            </h3>
+            <p className="text-sm text-[#5a6a80] mt-1">
+              {activeDocs.length === 0
+                ? 'Adicione um documento para começar seu acervo.'
+                : 'Tente ajustar a busca ou os filtros acima.'}
+            </p>
           </div>
         ) : (
           Object.entries(groupedByMonth).map(([month, docs]) => (
@@ -445,7 +389,7 @@ export default function Documents() {
                               <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[85%]" />
                               <div className="h-[5px] rounded-[3px] bg-[#d5dce8] w-[55%]" />
                             </div>
-                            <div className="h-[5px] rounded-[3px] bg-[#2f7a70]/40 w-[75%]" />
+                            <div className="h-[5px] rounded-[3px] bg-[#1f7fe0]/40 w-[75%]" />
                           </div>
                         </div>
 
@@ -461,7 +405,7 @@ export default function Documents() {
                       {/* Footer tags & delete */}
                       <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-50">
                         <div className="flex gap-1.5 flex-wrap">
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
                             {doc.tipo}
                           </span>
                           {renderBadge(doc)}
@@ -519,7 +463,7 @@ export default function Documents() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
+                        <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
                           {doc.tipo}
                         </span>
                         {renderBadge(doc)}
@@ -542,7 +486,7 @@ export default function Documents() {
         )}
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
-          Tela de acervo de documentos com dados de exemplo e suporte a filtros.
+          Seus documentos são carregados com segurança da sua conta.
         </p>
       </main>
     </div>

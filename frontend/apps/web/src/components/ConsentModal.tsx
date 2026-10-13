@@ -48,8 +48,8 @@ export function ConsentModal() {
           </DialogPrimitive.Close>
 
           {/* Shield Icon */}
-          <div className="w-14 h-14 rounded-[18px] bg-[#e8f4f2] flex items-center justify-center shrink-0">
-            <Shield size={28} className="text-[#2f7a70]" strokeWidth={2} />
+          <div className="w-14 h-14 rounded-[18px] bg-[#e5eefb] flex items-center justify-center shrink-0">
+            <Shield size={28} className="text-[#1f7fe0]" strokeWidth={2} />
           </div>
 
           <h2 className="mt-4.5 mb-1.5 text-2xl sm:text-[26px] font-extrabold tracking-[-0.03em] text-[#1b3a60]">
@@ -62,19 +62,19 @@ export function ConsentModal() {
           {/* Bullets */}
           <ul className="list-none m-0 mb-5 p-0 space-y-3">
             <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#1d2a3d]">
-              <span className="w-6 h-6 rounded-full bg-[#2f7a70] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <span className="w-6 h-6 rounded-full bg-[#1f7fe0] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Check size={14} strokeWidth={2.5} />
               </span>
               <span>Você decide o que adicionar</span>
             </li>
             <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#1d2a3d]">
-              <span className="w-6 h-6 rounded-full bg-[#2f7a70] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <span className="w-6 h-6 rounded-full bg-[#1f7fe0] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Check size={14} strokeWidth={2.5} />
               </span>
               <span>Os dados lidos podem conter erros: confira sempre</span>
             </li>
             <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#1d2a3d]">
-              <span className="w-6 h-6 rounded-full bg-[#2f7a70] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <span className="w-6 h-6 rounded-full bg-[#1f7fe0] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Check size={14} strokeWidth={2.5} />
               </span>
               <span>Você pode apagar documentos e a conta quando quiser</span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useRoute, useLocation } from 'wouter';
 import {
   Download,
@@ -10,7 +10,7 @@ import {
   X,
   FileText,
   Pill,
-  ExternalLink,
+  LoaderCircle,
 } from 'lucide-react';
 import {
   useGetApiDocumentsId,
@@ -30,7 +30,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const id = propId || (params as any)?.id;
   const isMongoId = /^[0-9a-fA-F]{24}$/.test(id || '');
 
-  const { data: docRaw, refetch } = useGetApiDocumentsId(id || '', {
+  const {
+    data: docRaw,
+    refetch,
+    isLoading,
+    isError,
+  } = useGetApiDocumentsId(id || '', {
     query: {
       queryKey: getGetApiDocumentsIdQueryKey(id || ''),
       enabled: isMongoId,
@@ -41,63 +46,63 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
   const [isConfirmingRevisao, setIsConfirmingRevisao] = useState(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
-
-  // Form edit state
-  const [formData, setFormData] = useState({
-    titulo: 'Hemograma completo',
-    tipo: 'Exame',
-    medico: 'Dr. Silva',
-    data: '10/09/2026',
-    hemoglobina: '11,2 g/dL',
-    hematocrito: '36 %',
-    leucocitos: '6.800 /mm³',
-    plaquetas: '245 mil/mm³',
-  });
+  const [formData, setFormData] = useState({ titulo: '', tipo: '', medico: '', data: '' });
 
   const doc = (docRaw as any) || null;
 
   useEffect(() => {
-    if (doc) {
-      setFormData((prev) => ({
-        ...prev,
-        titulo: doc.titulo || prev.titulo,
-        tipo: doc.tipo || prev.tipo,
-        medico: doc.medico || prev.medico,
-        data: doc.data || prev.data,
-      }));
-    }
+    if (!doc) return;
+    setFormData({
+      titulo: doc.titulo || '',
+      tipo: doc.tipo || '',
+      medico: doc.medico || '',
+      data: doc.data || '',
+    });
   }, [doc]);
 
-  const docTitle = doc?.titulo || 'Hemograma completo';
-  const docType = doc?.tipo || 'Exame';
-  const docDate = doc?.data || (doc?.createdAt ? new Date(doc.createdAt).toLocaleDateString('pt-BR') : '10 set 2026');
-  const isReviewPending = doc ? Boolean(doc.revisaoPendente) : true;
-  const doctorName = doc?.medico || 'Dr. Silva';
-  const fileUrl = doc?.fileUrl || null;
+  const docTitle = doc?.titulo || 'Documento';
+  const documentDate = doc?.data || doc?.criadoEm || doc?.createdAt;
+  const parsedDocumentDate = documentDate ? new Date(documentDate) : null;
+  const docDate =
+    parsedDocumentDate && !Number.isNaN(parsedDocumentDate.getTime())
+      ? parsedDocumentDate.toLocaleDateString('pt-BR')
+      : 'Data não informada';
+  const isReviewPending = Boolean(doc?.revisaoPendente);
+  const imageUrls: string[] = Array.isArray(doc?.urlImagens) ? doc.urlImagens : [];
+  const fileUrl = imageUrls[0] || doc?.fileUrl || null;
+  const examResults = Array.isArray(doc?.resultadosExame) ? doc.resultadosExame : [];
+  const medications = Array.isArray(doc?.medicamentos) ? doc.medicamentos : [];
+  const alerts = Array.isArray(doc?.alertas) ? doc.alertas : [];
+  const lowConfidenceFields = Array.isArray(doc?.camposBaixaConfianca)
+    ? doc.camposBaixaConfianca
+    : [];
+  const textSections = [
+    ['Resumo', doc?.resumo],
+    ['Diagnóstico registrado', doc?.diagnostico],
+    ['Conteúdo', doc?.conteudo],
+    ['Conclusões', doc?.conclusoes],
+    ['Observações', doc?.observacoes],
+    ['Texto extraído', doc?.textoExtraido],
+  ].filter(([, value]) => typeof value === 'string' && value.trim());
 
   const handleDelete = async () => {
+    if (!doc || !id || !isMongoId) return;
     if (!confirm('Tem certeza que deseja excluir este documento?')) return;
-    if (isMongoId && id) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        toast({ title: 'Documento excluído com sucesso' });
-        setLocation('/documentos');
-      } catch {
-        toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
-      }
-    } else {
-      toast({ title: 'Documento removido' });
+    try {
+      await deleteMutation.mutateAsync({ id });
+      toast({ title: 'Documento excluído com sucesso' });
       setLocation('/documentos');
+    } catch {
+      toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
     }
   };
 
   const handleConfirmRevisao = async () => {
+    if (!doc || !id || !isMongoId) return;
     setIsConfirmingRevisao(true);
     try {
-      if (isMongoId && id) {
-        await customFetch(`/api/documents/${id}/revisao/confirmar`, { method: 'POST' });
-        refetch();
-      }
+      await customFetch(`/api/documents/${id}/revisao/confirmar`, { method: 'POST' });
+      await refetch();
       toast({ title: 'Revisão confirmada com sucesso!' });
     } catch {
       toast({ title: 'Erro ao confirmar revisão', variant: 'destructive' });
@@ -107,57 +112,70 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   };
 
   const handleSaveEdit = async () => {
+    if (!doc || !id || !isMongoId) return;
     try {
-      if (isMongoId && id) {
-        await customFetch(`/api/documents/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            titulo: formData.titulo,
-            tipo: formData.tipo,
-            medico: formData.medico,
-            data: formData.data,
-          }),
-        });
-        refetch();
-      }
-      toast({ title: 'Valores atualizados com sucesso!' });
+      await customFetch(`/api/documents/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      await refetch();
+      toast({ title: 'Documento atualizado com sucesso!' });
       setIsEditingModalOpen(false);
     } catch {
       toast({ title: 'Erro ao salvar alterações', variant: 'destructive' });
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center text-[#5a6a80]">
+        <LoaderCircle size={22} className="mr-2 animate-spin" /> Carregando documento…
+      </div>
+    );
+  }
+
+  if (!isMongoId || isError || !doc) {
+    return (
+      <main className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#dde3ec] bg-white p-8 text-center">
+        <FileText size={36} className="mx-auto mb-3 text-[#5a6a80]" />
+        <h1 className="text-xl font-bold text-[#1b3a60]">Documento não encontrado</h1>
+        <p className="mt-2 text-sm text-[#5a6a80]">
+          Não foi possível carregar este documento da sua conta.
+        </p>
+        <Link href="/documentos" className="mt-5 inline-flex font-bold text-[#1b3a60] hover:underline">
+          Voltar aos documentos
+        </Link>
+      </main>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
-      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-8 pb-16">
-        {/* Breadcrumb */}
-        <div className="text-sm text-[#5a6a80] mb-3.5 flex items-center gap-2">
-          <Link href="/documentos" className="hover:text-[#1b3a60] transition-colors">
+    <div className="min-h-screen bg-[#f7f9fc] pb-16 font-sans text-[#1d2a3d]">
+      <main className="mx-auto max-w-[1240px] px-5 pb-16 pt-8 sm:px-10">
+        <div className="mb-3.5 flex items-center gap-2 text-sm text-[#5a6a80]">
+          <Link href="/documentos" className="transition-colors hover:text-[#1b3a60]">
             Documentos
           </Link>
           <span>/</span>
-          <span className="text-[#1d2a3d] font-medium">{docTitle}</span>
+          <span className="font-medium text-[#1d2a3d]">{docTitle}</span>
         </div>
 
-        {/* Header Title & Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-5.5">
+        <div className="mb-5.5 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <h1 className="m-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.035em] text-[#1b3a60] sm:text-4xl">
               {docTitle}
             </h1>
-            <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-              <span className="inline-block px-2.5 py-1 rounded-full bg-[#e8f4f2] text-[#2f7a70] text-xs font-bold whitespace-nowrap">
-                {docType}
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <span className="whitespace-nowrap rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1f7fe0]">
+                {doc.tipo || 'Tipo não informado'}
               </span>
               {isReviewPending && (
-                <span className="inline-block px-2.5 py-1 rounded-full bg-[#fdf3d8] text-[#6b4208] text-xs font-bold whitespace-nowrap">
+                <span className="whitespace-nowrap rounded-full bg-[#fdf3d8] px-2.5 py-1 text-xs font-bold text-[#6b4208]">
                   Revisar
                 </span>
               )}
-              <span className="text-[13px] text-[#5a6a80] py-1 px-1">
-                Adicionado em {docDate}
-              </span>
+              <span className="px-1 py-1 text-[13px] text-[#5a6a80]">Adicionado em {docDate}</span>
             </div>
           </div>
 
@@ -168,398 +186,259 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 target="_blank"
                 rel="noreferrer"
                 download
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors shadow-xs"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#1d2a3d] shadow-xs transition-colors hover:bg-slate-50"
               >
                 <Download size={16} strokeWidth={2} /> Baixar
               </a>
             ) : (
               <button
-                onClick={() => toast({ title: 'Download iniciado' })}
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+                type="button"
+                disabled
+                title="Arquivo original indisponível"
+                className="inline-flex min-h-[44px] cursor-not-allowed items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#5a6a80] opacity-60"
               >
-                <Download size={16} strokeWidth={2} /> Baixar
+                <Download size={16} strokeWidth={2} /> Original indisponível
               </button>
             )}
-
             <button
+              type="button"
               onClick={handleDelete}
-              className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#a13a30] border border-[#dde3ec] hover:bg-red-50/50 hover:border-[#f0b8b2] transition-colors shadow-xs cursor-pointer"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#a13a30] shadow-xs transition-colors hover:border-[#f0b8b2] hover:bg-red-50/50"
             >
               <Trash2 size={16} strokeWidth={2} /> Excluir
             </button>
           </div>
         </div>
 
-        {/* Warning Banner */}
         {isReviewPending && (
-          <div className="flex gap-3.5 items-center bg-[#fdf3d8] border border-[#e3b95a] rounded-2xl p-4 sm:p-5 mb-5 text-[#4a2c0a]">
-            <AlertTriangle size={22} className="text-[#6b4208] shrink-0" strokeWidth={2} />
-            <div className="flex-1 min-w-0">
-              <b className="text-[15px] block leading-tight">2 campos precisam de conferência</b>
-              <div className="text-sm mt-0.5 leading-relaxed">
-                Os dados extraídos automaticamente podem conter erros. Compare com o documento original antes de confirmar.
+          <div className="mb-5 flex items-center gap-3.5 rounded-2xl border border-[#e3b95a] bg-[#fdf3d8] p-4 text-[#4a2c0a] sm:p-5">
+            <AlertTriangle size={22} className="shrink-0 text-[#6b4208]" strokeWidth={2} />
+            <div className="min-w-0 flex-1">
+              <b className="block text-[15px] leading-tight">
+                {lowConfidenceFields.length > 0
+                  ? `${lowConfidenceFields.length} campo(s) precisam de conferência`
+                  : 'Este documento precisa de conferência'}
+              </b>
+              <div className="mt-0.5 text-sm leading-relaxed">
+                Confira as informações extraídas comparando-as com o documento original.
               </div>
             </div>
           </div>
         )}
 
-        {/* 2-Column Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left: Documento original */}
-          <div className="lg:col-span-6 bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-            <div className="flex items-center gap-2.5 mb-4">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
+          <section className="rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] lg:col-span-6">
+            <div className="mb-4 flex items-center gap-2.5">
               <b className="flex-1 text-base text-[#1d2a3d]">Documento original</b>
               <button
+                type="button"
                 onClick={() => setIsZoomModalOpen(true)}
-                className="w-[38px] h-[38px] rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0 hover:bg-slate-200 transition-colors cursor-pointer"
-                title="Ampliar documento"
+                disabled={!fileUrl}
+                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8] transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                title={fileUrl ? 'Ampliar documento' : 'Arquivo original indisponível'}
               >
                 <ZoomIn size={19} className="text-[#1b3a60]" />
               </button>
-              <span className="text-[13px] text-[#5a6a80] font-semibold">Pág. 1 de 2</span>
+              <span className="text-[13px] font-semibold text-[#5a6a80]">
+                {imageUrls.length > 0 ? `${imageUrls.length} página(s)` : 'Original indisponível'}
+              </span>
             </div>
-
-            {/* Document sheet representation or uploaded image */}
             {fileUrl ? (
-              <div className="relative bg-slate-100 border border-[#dde3ec] rounded-xl overflow-hidden min-h-[500px] flex items-center justify-center">
-                <img
-                  src={fileUrl}
-                  alt="Original"
-                  className="max-h-[640px] w-auto object-contain"
-                />
+              <div className="flex min-h-[500px] items-center justify-center overflow-hidden rounded-xl border border-[#dde3ec] bg-slate-100">
+                <img src={fileUrl} alt={`Documento original: ${docTitle}`} className="max-h-[640px] w-auto object-contain" />
               </div>
             ) : (
-              <div className="relative bg-white border border-[#dde3ec] rounded-xl p-8 sm:p-9 min-h-[640px] shadow-[0_20px_40px_-28px_rgba(27,58,96,0.25)] select-none">
-                <div className="flex justify-between items-center pb-2">
-                  <div className="font-extrabold text-base text-[#1b3a60]">
-                    LABORATÓRIO EXEMPLO
-                  </div>
-                  <div className="text-xs text-[#5a6a80]">Coleta: 10/09/2026</div>
-                </div>
-
-                <div className="h-2.5 rounded-full bg-[#d5dce8] w-[60%] mt-3.5" />
-                <div className="h-2.5 rounded-full bg-[#d5dce8] w-[40%] mt-2" />
-                <div className="h-[1px] bg-[#dde3ec] my-5" />
-
-                <div className="text-xs font-bold text-[#5a6a80] tracking-widest uppercase mb-2">
-                  HEMOGRAMA
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between py-2 border-b border-dashed border-[#dde3ec]">
-                    <span className="font-semibold">Hemoglobina</span>
-                    <span>11,2 g/dL</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-dashed border-[#dde3ec]">
-                    <span className="font-semibold">Hematócrito</span>
-                    <span>36 %</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-dashed border-[#dde3ec]">
-                    <span className="font-semibold">Leucócitos</span>
-                    <span>6.800 /mm³</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-dashed border-[#dde3ec]">
-                    <span className="font-semibold">Plaquetas</span>
-                    <span>245 mil/mm³</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-dashed border-[#dde3ec]">
-                    <span className="font-semibold">Eritrócitos</span>
-                    <span>4,1 milhões/mm³</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-dashed border-[#dde3ec]">
-                    <span className="font-semibold">VCM</span>
-                    <span>88 fL</span>
-                  </div>
-                </div>
-
-                <div className="h-2.5 rounded-full bg-[#d5dce8] w-[70%] mt-6" />
-                <div className="h-2.5 rounded-full bg-[#d5dce8] w-[52%] mt-2" />
-                <div className="h-2.5 rounded-full bg-[#d5dce8] w-[64%] mt-2" />
-
-                {/* Bounding box 1 */}
-                <div className="absolute left-8 right-8 top-[132px] h-[36px] border-2 border-[#e3b95a] bg-[#fdf3d8]/40 rounded-lg pointer-events-none">
-                  <span className="absolute -right-3 -top-3 w-6 h-6 rounded-full bg-[#e3b95a] text-[#4a2c0a] text-xs font-extrabold flex items-center justify-center shadow-xs">
-                    1
-                  </span>
-                </div>
-
-                {/* Bounding box 2 */}
-                <div className="absolute left-8 right-8 top-[214px] h-[36px] border-2 border-[#e3b95a] bg-[#fdf3d8]/40 rounded-lg pointer-events-none">
-                  <span className="absolute -right-3 -top-3 w-6 h-6 rounded-full bg-[#e3b95a] text-[#4a2c0a] text-xs font-extrabold flex items-center justify-center shadow-xs">
-                    2
-                  </span>
-                </div>
+              <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-[#c6cfdb] bg-[#f7f9fc] p-8 text-center">
+                <FileText size={40} className="mb-3 text-[#5a6a80]" />
+                <p className="m-0 text-sm text-[#5a6a80]">
+                  O arquivo original não está disponível para este documento.
+                </p>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Right: Dados lidos */}
-          <div className="lg:col-span-6 bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-            {/* Tabs */}
-            <div className="flex border-b border-[#dde3ec] mb-5">
-              <button
-                onClick={() => setActiveTab('dados')}
-                className={`px-4 py-2.5 text-sm font-bold transition-colors cursor-pointer border-b-[3px] -mb-[1px] ${
-                  activeTab === 'dados'
-                    ? 'text-[#1b3a60] border-[#2f7a70]'
-                    : 'text-[#5a6a80] border-transparent hover:text-[#1b3a60]'
-                }`}
-              >
-                Dados lidos
-              </button>
-              <button
-                onClick={() => setActiveTab('medicamentos')}
-                className={`px-4 py-2.5 text-sm font-bold transition-colors cursor-pointer border-b-[3px] -mb-[1px] ${
-                  activeTab === 'medicamentos'
-                    ? 'text-[#1b3a60] border-[#2f7a70]'
-                    : 'text-[#5a6a80] border-transparent hover:text-[#1b3a60]'
-                }`}
-              >
-                Medicamentos
-              </button>
-              <button
-                onClick={() => setActiveTab('alertas')}
-                className={`px-4 py-2.5 text-sm font-bold transition-colors cursor-pointer border-b-[3px] -mb-[1px] ${
-                  activeTab === 'alertas'
-                    ? 'text-[#1b3a60] border-[#2f7a70]'
-                    : 'text-[#5a6a80] border-transparent hover:text-[#1b3a60]'
-                }`}
-              >
-                Alertas
-              </button>
+          <section className="rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] lg:col-span-6">
+            <div className="mb-5 flex border-b border-[#dde3ec]">
+              {([
+                ['dados', 'Dados lidos'],
+                ['medicamentos', 'Medicamentos'],
+                ['alertas', 'Alertas'],
+              ] as const).map(([tab, label]) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`-mb-px cursor-pointer border-b-[3px] px-4 py-2.5 text-sm font-bold transition-colors ${
+                    activeTab === tab
+                      ? 'border-[#1f7fe0] text-[#1b3a60]'
+                      : 'border-transparent text-[#5a6a80] hover:text-[#1b3a60]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            {/* Metadados row */}
-            <div className="grid grid-cols-3 gap-4 mb-5.5">
-              <div className="min-w-[120px]">
-                <div className="text-xs text-[#5a6a80] font-semibold">Tipo</div>
-                <div className="text-[15px] font-bold text-[#1d2a3d] mt-1">Exame de sangue</div>
+            <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <div className="text-xs font-semibold text-[#5a6a80]">Tipo</div>
+                <div className="mt-1 text-[15px] font-bold text-[#1d2a3d]">{doc.tipoExame || doc.tipo || 'Não informado'}</div>
               </div>
-              <div className="min-w-[120px]">
-                <div className="text-xs text-[#5a6a80] font-semibold">Data da coleta</div>
-                <div className="text-[15px] font-bold text-[#1d2a3d] mt-1">{docDate}</div>
+              <div>
+                <div className="text-xs font-semibold text-[#5a6a80]">Data</div>
+                <div className="mt-1 text-[15px] font-bold text-[#1d2a3d]">{docDate}</div>
               </div>
-              <div className="min-w-[120px]">
-                <div className="text-xs text-[#5a6a80] font-semibold">Solicitante</div>
-                <div className="text-[15px] font-bold text-[#1d2a3d] mt-1">{doctorName}</div>
+              <div>
+                <div className="text-xs font-semibold text-[#5a6a80]">Solicitante</div>
+                <div className="mt-1 text-[15px] font-bold text-[#1d2a3d]">{doc.medico || 'Não informado'}</div>
               </div>
             </div>
 
             {activeTab === 'dados' && (
-              <div>
-                <div className="text-sm font-bold text-[#1d2a3d] mb-3">
-                  Resultados registrados
-                </div>
-
-                {/* Hemoglobina (Com Alerta de confiança) */}
-                <div className="p-3.5 sm:p-4 rounded-2xl border-2 border-[#e3b95a] bg-[#fffaf0] mb-2.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[15px] font-bold text-[#1d2a3d]">Hemoglobina</div>
-                      <div className="text-xs text-[#5a6a80]">Referência: 12,0 – 16,0</div>
+              <div className="space-y-4">
+                {examResults.length > 0 && (
+                  <div>
+                    <h2 className="mb-3 text-sm font-bold text-[#1d2a3d]">Resultados registrados</h2>
+                    <div className="divide-y divide-[#dde3ec] rounded-xl border border-[#dde3ec] px-4">
+                      {examResults.map((result: any, index: number) => (
+                        <div key={`${result.nome || 'resultado'}-${index}`} className="flex flex-wrap justify-between gap-2 py-3">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-[#1d2a3d]">{result.nome || 'Resultado'}</div>
+                            {result.referenciaTexto && (
+                              <div className="mt-0.5 text-xs text-[#5a6a80]">Referência: {result.referenciaTexto}</div>
+                            )}
+                          </div>
+                          <div className="text-right font-bold text-[#1d2a3d]">
+                            {result.valorTexto || result.valor || 'Não informado'} {result.unidade || ''}
+                            {result.status && <div className="text-xs font-medium text-[#5a6a80]">{result.status}</div>}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="text-base font-extrabold text-[#1d2a3d]">
-                      {formData.hemoglobina}
-                    </div>
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-[#fdf3d8] text-[#6b4208] text-xs font-bold whitespace-nowrap">
-                      Fora da referência
-                    </span>
                   </div>
-                  <div className="text-xs text-[#6b4208] mt-1.5 font-semibold">
-                    Confiança baixa · confira com o original (1)
+                )}
+                {textSections.map(([label, value]) => (
+                  <div key={label as string}>
+                    <h2 className="mb-1 text-sm font-bold text-[#1d2a3d]">{label}</h2>
+                    <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-[#5a6a80]">{value as string}</p>
                   </div>
-                </div>
-
-                {/* Hematócrito */}
-                <div className="p-3.5 sm:p-4 rounded-2xl border border-[#dde3ec] bg-white mb-2.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[15px] font-bold text-[#1d2a3d]">Hematócrito</div>
-                      <div className="text-xs text-[#5a6a80]">Referência: 36 – 46</div>
-                    </div>
-                    <div className="text-base font-extrabold text-[#1d2a3d]">
-                      {formData.hematocrito}
-                    </div>
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-[#e6f4ec] text-[#1f7a4d] text-xs font-bold whitespace-nowrap">
-                      Dentro
-                    </span>
-                  </div>
-                </div>
-
-                {/* Leucócitos */}
-                <div className="p-3.5 sm:p-4 rounded-2xl border border-[#dde3ec] bg-white mb-2.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[15px] font-bold text-[#1d2a3d]">Leucócitos</div>
-                      <div className="text-xs text-[#5a6a80]">Referência: 4.000 – 11.000</div>
-                    </div>
-                    <div className="text-base font-extrabold text-[#1d2a3d]">
-                      {formData.leucocitos}
-                    </div>
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-[#e6f4ec] text-[#1f7a4d] text-xs font-bold whitespace-nowrap">
-                      Dentro
-                    </span>
-                  </div>
-                </div>
-
-                {/* Plaquetas */}
-                <div className="p-3.5 sm:p-4 rounded-2xl border border-[#dde3ec] bg-white mb-2.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[15px] font-bold text-[#1d2a3d]">Plaquetas</div>
-                      <div className="text-xs text-[#5a6a80]">Referência: 150 – 450</div>
-                    </div>
-                    <div className="text-base font-extrabold text-[#1d2a3d]">
-                      {formData.plaquetas}
-                    </div>
-                    <span className="inline-block px-2.5 py-1 rounded-full bg-[#e6f4ec] text-[#1f7a4d] text-xs font-bold whitespace-nowrap">
-                      Dentro
-                    </span>
-                  </div>
-                </div>
+                ))}
+                {examResults.length === 0 && textSections.length === 0 && (
+                  <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
+                    Ainda não há dados extraídos para este documento.
+                  </p>
+                )}
               </div>
             )}
 
             {activeTab === 'medicamentos' && (
               <div className="space-y-3">
-                <div className="text-sm font-bold text-[#1d2a3d]">Medicamentos prescritos</div>
-                <div className="p-4 rounded-2xl border border-[#dde3ec] bg-[#f8fafc]">
-                  <b className="text-[15px] text-[#1b3a60] block">Dipirona Monoidratada 500mg</b>
-                  <p className="text-xs text-[#5a6a80] mt-1 mb-0">
-                    Posologia: 1 comprimido de 6 em 6 horas se houver febre ou dor.
+                <h2 className="text-sm font-bold text-[#1d2a3d]">Medicamentos registrados</h2>
+                {medications.length === 0 ? (
+                  <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
+                    Não há medicamentos registrados neste documento.
                   </p>
-                </div>
-                <div className="p-4 rounded-2xl border border-[#dde3ec] bg-[#f8fafc]">
-                  <b className="text-[15px] text-[#1b3a60] block">Amoxicilina 500mg</b>
-                  <p className="text-xs text-[#5a6a80] mt-1 mb-0">
-                    Posologia: 1 cápsula de 8 em 8 horas por 7 dias contínuos.
-                  </p>
-                </div>
+                ) : medications.map((medication: any, index: number) => (
+                  <div key={`${medication.nome || 'medicamento'}-${index}`} className="flex gap-3 rounded-2xl border border-[#dde3ec] bg-[#f8fafc] p-4">
+                    <Pill size={20} className="mt-0.5 shrink-0 text-[#1b3a60]" />
+                    <div>
+                      <b className="block text-[15px] text-[#1b3a60]">{medication.nome || 'Medicamento'}</b>
+                      {(medication.dosagem || medication.horario) && (
+                        <p className="mb-0 mt-1 text-xs text-[#5a6a80]">
+                          {[medication.dosagem, medication.horario].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
             {activeTab === 'alertas' && (
               <div className="space-y-3">
-                <div className="text-sm font-bold text-[#1d2a3d]">Alertas de segurança e interações</div>
-                <div className="p-4 rounded-2xl bg-[#fff5f4] border border-[#f0b8b2] text-[#a13a30]">
-                  <b className="text-sm block">Alergia conhecida: Dipirona</b>
-                  <p className="text-xs mt-1 mb-0 text-[#1d2a3d]">
-                    Consta no seu prontuário alergia cadastrada a Dipirona. Verifique com seu médico antes de administrar este item.
+                <h2 className="text-sm font-bold text-[#1d2a3d]">Alertas registrados</h2>
+                {alerts.length === 0 ? (
+                  <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
+                    Não há alertas registrados neste documento.
                   </p>
-                </div>
+                ) : alerts.map((alert: any, index: number) => (
+                  <div key={`${alert.tipo || 'alerta'}-${index}`} className="rounded-2xl border border-[#f0b8b2] bg-[#fff5f4] p-4 text-[#a13a30]">
+                    <b className="block text-sm">{alert.tipo || 'Alerta'}{alert.severidade ? ` · ${alert.severidade}` : ''}</b>
+                    {alert.mensagem && <p className="mb-0 mt-1 text-xs leading-relaxed text-[#1d2a3d]">{alert.mensagem}</p>}
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* Bottom Actions */}
-            <div className="flex gap-2.5 mt-6 justify-end">
+            <div className="mt-6 flex justify-end gap-2.5 border-t border-[#dde3ec] pt-4">
               <button
+                type="button"
                 onClick={() => setIsEditingModalOpen(true)}
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors cursor-pointer"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#1d2a3d] transition-colors hover:bg-slate-50"
               >
-                Editar valor
+                <Edit2 size={16} /> Editar dados
               </button>
-              <button
-                onClick={handleConfirmRevisao}
-                disabled={isConfirmingRevisao}
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors cursor-pointer disabled:opacity-60"
-              >
-                <Check size={16} /> Confirmar revisão
-              </button>
+              {isReviewPending && (
+                <button
+                  type="button"
+                  onClick={handleConfirmRevisao}
+                  disabled={isConfirmingRevisao}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white transition-colors hover:bg-[#24507f] disabled:opacity-60"
+                >
+                  {isConfirmingRevisao ? <LoaderCircle size={16} className="animate-spin" /> : <Check size={16} />}
+                  Confirmar revisão
+                </button>
+              )}
             </div>
-          </div>
+          </section>
         </div>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
-          Tela de design com dados de exemplo.
+          Os dados exibidos foram carregados do documento salvo na sua conta.
         </p>
       </main>
 
-      {/* Edit Values Modal */}
       <DialogPrimitive.Root open={isEditingModalOpen} onOpenChange={setIsEditingModalOpen}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-[#dde3ec] outline-none max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-[#1b3a60]">Editar dados extraídos</h3>
-              <DialogPrimitive.Close className="p-1 rounded-lg text-[#5a6a80] hover:bg-slate-100">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#dde3ec] bg-white p-6 shadow-2xl outline-none">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-[#1b3a60]">Editar dados do documento</h3>
+              <DialogPrimitive.Close className="rounded-lg p-1 text-[#5a6a80] hover:bg-slate-100">
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>
-
             <div className="space-y-4 text-sm">
-              <div>
-                <label className="block font-semibold mb-1">Título</label>
-                <input
-                  type="text"
-                  value={formData.titulo}
-                  onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                  className="w-full h-11 px-3 border border-[#c6cfdb] rounded-xl outline-none focus:border-[#1b3a60]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Médico / Solicitante</label>
-                <input
-                  type="text"
-                  value={formData.medico}
-                  onChange={(e) => setFormData({ ...formData, medico: e.target.value })}
-                  className="w-full h-11 px-3 border border-[#c6cfdb] rounded-xl outline-none focus:border-[#1b3a60]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">Hemoglobina</label>
+              {([
+                ['titulo', 'Título'],
+                ['tipo', 'Tipo'],
+                ['medico', 'Médico / Solicitante'],
+                ['data', 'Data'],
+              ] as const).map(([field, label]) => (
+                <div key={field}>
+                  <label className="mb-1 block font-semibold" htmlFor={`document-${field}`}>{label}</label>
                   <input
+                    id={`document-${field}`}
                     type="text"
-                    value={formData.hemoglobina}
-                    onChange={(e) => setFormData({ ...formData, hemoglobina: e.target.value })}
-                    className="w-full h-11 px-3 border border-[#c6cfdb] rounded-xl outline-none focus:border-[#1b3a60]"
+                    value={formData[field]}
+                    onChange={(event) => setFormData((previous) => ({ ...previous, [field]: event.target.value }))}
+                    className="h-11 w-full rounded-xl border border-[#c6cfdb] px-3 outline-none focus:border-[#1b3a60]"
                   />
                 </div>
-                <div>
-                  <label className="block font-semibold mb-1">Hematócrito</label>
-                  <input
-                    type="text"
-                    value={formData.hematocrito}
-                    onChange={(e) => setFormData({ ...formData, hematocrito: e.target.value })}
-                    className="w-full h-11 px-3 border border-[#c6cfdb] rounded-xl outline-none focus:border-[#1b3a60]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">Leucócitos</label>
-                  <input
-                    type="text"
-                    value={formData.leucocitos}
-                    onChange={(e) => setFormData({ ...formData, leucocitos: e.target.value })}
-                    className="w-full h-11 px-3 border border-[#c6cfdb] rounded-xl outline-none focus:border-[#1b3a60]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">Plaquetas</label>
-                  <input
-                    type="text"
-                    value={formData.plaquetas}
-                    onChange={(e) => setFormData({ ...formData, plaquetas: e.target.value })}
-                    className="w-full h-11 px-3 border border-[#c6cfdb] rounded-xl outline-none focus:border-[#1b3a60]"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
-
-            <div className="flex gap-2.5 justify-end mt-6">
+            <div className="mt-6 flex justify-end gap-2.5">
               <button
+                type="button"
                 onClick={() => setIsEditingModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-[#dde3ec] text-[#5a6a80] font-bold text-sm hover:bg-slate-50 cursor-pointer"
+                className="cursor-pointer rounded-xl border border-[#dde3ec] px-4 py-2.5 text-sm font-bold text-[#5a6a80] hover:bg-slate-50"
               >
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={handleSaveEdit}
-                className="px-5 py-2.5 rounded-xl bg-[#1b3a60] text-white font-bold text-sm hover:bg-[#24507f] cursor-pointer"
+                className="cursor-pointer rounded-xl bg-[#1b3a60] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#24507f]"
               >
                 Salvar alterações
               </button>
@@ -568,33 +447,18 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
 
-      {/* Zoom Modal */}
       <DialogPrimitive.Root open={isZoomModalOpen} onOpenChange={setIsZoomModalOpen}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-4xl bg-white rounded-3xl p-6 shadow-2xl border border-[#dde3ec] outline-none max-h-[92vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#dde3ec] bg-white p-6 shadow-2xl outline-none">
+            <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-bold text-[#1b3a60]">Visualização ampliada</h3>
-              <DialogPrimitive.Close className="p-1 rounded-lg text-[#5a6a80] hover:bg-slate-100">
+              <DialogPrimitive.Close className="rounded-lg p-1 text-[#5a6a80] hover:bg-slate-100">
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>
-            <div className="flex justify-center p-4 bg-slate-50 rounded-2xl border border-[#dde3ec]">
-              {fileUrl ? (
-                <img src={fileUrl} alt="Original ampliado" className="max-h-[75vh] object-contain" />
-              ) : (
-                <div className="w-full max-w-xl bg-white p-8 rounded-xl border border-[#dde3ec] text-sm">
-                  <div className="font-extrabold text-xl text-[#1b3a60] text-center mb-4">
-                    LABORATÓRIO EXEMPLO · HEMOGRAMA COMPLETO
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between border-b pb-1 font-medium"><span>Hemoglobina</span><span>11,2 g/dL (Ref: 12,0 - 16,0)</span></div>
-                    <div className="flex justify-between border-b pb-1 font-medium"><span>Hematócrito</span><span>36 % (Ref: 36 - 46)</span></div>
-                    <div className="flex justify-between border-b pb-1 font-medium"><span>Leucócitos</span><span>6.800 /mm³ (Ref: 4.000 - 11.000)</span></div>
-                    <div className="flex justify-between border-b pb-1 font-medium"><span>Plaquetas</span><span>245 mil/mm³ (Ref: 150 - 450)</span></div>
-                  </div>
-                </div>
-              )}
+            <div className="flex justify-center rounded-2xl border border-[#dde3ec] bg-slate-50 p-4">
+              {fileUrl && <img src={fileUrl} alt={`Documento original ampliado: ${docTitle}`} className="max-h-[75vh] object-contain" />}
             </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>

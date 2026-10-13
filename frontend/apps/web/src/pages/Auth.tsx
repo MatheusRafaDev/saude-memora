@@ -11,6 +11,8 @@ import {
   useGetApiPacientesMe,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { BrandWordmark } from '@/components/BrandWordmark';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 
 export interface AuthProps {
   defaultMode?: 'login' | 'register';
@@ -46,14 +48,26 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
   const [mode, setMode] = useState<'login' | 'register'>(getInitialMode);
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', termsAccepted: false });
-  const [message, setMessage] = useState('');
+  const [form, setForm] = useState({
+    name: '',
+    birthDate: '',
+    sex: '',
+    email: '',
+    password: '',
+    termsAccepted: false,
+  });
+  const [message, setMessage] = useState(() =>
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('registered') === '1'
+      ? 'Conta criada com sucesso. Entre com seu e-mail e senha para continuar.'
+      : '',
+  );
   const [error, setError] = useState('');
 
   // Recover password modal state
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMessage, setForgotMessage] = useState('');
+  const [forgotError, setForgotError] = useState('');
   const [isForgotLoading, setIsForgotLoading] = useState(false);
 
   useEffect(() => {
@@ -71,6 +85,12 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       setMode('login');
     }
   }, [defaultMode, location]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('registered') === '1') {
+      window.history.replaceState(null, '', '/entrar');
+    }
+  }, []);
 
   const handleModeChange = (newMode: 'login' | 'register') => {
     setMode(newMode);
@@ -90,7 +110,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
     try {
       if (mode === 'login') {
-        await loginMutation.mutateAsync({ data: { email: form.email, senha: form.password } });
+        await loginMutation.mutateAsync({ data: { email: form.email.trim(), senha: form.password } });
         setMessage('Carregando seu histórico...');
         await Promise.allSettled([
           queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
@@ -107,39 +127,37 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         await registerMutation.mutateAsync({
           data: {
             nome: form.name.trim(),
+            dataNascimento: form.birthDate,
+            sexo: form.sex,
             email: form.email.trim(),
             senha: form.password,
           },
         });
 
-        setMessage('Conta criada com sucesso! Entrando...');
-        await Promise.allSettled([
-          queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
-          queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
-          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
-        ]);
-        setLocation('/visao-geral');
+        setForm((prev) => ({ ...prev, password: '' }));
+        setLocation('/entrar?registered=1');
       }
     } catch (err: any) {
-      const apiMessage = err?.response?.data?.message || err?.message || 'Ocorreu um erro. Verifique seus dados.';
-      setError(apiMessage);
+      setError(getApiErrorMessage(err, 'Ocorreu um erro. Verifique seus dados.'));
     }
   };
 
   const handleForgotPassword = async (e: FormEvent) => {
     e.preventDefault();
-    if (!forgotEmail) return;
+    const email = forgotEmail.trim();
+    if (!email) return;
     setIsForgotLoading(true);
     setForgotMessage('');
+    setForgotError('');
     try {
-      await customFetch('/api/auth/reset-password/request', {
+      await customFetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotEmail }),
+        body: JSON.stringify({ email }),
       });
       setForgotMessage('Se o e-mail estiver cadastrado, enviamos as instruções de recuperação.');
-    } catch {
-      setForgotMessage('Se o e-mail estiver cadastrado, enviamos as instruções de recuperação.');
+    } catch (err) {
+      setForgotError(getApiErrorMessage(err, 'Não foi possível solicitar a recuperação agora. Tente novamente.'));
     } finally {
       setIsForgotLoading(false);
     }
@@ -162,10 +180,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[17px] text-white">
-            <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
-            <span>
-              saúde<span className="font-semibold text-[#7cc4e6]">memora</span>
-            </span>
+            <img src="/logo.png" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+            <BrandWordmark inverse />
           </Link>
 
           {/* SVG Illustration from Design Board */}
@@ -217,8 +233,15 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
         {/* ── Right Form Panel ───────────────────────────────────── */}
         <section className="flex flex-1 flex-col justify-between p-6 sm:p-12">
-          {/* Top Return Link */}
-          <div>
+          {/* Mobile brand and return link */}
+          <div className="flex flex-col gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2.5 font-extrabold text-[17px] text-[#1b3a60] lg:hidden"
+            >
+              <img src="/logo.png" alt="" className="h-9 w-9 object-contain flex-none" />
+              <BrandWordmark />
+            </Link>
             <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">
               ← Voltar ao início
             </Link>
@@ -257,12 +280,12 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
             {/* Messages */}
             {error && (
-              <div className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
+              <div role="alert" className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
                 {error}
               </div>
             )}
             {message && (
-              <div className="mb-5 rounded-xl border border-[#b9dcd6] bg-[#e8f4f2] p-3.5 text-[14px] text-[#2f7a70]">
+              <div className="mb-5 rounded-xl border border-[#bfd8f7] bg-[#e5eefb] p-3.5 text-[14px] text-[#1f7fe0]">
                 {message}
               </div>
             )}
@@ -270,27 +293,61 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             {/* Form */}
             <form onSubmit={submit} className="space-y-4">
               {mode === 'register' && (
-                <label className="block">
-                  <span className="block mb-1.5 text-[13px] font-semibold">Nome completo</span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Seu nome completo"
-                    value={form.name}
-                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                    className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
-                  />
-                </label>
-              )}
+                <>
+                  <label className="block">
+                    <span className="block mb-1.5 text-[13px] font-semibold">Nome completo</span>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="name"
+                      pattern=".*\S.*"
+                      placeholder="Seu nome completo"
+                      value={form.name}
+                      onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                      className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                    />
+                  </label>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="block mb-1.5 text-[13px] font-semibold">Data de nascimento</span>
+                      <input
+                        type="date"
+                        required
+                        autoComplete="bday"
+                        max={new Date().toISOString().slice(0, 10)}
+                        value={form.birthDate}
+                        onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
+                        className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="block mb-1.5 text-[13px] font-semibold">Sexo biológico</span>
+                      <select
+                        required
+                        value={form.sex}
+                        onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
+                        className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                      >
+                        <option value="">Selecione</option>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </label>
+                  </div>
+                </>
+                )}
 
               <label className="block">
                 <span className="block mb-1.5 text-[13px] font-semibold">E-mail</span>
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   placeholder="voce@email.com"
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                  onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
                   className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
                 />
               </label>
@@ -301,6 +358,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
+                    minLength={mode === 'register' ? 8 : undefined}
+                    autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                     placeholder={mode === 'register' ? 'No mínimo 8 caracteres' : 'Sua senha'}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
@@ -390,8 +449,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <X size={20} />
             </button>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8f4f2]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e5eefb]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
               </svg>
             </div>
@@ -402,17 +461,26 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             </p>
 
             {forgotMessage ? (
-              <div className="rounded-xl border border-[#b9dcd6] bg-[#e8f4f2] p-4 text-[14px] text-[#2f7a70]">
+              <div className="rounded-xl border border-[#bfd8f7] bg-[#e5eefb] p-4 text-[14px] text-[#1f7fe0]">
                 {forgotMessage}
               </div>
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-4">
+                {forgotError && (
+                  <div role="alert" className="rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
+                    {forgotError}
+                  </div>
+                )}
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   placeholder="voce@email.com"
                   value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
+                  onChange={(e) => {
+                    setForgotEmail(e.target.value);
+                    setForgotError('');
+                  }}
                   className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[14px] outline-none focus:border-[#1b3a60]"
                 />
                 <button

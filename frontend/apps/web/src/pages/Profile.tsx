@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import {
   User,
   Lock,
+  Mail,
   Shield,
   FileText,
+  CreditCard,
+  Upload,
   Trash2,
   Check,
   LoaderCircle,
@@ -19,50 +22,67 @@ import {
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 
 export default function Profile() {
   const { toast } = useToast();
   const { signOut } = useAuth();
-  const { data: profileRaw, refetch } = useGetApiPacientesMe();
+  const {
+    data: profileRaw,
+    refetch,
+    isLoading: isProfileLoading,
+    isError: profileError,
+  } = useGetApiPacientesMe();
   const patchPerfil = usePatchApiPacientesMePerfil();
   const deleteAccount = useDeleteApiPacientesMe();
 
-  const [activeTab, setActiveTab] = useState<'dados' | 'seguranca' | 'privacidade' | 'conta'>('dados');
+  const [activeTab, setActiveTab] = useState<'dados' | 'carteirinha' | 'seguranca' | 'privacidade'>('dados');
 
   // Form State
-  const [nome, setNome] = useState('Ana Souza');
-  const [email, setEmail] = useState('ana@exemplo.com');
-  const [nascimento, setNascimento] = useState('1992-03-14');
-  const [sexo, setSexo] = useState('Feminino');
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
+  const [nascimento, setNascimento] = useState('');
+  const [sexo, setSexo] = useState('');
+  const [contatoEmergencia, setContatoEmergencia] = useState('');
+  const [senhaAtualPerfil, setSenhaAtualPerfil] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [planoSaude, setPlanoSaude] = useState('');
+  const [numeroCarteirinha, setNumeroCarteirinha] = useState('');
+  const [urlCarteirinha, setUrlCarteirinha] = useState('');
+  const [isSavingCard, setIsSavingCard] = useState(false);
+  const [isUploadingCard, setIsUploadingCard] = useState(false);
+  const [isDeletingCard, setIsDeletingCard] = useState(false);
 
-  // Password State
-  const [senhaAtual, setSenhaAtual] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isRequestingPasswordReset, setIsRequestingPasswordReset] = useState(false);
+  const [passwordResetRequested, setPasswordResetRequested] = useState(false);
 
   // Consent Toggles
-  const [consentOcr, setConsentOcr] = useState(true);
-  const [consentChat, setConsentChat] = useState(true);
+  const [consentOcr, setConsentOcr] = useState(false);
+  const [consentChat, setConsentChat] = useState(false);
 
   // Delete account modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (profileRaw) {
-      const p = profileRaw as any;
-      if (p.nome) setNome(p.nome);
-      if (p.email) setEmail(p.email);
-      if (p.dataNascimento) {
-        setNascimento(p.dataNascimento.split('T')[0]);
-      }
-      if (p.sexo || p.sexoBiologico) setSexo(p.sexo || p.sexoBiologico);
-      if (p.consentimentoIa) {
-        setConsentOcr(Boolean(p.consentimentoIa.aceito));
-        setConsentChat(Boolean(p.consentimentoIa.aceito));
-      }
+    if (!profileRaw) return;
+
+    const p = profileRaw as any;
+    setNome(p.nome || '');
+    setEmail(p.email || '');
+    setOriginalEmail(p.email || '');
+    setNascimento(p.dataNascimento ? p.dataNascimento.split('T')[0] : '');
+    setSexo(p.sexo || p.sexoBiologico || '');
+    setContatoEmergencia(p.contatoEmergencia || '');
+    setPlanoSaude(p.planoSaude || '');
+    setNumeroCarteirinha(p.numeroCarteirinha || '');
+    setUrlCarteirinha(p.urlCarteirinha || '');
+    if (p.consentimentoIa) {
+      setConsentOcr(Boolean(p.consentimentoIa.aceito));
+      setConsentChat(Boolean(p.consentimentoIa.aceito));
     }
+
     customFetch('/api/pacientes/me/consentimento')
       .then((c: any) => {
         if (c && c.aceito !== undefined) {
@@ -70,8 +90,13 @@ export default function Profile() {
           setConsentChat(Boolean(c.aceito));
         }
       })
-      .catch(() => {});
-  }, [profileRaw]);
+      .catch(() => {
+        toast({
+          title: 'Não foi possível carregar o consentimento',
+          variant: 'destructive',
+        });
+      });
+  }, [profileRaw, toast]);
 
   // Initials
   const initials = nome
@@ -81,26 +106,125 @@ export default function Profile() {
         .slice(0, 2)
         .join('')
         .toUpperCase()
-    : 'AS';
+    : '—';
+
+  const emailChanged =
+    Boolean(originalEmail) && email.trim().toLowerCase() !== originalEmail.trim().toLowerCase();
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (emailChanged && !senhaAtualPerfil) {
+      toast({
+        title: 'Informe sua senha atual para alterar o e-mail',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSavingProfile(true);
     try {
       await patchPerfil.mutateAsync({
         data: {
-          nome,
-          email,
+          nome: nome.trim(),
+          email: email.trim(),
           dataNascimento: nascimento,
           sexo,
+          contatoEmergencia,
+          senhaAtual: emailChanged ? senhaAtualPerfil : undefined,
         } as any,
       });
       toast({ title: 'Perfil atualizado com sucesso!' });
+      setEmail(email.trim());
+      setOriginalEmail(email.trim());
+      setSenhaAtualPerfil('');
       refetch();
-    } catch {
-      toast({ title: 'Erro ao salvar alterações', variant: 'destructive' });
+    } catch (error) {
+      toast({
+        title: getApiErrorMessage(error, 'Erro ao salvar alterações. Tente novamente.'),
+        variant: 'destructive',
+      });
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleSaveHealthCard = async () => {
+    setIsSavingCard(true);
+    try {
+      await patchPerfil.mutateAsync({
+        data: {
+          planoSaude: planoSaude.trim(),
+          numeroCarteirinha: numeroCarteirinha.trim(),
+        } as any,
+      });
+      toast({ title: 'Carteirinha atualizada com sucesso!' });
+      await refetch();
+    } catch (error) {
+      toast({
+        title: getApiErrorMessage(error, 'Não foi possível salvar os dados da carteirinha.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingCard(false);
+    }
+  };
+
+  const handleUploadHealthCard = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+    const allowedExtensions = /\.(pdf|jpe?g|png)$/i.test(file.name);
+    if (!allowedTypes.has(file.type) || !allowedExtensions) {
+      toast({ title: 'Selecione um arquivo PDF, JPG ou PNG.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'O arquivo deve ter no máximo 10 MB.', variant: 'destructive' });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setIsUploadingCard(true);
+    try {
+      const result = await customFetch('/api/pacientes/me/carteirinha', {
+        method: 'POST',
+        body: formData,
+      }) as { url?: string; planoSaude?: string; numeroCarteirinha?: string };
+      setUrlCarteirinha(result.url || '');
+      if (result.planoSaude) setPlanoSaude(result.planoSaude);
+      if (result.numeroCarteirinha) setNumeroCarteirinha(result.numeroCarteirinha);
+      toast({ title: 'Carteirinha enviada', description: 'Confira os dados extraídos antes de salvar.' });
+      await refetch();
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Não foi possível enviar a carteirinha.');
+      toast({
+        title: message === 'consentimento_necessario'
+          ? 'Ative o consentimento de IA na seção Privacidade para enviar a carteirinha.'
+          : message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingCard(false);
+    }
+  };
+
+  const handleDeleteHealthCard = async () => {
+    setIsDeletingCard(true);
+    try {
+      await customFetch('/api/pacientes/me/carteirinha', { method: 'DELETE' });
+      setUrlCarteirinha('');
+      toast({ title: 'Imagem da carteirinha removida.' });
+      await refetch();
+    } catch (error) {
+      toast({
+        title: getApiErrorMessage(error, 'Não foi possível remover a imagem da carteirinha.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingCard(false);
     }
   };
 
@@ -120,31 +244,32 @@ export default function Profile() {
     }
   };
 
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!senhaAtual || !novaSenha) {
-      toast({ title: 'Preencha as senhas', variant: 'destructive' });
-      return;
-    }
-    if (novaSenha.length < 8) {
-      toast({ title: 'A nova senha deve ter pelo menos 8 caracteres', variant: 'destructive' });
+  const handleRequestPasswordReset = async () => {
+    if (!email.trim()) {
+      toast({ title: 'Não encontramos o e-mail da sua conta.', variant: 'destructive' });
       return;
     }
 
-    setIsUpdatingPassword(true);
+    setIsRequestingPasswordReset(true);
+    setPasswordResetRequested(false);
     try {
-      await customFetch('/api/auth/alterar-senha', {
+      await customFetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senhaAtual, novaSenha }),
+        body: JSON.stringify({ email: email.trim() }),
       });
-      toast({ title: 'Senha atualizada com sucesso!' });
-      setSenhaAtual('');
-      setNovaSenha('');
-    } catch {
-      toast({ title: 'Erro ao atualizar senha', variant: 'destructive' });
+      setPasswordResetRequested(true);
+      toast({
+        title: 'Solicitação enviada',
+        description: 'Se este e-mail estiver cadastrado, você receberá as instruções para redefinir sua senha.',
+      });
+    } catch (error) {
+      toast({
+        title: getApiErrorMessage(error, 'Não foi possível solicitar a redefinição. Tente novamente.'),
+        variant: 'destructive',
+      });
     } finally {
-      setIsUpdatingPassword(false);
+      setIsRequestingPasswordReset(false);
     }
   };
 
@@ -160,14 +285,40 @@ export default function Profile() {
     }
   };
 
+  if (isProfileLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center text-[#5a6a80]" role="status">
+        <LoaderCircle size={22} className="mr-2 animate-spin" />
+        Carregando seus dados…
+      </div>
+    );
+  }
+
+  if (profileError || !profileRaw) {
+    return (
+      <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center">
+        <p className="text-[#a13a30]" role="alert">
+          Não foi possível carregar seu perfil. Suas informações não foram alteradas.
+        </p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          className="mt-4 min-h-[44px] rounded-xl bg-[#1b3a60] px-5 font-bold text-white hover:bg-[#24507f]"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#2f7a70]">
-              Conta
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
+              Perfil
             </div>
             <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
               Meu perfil
@@ -195,6 +346,18 @@ export default function Profile() {
             </button>
 
             <button
+              onClick={() => setActiveTab('carteirinha')}
+              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left ${
+                activeTab === 'carteirinha'
+                  ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
+                  : 'text-[#5a6a80] hover:bg-slate-50'
+              }`}
+            >
+              <CreditCard size={18} className={activeTab === 'carteirinha' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
+              Carteirinha
+            </button>
+
+            <button
               onClick={() => setActiveTab('seguranca')}
               className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left ${
                 activeTab === 'seguranca'
@@ -217,42 +380,21 @@ export default function Profile() {
               <Shield size={18} className={activeTab === 'privacidade' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
               Privacidade
             </button>
-
-            <button
-              onClick={() => setActiveTab('conta')}
-              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left ${
-                activeTab === 'conta'
-                  ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
-                  : 'text-[#5a6a80] hover:bg-slate-50'
-              }`}
-            >
-              <FileText size={18} className={activeTab === 'conta' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
-              Conta
-            </button>
           </div>
 
           {/* Right Column: Cards (flex: 1) */}
           <div className="flex-1 min-w-[320px] sm:min-w-[640px] flex flex-col gap-5">
             {/* Card 1: Dados pessoais */}
-            {(activeTab === 'dados' || activeTab === 'conta') && (
+            {activeTab === 'dados' && (
               <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 {/* Avatar & User summary */}
                 <div className="flex gap-5 items-center mb-6">
-                  <div className="w-[88px] h-[88px] rounded-[28px] bg-gradient-to-br from-[#2f7a70] to-[#1b3a60] text-white text-3xl font-extrabold flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-[88px] h-[88px] rounded-[28px] bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-white text-3xl font-extrabold flex items-center justify-center shrink-0 shadow-xs">
                     {initials}
                   </div>
                   <div>
-                    <b className="text-xl text-[#1d2a3d] block">{nome}</b>
+                    <b className="text-xl text-[#1d2a3d] block">{nome || 'Nome não informado'}</b>
                     <div className="text-[#5a6a80] text-sm mt-0.5">{email}</div>
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        onClick={() => toast({ title: 'Foto selecionada' })}
-                        className="min-h-[38px] px-4 rounded-xl inline-flex items-center gap-2 font-bold text-xs bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors cursor-pointer"
-                      >
-                        Alterar foto
-                      </button>
-                    </div>
                   </div>
                 </div>
 
@@ -264,6 +406,9 @@ export default function Profile() {
                       </label>
                       <input
                         type="text"
+                        required
+                        pattern=".*\S.*"
+                        autoComplete="name"
                         value={nome}
                         onChange={(e) => setNome(e.target.value)}
                         className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
@@ -292,6 +437,7 @@ export default function Profile() {
                         onChange={(e) => setSexo(e.target.value)}
                         className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60] bg-white cursor-pointer"
                       >
+                        <option value="">Não informado</option>
                         <option value="Feminino">Feminino</option>
                         <option value="Masculino">Masculino</option>
                         <option value="Outro">Outro</option>
@@ -303,11 +449,43 @@ export default function Profile() {
                       </label>
                       <input
                         type="email"
+                        required
+                        autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => setEmail((value) => value.trim())}
                         className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
                       />
                     </div>
+                  </div>
+
+                  {emailChanged && (
+                    <div>
+                      <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
+                        Senha atual para confirmar o novo e-mail
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        autoComplete="current-password"
+                        value={senhaAtualPerfil}
+                        onChange={(e) => setSenhaAtualPerfil(e.target.value)}
+                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
+                      Contato de emergência
+                    </label>
+                    <input
+                      type="text"
+                      value={contatoEmergencia}
+                      onChange={(e) => setContatoEmergencia(e.target.value)}
+                      placeholder="Nome e telefone do contato"
+                      className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                    />
                   </div>
 
                   <div className="pt-2 text-right">
@@ -324,60 +502,157 @@ export default function Profile() {
               </div>
             )}
 
+            {activeTab === 'carteirinha' && (
+              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
+                    <CreditCard size={18} className="text-[#1b3a60]" />
+                  </div>
+                  <b className="text-base text-[#1d2a3d] flex-1">Carteirinha do plano de saúde</b>
+                </div>
+                <p className="mb-5 ml-11 text-sm leading-relaxed text-[#5a6a80]">
+                  Cadastre os dados manualmente ou envie uma imagem para preencher os campos com ajuda da leitura automática. Confira as informações extraídas.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="plano-saude" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">
+                        Nome do plano ou operadora
+                      </label>
+                      <input
+                        id="plano-saude"
+                        type="text"
+                        autoComplete="organization"
+                        value={planoSaude}
+                        onChange={(event) => setPlanoSaude(event.target.value)}
+                        placeholder="Ex.: nome da operadora"
+                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="numero-carteirinha" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">
+                        Número da carteirinha
+                      </label>
+                      <input
+                        id="numero-carteirinha"
+                        type="text"
+                        autoComplete="off"
+                        value={numeroCarteirinha}
+                        onChange={(event) => setNumeroCarteirinha(event.target.value)}
+                        placeholder="Número impresso no cartão"
+                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveHealthCard()}
+                    disabled={isSavingCard}
+                    className="min-h-[44px] rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white hover:bg-[#24507f] disabled:opacity-50"
+                  >
+                    {isSavingCard && <LoaderCircle size={16} className="mr-2 inline animate-spin" />}
+                    Salvar dados do plano
+                  </button>
+                </div>
+
+                <div className="mt-6 border-t border-[#dde3ec] pt-5">
+                  <h3 className="mb-1 text-sm font-bold text-[#1d2a3d]">Imagem da carteirinha</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-[#5a6a80]">
+                    Aceita PDF, JPG ou PNG de até 10 MB. O envio usa leitura automática e requer consentimento de IA ativado em Privacidade.
+                  </p>
+                  {urlCarteirinha && (
+                    <div className="mb-4 overflow-hidden rounded-xl border border-[#dde3ec] bg-[#f7f9fc]">
+                      {/\.pdf(?:[?#]|$)/i.test(urlCarteirinha) ? (
+                        <a
+                          href={urlCarteirinha}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex min-h-16 items-center gap-2 px-4 text-sm font-semibold text-[#1b3a60] hover:bg-[#f1f4f8]"
+                        >
+                          <FileText size={18} />
+                          Abrir arquivo da carteirinha
+                        </a>
+                      ) : (
+                        <a
+                          href={urlCarteirinha}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="Abrir imagem da carteirinha"
+                        >
+                          <img
+                            src={urlCarteirinha}
+                            alt="Carteirinha de plano de saúde cadastrada"
+                            className="max-h-64 w-full object-contain"
+                          />
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <label className={`min-h-[44px] cursor-pointer rounded-xl border border-[#c6cfdb] bg-white px-4 text-sm font-bold text-[#1b3a60] inline-flex items-center gap-2 hover:bg-[#f7f9fc] ${isUploadingCard ? 'pointer-events-none opacity-50' : ''}`}>
+                      {isUploadingCard
+                        ? <LoaderCircle size={16} className="animate-spin" />
+                        : <Upload size={16} />}
+                      {isUploadingCard ? 'Enviando…' : urlCarteirinha ? 'Substituir imagem' : 'Enviar carteirinha'}
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                        onChange={handleUploadHealthCard}
+                        disabled={isUploadingCard}
+                        className="sr-only"
+                      />
+                    </label>
+                    {urlCarteirinha && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteHealthCard}
+                        disabled={isDeletingCard}
+                        className="min-h-[44px] rounded-xl border border-[#f0b8b2] bg-white px-4 text-sm font-bold text-[#a13a30] inline-flex items-center gap-2 hover:bg-[#fff5f4] disabled:opacity-50"
+                      >
+                        {isDeletingCard
+                          ? <LoaderCircle size={16} className="animate-spin" />
+                          : <Trash2 size={16} />}
+                        Remover imagem
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Card 2: Segurança */}
-            {(activeTab === 'seguranca' || activeTab === 'conta') && (
+            {activeTab === 'seguranca' && (
               <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                    <Lock size={18} className="text-[#1b3a60]" />
+                    <Mail size={18} className="text-[#1b3a60]" />
                   </div>
                   <b className="text-base text-[#1d2a3d] flex-1">Segurança</b>
                 </div>
 
-                <form onSubmit={handleUpdatePassword} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
-                        Senha atual
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        value={senhaAtual}
-                        onChange={(e) => setSenhaAtual(e.target.value)}
-                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
-                        Nova senha
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="No mínimo 8 caracteres"
-                        value={novaSenha}
-                        onChange={(e) => setNovaSenha(e.target.value)}
-                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <button
-                      type="submit"
-                      disabled={isUpdatingPassword}
-                      className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors cursor-pointer"
-                    >
-                      {isUpdatingPassword && <LoaderCircle size={16} className="animate-spin" />}
-                      Atualizar senha
-                    </button>
-                  </div>
-                </form>
+                <p className="mb-4 text-sm leading-relaxed text-[#5a6a80]">
+                  Enviaremos para <strong className="text-[#1d2a3d]">{email}</strong> um link seguro para redefinir sua senha.
+                </p>
+                {passwordResetRequested && (
+                  <p role="status" className="mb-4 rounded-xl bg-[#f1f7ff] p-3 text-sm text-[#1b3a60]">
+                    Se este e-mail estiver cadastrado, você receberá as instruções para redefinir sua senha.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void handleRequestPasswordReset()}
+                  disabled={isRequestingPasswordReset || passwordResetRequested}
+                  className="min-h-[44px] rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {isRequestingPasswordReset && <LoaderCircle size={16} className="mr-2 inline animate-spin" />}
+                  {passwordResetRequested ? 'E-mail solicitado' : 'Enviar link para redefinir senha'}
+                </button>
               </div>
             )}
 
             {/* Card 3: Privacidade e consentimento */}
-            {(activeTab === 'privacidade' || activeTab === 'conta') && (
+            {activeTab === 'privacidade' && (
               <div className="bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 <div className="flex items-center gap-2.5 mb-4">
                   <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
@@ -403,7 +678,7 @@ export default function Profile() {
                       type="button"
                       onClick={() => handleToggleConsent(!consentOcr)}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-                        consentOcr ? 'bg-[#2f7a70]' : 'bg-[#c6cfdb]'
+                        consentOcr ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
                       }`}
                     >
                       <span
@@ -428,7 +703,7 @@ export default function Profile() {
                       type="button"
                       onClick={() => handleToggleConsent(!consentChat)}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-                        consentChat ? 'bg-[#2f7a70]' : 'bg-[#c6cfdb]'
+                        consentChat ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
                       }`}
                     >
                       <span
@@ -443,7 +718,7 @@ export default function Profile() {
             )}
 
             {/* Card 4: Excluir conta Danger Card */}
-            {(activeTab === 'conta' || activeTab === 'dados') && (
+            {activeTab === 'dados' && (
               <div className="bg-[#fff5f4] border border-[#f0b8b2] rounded-[20px] p-7 flex gap-4.5 items-center flex-wrap">
                 <div className="w-12 h-12 rounded-2xl bg-[#fde8e6] flex items-center justify-center shrink-0">
                   <Trash2 size={24} className="text-[#a13a30]" strokeWidth={2} />
@@ -469,7 +744,7 @@ export default function Profile() {
         </div>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
-          Tela de design com dados de exemplo.
+          Os dados e preferências exibidos pertencem à sua conta.
         </p>
       </main>
 

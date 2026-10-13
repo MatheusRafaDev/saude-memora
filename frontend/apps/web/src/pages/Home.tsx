@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
+import { ArrowRight, FileText, Shield } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
@@ -31,18 +32,18 @@ export default function Home() {
 
       <main className="flex-1">
         {/* ── Hero Section ────────────────────────────────────────── */}
-        <section className="relative overflow-hidden bg-[radial-gradient(900px_500px_at_8%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_100%_40%,#e8f4f2,transparent_60%),#fff] px-6 py-20 sm:px-12 md:py-24">
+        <section className="relative overflow-hidden bg-[radial-gradient(900px_500px_at_8%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_100%_40%,#e5eefb,transparent_60%),#fff] px-6 py-20 sm:px-12 md:py-24">
           <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
             <div className="flex-1 min-w-[320px] max-w-[560px]">
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#b9dcd6] bg-[#e8f4f2] px-4 py-2 text-[13px] font-bold text-[#2f7a70]">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#bfd8f7] bg-[#e5eefb] px-4 py-2 text-[13px] font-bold text-[#1f7fe0]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
                 </svg>
                 Seu histórico de saúde, mais organizado
               </span>
 
               <h1 className="mt-6 text-[42px] sm:text-[56px] lg:text-[68px] font-extrabold leading-[1.03] tracking-[-0.045em] text-[#1d2a3d]">
-                Cuidar da sua saúde também é <span className="text-[#2f7a70]">ter sua história por perto.</span>
+                Cuidar da sua saúde também é <span className="text-[#1f7fe0]">ter sua história por perto.</span>
               </h1>
 
               <p className="mt-6 text-[18px] sm:text-[20px] leading-[1.65] text-[#5a6a80]">
@@ -70,19 +71,19 @@ export default function Home() {
 
               <div className="mt-9 flex flex-wrap gap-7 text-[14px] font-semibold text-[#5a6a80]">
                 <span className="flex items-center gap-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
                   </svg>
                   Espaço pessoal
                 </span>
                 <span className="flex items-center gap-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
                   </svg>
                   Documentos reunidos
                 </span>
                 <span className="flex items-center gap-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12l4 4 10-10" />
                   </svg>
                   Você confere tudo
@@ -90,27 +91,29 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Hero Interactive Mockup Card */}
+            {/* Product overview without invented patient records. */}
             <div className="relative flex-1 min-w-[340px] max-w-[500px]">
               <div className="overflow-hidden rounded-[28px] border border-[#dde3ec] bg-white shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)]">
                 <div className="flex items-center gap-2 border-b border-[#dde3ec] bg-[#f1f4f8] px-5 py-3.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-[#e7a9a0]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[#ecd08a]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#a8d3b5]" />
-                  <span className="ml-3 text-[12px] text-[#5a6a80]">Visão geral · dados de exemplo</span>
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#7cc4e6]" />
+                  <span className="ml-3 text-[12px] text-[#5a6a80]">Seu espaço pessoal</span>
                 </div>
 
                 <div className="p-7">
-                  <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2f7a70]">
-                    SEU ESPAÇO DE SAÚDE
+                  <div className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f7fe0]">
+                    ACESSO PESSOAL
                   </div>
-                  <div className="mt-1 mb-4 text-[26px] font-extrabold tracking-[-0.03em]">Olá, Ana</div>
+                  <div className="mt-1 mb-4 text-[26px] font-extrabold tracking-[-0.03em]">Seu histórico, no seu espaço</div>
+                  <p className="mb-4 text-sm leading-relaxed text-[#5a6a80]">
+                    Entre na sua conta para consultar os dados e documentos que você cadastrou.
+                  </p>
 
                   <div className="mb-3 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-[#fde8e6] px-2.5 py-1 text-[12px] font-bold text-[#a13a30]">O+</span>
-                    <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">34 anos</span>
-                    <span className="rounded-full bg-[#fdf3d8] px-2.5 py-1 text-[12px] font-bold text-[#6b4208]">2 alergias</span>
-                    <span className="rounded-full bg-[#e8f4f2] px-2.5 py-1 text-[12px] font-bold text-[#2f7a70]">5 documentos</span>
+                    <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Documentos</span>
+                    <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Ficha médica</span>
+                    <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1f7fe0]">Acesso seguro</span>
                   </div>
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
@@ -120,10 +123,10 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-bold truncate">Receita · Dr. Silva</div>
-                      <div className="text-[12px] text-[#5a6a80]">Pronto</div>
+                      <div className="text-[14px] font-bold truncate">Documentos de saúde</div>
+                      <div className="text-[12px] text-[#5a6a80]">Adicione os documentos que deseja organizar</div>
                     </div>
-                    <span className="rounded-full bg-[#e6f4ec] px-2.5 py-1 text-[12px] font-bold text-[#1f7a4d]">Pronto</span>
+                    <FileText size={18} className="text-[#1b3a60]" />
                   </div>
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
@@ -133,10 +136,10 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-bold truncate">Hemograma completo</div>
-                      <div className="text-[12px] text-[#5a6a80]">Revisar dados</div>
+                      <div className="text-[14px] font-bold truncate">Ficha médica</div>
+                      <div className="text-[12px] text-[#5a6a80]">Informações cadastradas por você</div>
                     </div>
-                    <span className="rounded-full bg-[#fdf3d8] px-2.5 py-1 text-[12px] font-bold text-[#6b4208]">Revisar</span>
+                    <Shield size={18} className="text-[#1b3a60]" />
                   </div>
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
@@ -146,24 +149,24 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-bold truncate">Laudo de imagem</div>
-                      <div className="text-[12px] text-[#5a6a80]">Lendo arquivo…</div>
+                      <div className="text-[14px] font-bold truncate">Histórico organizado</div>
+                      <div className="text-[12px] text-[#5a6a80]">Consulte o que estiver salvo na sua conta</div>
                     </div>
-                    <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1b3a60]">Processando 60%</span>
+                    <ArrowRight size={18} className="text-[#1b3a60]" />
                   </div>
                 </div>
               </div>
 
               {/* Floating review card */}
               <div className="absolute -bottom-6 -left-6 flex items-center gap-3 rounded-[18px] border border-[#dde3ec] bg-white p-3.5 sm:px-5 sm:py-4 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)] animate-in fade-in zoom-in-95">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#e6f4ec]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f7a4d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#e5eefb]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12l4 4 10-10" />
                   </svg>
                 </div>
                 <div>
-                  <b className="text-[14px] text-[#1d2a3d]">Exame conferido</b>
-                  <div className="text-[12px] text-[#5a6a80]">Revisado por você</div>
+                  <b className="text-[14px] text-[#1d2a3d]">Você no controle</b>
+                  <div className="text-[12px] text-[#5a6a80]">Revise antes de confirmar</div>
                 </div>
               </div>
             </div>
@@ -175,8 +178,8 @@ export default function Home() {
           <div className="mx-auto max-w-[1140px]">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-start gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
                   </svg>
                 </div>
@@ -187,8 +190,8 @@ export default function Home() {
               </div>
 
               <div className="flex items-start gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
                   </svg>
                 </div>
@@ -199,8 +202,8 @@ export default function Home() {
               </div>
 
               <div className="flex items-start gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12l4 4 10-10" />
                   </svg>
                 </div>
@@ -211,8 +214,8 @@ export default function Home() {
               </div>
 
               <div className="flex items-start gap-3.5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e8f4f2]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13" />
                   </svg>
                 </div>
@@ -228,7 +231,7 @@ export default function Home() {
         {/* ── Como funciona (3 Steps) ─────────────────────────────── */}
         <section className="border-b border-[#dde3ec] bg-[#f1f4f8] px-6 py-20 sm:px-12 md:py-24">
           <div className="mx-auto max-w-[1140px]">
-            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Como funciona</div>
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Como funciona</div>
             <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
               Do papel ao histórico, em três passos.
             </h2>
@@ -268,10 +271,10 @@ export default function Home() {
                   A plataforma organiza as informações lidas e você revisa e corrige o que precisar.
                 </p>
                 <div className="flex h-11 items-center gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
-                  <span>Medicamento · Dipirona 500 mg</span>
+                  <span>Informações extraídas do documento</span>
                 </div>
                 <div className="mt-2 flex h-11 items-center justify-between gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
-                  <span>Posologia · a cada 6 horas</span>
+                  <span>Confira e corrija os dados</span>
                   <span className="rounded-full bg-[#fdf3d8] px-2.5 py-0.5 text-[11px] font-bold text-[#6b4208]">
                     Revisar
                   </span>
@@ -293,12 +296,12 @@ export default function Home() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a6a80" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M11 5a6 6 0 100 12 6 6 0 000-12zM16 16l4 4" />
                   </svg>
-                  <span>hemograma</span>
+                  <span>Busque nos seus documentos</span>
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  <span className="rounded-full bg-[#e8f4f2] px-2.5 py-1 text-[12px] font-bold text-[#2f7a70]">Exame</span>
-                  <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Últimos 6 meses</span>
-                  <span className="rounded-full bg-[#e6f4ec] px-2.5 py-1 text-[12px] font-bold text-[#1f7a4d]">Pronto</span>
+                  <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1f7fe0]">Tipo</span>
+                  <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Período</span>
+                  <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1b3a60]">Status</span>
                 </div>
               </div>
             </div>
@@ -308,7 +311,7 @@ export default function Home() {
         {/* ── Recursos Bento Grid ─────────────────────────────────── */}
         <section className="bg-white px-6 py-20 sm:px-12 md:py-24">
           <div className="mx-auto max-w-[1140px]">
-            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Recursos</div>
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Recursos</div>
             <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
               Tudo organizado em um só lugar
             </h2>
@@ -333,9 +336,9 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-[#b9dcd6] bg-[#e8f4f2] p-9 md:col-span-2">
+              <div className="rounded-[28px] border border-[#bfd8f7] bg-[#e5eefb] p-9 md:col-span-2">
                 <div className="flex h-13 w-13 items-center justify-center rounded-[17px] bg-white shadow-sm">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
                   </svg>
                 </div>
@@ -403,7 +406,7 @@ export default function Home() {
               </div>
 
               <div className="mt-10 flex-1 rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
-                <div className="text-[12px] font-bold uppercase text-[#2f7a70]">DADOS LIDOS</div>
+                <div className="text-[12px] font-bold uppercase text-[#1f7fe0]">DADOS LIDOS</div>
                 <div className="mt-3.5 space-y-2">
                   <div className="rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#5a6a80]">
                     Exame · Hemograma
@@ -419,7 +422,7 @@ export default function Home() {
             </div>
 
             <div className="flex-1 min-w-[340px]">
-              <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Você no controle</div>
+              <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Você no controle</div>
               <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
                 Original ao lado dos dados lidos.
               </h2>
@@ -434,7 +437,7 @@ export default function Home() {
                   'Os dados podem conter erros: confira sempre',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-[16px] font-medium text-[#1d2a3d]">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2f7a70] text-white">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1f7fe0] text-white">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M5 12l4 4 10-10" />
                       </svg>
@@ -451,7 +454,7 @@ export default function Home() {
         <section className="bg-white px-6 py-20 sm:px-12 md:py-24">
           <div className="mx-auto flex max-w-[1140px] flex-wrap items-center gap-16">
             <div className="flex-1 min-w-[340px]">
-              <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Para toda a família</div>
+              <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Para toda a família</div>
               <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
                 Cuidado compartilhado, tudo ao seu alcance.
               </h2>
@@ -466,7 +469,7 @@ export default function Home() {
                   'Você controla o que adiciona à sua conta',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-[16px] font-medium text-[#1d2a3d]">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2f7a70] text-white">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1f7fe0] text-white">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M5 12l4 4 10-10" />
                       </svg>
@@ -487,7 +490,7 @@ export default function Home() {
             </div>
 
             <div className="flex-1 min-w-[340px]">
-              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e8f4f2] to-[#dfe9f5] p-6 shadow-sm flex items-center justify-center">
+              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-6 shadow-sm flex items-center justify-center">
                 <img
                   src="/home-illustration.svg"
                   alt="Ilustração família e saúde"
@@ -549,7 +552,7 @@ export default function Home() {
         {/* ── FAQ (Perguntas frequentes) ──────────────────────────── */}
         <section className="bg-white px-6 py-20 sm:px-12 md:py-24">
           <div className="mx-auto max-w-[1140px]">
-            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#2f7a70]">Perguntas frequentes</div>
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Perguntas frequentes</div>
             <h2 className="mt-3 text-[34px] sm:text-[42px] font-extrabold leading-[1.1] tracking-[-0.035em] text-[#1d2a3d]">
               Antes de começar
             </h2>
@@ -565,7 +568,7 @@ export default function Home() {
                       className="flex w-full items-center justify-between text-left text-[18px] sm:text-[19px] font-bold text-[#1d2a3d] transition-colors hover:text-[#1b3a60]"
                     >
                       <span>{faq.q}</span>
-                      <span className="text-[24px] font-normal text-[#2f7a70] transition-transform duration-200">
+                      <span className="text-[24px] font-normal text-[#1f7fe0] transition-transform duration-200">
                         {isOpen ? '−' : '+'}
                       </span>
                     </button>
@@ -613,7 +616,7 @@ export default function Home() {
         </section>
       </main>
 
-      <PublicPageFooter variant="home" />
+      <PublicPageFooter />
     </div>
   );
 }

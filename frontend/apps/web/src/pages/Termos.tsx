@@ -25,9 +25,9 @@ export default function Termos() {
       <PublicPageHeader />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e8f4f2] px-6 sm:px-12 py-16 border-b border-[#dde3ec]">
+      <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 sm:px-12 py-16 border-b border-[#dde3ec]">
         <div className="max-w-[1000px] mx-auto">
-          <div className="text-xs font-bold tracking-[0.16em] text-[#2f7a70] uppercase">
+          <div className="text-xs font-bold tracking-[0.16em] text-[#1f7fe0] uppercase">
             Documento Legal
           </div>
           <h1 className="mt-2.5 mb-2 text-4xl sm:text-5xl font-extrabold tracking-[-0.04em] text-[#1b3a60]">

@@ -1,28 +1,12 @@
 import { Link } from 'wouter';
+import { BrandWordmark } from '@/components/BrandWordmark';
 
-export function PublicPageFooter({ variant = 'home' }: { variant?: 'home' | 'compact' }) {
-  if (variant === 'compact') {
-    return (
-      <footer className="border-t border-[#dde3ec] bg-[#f1f4f8] px-6 py-7 sm:px-12 text-[13px] text-[#5a6a80]">
-        <div className="mx-auto flex max-w-[1140px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span>Organização e acesso às suas informações de saúde.</span>
-          <div className="flex gap-4">
-            <Link href="/privacidade" className="hover:text-[#1b3a60]">Privacidade</Link>
-            <Link href="/termos" className="hover:text-[#1b3a60]">Termos de uso</Link>
-            <span>© {new Date().getFullYear()} SaúdeMemora</span>
-          </div>
-        </div>
-      </footer>
-    );
-  }
-
+export function PublicPageFooter() {
   return (
-    <footer className="border-t border-[#dde3ec] bg-[#f1f4f8] p-8 sm:p-12">
-      <div className="mx-auto flex max-w-[1140px] flex-wrap justify-between gap-12 text-[#5a6a80]">
-        <div className="max-w-[300px]">
-          <div className="text-[18px] font-extrabold text-[#1d2a3d]">
-            saúde<span className="font-semibold text-[#1f7fe0]">memora</span>
-          </div>
+    <footer className="border-t border-[#dde3ec] bg-[#f1f4f8] px-6 py-10 sm:px-8 sm:py-12">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 text-[#5a6a80] sm:gap-x-8 lg:grid-cols-[44%_21%_24%_11%] lg:gap-x-0 lg:gap-y-0">
+        <div className="col-span-2 max-w-[300px] lg:col-span-1">
+          <BrandWordmark className="text-[18px] text-[#1d2a3d]" />
           <p className="mt-3 text-[14px] leading-relaxed">
             Organização e acesso às suas informações de saúde.
           </p>
@@ -48,7 +32,7 @@ export function PublicPageFooter({ variant = 'home' }: { variant?: 'home' | 'com
           </div>
         </div>
 
-        <div>
+        <div className="col-span-2 lg:col-span-1">
           <b className="text-[14px] font-bold text-[#1d2a3d]">Criador</b>
           <div className="mt-2.5 text-[14px] text-[#1d2a3d] font-semibold">Matheus Rafael</div>
           <div className="mt-2.5 flex items-center gap-2 text-[14px]">
@@ -73,7 +57,7 @@ export function PublicPageFooter({ variant = 'home' }: { variant?: 'home' | 'com
         </div>
       </div>
 
-      <div className="mx-auto mt-8 max-w-[1140px] border-t border-[#dde3ec] pt-5 text-[13px] text-[#5a6a80]">
+      <div className="mx-auto mt-8 max-w-[1200px] border-t border-[#dde3ec] pt-5 text-[13px] text-[#5a6a80]">
         © {new Date().getFullYear()} SaúdeMemora
       </div>
     </footer>

@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { customFetch } from '@workspace/api-client-react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
+import { BrandWordmark } from '@/components/BrandWordmark';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 
 export default function ResetPassword() {
   const [, setLocation] = useLocation();
@@ -55,27 +57,25 @@ export default function ResetPassword() {
       });
       setMessage('Senha alterada com sucesso! Redirecionando...');
       setTimeout(() => setLocation('/entrar'), 2000);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Token inválido ou expirado. Solicite nova recuperação.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Token inválido ou expirado. Solicite nova recuperação.'));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] font-sans text-[#1d2a3d] flex flex-col justify-center items-center p-6 bg-[radial-gradient(800px_500px_at_20%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_90%_90%,#e8f4f2,transparent_60%),#fff]">
+    <div className="min-h-screen bg-[#f7f9fc] font-sans text-[#1d2a3d] flex flex-col justify-center items-center p-6 bg-[radial-gradient(800px_500px_at_20%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_90%_90%,#e5eefb,transparent_60%),#fff]">
       {/* Brand */}
       <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[20px] text-[#1b3a60] tracking-[-0.03em] mb-8">
-        <img src="/logo.svg" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
-        <span>
-          saúde<span className="font-semibold text-[#2f7a70]">memora</span>
-        </span>
+        <img src="/logo.png" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
+        <BrandWordmark />
       </Link>
 
       {/* Card */}
       <div className="w-full max-w-[460px] rounded-[28px] border border-[#dde3ec] bg-white p-9 shadow-[0_30px_70px_-40px_rgba(27,58,96,0.4)]">
-        <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#e8f4f2]">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2f7a70" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#e5eefb]">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
           </svg>
         </div>
@@ -88,12 +88,12 @@ export default function ResetPassword() {
         </p>
 
         {error && (
-          <div className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
+          <div role="alert" className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
             {error}
           </div>
         )}
         {message && (
-          <div className="mb-5 rounded-xl border border-[#b9dcd6] bg-[#e8f4f2] p-3.5 text-[14px] text-[#2f7a70]">
+          <div className="mb-5 rounded-xl border border-[#bfd8f7] bg-[#e5eefb] p-3.5 text-[14px] text-[#1f7fe0]">
             {message}
           </div>
         )}
@@ -105,6 +105,7 @@ export default function ResetPassword() {
               <input
                 type="text"
                 required
+                autoComplete="off"
                 placeholder="Insira o código recebido"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
@@ -119,6 +120,8 @@ export default function ResetPassword() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
+                minLength={8}
+                autoComplete="new-password"
                 placeholder="••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -136,10 +139,10 @@ export default function ResetPassword() {
 
           {/* Strength Bars */}
           <div className="flex gap-1.5 pt-1">
-            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 1 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
-            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 2 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
-            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 3 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
-            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 4 ? 'bg-[#2f7a70]' : 'bg-[#dde3ec]'}`} />
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 1 ? 'bg-[#1f7fe0]' : 'bg-[#dde3ec]'}`} />
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 2 ? 'bg-[#1f7fe0]' : 'bg-[#dde3ec]'}`} />
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 3 ? 'bg-[#1f7fe0]' : 'bg-[#dde3ec]'}`} />
+            <i className={`h-1.5 flex-1 rounded-full transition-colors ${strength >= 4 ? 'bg-[#1f7fe0]' : 'bg-[#dde3ec]'}`} />
           </div>
 
           <label className="block pt-2">
@@ -147,6 +150,8 @@ export default function ResetPassword() {
             <input
               type={showPassword ? 'text' : 'password'}
               required
+              minLength={8}
+              autoComplete="new-password"
               placeholder="••••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
