@@ -237,7 +237,7 @@
 /* Animations */
 .page-transition-enter {
   animation: page-transition-enter 0.32s cubic-bezier(.16, 1, .3, 1) both;
-  will-change: transform, opacity;
+  will-change: opacity;
 }
 .page-enter { animation: page-enter 0.4s cubic-bezier(.16,1,.3,1) both; }
 .fade-in    { animation: fade-in 0.35s ease both; }
@@ -256,11 +256,9 @@
 @keyframes page-transition-enter {
   0% {
     opacity: 0;
-    transform: translateY(10px) scale(0.996);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
