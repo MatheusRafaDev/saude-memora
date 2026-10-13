@@ -85,7 +85,7 @@ export default function Dashboard() {
     typeof value === 'string' && value.trim() ? value.trim() : 'Não informado';
   const yesNoOrUnknown = (value: unknown) =>
     value === true ? 'Sim' : value === false ? 'Não' : 'Não informado';
-  const clinicalSummary = [
+  const clinicalSummary = () => [
     'RESUMO DE SAÚDE PARA CONSULTA',
     `Paciente: ${valueOrUnknown(user.nome)}`,
     `Nascimento: ${birthDateFormatted}${age !== null ? ` (${age} anos)` : ''}`,
@@ -110,7 +110,7 @@ export default function Dashboard() {
 
   const copyClinicalSummary = async () => {
     try {
-      await navigator.clipboard.writeText(clinicalSummary);
+      await navigator.clipboard.writeText(clinicalSummary());
       setSummaryCopied(true);
       window.setTimeout(() => setSummaryCopied(false), 2500);
     } catch {
