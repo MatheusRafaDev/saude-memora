@@ -32,6 +32,7 @@ import type {
   CardResponse,
   CatalogSearchResponseOfCid10Registro,
   CatalogSearchResponseOfCnesRegistro,
+  ChatHistoryDaysResponse,
   ChatHistoryResponse,
   ChatRequest,
   ChatResponse,
@@ -52,6 +53,7 @@ import type {
   GetApiCatalogoCid10Params,
   GetApiCatalogoCnesParams,
   GetApiCatalogoMedicamentosParams,
+  GetApiChatHistoryParams,
   GetApiExamesSerieParams,
   GetApiReportsGenerateParams,
   HealthResponse,
@@ -914,17 +916,24 @@ export function useGetApiEmergenciaToken<TData = Awaited<ReturnType<typeof getAp
 
 
 
-export const getGetApiChatHistoryUrl = () => {
+export const getGetApiChatHistoryUrl = (params?: GetApiChatHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/chat/history`
+  return stringifiedParams.length > 0 ? `/api/chat/history?${stringifiedParams}` : `/api/chat/history`
 }
 
-export const getApiChatHistory = async ( options?: Parameters<typeof customFetch>[1]): Promise<ChatHistoryResponse> => {
+export const getApiChatHistory = async (params?: GetApiChatHistoryParams, options?: Parameters<typeof customFetch>[1]): Promise<ChatHistoryResponse> => {
 
-  return customFetch<ChatHistoryResponse>(getGetApiChatHistoryUrl(),
+  return customFetch<ChatHistoryResponse>(getGetApiChatHistoryUrl(params),
   {
     ...options,
     method: 'GET'
@@ -937,23 +946,23 @@ export const getApiChatHistory = async ( options?: Parameters<typeof customFetch
 
 
 
-export const getGetApiChatHistoryQueryKey = () => {
+export const getGetApiChatHistoryQueryKey = (params?: GetApiChatHistoryParams,) => {
     return [
-    `/api/chat/history`
+    `/api/chat/history`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetApiChatHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getGetApiChatHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(params?: GetApiChatHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetApiChatHistoryQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetApiChatHistoryQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiChatHistory>>> = ({ signal }) => getApiChatHistory({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiChatHistory>>> = ({ signal }) => getApiChatHistory(params, { signal, ...requestOptions });
 
 
 
@@ -967,7 +976,7 @@ export type GetApiChatHistoryQueryError = ErrorType<unknown>
 
 
 export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>> & Pick<
+ params: undefined |  GetApiChatHistoryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiChatHistory>>,
           TError,
@@ -977,7 +986,7 @@ export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiCha
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>> & Pick<
+ params?: GetApiChatHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiChatHistory>>,
           TError,
@@ -987,16 +996,111 @@ export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiCha
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ params?: GetApiChatHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiChatHistory<TData = Awaited<ReturnType<typeof getApiChatHistory>>, TError = ErrorType<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ params?: GetApiChatHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetApiChatHistoryQueryOptions(options)
+  const queryOptions = getGetApiChatHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetApiChatHistoryDaysUrl = () => {
+
+
+
+
+  return `/api/chat/history/days`
+}
+
+export const getApiChatHistoryDays = async ( options?: Parameters<typeof customFetch>[1]): Promise<ChatHistoryDaysResponse> => {
+
+  return customFetch<ChatHistoryDaysResponse>(getGetApiChatHistoryDaysUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiChatHistoryDaysQueryKey = () => {
+    return [
+    `/api/chat/history/days`
+    ] as const;
+    }
+
+
+export const getGetApiChatHistoryDaysQueryOptions = <TData = Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiChatHistoryDaysQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiChatHistoryDays>>> = ({ signal }) => getApiChatHistoryDays({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiChatHistoryDaysQueryResult = NonNullable<Awaited<ReturnType<typeof getApiChatHistoryDays>>>
+export type GetApiChatHistoryDaysQueryError = ErrorType<unknown>
+
+
+export function useGetApiChatHistoryDays<TData = Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiChatHistoryDays>>,
+          TError,
+          Awaited<ReturnType<typeof getApiChatHistoryDays>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiChatHistoryDays<TData = Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiChatHistoryDays>>,
+          TError,
+          Awaited<ReturnType<typeof getApiChatHistoryDays>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiChatHistoryDays<TData = Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetApiChatHistoryDays<TData = Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiChatHistoryDays>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiChatHistoryDaysQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

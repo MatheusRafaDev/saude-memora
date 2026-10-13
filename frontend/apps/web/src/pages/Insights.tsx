@@ -43,7 +43,7 @@ function field(record: ApiRecord, key: string): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }
 
-export default function Insights() {
+export default function Insights({ embedded = false }: { embedded?: boolean }) {
   const [activeTab, setActiveTab] = useState<InsightTab>('relatorio');
   const [months, setMonths] = useState(6);
   const [report, setReport] = useState('');
@@ -158,8 +158,8 @@ export default function Insights() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-[1240px] px-5 pb-16 pt-9 sm:px-10">
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
+    <div className={embedded ? 'w-full' : 'mx-auto w-full max-w-[1240px] px-5 pb-16 pt-9 sm:px-10'}>
+      {!embedded && <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Seu histórico de saúde</div>
           <h1 className="mb-0 mt-2 text-3xl font-extrabold text-[#1b3a60] sm:text-4xl">Análises</h1>
@@ -168,7 +168,7 @@ export default function Insights() {
         <Link href="/documentos" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] hover:bg-[#f7f9fc]">
           <FileBarChart size={16} /> Ver documentos
         </Link>
-      </header>
+      </header>}
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InsightTab)}>
         <TabsList className="mb-5 flex h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-[#dde3ec] bg-white p-1">
@@ -293,6 +293,6 @@ export default function Insights() {
           </section>
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   );
 }

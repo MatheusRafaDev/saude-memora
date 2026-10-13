@@ -28,7 +28,8 @@ public static class ReprocessamentoEndpoints
             var doc = await repo.GetByIdAsync(id);
             if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
-            if (doc.Status == "processing") return Results.BadRequest(new { message = "Documento já está em processamento." });
+            if (doc.Status != "failed")
+                return Results.Conflict(new { id, status = doc.Status, message = "Apenas documentos com falha podem ser reprocessados." });
             if (doc.ReprocessCount >= 5) return Results.BadRequest(new { message = "Limite de reprocessamentos atingido para este documento." });
 
             doc.Status = "pending";

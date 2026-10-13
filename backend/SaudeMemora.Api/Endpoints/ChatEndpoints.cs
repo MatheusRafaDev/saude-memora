@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Domain.Interfaces;
+using SaudeMemora.Domain.Entities;
 using SaudeMemora.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using System.Text;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using System.Globalization;
 
 namespace SaudeMemora.Api.Endpoints;
 
@@ -26,6 +28,7 @@ public static class ChatEndpoints
     public static void MapChatEndpoints(this WebApplication app)
     {
         app.MapGet("/api/chat/history", async (
+            [FromQuery(Name = "date")] string? chatDate,
             ClaimsPrincipal user,
             IChatHistoryRepository chatHistoryRepo,
             CancellationToken cancellationToken) =>
@@ -33,15 +36,37 @@ public static class ChatEndpoints
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Results.Unauthorized();
 
-            var history = await chatHistoryRepo.GetAllByPacienteIdAsync(userId, cancellationToken);
+            var date = string.IsNullOrWhiteSpace(chatDate)
+                ? DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                : chatDate;
+            if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+                return Results.BadRequest(new { message = "Data inválida. Use o formato yyyy-MM-dd." });
+
+            var history = await chatHistoryRepo.GetByPacienteIdAndDayAsync(userId, date, cancellationToken);
             var messages = history.SelectMany(item => new[]
             {
-                new ChatHistoryMessage(item.Id + "-user", "user", item.Pergunta, item.CriadoEm),
-                new ChatHistoryMessage(item.Id + "-assistant", "assistant", item.Resposta, item.CriadoEm)
+                new ChatHistoryMessage(item.Id + "-user", "user", item.Pergunta, item.CriadoEm, item.SessaoId, Array.Empty<ChatCitation>()),
+                new ChatHistoryMessage(item.Id + "-assistant", "assistant", item.Resposta, item.CriadoEm, item.SessaoId,
+                    (item.Citacoes ?? []).Select(citation => new ChatCitation(citation.Id, citation.Titulo, citation.Data)).ToArray())
             });
 
-            return Results.Ok(new ChatHistoryResponse(messages.ToArray()));
+            return Results.Ok(new ChatHistoryResponse(date, messages.ToArray()));
         }).Produces<ChatHistoryResponse>().RequireAuthorization();
+
+        app.MapGet("/api/chat/history/days", async (
+            ClaimsPrincipal user,
+            IChatHistoryRepository chatHistoryRepo,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Results.Unauthorized();
+
+            var days = await chatHistoryRepo.GetChatDaysByPacienteIdAsync(userId, cancellationToken);
+            return Results.Ok(new ChatHistoryDaysResponse(days.Select(day => new ChatHistoryDay(
+                day.Date,
+                day.MessageCount * 2,
+                day.UpdatedAt)).ToArray()));
+        }).Produces<ChatHistoryDaysResponse>().RequireAuthorization();
 
         app.MapPost("/api/chat", async (
             ChatRequest req,
@@ -62,6 +87,14 @@ public static class ChatEndpoints
 
             if (req.Message.Length > 1000)
                 return Results.BadRequest(new { error = "A pergunta deve ter no máximo 1000 caracteres." });
+
+            var chatDate = string.IsNullOrWhiteSpace(req.ChatDate)
+                ? DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                : req.ChatDate;
+            if (!DateOnly.TryParseExact(chatDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+                return Results.BadRequest(new { message = "Data da conversa inválida. Use o formato yyyy-MM-dd." });
+            if (string.IsNullOrWhiteSpace(req.SessionId) || req.SessionId.Length > 80)
+                return Results.BadRequest(new { message = "Identificador da conversa inválido." });
 
             var groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY")
                 ?? config["GROQ_API_KEY"]
@@ -172,7 +205,7 @@ INSTRUÇÕES DE RESPOSTA:
 - Retorne somente um objeto JSON com as propriedades ""response"" (texto da resposta) e ""citationIds"" (lista de IDs dos documentos que sustentam diretamente a resposta; use lista vazia quando não houver documento relevante). Use somente os IDs fornecidos no contexto.
 ";
 
-            var recentHistory = await chatHistoryRepo.GetRecentByPacienteIdAsync(userId, 10, cancellationToken);
+            var recentHistory = await chatHistoryRepo.GetRecentByPacienteAndSessionAsync(userId, chatDate, req.SessionId, 10, cancellationToken);
             var requestBody = new
             {
                 model = groqModel,
@@ -247,9 +280,19 @@ INSTRUÇÕES DE RESPOSTA:
                 }, statusCode: StatusCodes.Status502BadGateway);
             }
 
+            var savedCitations = docs
+                .Where(document => citationIds.Contains(document.Id, StringComparer.Ordinal))
+                .Select(document => new ChatHistoricoCitacao
+                {
+                    Id = document.Id!,
+                    Titulo = document.Titulo,
+                    Data = document.Data
+                })
+                .ToArray();
+
             try
             {
-                await chatHistoryRepo.SaveExchangeAsync(userId, req.Message, reply, cancellationToken);
+                await chatHistoryRepo.SaveExchangeAsync(userId, chatDate, req.SessionId, req.Message, reply, savedCitations, cancellationToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -262,10 +305,7 @@ INSTRUÇÕES DE RESPOSTA:
 
             return Results.Ok(new ChatResponse(
                 reply,
-                docs
-                    .Where(document => citationIds.Contains(document.Id, StringComparer.Ordinal))
-                    .Select(document => new ChatCitation(document.Id!, document.Titulo, document.Data))
-                    .ToArray()));
+                savedCitations.Select(citation => new ChatCitation(citation.Id, citation.Titulo, citation.Data)).ToArray()));
         }).Produces<ChatResponse>().RequireAuthorization().RequireRateLimiting("chat");
     }
 }
@@ -273,9 +313,13 @@ INSTRUÇÕES DE RESPOSTA:
 public class ChatRequest
 {
     public string Message { get; set; } = string.Empty;
+    public string ChatDate { get; set; } = string.Empty;
+    public string SessionId { get; set; } = string.Empty;
 }
 
-public record ChatHistoryMessage(string Id, string Role, string Content, DateTime CreatedAt);
-public record ChatHistoryResponse(ChatHistoryMessage[] Messages);
+public record ChatHistoryMessage(string Id, string Role, string Content, DateTime CreatedAt, string? SessionId, ChatCitation[] Citations);
+public record ChatHistoryResponse(string Date, ChatHistoryMessage[] Messages);
+public record ChatHistoryDay(string Date, int MessageCount, DateTime UpdatedAt);
+public record ChatHistoryDaysResponse(ChatHistoryDay[] Days);
 public record ChatCitation(string Id, string Titulo, string Data);
 public record ChatResponse(string Response, ChatCitation[] Citations);

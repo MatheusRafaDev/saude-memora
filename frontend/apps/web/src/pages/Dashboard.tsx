@@ -24,6 +24,7 @@ import {
   useGetApiFichaMedicaMe,
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
+import Insights from '@/pages/Insights';
 
 function uniqueLabels(values: unknown[]): string[] {
   const seen = new Set<string>();
@@ -176,13 +177,20 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <button
-            onClick={() => triggerUploadModal()}
-            className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors shadow-sm cursor-pointer"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            Adicionar documento
-          </button>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Link
+              href="/anamnese"
+              className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm font-bold text-[#1b3a60] hover:bg-[#f1f4f8] lg:hidden"
+            >
+              Anamnese
+            </Link>
+            <button
+              onClick={() => triggerUploadModal()}
+              className="min-h-[44px] flex-1 rounded-xl bg-[#1b3a60] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#24507f] sm:flex-none sm:px-5"
+            >
+              <span className="inline-flex items-center gap-2"><Plus size={16} strokeWidth={2.5} />Adicionar documento</span>
+            </button>
+          </div>
         </div>
 
         {/* Alerts are only shown when the API reports items that need attention. */}
@@ -408,7 +416,7 @@ export default function Dashboard() {
             {/* CARTEIRINHA DE SAÚDE */}
             <div className="bg-gradient-to-br from-[#1b3a60] to-[#24507f] text-white rounded-[24px] p-6 shadow-md relative overflow-hidden">
               <div className="flex justify-between items-center text-xs tracking-[0.14em] font-bold text-[#9fc3ea]">
-                <span>CARTEIRINHA DE SAÚDE</span>
+                <span>MEU PERFIL</span>
                 <span className="opacity-80">DIGITAL</span>
               </div>
 
@@ -450,13 +458,13 @@ export default function Dashboard() {
                 onClick={() => setIsCarteirinhaOpen(true)}
                 className="mt-4 w-full py-2 bg-white/10 hover:bg-white/15 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Maximize2 size={13} /> Ver detalhes da carteirinha
+                <Maximize2 size={13} /> Ver dados completos do perfil
               </button>
               <Link
                 href="/perfil"
                 className="mt-2 block text-center text-xs font-bold text-[#c9d6e8] underline-offset-2 hover:text-white hover:underline"
               >
-                Cadastrar ou atualizar carteirinha
+                Editar meu perfil
               </Link>
             </div>
 
@@ -483,6 +491,14 @@ export default function Dashboard() {
 
           </div>
         </div>
+
+        <section className="mt-10">
+          <div className="mb-4">
+            <h2 className="m-0 text-2xl font-extrabold text-[#1b3a60]">Análise do histórico</h2>
+            <p className="mb-0 mt-1 text-sm text-[#5a6a80]">Relatórios, tendências de exames e consultas a referências clínicas.</p>
+          </div>
+          <Insights embedded />
+        </section>
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
           Informações organizadas com segurança para o seu acompanhamento contínuo.

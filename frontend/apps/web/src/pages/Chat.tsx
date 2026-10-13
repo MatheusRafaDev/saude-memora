@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link } from 'wouter';
 import {
   Send,
@@ -6,8 +6,11 @@ import {
   FileText,
   AlertTriangle,
   MessageSquare,
+  Plus,
+  CalendarDays,
+  ChevronLeft,
 } from 'lucide-react';
-import { customFetch, postApiChat, useGetApiDocuments } from '@workspace/api-client-react';
+import { customFetch } from '@workspace/api-client-react';
 import ReactMarkdown from 'react-markdown';
 
 type Citation = {
@@ -20,16 +23,16 @@ type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  createdAt?: string;
+  sessionId?: string;
   citations?: Citation[];
   sendFailed?: boolean;
 };
 
-type ChatDocument = {
-  id: string;
-  titulo?: string;
-  tipo?: string;
-  criadoEm?: string;
-  createdAt?: string;
+type ChatDay = {
+  date: string;
+  messageCount: number;
+  updatedAt: string;
 };
 
 const SUGGESTIONS = [
@@ -44,82 +47,149 @@ const SIDEBAR_PROMPTS = [
   'Quando vence minha última receita?',
 ];
 
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function createSessionId() {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function formatDateLabel(dateKey: string) {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (dateKey === getLocalDateKey(today)) return 'Hoje';
+  if (dateKey === getLocalDateKey(yesterday)) return 'Ontem';
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+}
+
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingDays, setIsLoadingDays] = useState(true);
   const [historyError, setHistoryError] = useState(false);
+  const [daysError, setDaysError] = useState(false);
   const [sendError, setSendError] = useState(false);
-  const {
-    data: documentsRaw,
-    isLoading: isLoadingDocuments,
-    isError: documentsError,
-  } = useGetApiDocuments();
+  const [historyDays, setHistoryDays] = useState<ChatDay[]>([]);
+  const [chatDate, setChatDate] = useState(getLocalDateKey());
+  const [sessionId, setSessionId] = useState(createSessionId);
+  const [selectedArchiveDate, setSelectedArchiveDate] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const documents = Array.isArray(documentsRaw) ? documentsRaw as ChatDocument[] : [];
-  const hasInvalidDocumentsResponse = documentsRaw !== undefined && !Array.isArray(documentsRaw);
+  const archiveRequestId = useRef(0);
+  const isArchiveView = selectedArchiveDate !== null;
+  const latestAssistantMessage = useMemo(
+    () => [...messages].reverse().find((message) => message.role === 'assistant'),
+    [messages],
+  );
+  const latestCitations = latestAssistantMessage?.citations ?? [];
+  const archiveLabel = useMemo(
+    () => selectedArchiveDate ? formatDateLabel(selectedArchiveDate) : null,
+    [selectedArchiveDate],
+  );
 
-  // Load chat history from API if available
+  const loadDays = async () => {
+    setIsLoadingDays(true);
+    setDaysError(false);
+    try {
+      const result = await customFetch<{ days: ChatDay[] }>('/api/chat/history/days');
+      setHistoryDays(Array.isArray(result?.days) ? result.days : []);
+    } catch {
+      setDaysError(true);
+    } finally {
+      setIsLoadingDays(false);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
-    const loadHistory = async () => {
-      try {
-        const result = await customFetch<{ messages: Message[] }>('/api/chat/history');
-        if (isMounted) {
-          if (!Array.isArray(result?.messages)) {
-            throw new Error('A API retornou um histórico de conversa inválido.');
-          }
-          setMessages(result.messages);
-        }
-      } catch {
-        if (isMounted) setHistoryError(true);
-      } finally {
-        if (isMounted) setIsLoadingHistory(false);
-      }
-    };
-    void loadHistory();
-    return () => {
-      isMounted = false;
-    };
+    void loadDays();
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isLoading]);
 
+  const openArchiveDay = async (date: string) => {
+    if (isLoading) return;
+    const requestId = ++archiveRequestId.current;
+    setSelectedArchiveDate(date);
+    setChatDate(date);
+    setHistoryError(false);
+    setSendError(false);
+    setIsLoadingHistory(true);
+    try {
+      const result = await customFetch<{ messages: Message[] }>(`/api/chat/history?date=${encodeURIComponent(date)}`);
+      if (requestId !== archiveRequestId.current) return;
+      if (!Array.isArray(result?.messages)) {
+        throw new Error('A API retornou um histórico inválido.');
+      }
+      setMessages(result.messages);
+    } catch {
+      if (requestId !== archiveRequestId.current) return;
+      setMessages([]);
+      setHistoryError(true);
+    } finally {
+      if (requestId === archiveRequestId.current) setIsLoadingHistory(false);
+    }
+  };
+
+  const startNewChat = () => {
+    archiveRequestId.current += 1;
+    if (isLoading) return;
+    setMessages([]);
+    setInput('');
+    setChatDate(getLocalDateKey());
+    setSessionId(createSessionId());
+    setSelectedArchiveDate(null);
+    setHistoryError(false);
+    setSendError(false);
+  };
+
   const handleSend = async (messageText?: string) => {
-    const textToSend = (messageText || input).trim();
-    if (!textToSend || isLoading) return;
+    const textToSend = (messageText ?? input).trim();
+    if (!textToSend || isLoading || isArchiveView) return;
 
     setInput('');
     setSendError(false);
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-user`,
       role: 'user',
       content: textToSend,
+      createdAt: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((previous) => [...previous, userMessage]);
     setIsLoading(true);
 
     try {
-      const res = await postApiChat({ message: textToSend });
-      if (typeof res?.response !== 'string' || !res.response.trim()) {
+      const result = await customFetch<{ response: string; citations?: Citation[] }>('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: textToSend, chatDate, sessionId }),
+      });
+      if (typeof result?.response !== 'string' || !result.response.trim()) {
         throw new Error('A API não retornou uma resposta válida.');
       }
 
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: `${Date.now()}-assistant`,
         role: 'assistant',
-        content: res.response,
-        citations: res.citations || [],
+        content: result.response,
+        citations: result.citations || [],
+        createdAt: new Date().toISOString(),
       };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((previous) => [...previous, assistantMessage]);
+      void loadDays();
     } catch {
       setMessages((current) => current.map((message) =>
-        message.id === userMessage.id ? { ...message, sendFailed: true } : message
+        message.id === userMessage.id ? { ...message, sendFailed: true } : message,
       ));
       setSendError(true);
     } finally {
@@ -128,65 +198,107 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
-      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
-        {/* Header Title */}
-        <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
-          <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
+    <div className="min-h-screen bg-[#f7f9fc] font-sans text-[#1d2a3d]">
+      <main className="mx-auto max-w-[1240px] px-3 pb-8 pt-5 sm:px-6 sm:pt-8 lg:px-10 lg:pb-16">
+        <div className="mb-4 flex items-end justify-between gap-3 sm:mb-6">
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0] sm:text-xs">
               Converse com seu histórico
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+            <h1 className="mb-0 mt-1.5 text-2xl font-extrabold tracking-[-0.035em] text-[#1b3a60] sm:mt-2 sm:text-4xl">
               Chat IA
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
-              Pergunte em linguagem natural e veja de qual documento veio cada resposta.
+            <p className="mb-0 mt-1 max-w-2xl text-xs leading-relaxed text-[#5a6a80] sm:mt-1.5 sm:text-base">
+              Uma conversa nova começa vazia. Seus chats ficam salvos por dia.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={startNewChat}
+            disabled={isLoading}
+            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[#1b3a60] px-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#24507f] disabled:opacity-50 sm:min-h-11 sm:gap-2 sm:px-4 sm:text-sm"
+          >
+            {isArchiveView ? <ChevronLeft size={16} /> : <Plus size={16} />}
+            <span className="sm:hidden">Novo</span>
+            <span className="hidden sm:inline">Nova conversa</span>
+          </button>
         </div>
 
-        {/* 2-col Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Main Chat Box (8 cols) */}
-          <div className="lg:col-span-8 bg-white border border-[#dde3ec] rounded-[20px] p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] flex flex-col min-h-[640px]">
-            {/* Assistant Header */}
-            <div className="flex gap-3 items-center pb-4 border-b border-[#dde3ec]">
-              <div className="w-11 h-11 rounded-[14px] bg-[#1b3a60] flex items-center justify-center shrink-0 shadow-xs">
-                {/* Heart / Sparkle icon */}
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#fff"
-                  strokeWidth="1.9"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
-                </svg>
+        <section aria-label="Histórico por dia" className="mb-4 rounded-2xl border border-[#dde3ec] bg-white p-3 shadow-[0_8px_22px_-20px_rgba(27,58,96,0.35)] sm:mb-5 sm:p-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-bold text-[#1b3a60] sm:text-sm">
+            <CalendarDays size={16} />
+            <span>Conversas anteriores</span>
+            {!isLoadingDays && historyDays.length > 0 && (
+              <span className="font-medium text-[#738198]">({historyDays.length} {historyDays.length === 1 ? 'dia' : 'dias'})</span>
+            )}
+          </div>
+          {isLoadingDays ? (
+            <div className="flex items-center gap-2 py-2 text-xs text-[#738198]" role="status">
+              <LoaderCircle size={14} className="animate-spin" /> Carregando dias salvos…
+            </div>
+          ) : daysError ? (
+            <div className="flex items-center justify-between gap-3 py-1 text-xs text-[#a13a30]" role="alert">
+              <span>Não foi possível carregar os dias salvos.</span>
+              <button type="button" onClick={() => void loadDays()} className="font-bold underline">Tentar novamente</button>
+            </div>
+          ) : historyDays.length === 0 ? (
+            <p className="m-0 py-1 text-xs text-[#738198]">Suas conversas anteriores aparecerão aqui.</p>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]">
+              {historyDays.map((day) => {
+                const selected = selectedArchiveDate === day.date;
+                return (
+                  <button
+                    key={day.date}
+                    type="button"
+                    onClick={() => void openArchiveDay(day.date)}
+                    disabled={isLoading || isLoadingHistory}
+                    aria-pressed={selected}
+                    className={`min-h-10 shrink-0 rounded-xl border px-3 py-2 text-left transition-colors disabled:opacity-50 sm:min-h-11 sm:px-3.5 ${
+                      selected ? 'border-[#1b3a60] bg-[#eaf2fc] text-[#1b3a60]' : 'border-[#dde3ec] bg-white text-[#33445d] hover:bg-[#f7f9fc]'
+                    }`}
+                  >
+                    <span className="block text-xs font-bold">{formatDateLabel(day.date)}</span>
+                    <span className="block text-[10px] text-[#738198] sm:text-[11px]">
+                      {day.messageCount} {day.messageCount === 1 ? 'mensagem' : 'mensagens'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:gap-5">
+          <section className="flex h-[min(68dvh,760px)] min-h-[460px] flex-col rounded-2xl border border-[#dde3ec] bg-white p-3 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-5 lg:col-span-8 lg:h-auto lg:min-h-[640px] lg:rounded-[20px] lg:p-7">
+            <div className="flex items-center gap-2.5 border-b border-[#dde3ec] pb-3 sm:gap-3 sm:pb-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#1b3a60] shadow-sm sm:h-11 sm:w-11">
+                <MessageSquare size={19} className="text-white" />
               </div>
-              <div className="flex-1 min-w-0">
-                <b className="text-[17px] text-[#1d2a3d] block leading-tight">Mémora</b>
-                <div className="text-[13px] text-[#5a6a80]">
-                  Assistente do seu histórico de saúde
+              <div className="min-w-0 flex-1">
+                <b className="block text-sm leading-tight text-[#1d2a3d] sm:text-[17px]">Mémora</b>
+                <div className="truncate text-[11px] text-[#5a6a80] sm:text-[13px]">
+                  {isArchiveView ? `Arquivo de ${archiveLabel}` : `Nova conversa · ${formatDateLabel(chatDate)}`}
                 </div>
               </div>
-              <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
+              <span className="hidden whitespace-nowrap rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1f7fe0] sm:inline-block">
                 Respostas com fontes
               </span>
             </div>
 
-            {/* Disclaimer Banner */}
-            <div className="flex gap-2.5 items-start my-4 p-3 sm:px-3.5 rounded-xl bg-[#fdf3d8] text-[#6b4208] text-[13px] leading-relaxed border border-[#e3b95a]/30">
-              <AlertTriangle size={16} className="text-[#6b4208] shrink-0 mt-0.5" strokeWidth={2} />
-              <span>
-                A IA organiza e consulta seus documentos. Ela não faz diagnósticos nem substitui um profissional de saúde.
-              </span>
+            <div className="my-3 flex items-start gap-2 rounded-xl border border-[#e3b95a]/30 bg-[#fdf3d8] p-2.5 text-[11px] leading-relaxed text-[#6b4208] sm:my-4 sm:gap-2.5 sm:p-3.5 sm:text-[13px]">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[#6b4208] sm:h-4 sm:w-4" />
+              <span>A IA organiza e consulta seus documentos. Ela não faz diagnósticos nem substitui um profissional de saúde.</span>
             </div>
 
-            {/* Messages Thread */}
-            <div className="flex-1 overflow-y-auto py-3 space-y-5.5 min-h-[300px]">
+            {isArchiveView && !isLoadingHistory && !historyError && (
+              <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-[#f1f4f8] px-3 py-2 text-xs text-[#53647b]">
+                <span>Este é um arquivo salvo. Para conversar, inicie uma nova conversa.</span>
+                <button type="button" onClick={startNewChat} className="shrink-0 font-bold text-[#1f7fe0]">Nova</button>
+              </div>
+            )}
+
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain py-2 sm:space-y-5 sm:py-3">
               {isLoadingHistory && (
                 <div className="flex justify-center py-8 text-sm text-[#5a6a80]">
                   <LoaderCircle size={18} className="mr-2 animate-spin" /> Carregando conversa…
@@ -194,7 +306,7 @@ export default function Chat() {
               )}
               {historyError && (
                 <div role="alert" className="rounded-xl bg-[#fff5f4] p-3 text-sm text-[#a13a30]">
-                  Não foi possível carregar o histórico do chat. Tente atualizar a página.
+                  Não foi possível abrir esta conversa. Tente novamente.
                 </div>
               )}
               {sendError && (
@@ -203,204 +315,132 @@ export default function Chat() {
                 </div>
               )}
               {!isLoadingHistory && !historyError && messages.length === 0 && (
-                <div className="py-8 text-center text-sm text-[#5a6a80]">
-                  Ainda não há mensagens nesta conversa. Faça uma pergunta sobre os dados registrados na sua conta.
+                <div className="mx-auto max-w-md py-8 text-center sm:py-12">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf2fc] text-[#1b3a60]">
+                    <MessageSquare size={22} />
+                  </div>
+                  <p className="mb-1 text-sm font-bold text-[#1d2a3d]">Sua conversa começa aqui</p>
+                  <p className="m-0 text-xs leading-relaxed text-[#5a6a80] sm:text-sm">
+                    Faça uma pergunta sobre seus registros. Conversas salvas de outros dias ficam no histórico acima.
+                  </p>
                 </div>
               )}
-              {messages.map((msg) => (
-                <div key={msg.id}>
-                  {msg.role === 'user' ? (
-                    /* User Bubble */
-                    <div className="flex justify-end mb-4">
-                      <div className="max-w-[480px] bg-[#1b3a60] text-white rounded-[18px] rounded-tr-[6px] px-4.5 py-3.5 text-[15px] leading-relaxed shadow-xs">
-                        {msg.content}
-                        {msg.sendFailed && (
-                          <div className="mt-2 border-t border-white/20 pt-2 text-xs text-white/80">
-                            Não enviada ao servidor.
-                          </div>
-                        )}
+              {messages.map((message) => (
+                <div key={message.id}>
+                  {message.role === 'user' ? (
+                    <div className="mb-3 flex justify-end sm:mb-4">
+                      <div className="max-w-[88%] rounded-[18px] rounded-tr-[6px] bg-[#1b3a60] px-3.5 py-3 text-sm leading-relaxed text-white shadow-sm sm:max-w-[480px] sm:px-4.5 sm:py-3.5 sm:text-[15px]">
+                        {message.content}
+                        {message.sendFailed && <div className="mt-2 border-t border-white/20 pt-2 text-xs text-white/80">Não enviada ao servidor.</div>}
                       </div>
                     </div>
                   ) : (
-                    /* Assistant Bubble */
-                    <div className="flex gap-3 items-start mb-4">
-                      <div className="w-9 h-9 rounded-xl bg-[#1b3a60] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#fff"
-                          strokeWidth="1.9"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
-                        </svg>
+                    <div className="mb-3 flex items-start gap-2 sm:mb-4 sm:gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1b3a60] text-white shadow-sm sm:h-9 sm:w-9">
+                        <MessageSquare size={16} />
                       </div>
-
-                      <div className="max-w-[580px] bg-[#f1f4f8] rounded-[18px] rounded-tl-[6px] p-4 sm:px-4.5 sm:py-4 text-[15px] leading-relaxed text-[#1d2a3d]">
-                        <div className="prose prose-sm max-w-none text-[#1d2a3d]">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        </div>
-
-                        {/* Citation Badges */}
-                        {msg.citations && msg.citations.length > 0 && (
-                          <div className="flex gap-1.5 flex-wrap mt-3 pt-2">
-                            {msg.citations.map((c, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold"
-                              >
-                                <FileText size={13} strokeWidth={2} />
-                                {c.titulo} {c.data ? `· ${c.data}` : ''}
+                      <div className="min-w-0 max-w-[calc(100%-2.5rem)] rounded-[18px] rounded-tl-[6px] bg-[#f1f4f8] p-3 text-sm leading-relaxed text-[#1d2a3d] sm:max-w-[580px] sm:p-4 sm:text-[15px]">
+                        <div className="prose prose-sm max-w-none break-words text-[#1d2a3d]"><ReactMarkdown>{message.content}</ReactMarkdown></div>
+                        {message.citations && message.citations.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#dde3ec] pt-2">
+                            {message.citations.map((citation, index) => (
+                              <span key={citation.id || index} className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#e5eefb] px-2.5 py-1.5 text-[10px] font-bold text-[#1f7fe0] sm:px-3 sm:text-xs">
+                                <FileText size={13} className="shrink-0" />
+                                <span className="truncate">{citation.titulo} {citation.data ? `· ${citation.data}` : ''}</span>
                               </span>
                             ))}
                           </div>
                         )}
-
-                        <div className="text-xs text-[#5a6a80] mt-3">
-                          Confira sempre os dados extraídos. Não substitui orientação médica.
-                        </div>
+                        <div className="mt-3 text-[10px] text-[#5a6a80] sm:text-xs">Confira sempre os dados extraídos. Não substitui orientação médica.</div>
                       </div>
                     </div>
                   )}
                 </div>
               ))}
-
               {isLoading && (
-                <div className="flex gap-3 items-center text-sm text-[#5a6a80] py-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#1b3a60] flex items-center justify-center shrink-0">
-                    <LoaderCircle size={18} className="text-white animate-spin" />
+                <div className="flex items-center gap-3 py-2 text-xs text-[#5a6a80] sm:text-sm">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1b3a60] sm:h-9 sm:w-9">
+                    <LoaderCircle size={18} className="animate-spin text-white" />
                   </div>
-                  <span>Mémora está consultando seus documentos...</span>
+                  <span>Mémora está consultando seus documentos…</span>
                 </div>
               )}
-
               <div ref={bottomRef} />
             </div>
 
-            {/* Quick Suggestions Chips */}
-            <div className="flex gap-2 flex-wrap my-2 mb-3.5">
-              {SUGGESTIONS.map((sug, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleSend(sug)}
-                  className="px-3.5 py-2 rounded-full border border-[#b8cdee] bg-white text-[#1b3a60] text-xs sm:text-[13px] font-semibold hover:bg-blue-50/50 transition-colors cursor-pointer"
-                >
-                  {sug}
-                </button>
-              ))}
-            </div>
-
-            {/* Input Form */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSend();
-              }}
-              className="flex gap-2.5 items-center border border-[#c6cfdb] rounded-2xl p-2 pl-4 text-[15px] focus-within:border-[#1b3a60] transition-colors"
-            >
-              <input
-                type="text"
-                placeholder="Pergunte sobre seus documentos…"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isLoading}
-                className="flex-1 bg-transparent border-none outline-none text-[#1d2a3d] placeholder:text-[#5a6a80] text-sm sm:text-[15px]"
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="w-11 h-11 rounded-xl bg-[#1b3a60] text-white flex items-center justify-center shrink-0 hover:bg-[#24507f] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
-              >
-                <Send size={18} strokeWidth={2} />
-              </button>
-            </form>
-          </div>
-
-          {/* Right Column: Sources & Prompts (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col gap-5">
-            {/* Keep account-wide document navigation separate from per-answer citations. */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                  <FileText size={18} className="text-[#1b3a60]" />
+            {!isArchiveView && (
+              <>
+                <div className="my-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
+                  {SUGGESTIONS.map((suggestion) => (
+                    <button key={suggestion} type="button" onClick={() => void handleSend(suggestion)} disabled={isLoading} className="min-h-9 shrink-0 rounded-full border border-[#b8cdee] bg-white px-3 text-[11px] font-semibold text-[#1b3a60] transition-colors hover:bg-blue-50/50 disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-[13px]">
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
-                <b className="text-base text-[#1d2a3d] flex-1">Documentos recentes</b>
-              </div>
-
-              <div className="divide-y divide-[#dde3ec]">
-                {isLoadingDocuments && (
-                  <div className="py-4 text-sm text-[#5a6a80]" role="status">
-                    Carregando documentos…
-                  </div>
-                )}
-                {(documentsError || hasInvalidDocumentsResponse) && (
-                  <div className="py-4 text-sm text-[#a13a30]" role="alert">
-                    Não foi possível carregar seus documentos.
-                  </div>
-                )}
-                {!isLoadingDocuments && !documentsError && !hasInvalidDocumentsResponse && documents.length === 0 && (
-                  <div className="py-4 text-sm text-[#5a6a80]">
-                    Você ainda não adicionou documentos à sua conta.
-                  </div>
-                )}
-                {!isLoadingDocuments && !documentsError && !hasInvalidDocumentsResponse && documents.slice(0, 4).map((doc) => {
-                  const createdAt = doc.criadoEm || doc.createdAt;
-                  const parsedDate = createdAt ? new Date(createdAt) : null;
-                  const dateLabel = parsedDate && !Number.isNaN(parsedDate.getTime())
-                    ? parsedDate.toLocaleDateString('pt-BR')
-                    : 'Data não informada';
-
-                  return (
-                    <Link
-                      key={doc.id}
-                      href={`/documentos/${doc.id}`}
-                      className="flex items-center gap-3.5 py-3.5"
-                    >
-                      <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                        <FileText size={22} className="text-[#1b3a60]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-bold text-[#1d2a3d] truncate">
-                          {doc.titulo || doc.tipo || 'Documento'}
-                        </div>
-                        <div className="text-[13px] text-[#5a6a80]">{dateLabel}</div>
-                      </div>
-                      <span className="text-xs font-semibold text-[#1f7fe0]">Abrir</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Experimente perguntar Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                  <MessageSquare size={18} className="text-[#1b3a60]" />
-                </div>
-                <b className="text-base text-[#1d2a3d] flex-1">Experimente perguntar</b>
-              </div>
-
-              <div className="divide-y divide-[#dde3ec]">
-                {SIDEBAR_PROMPTS.map((prompt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(prompt)}
-                    className="w-full text-left py-3 text-sm text-[#1d2a3d] hover:text-[#1b3a60] hover:font-semibold transition-all cursor-pointer block"
-                  >
-                    {prompt}
+                <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="flex items-center gap-2 rounded-2xl border border-[#c6cfdb] p-1.5 pl-3 text-sm transition-colors focus-within:border-[#1b3a60] sm:gap-2.5 sm:p-2 sm:pl-4 sm:text-[15px]">
+                  <input
+                    type="text"
+                    placeholder="Pergunte sobre seus documentos…"
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    disabled={isLoading}
+                    className="min-w-0 flex-1 border-none bg-transparent text-[#1d2a3d] outline-none placeholder:text-[#738198]"
+                  />
+                  <button type="submit" aria-label="Enviar pergunta" disabled={isLoading || !input.trim()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1b3a60] text-white shadow-sm transition-colors hover:bg-[#24507f] disabled:opacity-50 sm:h-11 sm:w-11">
+                    {isLoading ? <LoaderCircle size={18} className="animate-spin" /> : <Send size={18} />}
                   </button>
-                ))}
+                </form>
+              </>
+            )}
+          </section>
+
+          <aside className="flex flex-col gap-4 lg:col-span-4 lg:gap-5">
+            <section className="rounded-2xl border border-[#dde3ec] bg-white p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:rounded-[20px] sm:p-6">
+              <div className="mb-2.5 flex items-center gap-2.5 sm:mb-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]"><FileText size={18} className="text-[#1b3a60]" /></div>
+                <b className="flex-1 text-sm text-[#1d2a3d] sm:text-base">Fontes da resposta mais recente</b>
               </div>
-            </div>
-          </div>
+              {isLoading ? (
+                <div className="flex items-center gap-2 py-3 text-xs text-[#5a6a80] sm:text-sm"><LoaderCircle size={16} className="animate-spin" />Consultando fontes para a nova resposta...</div>
+              ) : !latestAssistantMessage ? (
+                <p className="m-0 py-2 text-xs leading-relaxed text-[#5a6a80] sm:text-sm">Os documentos usados aparecerao aqui depois que o chat responder.</p>
+              ) : latestCitations.length === 0 ? (
+                <p className="m-0 py-2 text-xs leading-relaxed text-[#5a6a80] sm:text-sm">Esta resposta nao utilizou um documento especifico.</p>
+              ) : (
+                <div className="divide-y divide-[#dde3ec]">
+                  {latestCitations.map((citation, index) => (
+                    <Link key={citation.id || index} href={citation.id ? '/documentos/' + citation.id : '/documentos'} className="flex min-w-0 items-center gap-3 py-3 sm:py-3.5">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#e5eefb]"><FileText size={18} className="text-[#1f7fe0]" /></div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-bold text-[#1d2a3d]">{citation.titulo || 'Documento'}</div>
+                        {citation.data && <div className="text-xs text-[#5a6a80]">Data do documento: {citation.data}</div>}
+                      </div>
+                      <span className="shrink-0 text-[11px] font-semibold text-[#1f7fe0]">Abrir</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {!isArchiveView && (
+              <section className="rounded-2xl border border-[#dde3ec] bg-white p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:rounded-[20px] sm:p-6">
+                <div className="mb-2.5 flex items-center gap-2.5 sm:mb-4">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]"><MessageSquare size={18} className="text-[#1b3a60]" /></div>
+                  <b className="flex-1 text-sm text-[#1d2a3d] sm:text-base">Experimente perguntar</b>
+                </div>
+                <div className="divide-y divide-[#dde3ec]">
+                  {SIDEBAR_PROMPTS.map((prompt) => (
+                    <button key={prompt} type="button" onClick={() => void handleSend(prompt)} disabled={isLoading} className="block min-h-11 w-full py-2.5 text-left text-xs text-[#1d2a3d] transition-colors hover:font-semibold hover:text-[#1b3a60] disabled:opacity-50 sm:py-3 sm:text-sm">
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </aside>
         </div>
 
-        <p className="mt-8 text-center text-xs text-[#5a6a80]">
+        <p className="mb-0 mt-5 text-center text-[10px] text-[#5a6a80] sm:mt-8 sm:text-xs">
           As respostas dependem dos dados disponíveis na sua conta e nos seus documentos.
         </p>
       </main>

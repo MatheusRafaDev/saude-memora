@@ -23,6 +23,7 @@ using MongoDB.Driver;
 using DotNetEnv;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.AspNetCore.HttpOverrides;
+using System.IO.Compression;
 
 // Load .env variables
 Env.Load();
@@ -468,7 +469,30 @@ _ = Task.Run(async () =>
             var catalogPath = Environment.GetEnvironmentVariable("CNES_CATALOG_PATH");
             if (string.IsNullOrWhiteSpace(catalogPath))
             {
-                app.Logger.LogWarning("[CNES] Catálogo vazio. Configure CNES_CATALOG_PATH ou importe a base pelo endpoint protegido.");
+                var zipPath = Path.Combine(Path.GetTempPath(), $"saudememora-cnes-{Guid.NewGuid():N}.zip");
+                try
+                {
+                    const string catalogUrl = "https://s3.sa-east-1.amazonaws.com/ckan.saude.gov.br/CNES/cnes_estabelecimentos_json.zip";
+                    using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
+                    using var response = await httpClient.GetAsync(catalogUrl, HttpCompletionOption.ResponseHeadersRead, token);
+                    response.EnsureSuccessStatusCode();
+                    await using (var zipFile = new FileStream(zipPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan))
+                    await using (var downloadStream = await response.Content.ReadAsStreamAsync(token))
+                        await downloadStream.CopyToAsync(zipFile, token);
+
+                    using var archive = ZipFile.OpenRead(zipPath);
+                    var jsonEntry = archive.Entries.FirstOrDefault(entry => entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                        ?? throw new InvalidDataException("O arquivo oficial do CNES não contém um JSON.");
+                    await using var catalogStream = jsonEntry.Open();
+                    var catalogService = scope.ServiceProvider.GetRequiredService<ICnesCatalogoService>();
+                    var importResult = await catalogService.ImportarAsync(catalogStream, token);
+                    app.Logger.LogInformation("[CNES] Base oficial carregada: {Imported} registros, {Invalid} inválidos e {Duplicates} duplicados.",
+                        importResult.RegistrosImportados, importResult.RegistrosInvalidos, importResult.RegistrosDuplicados);
+                }
+                finally
+                {
+                    if (File.Exists(zipPath)) File.Delete(zipPath);
+                }
             }
             else if (!File.Exists(catalogPath))
             {
@@ -1445,6 +1469,64 @@ app.MapPut("/api/documents/{id}", async (
     var doc = await repo.GetByIdAsync(id);
     if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
+    var originallyConfirmedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var path in updateDto.CamposConfirmados ?? new List<string>())
+    {
+        var medicationMatch = System.Text.RegularExpressions.Regex.Match(path, @"^medicamentos\[(\d+)\]\.(\w+)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (medicationMatch.Success && int.TryParse(medicationMatch.Groups[1].Value, out var medicationIndex)
+            && updateDto.Medicamentos?.ElementAtOrDefault(medicationIndex) is { } updatedMedication
+            && doc.Medicamentos?.ElementAtOrDefault(medicationIndex) is { } originalMedication)
+        {
+            var field = medicationMatch.Groups[2].Value;
+            var changed = field.Equals("dosagem", StringComparison.OrdinalIgnoreCase) ? originalMedication.Dosagem != updatedMedication.Dosagem
+                : field.Equals("horario", StringComparison.OrdinalIgnoreCase) ? originalMedication.Horario != updatedMedication.Horario
+                : field.Equals("nome", StringComparison.OrdinalIgnoreCase) && originalMedication.Nome != updatedMedication.Nome;
+            if (changed) originallyConfirmedFields.Add(path);
+            continue;
+        }
+
+        var examMatch = System.Text.RegularExpressions.Regex.Match(path, @"^resultadosExame\[(\d+)\]\.(\w+)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (examMatch.Success && int.TryParse(examMatch.Groups[1].Value, out var examIndex)
+            && updateDto.ResultadosExame?.ElementAtOrDefault(examIndex) is { } updatedExam
+            && doc.ResultadosExame?.ElementAtOrDefault(examIndex) is { } originalExam)
+        {
+            var field = examMatch.Groups[2].Value;
+            var changed = field.Equals("valor", StringComparison.OrdinalIgnoreCase) ? originalExam.Valor != updatedExam.Valor
+                : field.Equals("nome", StringComparison.OrdinalIgnoreCase) ? originalExam.Nome != updatedExam.Nome
+                : field.Equals("valorTexto", StringComparison.OrdinalIgnoreCase) ? originalExam.ValorTexto != updatedExam.ValorTexto
+                : field.Equals("unidade", StringComparison.OrdinalIgnoreCase) ? originalExam.Unidade != updatedExam.Unidade
+                : field.Equals("referenciaTexto", StringComparison.OrdinalIgnoreCase) && originalExam.ReferenciaTexto != updatedExam.ReferenciaTexto;
+            if (changed) originallyConfirmedFields.Add(path);
+            continue;
+        }
+
+        var originalValue = path.ToLowerInvariant() switch
+        {
+            "tipo" => doc.Tipo,
+            "titulo" => doc.Titulo, "medico" => doc.Medico, "clinica" => doc.Clinica,
+            "data" => doc.Data, "resumo" => doc.Resumo, "diagnostico" => doc.Diagnostico,
+            "crm" => doc.Crm, "cid" => doc.Cid, "cnes" => doc.Cnes,
+            "nomeexame" => doc.NomeExame, "tipoexame" => doc.TipoExame,
+            "resultado" => doc.Resultado, "especialidade" => doc.Especialidade,
+            "tipoclinico" => doc.TipoClinico, "conteudo" => doc.Conteudo,
+            "conclusoes" => doc.Conclusoes, "observacoes" => doc.Observacoes,
+            _ => null
+        };
+        var updatedValue = path.ToLowerInvariant() switch
+        {
+            "tipo" => updateDto.Tipo,
+            "titulo" => updateDto.Titulo, "medico" => updateDto.Medico, "clinica" => updateDto.Clinica,
+            "data" => updateDto.Data, "resumo" => updateDto.Resumo, "diagnostico" => updateDto.Diagnostico,
+            "crm" => updateDto.Crm, "cid" => updateDto.Cid, "cnes" => updateDto.Cnes,
+            "nomeexame" => updateDto.NomeExame, "tipoexame" => updateDto.TipoExame,
+            "resultado" => updateDto.Resultado, "especialidade" => updateDto.Especialidade,
+            "tipoclinico" => updateDto.TipoClinico, "conteudo" => updateDto.Conteudo,
+            "conclusoes" => updateDto.Conclusoes, "observacoes" => updateDto.Observacoes,
+            _ => null
+        };
+        if (originalValue != updatedValue && updatedValue != null) originallyConfirmedFields.Add(path);
+    }
+
     if (!string.IsNullOrWhiteSpace(updateDto.Data))
     {
         var culture = System.Globalization.CultureInfo.InvariantCulture;
@@ -1536,6 +1618,14 @@ app.MapPut("/api/documents/{id}", async (
                 MotivoConfirmacao = r.MotivoConfirmacao ?? ""
             };
         }).ToList();
+    }
+
+    if (originallyConfirmedFields.Count > 0)
+    {
+        doc.CamposBaixaConfianca = (doc.CamposBaixaConfianca ?? new List<string>())
+            .Where(field => !originallyConfirmedFields.Contains(field)).ToList();
+        doc.RevisaoPendente = doc.CamposBaixaConfianca.Count > 0;
+        if (!doc.RevisaoPendente) doc.RevisadoEm = DateTime.UtcNow;
     }
 
     // Medicamentos e tipo podem mudar durante a edição. Recalculamos avisos para
@@ -1816,6 +1906,7 @@ public record ApiReportResponse(string? Report);
 
 public class DocumentUpdateDto
 {
+    public List<string>? CamposConfirmados { get; set; }
     public string? Titulo { get; set; }
     public string? Tipo { get; set; }
     public string? Medico { get; set; }

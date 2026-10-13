@@ -23,6 +23,9 @@ public static class RevisaoEndpoints
             var doc = await repo.GetByIdAsync(id);
             if (doc == null || doc.PacienteId != userId) return Results.NotFound();
 
+            if (doc.CamposBaixaConfianca?.Count > 0)
+                return Results.Conflict(new { error = "Edite e confirme cada campo destacado antes de concluir a revisão." });
+
             using var scope = app.Services.CreateScope();
             var sp = scope.ServiceProvider;
             var pacienteRepo = sp.GetRequiredService<IPacienteRepository>();

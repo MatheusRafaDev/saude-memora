@@ -134,6 +134,16 @@ export default function Documents() {
         tipoKey: typeKey,
         status: doc.status || 'pronto',
         revisaoPendente: Boolean(doc.revisaoPendente),
+        dataDocumento: typeof doc.data === 'string' ? doc.data : '',
+        medico: typeof doc.medico === 'string' ? doc.medico : '',
+        clinica: typeof doc.clinica === 'string' ? doc.clinica : '',
+        resumo: typeof doc.resumo === 'string' ? doc.resumo : '',
+        diagnostico: typeof doc.diagnostico === 'string' ? doc.diagnostico : '',
+        nomeExame: typeof doc.nomeExame === 'string' ? doc.nomeExame : '',
+        tipoExame: typeof doc.tipoExame === 'string' ? doc.tipoExame : '',
+        medicamentos: Array.isArray(doc.medicamentos) ? doc.medicamentos : [],
+        exames: Array.isArray(doc.resultadosExame) ? doc.resultadosExame : [],
+        quantidadeAlertas: Array.isArray(doc.alertas) ? doc.alertas.filter((alerta: any) => alerta.dispensado !== true).length : 0,
         dateStr,
         monthGroup: monthGroup.charAt(0).toUpperCase() + monthGroup.slice(1),
         createdAt: hasValidDate ? date.toISOString() : undefined,
@@ -144,6 +154,12 @@ export default function Documents() {
           doc.tipoExame,
           doc.resumo,
           doc.diagnostico,
+          doc.medico,
+          doc.clinica,
+          doc.cid,
+          doc.cnes,
+          ...(Array.isArray(doc.medicamentos) ? doc.medicamentos.flatMap((medicamento: any) => [medicamento.nome, medicamento.dosagem]) : []),
+          ...(Array.isArray(doc.resultadosExame) ? doc.resultadosExame.map((exame: any) => exame.nome) : []),
         ].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR'),
       };
     });
@@ -428,10 +444,28 @@ export default function Documents() {
                         <div className="mt-3.5 text-[15px] font-bold text-[#1d2a3d] truncate">
                           {doc.titulo}
                         </div>
-                        <div className="text-[13px] text-[#5a6a80] mt-0.5 mb-3">
-                          {doc.dateStr}
-                        </div>
+                        <div className="text-[13px] text-[#5a6a80] mt-0.5">Adicionado {doc.dateStr}</div>
                       </Link>
+
+                      <div className="my-3 space-y-2 text-xs text-[#52627a]">
+                        {(doc.dataDocumento || doc.medico || doc.clinica) && (
+                          <div className="flex flex-wrap gap-x-3 gap-y-1">
+                            {doc.dataDocumento && <span><b className="text-[#34445b]">Data:</b> {doc.dataDocumento}</span>}
+                            {doc.medico && <span><b className="text-[#34445b]">Profissional:</b> {doc.medico}</span>}
+                          </div>
+                        )}
+                        {doc.clinica && <div className="truncate"><b className="text-[#34445b]">Local:</b> {doc.clinica}</div>}
+                        {(doc.resumo || doc.diagnostico) && (
+                          <p className="m-0 line-clamp-2 leading-relaxed">{doc.resumo || doc.diagnostico}</p>
+                        )}
+                        {(doc.nomeExame || doc.tipoExame || doc.exames.length > 0) && (
+                          <div className="flex items-start gap-1.5"><Activity size={14} className="mt-0.5 shrink-0 text-[#1f7fe0]" /><span className="line-clamp-1">{doc.nomeExame || doc.exames.map((exame: any) => exame.nome).filter(Boolean).join(', ') || doc.tipoExame}</span></div>
+                        )}
+                        {doc.medicamentos.length > 0 && (
+                          <div className="flex items-start gap-1.5"><Pill size={14} className="mt-0.5 shrink-0 text-[#1b3a60]" /><span className="line-clamp-1">{doc.medicamentos.map((medicamento: any) => medicamento.nome).filter(Boolean).join(', ')}</span></div>
+                        )}
+                        {doc.quantidadeAlertas > 0 && <div className="flex items-center gap-1.5 text-amber-800"><AlertTriangle size={14} />{doc.quantidadeAlertas} {doc.quantidadeAlertas === 1 ? 'alerta ativo' : 'alertas ativos'}</div>}
+                      </div>
 
                       {/* Footer tags & delete */}
                       <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-50">
@@ -497,12 +531,21 @@ export default function Documents() {
                             {doc.titulo}
                           </div>
                           <div className="text-xs text-[#5a6a80] mt-0.5">
-                            {doc.dateStr}
+                            Adicionado {doc.dateStr}{doc.dataDocumento ? ` · Documento: ${doc.dataDocumento}` : ''}
                           </div>
+                          {(doc.resumo || doc.diagnostico || doc.medico || doc.clinica || doc.medicamentos.length > 0 || doc.exames.length > 0) && (
+                            <div className="mt-1.5 space-y-0.5 text-xs text-[#52627a]">
+                              {(doc.medico || doc.clinica) && <div className="truncate">{[doc.medico, doc.clinica].filter(Boolean).join(' · ')}</div>}
+                              {(doc.resumo || doc.diagnostico) && <div className="line-clamp-1">{doc.resumo || doc.diagnostico}</div>}
+                              {doc.medicamentos.length > 0 && <div className="line-clamp-1">Medicamentos: {doc.medicamentos.map((medicamento: any) => medicamento.nome).filter(Boolean).join(', ')}</div>}
+                              {doc.exames.length > 0 && <div className="line-clamp-1">Exames: {doc.exames.map((exame: any) => exame.nome).filter(Boolean).join(', ')}</div>}
+                            </div>
+                          )}
                         </Link>
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {doc.quantidadeAlertas > 0 && <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800"><AlertTriangle size={14} />{doc.quantidadeAlertas}</span>}
                         {doc.status === 'failed' && (
                           <button
                             type="button"

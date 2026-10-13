@@ -263,6 +263,17 @@
         "tags": [
           "SaudeMemora.Api"
         ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -270,6 +281,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ChatHistoryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/history/days": {
+      "get": {
+        "tags": [
+          "SaudeMemora.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryDaysResponse"
                 }
               }
             }
@@ -1468,15 +1498,30 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "sessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatCitation"
+            }
           }
         }
       },
       "ChatHistoryResponse": {
         "required": [
+          "date",
           "messages"
         ],
         "type": "object",
         "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
           "messages": {
             "type": "array",
             "items": {
@@ -1485,10 +1530,53 @@
           }
         }
       },
+      "ChatHistoryDay": {
+        "required": [
+          "date",
+          "messageCount",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "messageCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatHistoryDaysResponse": {
+        "required": [
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatHistoryDay"
+            }
+          }
+        }
+      },
       "ChatRequest": {
         "type": "object",
         "properties": {
           "message": {
+            "type": "string"
+          },
+          "chatDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "sessionId": {
             "type": "string"
           }
         }

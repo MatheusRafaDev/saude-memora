@@ -35,7 +35,6 @@ const AnamneseEdit = lazy(() => import('@/pages/AnamneseEdit'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const Emergencia = lazy(() => import('@/pages/Emergencia'));
 const Chat = lazy(() => import('@/pages/Chat'));
-const Insights = lazy(() => import('@/pages/Insights'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -347,7 +346,7 @@ function Router() {
             <Route path="/emergencia">{() => <ProtectedRoute><Emergencia /></ProtectedRoute>}</Route>
             <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
             <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
-            <Route path="/analises">{() => <ProtectedRoute><Insights /></ProtectedRoute>}</Route>
+            <Route path="/analises">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>
             <Route component={NotFound} />
           </Switch>
         </div>

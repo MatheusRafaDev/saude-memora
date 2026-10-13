@@ -7,5 +7,6 @@
 import type { ChatHistoryMessage } from './chatHistoryMessage';
 
 export interface ChatHistoryResponse {
+  date: Date;
   messages: ChatHistoryMessage[];
 }

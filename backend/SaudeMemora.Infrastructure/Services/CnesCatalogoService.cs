@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using MongoDB.Bson;
 using SaudeMemora.Application.Interfaces;
 using SaudeMemora.Domain.Entities;
@@ -81,6 +82,8 @@ public sealed class CnesCatalogoService : ICnesCatalogoService
         var prefixText = System.Text.Encoding.UTF8.GetString(prefix, 0, bytesRead);
         var firstContentCharacter = prefixText.TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
         var isXml = firstContentCharacter.StartsWith('<');
+        var isJsonArray = firstContentCharacter.StartsWith('[');
+        var isJsonObject = firstContentCharacter.StartsWith('{');
         if (stream.CanSeek)
         {
             stream.Position = 0;
@@ -90,9 +93,9 @@ public sealed class CnesCatalogoService : ICnesCatalogoService
             stream = new PrefixStream(prefix.AsMemory(0, bytesRead), stream);
         }
 
-        return isXml
-            ? await ImportarXmlAsync(stream, cancellationToken)
-            : await ImportarCsvAsync(stream, cancellationToken);
+        if (isJsonArray) return await ImportarJsonArrayAsync(stream, cancellationToken);
+        if (isJsonObject) return await ImportarJsonAsync(stream, cancellationToken);
+        return isXml ? await ImportarXmlAsync(stream, cancellationToken) : await ImportarCsvAsync(stream, cancellationToken);
     }
 
     public Task<IReadOnlyList<CnesRegistro>> BuscarAsync(string query, int limit, CancellationToken cancellationToken = default)
@@ -120,6 +123,125 @@ public sealed class CnesCatalogoService : ICnesCatalogoService
             cancellationToken);
         return new ImportacaoCatalogoResult(stats.Imported, stats.Invalid, stats.Duplicates, importadoEm);
     }
+
+    private async Task<ImportacaoCatalogoResult> ImportarJsonArrayAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        var importadoEm = DateTime.UtcNow;
+        var stats = new ImportStats();
+        await _repository.ReplaceAllAsync(
+            ParseJsonRowsAsync(stream, importadoEm, stats, cancellationToken),
+            cancellationToken);
+        return new ImportacaoCatalogoResult(stats.Imported, stats.Invalid, stats.Duplicates, importadoEm);
+    }
+
+    private async Task<ImportacaoCatalogoResult> ImportarJsonAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var root = document.RootElement.TryGetProperty("estabelecimentos", out var estabelecimentos)
+            ? estabelecimentos
+            : throw new InvalidDataException("O JSON deve conter uma lista de estabelecimentos.");
+        if (root.ValueKind != JsonValueKind.Array)
+            throw new InvalidDataException("O JSON deve conter uma lista de estabelecimentos.");
+
+        var importadoEm = DateTime.UtcNow;
+        var stats = new ImportStats();
+        await _repository.ReplaceAllAsync(
+            ParseJsonElementsAsync(root, importadoEm, stats, cancellationToken),
+            cancellationToken);
+        return new ImportacaoCatalogoResult(stats.Imported, stats.Invalid, stats.Duplicates, importadoEm);
+    }
+
+    private static async IAsyncEnumerable<CnesRegistro> ParseJsonRowsAsync(
+        Stream stream,
+        DateTime importadoEm,
+        ImportStats stats,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await foreach (var item in JsonSerializer.DeserializeAsyncEnumerable<JsonElement>(stream, cancellationToken: cancellationToken))
+        {
+            var registro = ParseJsonRegistro(item, importadoEm);
+            if (registro is null)
+            {
+                stats.Invalid++;
+                continue;
+            }
+            if (!stats.Codes.Add(registro.CodigoNormalizado))
+            {
+                stats.Duplicates++;
+                continue;
+            }
+            stats.Imported++;
+            yield return registro;
+        }
+    }
+
+    private static async IAsyncEnumerable<CnesRegistro> ParseJsonElementsAsync(
+        JsonElement elements,
+        DateTime importadoEm,
+        ImportStats stats,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        foreach (var item in elements.EnumerateArray())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var registro = ParseJsonRegistro(item, importadoEm);
+            if (registro is null)
+            {
+                stats.Invalid++;
+                continue;
+            }
+            if (!stats.Codes.Add(registro.CodigoNormalizado))
+            {
+                stats.Duplicates++;
+                continue;
+            }
+            stats.Imported++;
+            yield return registro;
+            await Task.CompletedTask;
+        }
+    }
+
+    private static CnesRegistro? ParseJsonRegistro(JsonElement item, DateTime importadoEm)
+    {
+        var codigo = NormalizarCodigoCnes(GetJsonString(item, "codigo_cnes", "codigo", "co_cnes", "CO_CNES"));
+        var descricao = GetJsonString(item, "nome_fantasia", "NO_FANTASIA", "nome_razao_social", "NO_RAZAO_SOCIAL", "descricao", "no_razao_social");
+        if (!IsValidCodigo(codigo) || string.IsNullOrWhiteSpace(descricao)) return null;
+
+        return new CnesRegistro
+        {
+            Id = ObjectId.GenerateNewId().ToString(),
+            Codigo = codigo,
+            CodigoNormalizado = Normalizar(codigo),
+            Descricao = descricao,
+            DescricaoNormalizada = Normalizar(descricao),
+            Categoria = GetJsonString(item, "descricao_natureza_juridica_estabelecimento", "DS_NATUREZA_ORGANIZACAO", "DS_ESFERA_ADMINISTRATIVA", "ds_atividade"),
+            Origem = "API_GOV",
+            ImportadoEm = importadoEm
+        };
+    }
+
+    private static string GetJsonString(JsonElement element, params string[] names)
+    {
+        if (element.ValueKind != JsonValueKind.Object) return string.Empty;
+        foreach (var name in names)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (!string.Equals(name, property.Name, StringComparison.OrdinalIgnoreCase)) continue;
+                var text = property.Value.ValueKind switch
+                {
+                    JsonValueKind.String => property.Value.GetString(),
+                    JsonValueKind.Number => property.Value.GetRawText(),
+                    _ => null
+                };
+                if (!string.IsNullOrWhiteSpace(text)) return text.Trim();
+            }
+        }
+        return string.Empty;
+    }
+
+    private static string NormalizarCodigoCnes(string value)
+        => value.Length is > 0 and <= 7 && value.All(char.IsAsciiDigit) ? value.PadLeft(7, '0') : value;
 
     private static async Task<IReadOnlyDictionary<string, int>> ReadColumnsAsync(
         IAsyncEnumerator<string[]> enumerator,

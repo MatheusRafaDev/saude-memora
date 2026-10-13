@@ -97,18 +97,40 @@ export const GetApiEmergenciaTokenResponse = zod.object({
 })
 
 
+export const GetApiChatHistoryQueryParams = zod.object({
+  "date": zod.date().optional()
+})
+
 export const GetApiChatHistoryResponse = zod.object({
+  "date": zod.coerce.date(),
   "messages": zod.array(zod.object({
   "id": zod.string(),
   "role": zod.string(),
   "content": zod.string(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "sessionId": zod.string().nullish(),
+  "citations": zod.array(zod.object({
+  "id": zod.string(),
+  "titulo": zod.string(),
+  "data": zod.string()
+})).optional()
+}))
+})
+
+
+export const GetApiChatHistoryDaysResponse = zod.object({
+  "days": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "messageCount": zod.number().int(),
+  "updatedAt": zod.coerce.date()
 }))
 })
 
 
 export const PostApiChatBody = zod.object({
-  "message": zod.string().optional()
+  "message": zod.string().optional(),
+  "chatDate": zod.coerce.date().optional(),
+  "sessionId": zod.string().optional()
 })
 
 export const PostApiChatResponse = zod.object({

@@ -58,9 +58,10 @@ public static class CdosCatalogosEndpoints
         {
             if (file is null || file.Length == 0) return Results.BadRequest(new { message = "Um arquivo CSV ou XML é obrigatório." });
             if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
-                && !file.FileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                && !file.FileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
+                && !file.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
-                return Results.BadRequest(new { message = "Apenas arquivos CSV ou XML são aceitos." });
+                return Results.BadRequest(new { message = "Apenas arquivos CSV, XML ou JSON são aceitos." });
             }
             await using var stream = file.OpenReadStream();
             return Results.Ok(await service.ImportarAsync(stream, cancellationToken));

@@ -3,12 +3,10 @@ import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
-import { EmergenciaModal } from '@/components/EmergenciaModal';
 import { BrandWordmark } from '@/components/BrandWordmark';
 import { useGetApiPacientesMe } from '@workspace/api-client-react';
-import { ChartNoAxesCombined } from 'lucide-react';
 
-const navItems = [
+const desktopNavItems = [
   {
     href: '/visao-geral',
     label: 'Visão geral',
@@ -28,11 +26,6 @@ const navItems = [
     ),
   },
   {
-    href: '/analises',
-    label: 'Análises',
-    icon: <ChartNoAxesCombined size={16} />,
-  },
-  {
     href: '/anamnese',
     label: 'Anamnese',
     icon: (
@@ -50,12 +43,27 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: '/perfil',
+    label: 'Perfil',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
+      </svg>
+    ),
+  },
+];
+
+const mobileNavItems = [
+  desktopNavItems[0],
+  desktopNavItems[1],
+  desktopNavItems[3],
+  { ...desktopNavItems[4], label: 'Perfil' },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [showEmergenciaModal, setShowEmergenciaModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { signOut } = useAuth();
 
@@ -72,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const activeHref = navItems.find((item) => location.startsWith(item.href))?.href || (location === '/visao-geral' ? '/visao-geral' : '');
+  const activeHref = desktopNavItems.find((item) => location.startsWith(item.href))?.href || (location === '/visao-geral' ? '/visao-geral' : '');
 
   const initials = profile.nome
     ? profile.nome
@@ -103,8 +111,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         {/* Navigation center */}
-        <nav aria-label="Navegação principal" className="hidden md:flex flex-1 items-center justify-center gap-1">
-          {navItems.map(({ href, label, icon }) => {
+        <nav aria-label="Navegação principal" className="hidden lg:flex flex-1 items-center justify-center gap-1">
+          {desktopNavItems.map(({ href, label, icon }) => {
               const isActive = activeHref === href;
               return (
                 <Link
@@ -125,21 +133,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Right side actions */}
         <div className="ml-auto flex items-center gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowEmergenciaModal(true)}
-            className="flex items-center gap-2 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] px-3.5 py-2.5 text-[13px] font-bold text-[#a13a30] transition-colors hover:bg-[#fde8e6]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a13a30" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM12 9v6M9 12h6" />
-            </svg>
-            <span>Emergência</span>
-          </button>
+
 
           <button
               type="button"
               onClick={triggerUploadModal}
-              className="hidden sm:inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
+              className="hidden lg:inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14M5 12h14" />
@@ -177,16 +176,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                     Meu perfil
                   </Link>
 
-                  <Link
-                    href="/emergencia"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM12 9v6M9 12h6" />
-                    </svg>
-                    Ficha de emergência
-                  </Link>
 
                   <button
                     type="button"
@@ -211,7 +200,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main page content */}
       <div
         id="main-content"
-        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8"
+        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8"
       >
         {children}
       </div>
@@ -219,9 +208,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ── Mobile Bottom Navigation Bar (as per Mobile reference) ── */}
       <nav
           aria-label="Navegação móvel inferior"
-          className="fixed inset-x-0 bottom-0 z-40 flex min-h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-[#dde3ec] bg-white px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_rgba(27,58,96,0.45)] md:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex min-h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-[#dde3ec] bg-white px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_rgba(27,58,96,0.45)] lg:hidden"
         >
-        {navItems.map(({ href, label, icon }) => {
+        {mobileNavItems.map(({ href, label, icon }) => {
             const isActive = activeHref === href;
             return (
               <Link
@@ -248,7 +237,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Modals */}
       <UploadModal />
       <ConsentModal />
-      <EmergenciaModal open={showEmergenciaModal} onOpenChange={setShowEmergenciaModal} />
     </div>
   );
 }

@@ -7,4 +7,6 @@
 
 export interface ChatRequest {
   message?: string;
+  chatDate?: Date;
+  sessionId?: string;
 }

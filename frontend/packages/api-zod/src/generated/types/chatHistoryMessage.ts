@@ -4,10 +4,14 @@
  * Api
  * OpenAPI spec version: 1.0.0
  */
+import type { ChatCitation } from './chatCitation';
 
 export interface ChatHistoryMessage {
   id: string;
   role: string;
   content: string;
   createdAt: Date;
+  /** @nullable */
+  sessionId?: string | null;
+  citations?: ChatCitation[];
 }

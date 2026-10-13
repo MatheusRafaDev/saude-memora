@@ -101,14 +101,30 @@ export interface ChatHistoryMessage {
   role: string;
   content: string;
   createdAt: string;
+  /** @nullable */
+  sessionId?: string | null;
+  citations?: ChatCitation[];
 }
 
 export interface ChatHistoryResponse {
+  date: string;
   messages: ChatHistoryMessage[];
+}
+
+export interface ChatHistoryDay {
+  date: string;
+  messageCount: number;
+  updatedAt: string;
+}
+
+export interface ChatHistoryDaysResponse {
+  days: ChatHistoryDay[];
 }
 
 export interface ChatRequest {
   message?: string;
+  chatDate?: string;
+  sessionId?: string;
 }
 
 export interface ChatResponse {
@@ -615,6 +631,10 @@ export interface UpdateFichaMedicaDto {
   /** @nullable */
   condicoes?: CondicaoMedica[] | null;
 }
+
+export type GetApiChatHistoryParams = {
+date?: string;
+};
 
 export type GetApiReportsGenerateParams = {
 months?: number;

@@ -16,7 +16,6 @@ import {
   Copy,
   RotateCw,
 } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import {
   useGetApiDocumentsId,
   useDeleteApiDocumentsId,
@@ -83,15 +82,16 @@ const documentTextFields: { key: DocumentTextField; label: string; multiline?: b
   { key: 'nomeExame', label: 'Nome do exame' },
   { key: 'tipoExame', label: 'Tipo de exame' },
   { key: 'resultado', label: 'Resultado' },
-  { key: 'especialidade', label: 'Especialidade' },
-  { key: 'tipoClinico', label: 'Tipo clínico' },
   { key: 'resumo', label: 'Resumo', multiline: true },
   { key: 'diagnostico', label: 'Diagnóstico', multiline: true },
-  { key: 'conteudo', label: 'Conteúdo', multiline: true },
   { key: 'conclusoes', label: 'Conclusões', multiline: true },
   { key: 'observacoes', label: 'Observações', multiline: true },
-  { key: 'textoExtraido', label: 'Texto extraído', multiline: true },
 ];
+
+const maskDate = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  return digits.length <= 2 ? digits : digits.length <= 4 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+};
 
 function createDocumentEditForm(doc: any): DocumentEditForm {
   const textValue = (value: unknown) => (typeof value === 'string' ? value : '');
@@ -100,7 +100,7 @@ function createDocumentEditForm(doc: any): DocumentEditForm {
     tipo: textValue(doc?.tipo),
     medico: textValue(doc?.medico),
     clinica: textValue(doc?.clinica),
-    data: textValue(doc?.data),
+    data: typeof doc?.data === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(doc.data) ? `${doc.data.slice(8, 10)}/${doc.data.slice(5, 7)}/${doc.data.slice(0, 4)}` : textValue(doc?.data),
     resumo: textValue(doc?.resumo),
     diagnostico: textValue(doc?.diagnostico),
     crm: textValue(doc?.crm),
@@ -183,6 +183,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [showExtractedText, setShowExtractedText] = useState(false);
   const [hasCopiedExtractedText, setHasCopiedExtractedText] = useState(false);
   const [formData, setFormData] = useState<DocumentEditForm>(() => createDocumentEditForm(null));
+  const [confirmedFields, setConfirmedFields] = useState<Set<string>>(new Set());
+  const [cidSuggestions, setCidSuggestions] = useState<any[]>([]);
+  const [cnesSuggestions, setCnesSuggestions] = useState<any[]>([]);
+  const [cnesSearchQuery, setCnesSearchQuery] = useState('');
+  const [bulaResults, setBulaResults] = useState<Record<number, any>>({});
+  const [bulaErrors, setBulaErrors] = useState<Record<number, string>>({});
+  const [loadingBulaIndex, setLoadingBulaIndex] = useState<number | null>(null);
 
   const doc = (docRaw as any) || null;
   const hasMedicationTab = String(doc?.tipo ?? '').trim().toLowerCase() === 'receita' || (Array.isArray(doc?.medicamentos) && doc.medicamentos.length > 0);
@@ -192,6 +199,43 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     if (!hasMedicationTab) setActiveTab('dados');
     setFormData(createDocumentEditForm(doc));
   }, [doc, hasMedicationTab]);
+
+  useEffect(() => {
+    if (!isEditingModalOpen || formData.cid.trim().length < 3) {
+      setCidSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ query: formData.cid.trim(), limit: '8' });
+        const result = await customFetch<{ registros?: any[] }>(`/api/catalogo-cid10?${params}`, { signal: controller.signal });
+        setCidSuggestions(Array.isArray(result.registros) ? result.registros : []);
+      } catch {
+        if (!controller.signal.aborted) setCidSuggestions([]);
+      }
+    }, 250);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [formData.cid, isEditingModalOpen]);
+
+  useEffect(() => {
+    const query = cnesSearchQuery.trim();
+    if (!isEditingModalOpen || query.length < 3) {
+      setCnesSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ query, limit: '8' });
+        const result = await customFetch<{ registros?: any[] }>(`/api/catalogo-cnes?${params}`, { signal: controller.signal });
+        setCnesSuggestions(Array.isArray(result.registros) ? result.registros : []);
+      } catch {
+        if (!controller.signal.aborted) setCnesSuggestions([]);
+      }
+    }, 250);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [cnesSearchQuery, isEditingModalOpen]);
 
   const docTitle = doc?.titulo || 'Documento';
   const documentDate = doc?.data || doc?.criadoEm || doc?.createdAt;
@@ -258,13 +302,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   };
 
   const handleReprocess = async () => {
-    if (!doc || !id || !isMongoId || isReprocessing) return;
+    if (!doc || doc.status !== 'failed' || !id || !isMongoId || isReprocessing) return;
     setIsReprocessing(true);
-    const path = doc.status === 'failed' ? 'retry' : 'reprocessar';
     try {
-      await customFetch(`/api/documents/${id}/${path}`, { method: 'POST' });
+      await customFetch(`/api/documents/${id}/retry`, { method: 'POST' });
       await refetch();
-      toast({ title: path === 'retry' ? 'Documento recolocado na fila.' : 'Reprocessamento iniciado.' });
+      toast({ title: 'Documento recolocado na fila.' });
     } catch (error) {
       toast({ title: getApiErrorMessage(error, 'Não foi possível reprocessar o documento.'), variant: 'destructive' });
     } finally {
@@ -292,7 +335,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       await customFetch(`/api/documents/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, camposConfirmados: [...confirmedFields] }),
       });
       await refetch();
       toast({ title: 'Documento atualizado com sucesso!' });
@@ -303,7 +346,41 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   };
 
   const updateTextField = (key: DocumentTextField, value: string) => {
+    if (key === 'data') value = maskDate(value);
+    if (key === 'cnes') value = value.replace(/\D/g, '').slice(0, 7);
     setFormData((previous) => ({ ...previous, [key]: value }));
+    setConfirmedFields((previous) => { const next = new Set(previous); next.delete(key); return next; });
+    if (key === 'clinica' || key === 'cnes') setCnesSearchQuery(value);
+  };
+
+  const confidencePath = (path: string) => lowConfidenceFields.some((item: string) => item.toLowerCase() === path.toLowerCase());
+  const fieldChanged = (path: string) => {
+    const match = path.match(/^(medicamentos|resultadosExame)\[(\d+)\]\.(.+)$/i);
+    if (match) {
+      const [, collection, indexText, field] = match;
+      const index = Number(indexText);
+      const current = collection.toLowerCase() === 'medicamentos' ? formData.medicamentos[index]?.[field as keyof MedicationEdit] : formData.resultadosExame[index]?.[field as keyof ExamResultEdit];
+      const original = collection.toLowerCase() === 'medicamentos' ? doc?.medicamentos?.[index]?.[field] : doc?.resultadosExame?.[index]?.[field];
+      return current !== original;
+    }
+    const key = path.toLowerCase() as DocumentTextField;
+    return formData[key] !== (doc?.[key] ?? '');
+  };
+  const confirmField = (path: string) => setConfirmedFields((previous) => new Set(previous).add(path));
+
+  const handleSearchBula = async (index: number, nome: string) => {
+    if (nome.trim().length < 3) return;
+    setLoadingBulaIndex(index);
+    setBulaErrors((previous) => ({ ...previous, [index]: '' }));
+    setBulaResults((previous) => ({ ...previous, [index]: undefined }));
+    try {
+      const result = await customFetch<any>(`/api/medicamentos/${encodeURIComponent(nome.trim())}/descricao`);
+      setBulaResults((previous) => ({ ...previous, [index]: result }));
+    } catch (error) {
+      setBulaErrors((previous) => ({ ...previous, [index]: getApiErrorMessage(error, 'NÃ£o foi possÃ­vel localizar a bula deste medicamento.') }));
+    } finally {
+      setLoadingBulaIndex(null);
+    }
   };
 
   const updateExamResultNumber = (
@@ -377,7 +454,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </span>
               {['processing', 'pending'].includes(doc.status) && <span className="whitespace-nowrap rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1b3a60]">Processando</span>}
               {doc.status === 'failed' && <span className="whitespace-nowrap rounded-full bg-[#fde8e6] px-2.5 py-1 text-xs font-bold text-[#a13a30]">Falhou</span>}
-              {isReviewPending && (
+              {isReviewPending && lowConfidenceFields.length === 0 && (
                 <span className="whitespace-nowrap rounded-full bg-[#fdf3d8] px-2.5 py-1 text-xs font-bold text-[#6b4208]">
                   Revisar
                 </span>
@@ -387,7 +464,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
 
           <div className="flex gap-2.5">
-            {!['processing', 'pending'].includes(doc.status) && (
+            {doc.status === 'failed' && (
               <button
                 type="button"
                 onClick={handleReprocess}
@@ -395,7 +472,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] shadow-xs transition-colors hover:bg-slate-50 disabled:opacity-50"
               >
                 {isReprocessing ? <LoaderCircle size={16} className="animate-spin" /> : <RotateCw size={16} />}
-                {doc.status === 'failed' ? 'Tentar novamente' : 'Reprocessar'}
+                Tentar novamente
               </button>
             )}
             {fileUrl ? (
@@ -444,7 +521,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   : 'Este documento precisa de conferência'}
               </b>
               <div className="mt-0.5 text-sm leading-relaxed">
-                Confira as informações extraídas comparando-as com o documento original.
+                Os campos em amarelo precisam ser conferidos. Altere o valor e confirme cada campo.
               </div>
             </div>
           </div>
@@ -694,17 +771,10 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
                 {extractedText && (
                   <div className="rounded-2xl border border-[#dde3ec] bg-white overflow-hidden shadow-xs transition-all">
-                    <div
-                      onClick={() => setShowExtractedText(!showExtractedText)}
-                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors select-none"
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setShowExtractedText(!showExtractedText);
-                        }
-                      }}
+                    <button
+                      type="button"
+                      onClick={() => setShowExtractedText((open) => !open)}
+                      className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
                       aria-expanded={showExtractedText}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -715,31 +785,16 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           <div className="text-sm font-bold text-[#1d2a3d] flex items-center gap-2">
                             Texto extraído
                           </div>
-                          <div className="text-xs text-[#5a6a80]">
-                            {showExtractedText ? 'Clique na chavinha para fechar' : 'Clique na chavinha para abrir o texto completo'}
-                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <span className="text-xs font-semibold text-[#5a6a80] hidden sm:inline">
-                          {showExtractedText ? 'Aberto' : 'Fechado'}
-                        </span>
-                        <Switch
-                          checked={showExtractedText}
-                          onCheckedChange={setShowExtractedText}
-                          className="data-[state=checked]:bg-[#1b3a60] data-[state=unchecked]:bg-slate-300 cursor-pointer"
-                          aria-label="Alternar visualização do texto extraído"
-                        />
-                        <ChevronDown
-                          size={18}
-                          className={`text-[#5a6a80] transition-transform duration-200 cursor-pointer ${
-                            showExtractedText ? 'rotate-180' : ''
-                          }`}
-                          onClick={() => setShowExtractedText(!showExtractedText)}
-                        />
-                      </div>
-                    </div>
+                      <ChevronDown
+                        size={18}
+                        className={`shrink-0 text-[#5a6a80] transition-transform duration-200 ${
+                          showExtractedText ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
 
                     {showExtractedText && (
                       <div className="border-t border-[#dde3ec] bg-[#f8fafc] p-4 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -840,12 +895,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             <div className="mt-6 flex justify-end gap-2.5 border-t border-[#dde3ec] pt-4">
               <button
                 type="button"
-                onClick={() => setIsEditingModalOpen(true)}
+                onClick={() => { setConfirmedFields(new Set()); setIsEditingModalOpen(true); }}
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#1d2a3d] transition-colors hover:bg-slate-50"
               >
                 <Edit2 size={16} /> Editar dados
               </button>
-              {isReviewPending && (
+              {isReviewPending && lowConfidenceFields.length === 0 && (
                 <button
                   type="button"
                   onClick={handleConfirmRevisao}
@@ -885,12 +940,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       id="document-tipo"
                       value={formData.tipo}
                       onChange={(event) => updateTextField('tipo', event.target.value)}
-                      className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 outline-none focus:border-[#1b3a60]"
+                      className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1b3a60] ${confidencePath('tipo') ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                     >
                       {['exame', 'receita', 'laudo', 'atestado', 'vacina', 'encaminhamento', 'relatorio', 'outro'].map((type) => (
                         <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
                       ))}
                     </select>
+                    {confidencePath('tipo') && <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">Confira este campo. {confirmedFields.has('tipo') ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged('tipo')} onClick={() => confirmField('tipo')} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</div>}
                   </div>
                   {documentTextFields.map(({ key, label, multiline }) => (
                     <div key={key} className={multiline ? 'sm:col-span-2' : undefined}>
@@ -898,10 +954,10 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       {multiline ? (
                         <textarea
                           id={`document-${key}`}
-                          rows={key === 'textoExtraido' || key === 'conteudo' ? 5 : 3}
+                          rows={3}
                           value={formData[key]}
                           onChange={(event) => updateTextField(key, event.target.value)}
-                          className="w-full rounded-xl border border-[#c6cfdb] p-3 outline-none focus:border-[#1b3a60]"
+                          className={`w-full rounded-xl border p-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                         />
                       ) : (
                         <input
@@ -909,8 +965,45 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           type="text"
                           value={formData[key]}
                           onChange={(event) => updateTextField(key, event.target.value)}
-                          className="h-11 w-full rounded-xl border border-[#c6cfdb] px-3 outline-none focus:border-[#1b3a60]"
+                          maxLength={key === 'data' ? 10 : key === 'cnes' ? 7 : undefined}
+                          placeholder={key === 'data' ? 'DD/MM/AAAA' : undefined}
+                          className={`h-11 w-full rounded-xl border px-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                         />
+                      )}
+                      {confidencePath(key) && (
+                        <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+                          <p>Confira este valor. Ele só será aceito após você alterar e confirmar.</p>
+                          {confirmedFields.has(key) ? <p className="mt-1 font-bold">Valor confirmado</p> : (
+                            <button type="button" disabled={!fieldChanged(key)} onClick={() => confirmField(key)} className="mt-1 font-bold underline disabled:cursor-not-allowed disabled:opacity-50">Confirmar valor</button>
+                          )}
+                        </div>
+                      )}
+                      {key === 'cid' && cidSuggestions.length > 0 && (
+                        <div className="mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#dde3ec] bg-white shadow-lg">
+                          {cidSuggestions.map((record) => (
+                            <button key={record.codigo} type="button" onClick={() => {
+                              updateTextField('cid', `${record.codigo} - ${record.descricao}`);
+                              setCidSuggestions([]);
+                            }} className="block w-full px-3 py-2 text-left text-xs hover:bg-slate-50">
+                              <span className="font-bold text-[#1b3a60]">{record.codigo}</span>
+                              <span className="ml-2 text-[#5a6a80]">{record.descricao}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {(key === 'clinica' || key === 'cnes') && cnesSuggestions.length > 0 && (
+                        <div className="mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#dde3ec] bg-white shadow-lg">
+                          {cnesSuggestions.map((record) => (
+                            <button key={record.codigo} type="button" onClick={() => {
+                              setFormData((previous) => ({ ...previous, cnes: record.codigo, clinica: record.descricao }));
+                              setCnesSuggestions([]);
+                              setCnesSearchQuery('');
+                            }} className="block w-full px-3 py-2 text-left text-xs hover:bg-slate-50">
+                              <span className="font-bold text-[#1b3a60]">CNES {record.codigo}</span>
+                              <span className="ml-2 text-[#5a6a80]">{record.descricao}</span>
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -946,15 +1039,44 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           {label}
                           <input
                             value={medication[field]}
-                            onChange={(event) => setFormData((previous) => ({
-                              ...previous,
-                              medicamentos: previous.medicamentos.map((item, itemIndex) =>
-                                itemIndex === index ? { ...item, [field]: event.target.value } : item),
-                            }))}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
+                            onChange={(event) => {
+                              setFormData((previous) => ({ ...previous, medicamentos: previous.medicamentos.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: event.target.value } : item) }));
+                              setConfirmedFields((previous) => { const next = new Set(previous); next.delete(`medicamentos[${index}].${field}`); return next; });
+                            }}
+                            className={`mt-1 h-10 w-full rounded-lg border px-3 font-normal outline-none focus:border-[#1b3a60] ${confidencePath(`medicamentos[${index}].${field}`) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                           />
+                          {confidencePath(`medicamentos[${index}].${field}`) && (
+                            <span className="mt-1 block rounded bg-amber-50 p-2 text-xs font-normal text-amber-900">
+                              Confira este campo. {confirmedFields.has(`medicamentos[${index}].${field}`) ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged(`medicamentos[${index}].${field}`)} onClick={() => confirmField(`medicamentos[${index}].${field}`)} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}
+                            </span>
+                          )}
                         </label>
                       ))}
+                      <div className="sm:col-span-4">
+                        <button
+                          type="button"
+                          disabled={loadingBulaIndex === index || medication.nome.trim().length < 3}
+                          onClick={() => handleSearchBula(index, medication.nome)}
+                          className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#b9cde4] px-3 text-xs font-bold text-[#1b3a60] hover:bg-[#f3f7fc] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {loadingBulaIndex === index ? <LoaderCircle size={14} className="animate-spin" /> : <FileText size={14} />}
+                          Consultar bula na ANVISA
+                        </button>
+                        {bulaErrors[index] && <p className="mb-0 mt-2 text-xs text-red-700">{bulaErrors[index]}</p>}
+                        {bulaResults[index] && (
+                          <div className="mt-2 rounded-lg bg-[#f7f9fc] p-3 text-xs text-[#40516a]">
+                            <p className="mb-1 font-bold text-[#1b3a60]">{bulaResults[index].nome} · Fonte: {bulaResults[index].fonte}</p>
+                            <p className="mb-2 whitespace-pre-wrap">{bulaResults[index].descricao}</p>
+                            <a href="https://consultas.anvisa.gov.br/#/bulario" target="_blank" rel="noreferrer" className="inline-block font-bold text-[#1f7fe0] underline">Abrir Bulario Eletronico oficial</a>
+                            <p className="mb-0 text-[11px]">{[
+                              bulaResults[index].principioAtivo && `Principio ativo: ${bulaResults[index].principioAtivo}`,
+                              bulaResults[index].fabricante && `Fabricante: ${bulaResults[index].fabricante}`,
+                              bulaResults[index].registroAnvisa && `Registro ANVISA: ${bulaResults[index].registroAnvisa}`,
+                              bulaResults[index].situacaoRegistro && `Situacao: ${bulaResults[index].situacaoRegistro}`,
+                            ].filter(Boolean).join(' · ')}</p>
+                          </div>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={() => setFormData((previous) => ({
@@ -971,151 +1093,35 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 </div>
               </section>
 
-              <section>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h4 className="font-bold text-[#1b3a60]">Resultados de exames</h4>
-                  <button
-                    type="button"
-                    onClick={() => setFormData((previous) => ({
-                      ...previous,
-                      resultadosExame: [...previous.resultadosExame, {
-                        nome: '', nomeNormalizado: '', valor: null, valorTexto: '', unidade: '',
-                        refMin: null, refMax: null, referenciaTexto: '', status: 'indefinido',
-                        confianca: 1, confirmacaoNecessaria: false, motivoConfirmacao: '',
-                      }],
-                    }))}
-                    className="rounded-lg border border-[#dde3ec] px-3 py-2 text-xs font-bold text-[#1b3a60] hover:bg-slate-50"
-                  >
-                    Adicionar resultado
-                  </button>
-                </div>
-                {formData.resultadosExame.length === 0 && (
-                  <p className="text-sm text-[#5a6a80]">Nenhum resultado de exame registrado.</p>
-                )}
-                <div className="space-y-3">
-                  {formData.resultadosExame.map((result, index) => (
-                    <div key={index} className="space-y-3 rounded-xl border border-[#dde3ec] p-3">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {([
-                          ['nome', 'Exame'],
-                          ['nomeNormalizado', 'Nome normalizado'],
-                          ['valorTexto', 'Valor exibido'],
-                          ['unidade', 'Unidade'],
-                          ['referenciaTexto', 'Referência'],
-                          ['status', 'Status'],
-                          ['motivoConfirmacao', 'Motivo da confirmação'],
-                        ] as const).map(([field, label]) => (
-                          <label key={field} className="block font-semibold">
-                            {label}
-                            <input
-                              value={result[field]}
-                              onChange={(event) => setFormData((previous) => ({
-                                ...previous,
-                                resultadosExame: previous.resultadosExame.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, [field]: event.target.value } : item),
-                              }))}
-                              className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
-                            />
-                          </label>
-                        ))}
-                        {([
-                          ['valor', 'Valor numérico'],
-                          ['refMin', 'Referência mínima'],
-                          ['refMax', 'Referência máxima'],
-                          ['confianca', 'Confiança'],
-                        ] as const).map(([field, label]) => (
-                          <label key={field} className="block font-semibold">
-                            {label}
-                            <input
-                              type="number"
-                              step="any"
-                              value={result[field] ?? ''}
-                              onChange={(event) => updateExamResultNumber(index, field, event.target.value)}
-                              className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
-                            />
-                          </label>
-                        ))}
+              {formData.resultadosExame.length > 0 && (
+                <section>
+                  <h4 className="mb-3 font-bold text-[#1b3a60]">Resultados do exame</h4>
+                  <div className="space-y-3">
+                    {formData.resultadosExame.map((result, index) => (
+                      <div key={index} className="grid gap-3 rounded-xl border border-[#dde3ec] p-3 sm:grid-cols-2">
+                        {(() => { const path = `resultadosExame[${index}].valor`; return <label className="block font-semibold">Valor numérico
+                          <input type="number" step="any" value={result.valor ?? ''} onChange={(event) => {
+                            setFormData((previous) => ({ ...previous, resultadosExame: previous.resultadosExame.map((item, itemIndex) => itemIndex === index ? { ...item, valor: event.target.value === '' ? null : Number(event.target.value) } : item) }));
+                            setConfirmedFields((previous) => { const next = new Set(previous); next.delete(path); return next; });
+                          }} className={`mt-1 h-10 w-full rounded-lg border px-3 font-normal ${confidencePath(path) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />
+                          {confidencePath(path) && <span className="mt-1 block rounded bg-amber-50 p-2 text-xs font-normal text-amber-900">Confira este campo. {confirmedFields.has(path) ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged(path)} onClick={() => confirmField(path)} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</span>}
+                        </label>; })()}
+                        {([['nome', 'Exame'], ['valorTexto', 'Resultado'], ['unidade', 'Unidade'], ['referenciaTexto', 'Referência']] as const).map(([field, label]) => {
+                          const path = `resultadosExame[${index}].${field}`;
+                          return <label key={field} className="block font-semibold">{label}
+                            <input value={result[field]} onChange={(event) => {
+                              setFormData((previous) => ({ ...previous, resultadosExame: previous.resultadosExame.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: event.target.value } : item) }));
+                              setConfirmedFields((previous) => { const next = new Set(previous); next.delete(path); return next; });
+                            }} className={`mt-1 h-10 w-full rounded-lg border px-3 font-normal ${confidencePath(path) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />
+                            {confidencePath(path) && <span className="mt-1 block rounded bg-amber-50 p-2 text-xs font-normal text-amber-900">Confira este campo. {confirmedFields.has(path) ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged(path)} onClick={() => confirmField(path)} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</span>}
+                          </label>;
+                        })}
                       </div>
-                      <label className="inline-flex items-center gap-2 font-semibold">
-                        <input
-                          type="checkbox"
-                          checked={result.confirmacaoNecessaria}
-                          onChange={(event) => setFormData((previous) => ({
-                            ...previous,
-                            resultadosExame: previous.resultadosExame.map((item, itemIndex) =>
-                              itemIndex === index ? { ...item, confirmacaoNecessaria: event.target.checked } : item),
-                          }))}
-                        />
-                        Requer confirmação
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setFormData((previous) => ({
-                          ...previous,
-                          resultadosExame: previous.resultadosExame.filter((_, itemIndex) => itemIndex !== index),
-                        }))}
-                        className="ml-4 rounded-lg px-3 py-2 font-bold text-[#a13a30] hover:bg-red-50"
-                      >
-                        Remover resultado
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                    ))}
+                  </div>
+                </section>
+              )}
 
-              <section>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h4 className="font-bold text-[#1b3a60]">Conteúdo estruturado</h4>
-                  <button
-                    type="button"
-                    onClick={() => setFormData((previous) => ({
-                      ...previous,
-                      conteudoIndentado: [...previous.conteudoIndentado, { tipo: '', texto: '', chave: '', valor: '' }],
-                    }))}
-                    className="rounded-lg border border-[#dde3ec] px-3 py-2 text-xs font-bold text-[#1b3a60] hover:bg-slate-50"
-                  >
-                    Adicionar campo
-                  </button>
-                </div>
-                {formData.conteudoIndentado.length === 0 && (
-                  <p className="text-sm text-[#5a6a80]">Nenhum campo estruturado registrado.</p>
-                )}
-                <div className="space-y-3">
-                  {formData.conteudoIndentado.map((item, index) => (
-                    <div key={index} className="grid gap-3 rounded-xl border border-[#dde3ec] p-3 sm:grid-cols-4">
-                      {([
-                        ['tipo', 'Tipo'],
-                        ['texto', 'Texto'],
-                        ['chave', 'Chave'],
-                        ['valor', 'Valor'],
-                      ] as const).map(([field, label]) => (
-                        <label key={field} className="block font-semibold">
-                          {label}
-                          <input
-                            value={item[field]}
-                            onChange={(event) => setFormData((previous) => ({
-                              ...previous,
-                              conteudoIndentado: previous.conteudoIndentado.map((row, itemIndex) =>
-                                itemIndex === index ? { ...row, [field]: event.target.value } : row),
-                            }))}
-                            className="mt-1 h-10 w-full rounded-lg border border-[#c6cfdb] px-3 font-normal outline-none focus:border-[#1b3a60]"
-                          />
-                        </label>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => setFormData((previous) => ({
-                          ...previous,
-                          conteudoIndentado: previous.conteudoIndentado.filter((_, itemIndex) => itemIndex !== index),
-                        }))}
-                        className="justify-self-start rounded-lg px-3 py-2 font-bold text-[#a13a30] hover:bg-red-50 sm:col-span-4"
-                      >
-                        Remover campo
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
             </div>
             <div className="mt-6 flex justify-end gap-2.5">
               <button
