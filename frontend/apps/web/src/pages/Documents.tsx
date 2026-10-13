@@ -48,6 +48,27 @@ const DOCUMENT_TYPE_LABELS = Object.fromEntries(
   DOCUMENT_TYPES.map(({ id, label }) => [id, label.replace(/s$/, '')]),
 ) as Record<string, string>;
 
+function getDocumentTypeIcon(type: string) {
+  const normalized = type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (normalized.includes('receit')) return Pill;
+  if (normalized.includes('exam')) return Activity;
+  if (normalized.includes('atest')) return ShieldCheck;
+  if (normalized.includes('vacin')) return Plus;
+  if (normalized.includes('encaminh')) return ChevronRight;
+  if (normalized.includes('relat')) return LayoutGrid;
+  return FileText;
+}
+
+function DocumentTypeBadge({ type }: { type: string }) {
+  const Icon = getDocumentTypeIcon(type);
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1f7fe0] whitespace-nowrap">
+      <Icon size={13} aria-hidden="true" />
+      {type}
+    </span>
+  );
+}
+
 function DocumentThumbnail({
   src,
   title,
@@ -61,7 +82,7 @@ function DocumentThumbnail({
 }) {
   const [hasLoadError, setHasLoadError] = useState(false);
   useEffect(() => setHasLoadError(false), [src]);
-  const TypeIcon = type.toLowerCase().includes('receita') ? Pill : type.toLowerCase().includes('exame') ? Activity : FileText;
+  const TypeIcon = getDocumentTypeIcon(type);
 
   return (
     <div className={`group relative flex shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[#e5eaf1] bg-gradient-to-br from-[#f7f9fc] to-[#eaf0f7] transition-colors hover:from-[#f1f6fc] hover:to-[#e1ebf8] ${compact ? 'h-16 w-16 sm:h-[72px] sm:w-[72px]' : 'h-[150px] w-full'}`}>
@@ -456,9 +477,7 @@ export default function Documents() {
                       {/* Footer tags & delete */}
                       <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-50">
                         <div className="flex gap-1.5 flex-wrap">
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
-                            {doc.tipo}
-                          </span>
+                          <DocumentTypeBadge type={doc.tipo} />
                           {renderBadge(doc)}
                         </div>
 
@@ -538,9 +557,7 @@ export default function Documents() {
                             <RotateCw size={14} /> Tentar novamente
                           </button>
                         )}
-                        <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
-                          {doc.tipo}
-                        </span>
+                        <DocumentTypeBadge type={doc.tipo} />
                         {renderBadge(doc)}
                       </div>
 
