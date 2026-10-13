@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'wouter';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   FileText,
@@ -9,10 +8,8 @@ import {
   ArrowRight,
   Activity,
   X,
-  Maximize2,
-  Copy,
-  Check,
-  Stethoscope
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import {
   useGetApiPacientesMe,
@@ -36,7 +33,7 @@ function uniqueLabels(values: unknown[]): string[] {
 
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
-  const [summaryCopied, setSummaryCopied] = useState(false);
+  const [cardZoom, setCardZoom] = useState(1);
 
   const { data: profile, isLoading: isProfileLoading, isError: profileError } = useGetApiPacientesMe();
   const { data: documentsRaw, isLoading: isDocumentsLoading, isError: documentsError } = useGetApiDocuments();
@@ -80,45 +77,6 @@ export default function Dashboard() {
   const continuousMeds = uniqueLabels(
     Array.isArray(ficha.medicamentosContinuos) ? ficha.medicamentosContinuos : []
   );
-
-  const valueOrUnknown = (value: unknown) =>
-    typeof value === 'string' && value.trim() ? value.trim() : 'Não informado';
-  const yesNoOrUnknown = (value: unknown) =>
-    value === true ? 'Sim' : value === false ? 'Não' : 'Não informado';
-  const clinicalSummary = () => [
-    'RESUMO DE SAÚDE PARA CONSULTA',
-    `Paciente: ${valueOrUnknown(user.nome)}`,
-    `Nascimento: ${birthDateFormatted}${age !== null ? ` (${age} anos)` : ''}`,
-    `Sexo: ${valueOrUnknown(user.sexo || user.sexoBiologico)}`,
-    `Tipo sanguíneo: ${valueOrUnknown(ficha.tipoSanguineo)}`,
-    `Alergias: ${allergiesDisplay}`,
-    `Condições de saúde: ${conditionsDisplay}`,
-    `Medicamentos contínuos: ${continuousMeds.join(', ') || 'Não informado'}`,
-    `Cirurgias: ${valueOrUnknown(ficha.cirurgias)}`,
-    `Tabagismo: ${yesNoOrUnknown(ficha.fuma)}`,
-    `Consumo de álcool: ${yesNoOrUnknown(ficha.bebe)}`,
-    `Hábitos e rotina: ${valueOrUnknown(ficha.habitosGerais)}`,
-    `Histórico familiar: ${valueOrUnknown(ficha.historicoFamiliar)}`,
-    `Contato de emergência: ${valueOrUnknown(user.contatoEmergencia)}`,
-    `Plano de saúde: ${valueOrUnknown(healthPlan)}`,
-    `Carteirinha: ${valueOrUnknown(insuranceCardNumber)}`,
-    `Medicamentos identificados nos documentos: ${frequentMeds.map((item) => `${item.nome} (${item.count})`).join(', ') || 'Não informado'}`,
-    `Exames identificados nos documentos: ${frequentExams.map((item) => `${item.nome} (${item.count})`).join(', ') || 'Não informado'}`,
-    '',
-    'Resumo montado com informações cadastradas pelo paciente. Confirmar dados e atualizações durante a consulta.',
-  ].join('\n');
-
-  const copyClinicalSummary = async () => {
-    try {
-      await navigator.clipboard.writeText(clinicalSummary());
-      setSummaryCopied(true);
-      window.setTimeout(() => setSummaryCopied(false), 2500);
-    } catch {
-      setSummaryCopied(false);
-    }
-  };
-
-
 
   const getFrequencies = (values: unknown[]) => {
     const counts = new Map<string, number>();
@@ -178,12 +136,6 @@ export default function Dashboard() {
           </div>
 
           <div className="flex w-full gap-2 sm:w-auto">
-            <Link
-              href="/anamnese"
-              className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm font-bold text-[#1b3a60] hover:bg-[#f1f4f8] lg:hidden"
-            >
-              Anamnese
-            </Link>
             <button
               onClick={() => triggerUploadModal()}
               className="min-h-[44px] flex-1 rounded-xl bg-[#1b3a60] px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#24507f] sm:flex-none sm:px-5"
@@ -196,7 +148,12 @@ export default function Dashboard() {
           {/* Meu perfil e ficha de emergência */}
           <div className="mb-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
             {/* CARTEIRINHA DE SAÚDE */}
-            <div className="bg-gradient-to-br from-[#1b3a60] to-[#24507f] text-white rounded-[24px] p-6 shadow-md relative overflow-hidden lg:col-span-2">
+            <button
+              type="button"
+              onClick={() => setIsCarteirinhaOpen(true)}
+              aria-label="Abrir carteirinha de saúde em tela inteira"
+              className="block w-full cursor-zoom-in bg-gradient-to-br from-[#1b3a60] to-[#24507f] text-left text-white rounded-[24px] p-6 shadow-md relative overflow-hidden transition-shadow hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f7fe0] lg:col-span-2"
+            >
               <div className="flex justify-between items-center text-xs tracking-[0.14em] font-bold text-[#9fc3ea]">
                 <span>MEU PERFIL</span>
                 <span className="opacity-80">DIGITAL</span>
@@ -212,6 +169,9 @@ export default function Dashboard() {
                 <span className="font-bold">Plano:</span> {healthPlan || 'Não cadastrado'}
                 <span className="mx-1.5 text-[#9fc3ea]">·</span>
                 <span className="font-bold">Carteirinha:</span> {insuranceCardNumber || 'Não informada'}
+              </div>
+              <div className="mt-2 text-[13px] text-[#c9d6e8]">
+                <span className="font-bold text-white">Sexo:</span> {user.sexo || user.sexoBiologico || 'Não informado'}
               </div>
 
               <div className="flex gap-2.5 mt-5">
@@ -250,14 +210,10 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsCarteirinhaOpen(true)}
-                className="mt-4 w-full py-2 bg-white/10 hover:bg-white/15 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Maximize2 size={13} /> Ver dados completos do perfil
-              </button>
-
-            </div>
+              <div className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-white/10 py-2 text-xs font-bold text-white">
+                Toque para ampliar a carteirinha
+              </div>
+            </button>
 
             {/* Quick Emergency Card */}
             <button
@@ -355,50 +311,6 @@ export default function Dashboard() {
 
         </div>
 
-        <section aria-labelledby="doctor-summary-title" className="mt-7 rounded-[20px] border border-[#cbd9e8] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf3fc] text-[#1b3a60]">
-                <Stethoscope size={20} />
-              </div>
-              <div>
-                <h2 id="doctor-summary-title" className="m-0 text-lg font-extrabold text-[#1b3a60]">Resumo para consulta médica</h2>
-                <p className="mb-0 mt-1 max-w-2xl text-sm text-[#5a6a80]">Reúna os principais dados de saúde para compartilhar com o profissional durante a consulta.</p>
-              </div>
-            </div>
-            <button type="button" onClick={copyClinicalSummary} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1b3a60] px-4 text-sm font-bold text-white transition-colors hover:bg-[#24507f]">
-              {summaryCopied ? <Check size={16} /> : <Copy size={16} />}
-              {summaryCopied ? 'Resumo copiado' : 'Copiar resumo'}
-            </button>
-          </div>
-          <dl className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 border-t border-[#e4eaf1] pt-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              ['Paciente', valueOrUnknown(user.nome)],
-              ['Nascimento e idade', `${birthDateFormatted}${age !== null ? ` · ${age} anos` : ''}`],
-              ['Sexo', valueOrUnknown(user.sexo || user.sexoBiologico)],
-              ['Tipo sanguíneo', valueOrUnknown(ficha.tipoSanguineo)],
-              ['Alergias', allergiesDisplay],
-              ['Condições de saúde', conditionsDisplay],
-              ['Medicamentos contínuos', continuousMeds.join(' · ') || 'Não informado'],
-              ['Cirurgias', valueOrUnknown(ficha.cirurgias)],
-              ['Tabagismo / álcool', `${yesNoOrUnknown(ficha.fuma)} / ${yesNoOrUnknown(ficha.bebe)}`],
-              ['Hábitos e rotina', valueOrUnknown(ficha.habitosGerais)],
-              ['Histórico familiar', valueOrUnknown(ficha.historicoFamiliar)],
-              ['Contato de emergência', valueOrUnknown(user.contatoEmergencia)],
-              ['Plano de saúde', valueOrUnknown(healthPlan)],
-              ['Número da carteirinha', valueOrUnknown(insuranceCardNumber)],
-              ['Medicamentos nos documentos', frequentMeds.map((item) => `${item.nome} (${item.count})`).join(' · ') || 'Não informado'],
-              ['Exames nos documentos', frequentExams.map((item) => `${item.nome} (${item.count})`).join(' · ') || 'Não informado'],
-            ].map(([label, value]) => (
-              <div key={label} className="min-w-0">
-                <dt className="text-xs font-bold uppercase tracking-wide text-[#718096]">{label}</dt>
-                <dd className="mb-0 mt-1 break-words text-sm font-semibold text-[#26384f]">{value}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mb-0 mt-5 border-t border-[#e4eaf1] pt-4 text-xs leading-relaxed text-[#718096]">Dados informados pelo paciente; confirme as informações e se continuam atualizadas durante a consulta.</p>
-        </section>
-
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
           Informações organizadas com segurança para o seu acompanhamento contínuo.
         </p>
@@ -407,17 +319,28 @@ export default function Dashboard() {
       {/* Carteirinha Modal Dialog */}
       <DialogPrimitive.Root open={isCarteirinhaOpen} onOpenChange={setIsCarteirinhaOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-[#dde3ec] outline-none">
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-xs font-bold tracking-widest text-[#1f7fe0] uppercase">
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm animate-in fade-in" />
+          <DialogPrimitive.Content className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#f7f9fc] p-3 outline-none sm:p-6">
+            <div className="mb-3 flex shrink-0 items-center justify-between border-b border-[#dde3ec] bg-white px-2 py-3 sm:px-4">
+              <DialogPrimitive.Title className="text-sm font-bold tracking-wide text-[#1b3a60] sm:text-base">
                 Carteirinha de Saúde
-              </div>
-              <DialogPrimitive.Close className="p-1 rounded-lg text-[#5a6a80] hover:bg-slate-100 transition-colors">
+              </DialogPrimitive.Title>
+              <div className="flex items-center gap-2">
+                <button type="button" aria-label="Diminuir zoom" onClick={() => setCardZoom((zoom) => Math.max(0.75, Number((zoom - 0.15).toFixed(2))))} disabled={cardZoom <= 0.75} className="flex h-10 w-10 items-center justify-center rounded-xl text-[#1b3a60] hover:bg-[#f1f4f8] disabled:opacity-40">
+                  <ZoomOut size={19} />
+                </button>
+                <span className="min-w-12 text-center text-xs font-semibold text-[#5a6a80]">{Math.round(cardZoom * 100)}%</span>
+                <button type="button" aria-label="Aumentar zoom" onClick={() => setCardZoom((zoom) => Math.min(1.6, Number((zoom + 0.15).toFixed(2))))} disabled={cardZoom >= 1.6} className="flex h-10 w-10 items-center justify-center rounded-xl text-[#1b3a60] hover:bg-[#f1f4f8] disabled:opacity-40">
+                  <ZoomIn size={19} />
+                </button>
+                <DialogPrimitive.Close aria-label="Fechar carteirinha" className="flex h-10 w-10 items-center justify-center rounded-xl text-[#5a6a80] hover:bg-slate-100 transition-colors">
                 <X size={18} />
-              </DialogPrimitive.Close>
+                </DialogPrimitive.Close>
+              </div>
             </div>
 
+            <div className="min-h-0 flex-1 overflow-auto overscroll-contain p-1 sm:p-4">
+              <div style={{ zoom: cardZoom }} className="mx-auto max-w-3xl">
             <div className="bg-gradient-to-br from-[#1b3a60] to-[#24507f] text-white rounded-2xl p-6 shadow-md mb-4">
               <div className="text-xs tracking-wider text-[#9fc3ea] font-bold">
                 SAÚDEMÉMORA · IDENTIFICAÇÃO PESSOAL
@@ -426,6 +349,7 @@ export default function Dashboard() {
               <div className="text-xs text-[#c9d6e8] mt-1">
                 Nascimento: {birthDateFormatted}{age !== null ? ` · Idade: ${age} anos` : ''}
               </div>
+              <div className="mt-2 text-sm text-white"><strong>Sexo:</strong> {user.sexo || user.sexoBiologico || 'Não informado'}</div>
 
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div className="bg-white/10 rounded-xl p-3">
@@ -444,6 +368,8 @@ export default function Dashboard() {
                 <div><strong className="text-white">Alergias:</strong> {allergiesDisplay}</div>
                 <div><strong className="text-white">Condições:</strong> {conditionsDisplay}</div>
                 <div><strong className="text-white">Remédios contínuos:</strong> {continuousMeds.join(', ') || 'Nenhum'}</div>
+                <div><strong className="text-white">Cirurgias:</strong> {ficha.cirurgias?.trim() || 'Não informado'}</div>
+                <div><strong className="text-white">Contato de emergência:</strong> {user.contatoEmergencia?.trim() || 'Não informado'}</div>
                 <div><strong className="text-white">Plano de saúde:</strong> {healthPlan || 'Não cadastrado'}</div>
                 <div><strong className="text-white">Número da carteirinha:</strong> {insuranceCardNumber || 'Não informado'}</div>
               </div>
@@ -462,34 +388,19 @@ export default function Dashboard() {
                     Abrir carteirinha cadastrada
                   </a>
                 ) : (
-                  <a href={registeredCardUrl} target="_blank" rel="noreferrer" aria-label="Abrir carteirinha de plano cadastrada">
-                    <img
-                      src={registeredCardUrl}
-                      alt="Carteirinha do plano de saúde cadastrada"
-                      className="max-h-56 w-full object-contain"
-                    />
-                  </a>
+                  <img
+                    src={registeredCardUrl}
+                    alt="Carteirinha do plano de saúde cadastrada"
+                    className="max-h-[70vh] w-full object-contain"
+                  />
                 )}
               </div>
             )}
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCarteirinhaOpen(false);
-                  triggerEmergencyModal();
-                }}
-                className="flex-1 py-3 bg-[#fff5f4] border border-[#f0b8b2] text-[#a13a30] text-center font-bold text-sm rounded-xl hover:bg-[#fde8e6] transition-colors"
-              >
-                Abrir ficha completa
-              </button>
-              <button
-                onClick={() => setIsCarteirinhaOpen(false)}
-                className="px-4 py-3 bg-[#f1f4f8] text-[#1b3a60] font-bold text-sm rounded-xl hover:bg-slate-200 transition-colors"
-              >
-                Fechar
-              </button>
+            <div className="mt-4 rounded-xl border border-[#dde3ec] bg-white p-4 text-sm text-[#33445d]">
+              <strong>Histórico familiar:</strong> {ficha.historicoFamiliar?.trim() || 'Não informado'}
+            </div>
+              </div>
             </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
