@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import {
   Check,
   Plus,
+  Search,
   X,
   Pill,
   Shield,
@@ -25,8 +26,10 @@ import {
   findAnamneseSuggestions,
   getAnamneseQuery,
   HABIT_SUGGESTIONS,
+  hasAnamneseEntry,
   normalizeAnamneseTerm,
   SURGERY_SUGGESTIONS,
+  toggleAnamneseEntry,
   type AnamneseSuggestion,
 } from '@/lib/anamnese-dictionary';
 
@@ -46,27 +49,34 @@ function SuggestionButtons({
   dictionary,
   onSelect,
   label,
+  maxSuggestions = 6,
 }: {
   query: string;
   dictionary: AnamneseSuggestion[];
   onSelect: (suggestion: AnamneseSuggestion) => void;
   label: string;
+  maxSuggestions?: number;
 }) {
-  const suggestions = findAnamneseSuggestions(query, dictionary);
+  const suggestions = query.trim().length >= 2
+    ? findAnamneseSuggestions(query, dictionary, maxSuggestions)
+    : dictionary.slice(0, maxSuggestions);
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="mt-2" role="group" aria-label={label}>
-      <div className="mb-1.5 text-xs text-[#5a6a80]">Sugestões — selecione para adicionar:</div>
+    <div className="mt-2.5" role="group" aria-label={label}>
+      <div className="mb-1.5 text-xs text-[#5a6a80]">
+        Opções para preencher rápido:
+      </div>
       <div className="flex flex-wrap gap-2">
         {suggestions.map((suggestion) => (
           <button
             key={suggestion.label}
             type="button"
             onClick={() => onSelect(suggestion)}
-            className="rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-left text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-left text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff] transition-colors cursor-pointer"
           >
-            {suggestion.label}
+            <Plus size={13} className="text-[#1f7fe0]" />
+            <span>{suggestion.label}</span>
           </button>
         ))}
       </div>
@@ -89,24 +99,109 @@ function SuggestedTextarea({
   placeholder: string;
   label: string;
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const displaySuggestions = dictionary
+    ? (searchQuery.trim().length >= 2
+        ? findAnamneseSuggestions(searchQuery, dictionary, 10)
+        : dictionary.slice(0, 8))
+    : [];
+
+  const handleAddCustom = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onChange(appendAnamneseEntry(value, trimmed));
+    setSearchQuery('');
+  };
+
   return (
-    <>
+    <div className="space-y-2.5">
+      {dictionary && dictionary.length > 0 && (
+        <div className="space-y-2">
+          {/* Quick search / add input */}
+          <div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 focus-within:border-[#1b3a60]">
+            <Search size={16} className="shrink-0 text-[#5a6a80]" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustom(searchQuery);
+                }
+              }}
+              placeholder={`Buscar ou adicionar opção para ${label}...`}
+              autoComplete="off"
+              className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#1d2a3d] outline-none placeholder:text-[#78879a]"
+            />
+            <button
+              type="button"
+              onClick={() => handleAddCustom(searchQuery)}
+              disabled={!searchQuery.trim()}
+              aria-label={`Adicionar a ${label}`}
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-[#1b3a60] px-3 text-xs font-bold text-white transition-colors hover:bg-[#244d7e] disabled:opacity-40 cursor-pointer"
+            >
+              <Plus size={14} />
+              <span>Adicionar</span>
+            </button>
+          </div>
+
+          {/* Quick fill chips / pills */}
+          {displaySuggestions.length > 0 && (
+            <div>
+              <div className="mb-1.5 flex items-center justify-between text-xs text-[#5a6a80]">
+                <span>
+                  {searchQuery.trim().length >= 2
+                    ? 'Opções encontradas — clique para selecionar:'
+                    : 'Opções rápidas para preencher (clique para marcar):'}
+                </span>
+              </div>
+              <div
+                className="flex flex-wrap gap-2"
+                aria-label={`Sugestões para ${label}`}
+              >
+                {displaySuggestions.map((suggestion) => {
+                  const isSelected = hasAnamneseEntry(value, suggestion.label);
+                  return (
+                    <button
+                      key={suggestion.label}
+                      type="button"
+                      onClick={() =>
+                        onChange(toggleAnamneseEntry(value, suggestion.label))
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border border-[#1b3a60] bg-[#1b3a60] text-white shadow-xs'
+                          : 'border border-[#c6cfdb] bg-white text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]'
+                      }`}
+                    >
+                      {isSelected ? (
+                        <Check size={13} strokeWidth={2.5} className="shrink-0" />
+                      ) : (
+                        <Plus size={13} strokeWidth={2.5} className="shrink-0 text-[#1f7fe0]" />
+                      )}
+                      <span>{suggestion.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Textarea */}
       <textarea
         rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-[#c6cfdb] p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+        className="w-full rounded-xl border border-[#c6cfdb] bg-white p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
       />
-      <SuggestionButtons
-        query={getAnamneseQuery(value)}
-        dictionary={dictionary}
-        label={`Sugestões para ${label}`}
-        onSelect={({ label: suggestion }) =>
-          onChange(appendAnamneseEntry(value, suggestion))
-        }
-      />
-    </>
+      <p className="mt-1 text-xs text-[#78879a]">
+        Você pode marcar as opções sugeridas acima ou escrever/editar livremente no campo de texto.
+      </p>
+    </div>
   );
 }
 

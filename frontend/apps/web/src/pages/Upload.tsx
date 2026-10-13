@@ -23,6 +23,7 @@ type UploadQueueItem = {
   status: 'pronto' | 'processando' | 'fila' | 'falha';
   statusText: string;
   error?: string;
+  previewUrl?: string;
 };
 
 const DOC_TYPES = [
@@ -71,6 +72,9 @@ export default function Upload() {
       const tempId = `upload-${Date.now()}-${Math.random()}`;
       const sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB · enviando`;
 
+      const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
+      const previewUrl = isImage ? URL.createObjectURL(file) : undefined;
+
       const newItem: UploadQueueItem = {
         id: tempId,
         name: file.name,
@@ -78,6 +82,7 @@ export default function Upload() {
         progress: 20,
         status: 'processando',
         statusText: 'Processando 20%',
+        previewUrl,
       };
 
       setQueue((prev) => [newItem, ...prev]);
@@ -311,14 +316,20 @@ export default function Upload() {
                 {queue.map((item) => (
                   <div key={item.id} className="flex items-center gap-3.5 py-4">
                     {/* File icon preview */}
-                    <div className="w-11 h-14 rounded-lg bg-white border border-[#dde3ec] p-2.5 shrink-0 flex flex-col justify-between shadow-xs">
-                      <div className="space-y-1">
-                        <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[90%]" />
-                        <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[65%]" />
-                        <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[85%]" />
+                    {item.previewUrl ? (
+                      <div className="w-11 h-14 rounded-lg overflow-hidden border border-[#dde3ec] shrink-0 bg-white shadow-xs">
+                        <img src={item.previewUrl} alt={item.name} className="w-full h-full object-cover" />
                       </div>
-                      <div className="h-[4px] rounded-[2px] bg-[#1f7fe0]/50 w-[70%]" />
-                    </div>
+                    ) : (
+                      <div className="w-11 h-14 rounded-lg bg-white border border-[#dde3ec] p-2.5 shrink-0 flex flex-col justify-between shadow-xs">
+                        <div className="space-y-1">
+                          <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[90%]" />
+                          <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[65%]" />
+                          <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[85%]" />
+                        </div>
+                        <div className="h-[4px] rounded-[2px] bg-[#1f7fe0]/50 w-[70%]" />
+                      </div>
+                    )}
 
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-0.5">

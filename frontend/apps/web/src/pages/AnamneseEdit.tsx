@@ -2,9 +2,11 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { useLocation } from 'wouter';
 import {
   ArrowLeft,
+  Check,
   LoaderCircle,
   Plus,
   Save,
+  Search,
   ShieldCheck,
   X,
 } from 'lucide-react';
@@ -21,8 +23,10 @@ import {
   findAnamneseSuggestions,
   getAnamneseQuery,
   HABIT_SUGGESTIONS,
+  hasAnamneseEntry,
   normalizeAnamneseTerm,
   SURGERY_SUGGESTIONS,
+  toggleAnamneseEntry,
   type AnamneseSuggestion,
 } from '@/lib/anamnese-dictionary';
 
@@ -65,10 +69,11 @@ function EditableList({
       addItem(value);
     }
   };
-  const matchingSuggestions = findAnamneseSuggestions(value, suggestions).slice(
-    0,
-    5,
-  );
+  const matchingSuggestions = value.trim().length >= 2
+    ? findAnamneseSuggestions(value, suggestions).slice(0, 6)
+    : suggestions
+        .filter((s) => !items.some((item) => normalizeAnamneseTerm(item) === normalizeAnamneseTerm(s.label)))
+        .slice(0, 6);
 
   return (
     <section>
@@ -89,26 +94,32 @@ function EditableList({
           onClick={() => addItem(value)}
           disabled={!value.trim()}
           aria-label={`Adicionar ${label.toLowerCase()}`}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1b3a60] text-white hover:bg-[#244d7e] disabled:opacity-40"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1b3a60] text-white hover:bg-[#244d7e] disabled:opacity-40 transition-colors"
         >
           <Plus size={17} />
         </button>
       </div>
       {matchingSuggestions.length > 0 && (
-        <div
-          className="mt-2 flex flex-wrap gap-2"
-          aria-label={`Sugestões para ${label.toLowerCase()}`}
-        >
-          {matchingSuggestions.map((suggestion) => (
-            <button
-              key={suggestion.label}
-              type="button"
-              onClick={() => addItem(suggestion.label)}
-              className="rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
-            >
-              {suggestion.label}
-            </button>
-          ))}
+        <div className="mt-2.5">
+          <div className="mb-1.5 text-xs text-[#5a6a80]">
+            Opções para preencher rápido:
+          </div>
+          <div
+            className="flex flex-wrap gap-2"
+            aria-label={`Sugestões para ${label.toLowerCase()}`}
+          >
+            {matchingSuggestions.map((suggestion) => (
+              <button
+                key={suggestion.label}
+                type="button"
+                onClick={() => addItem(suggestion.label)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff] transition-colors"
+              >
+                <Plus size={13} className="text-[#1f7fe0]" />
+                <span>{suggestion.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
@@ -144,48 +155,121 @@ function TextAreaField({
   onChange,
   placeholder,
   suggestions,
+  rows = 3,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   suggestions?: AnamneseSuggestion[];
+  rows?: number;
 }) {
-  const matchingSuggestions = suggestions
-    ? findAnamneseSuggestions(getAnamneseQuery(value), suggestions).slice(0, 5)
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const displaySuggestions = suggestions
+    ? (searchQuery.trim().length >= 2
+        ? findAnamneseSuggestions(searchQuery, suggestions, 10)
+        : suggestions.slice(0, 8))
     : [];
+
+  const handleAddCustom = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    onChange(appendAnamneseEntry(value, trimmed));
+    setSearchQuery('');
+  };
 
   return (
     <section>
       <label className="mb-1.5 block text-sm font-bold text-[#1d2a3d]">
         {label}
       </label>
+
+      {suggestions && suggestions.length > 0 && (
+        <div className="mb-3 space-y-2.5">
+          {/* Campo para buscar ou adicionar opção */}
+          <div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 focus-within:border-[#1b3a60]">
+            <Search size={16} className="shrink-0 text-[#5a6a80]" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustom(searchQuery);
+                }
+              }}
+              placeholder={`Buscar ou adicionar opção para ${label.toLowerCase()}...`}
+              autoComplete="off"
+              className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#1d2a3d] outline-none placeholder:text-[#78879a]"
+            />
+            <button
+              type="button"
+              onClick={() => handleAddCustom(searchQuery)}
+              disabled={!searchQuery.trim()}
+              aria-label={`Adicionar a ${label.toLowerCase()}`}
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-[#1b3a60] px-3 text-xs font-bold text-white transition-colors hover:bg-[#244d7e] disabled:opacity-40"
+            >
+              <Plus size={14} />
+              <span>Adicionar</span>
+            </button>
+          </div>
+
+          {/* Sugestões rápidas para preencher */}
+          {displaySuggestions.length > 0 && (
+            <div>
+              <div className="mb-1.5 flex items-center justify-between text-xs text-[#5a6a80]">
+                <span>
+                  {searchQuery.trim().length >= 2
+                    ? 'Opções encontradas — clique para selecionar:'
+                    : 'Opções rápidas para preencher (clique para marcar):'}
+                </span>
+              </div>
+              <div
+                className="flex flex-wrap gap-2"
+                aria-label={`Sugestões para ${label.toLowerCase()}`}
+              >
+                {displaySuggestions.map((suggestion) => {
+                  const isSelected = hasAnamneseEntry(value, suggestion.label);
+                  return (
+                    <button
+                      key={suggestion.label}
+                      type="button"
+                      onClick={() =>
+                        onChange(toggleAnamneseEntry(value, suggestion.label))
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border border-[#1b3a60] bg-[#1b3a60] text-white shadow-xs'
+                          : 'border border-[#c6cfdb] bg-white text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]'
+                      }`}
+                    >
+                      {isSelected ? (
+                        <Check size={13} strokeWidth={2.5} className="shrink-0" />
+                      ) : (
+                        <Plus size={13} strokeWidth={2.5} className="shrink-0 text-[#1f7fe0]" />
+                      )}
+                      <span>{suggestion.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Caixa de texto */}
       <textarea
-        rows={3}
+        rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         className="w-full rounded-xl border border-[#c6cfdb] bg-white p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
       />
-      {matchingSuggestions.length > 0 && (
-        <div
-          className="mt-2 flex flex-wrap gap-2"
-          aria-label={`Sugestões para ${label.toLowerCase()}`}
-        >
-          {matchingSuggestions.map((suggestion) => (
-            <button
-              key={suggestion.label}
-              type="button"
-              onClick={() =>
-                onChange(appendAnamneseEntry(value, suggestion.label))
-              }
-              className="rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
-            >
-              {suggestion.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <p className="mt-1 text-xs text-[#78879a]">
+        Você pode marcar as opções sugeridas acima ou escrever/editar livremente no campo de texto.
+      </p>
     </section>
   );
 }
@@ -641,10 +725,9 @@ export default function AnamneseEdit() {
 
 function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
   const [value, setValue] = useState('');
-  const suggestions = findAnamneseSuggestions(
-    value,
-    CONDITION_SUGGESTIONS,
-  ).slice(0, 5);
+  const suggestions = value.trim().length >= 2
+    ? findAnamneseSuggestions(value, CONDITION_SUGGESTIONS).slice(0, 6)
+    : CONDITION_SUGGESTIONS.slice(0, 6);
   const add = (name: string) => {
     onAdd(name);
     setValue('');
@@ -673,27 +756,33 @@ function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
           type="button"
           onClick={() => add(value)}
           disabled={!value.trim()}
-          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-[#1b3a60] px-4 text-sm font-bold text-white hover:bg-[#244d7e] disabled:opacity-50"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-[#1b3a60] px-4 text-sm font-bold text-white hover:bg-[#244d7e] disabled:opacity-50 transition-colors"
         >
           <Plus size={16} />
           Adicionar
         </button>
       </div>
       {suggestions.length > 0 && (
-        <div
-          className="mt-2 flex flex-wrap gap-2"
-          aria-label="Sugestões de condições"
-        >
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion.label}
-              type="button"
-              onClick={() => add(suggestion.label)}
-              className="rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
-            >
-              {suggestion.label}
-            </button>
-          ))}
+        <div className="mt-2.5">
+          <div className="mb-1.5 text-xs text-[#5a6a80]">
+            Opções para preencher rápido:
+          </div>
+          <div
+            className="flex flex-wrap gap-2"
+            aria-label="Sugestões de condições"
+          >
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.label}
+                type="button"
+                onClick={() => add(suggestion.label)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff] transition-colors"
+              >
+                <Plus size={13} className="text-[#1f7fe0]" />
+                <span>{suggestion.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

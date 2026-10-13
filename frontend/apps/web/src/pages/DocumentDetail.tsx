@@ -12,7 +12,10 @@ import {
   FileText,
   Pill,
   LoaderCircle,
+  ChevronDown,
+  Copy,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import {
   useGetApiDocumentsId,
   useDeleteApiDocumentsId,
@@ -169,10 +172,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
   const [isConfirmingRevisao, setIsConfirmingRevisao] = useState(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+  const [showExtractedText, setShowExtractedText] = useState(false);
+  const [hasCopiedExtractedText, setHasCopiedExtractedText] = useState(false);
   const [formData, setFormData] = useState<DocumentEditForm>(() => createDocumentEditForm(null));
 
   const doc = (docRaw as any) || null;
-  const hasMedicationTab = String(doc?.tipo ?? '').trim().toLowerCase() === 'receita';
+  const hasMedicationTab = String(doc?.tipo ?? '').trim().toLowerCase() === 'receita' || (Array.isArray(doc?.medicamentos) && doc.medicamentos.length > 0);
 
   useEffect(() => {
     if (!doc) return;
@@ -186,24 +191,36 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const docDate =
     parsedDocumentDate && !Number.isNaN(parsedDocumentDate.getTime())
       ? parsedDocumentDate.toLocaleDateString('pt-BR')
-      : 'Data não informada';
+      : (typeof doc?.data === 'string' && doc.data ? doc.data : 'Data não informada');
   const isReviewPending = Boolean(doc?.revisaoPendente);
   const imageUrls: string[] = Array.isArray(doc?.urlImagens) ? doc.urlImagens : [];
   const fileUrl = imageUrls[0] || doc?.fileUrl || null;
   const examResults = Array.isArray(doc?.resultadosExame) ? doc.resultadosExame : [];
   const medications = Array.isArray(doc?.medicamentos) ? doc.medicamentos : [];
   const alerts = Array.isArray(doc?.alertas) ? doc.alertas : [];
+  const indentedContent: any[] = Array.isArray(doc?.conteudoIndentado) ? doc.conteudoIndentado : [];
   const lowConfidenceFields = Array.isArray(doc?.camposBaixaConfianca)
     ? doc.camposBaixaConfianca
     : [];
+  const extractedText = typeof doc?.textoExtraido === 'string' && doc.textoExtraido.trim()
+    ? doc.textoExtraido.trim()
+    : null;
   const textSections = [
     ['Resumo', doc?.resumo],
     ['Diagnóstico registrado', doc?.diagnostico],
-    ['Conteúdo', doc?.conteudo],
+    ['Resultado do exame', doc?.resultado],
+    ['Conteúdo clínico', doc?.conteudo],
     ['Conclusões', doc?.conclusoes],
     ['Observações', doc?.observacoes],
-    ['Texto extraído', doc?.textoExtraido],
   ].filter(([, value]) => typeof value === 'string' && value.trim());
+
+  const handleCopyExtractedText = () => {
+    if (!extractedText) return;
+    navigator.clipboard.writeText(extractedText);
+    setHasCopiedExtractedText(true);
+    toast({ title: 'Texto extraído copiado!' });
+    setTimeout(() => setHasCopiedExtractedText(false), 2000);
+  };
 
   const handleDelete = async () => {
     if (!doc || !id || !isMongoId) return;
@@ -431,23 +448,94 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 ))}
             </div>
 
-            <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <div className="text-xs font-semibold text-[#5a6a80]">Tipo</div>
-                <div className="mt-1 text-[15px] font-bold text-[#1d2a3d]">{doc.tipoExame || doc.tipo || 'Não informado'}</div>
+            {/* Metadados dinâmicos e completos extraídos do documento */}
+            <div className="mb-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                <div className="text-[11px] font-semibold text-[#5a6a80]">Tipo</div>
+                <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] capitalize truncate">
+                  {doc.tipoExame || doc.tipo || 'Não informado'}
+                </div>
               </div>
-              <div>
-                <div className="text-xs font-semibold text-[#5a6a80]">Data</div>
-                <div className="mt-1 text-[15px] font-bold text-[#1d2a3d]">{docDate}</div>
+
+              <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                <div className="text-[11px] font-semibold text-[#5a6a80]">Data</div>
+                <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate">
+                  {doc.data || docDate}
+                </div>
               </div>
-              <div>
-                <div className="text-xs font-semibold text-[#5a6a80]">Solicitante</div>
-                <div className="mt-1 text-[15px] font-bold text-[#1d2a3d]">{doc.medico || 'Não informado'}</div>
-              </div>
+
+              {(doc.medico || doc.crm) && (
+                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3 col-span-2 sm:col-span-1">
+                  <div className="text-[11px] font-semibold text-[#5a6a80]">Médico / Solicitante</div>
+                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate" title={doc.medico}>
+                    {doc.medico || 'Não informado'}
+                  </div>
+                  {doc.crm && (
+                    <div className="text-xs text-[#1f7fe0] font-semibold mt-0.5">
+                      CRM: {doc.crm}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {doc.clinica && (
+                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-semibold text-[#5a6a80]">Clínica / Local</div>
+                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate" title={doc.clinica}>
+                    {doc.clinica}
+                  </div>
+                </div>
+              )}
+
+              {doc.especialidade && (
+                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-semibold text-[#5a6a80]">Especialidade</div>
+                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate">
+                    {doc.especialidade}
+                  </div>
+                </div>
+              )}
+
+              {doc.cid && (
+                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-semibold text-[#5a6a80]">Código CID-10</div>
+                  <div className="mt-0.5 text-sm font-bold text-[#1b3a60] inline-block bg-[#e5eefb] px-2 py-0.5 rounded font-mono">
+                    {doc.cid}
+                  </div>
+                </div>
+              )}
+
+              {doc.cnes && (
+                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-semibold text-[#5a6a80]">CNES</div>
+                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d]">
+                    {doc.cnes}
+                  </div>
+                </div>
+              )}
+
+              {doc.nomeExame && (
+                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-semibold text-[#5a6a80]">Exame</div>
+                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate" title={doc.nomeExame}>
+                    {doc.nomeExame}
+                  </div>
+                </div>
+              )}
+
+              {doc.tipoClinico && (
+                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-semibold text-[#5a6a80]">Classificação</div>
+                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d]">
+                    {doc.tipoClinico}
+                  </div>
+                </div>
+              )}
             </div>
 
             {activeTab === 'dados' && (
               <div className="space-y-4">
+                {/* Resultados de Exames Laboratoriais */}
                 {examResults.length > 0 && (
                   <div>
                     <h2 className="mb-3 text-sm font-bold text-[#1d2a3d]">Resultados registrados</h2>
@@ -469,13 +557,168 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     </div>
                   </div>
                 )}
+
+                {/* Estrutura e dados detalhados identificados pela IA */}
+                {indentedContent.length > 0 && (
+                  <div className="space-y-3 rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-xs">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#1b3a60] border-b border-[#dde3ec] pb-3">
+                      <FileText size={17} className="text-[#1f7fe0]" />
+                      <span>Dados e estrutura identificados pela IA</span>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      {/* Chaves e Valores (Paciente, Endereço, etc.) */}
+                      {indentedContent.some((item: any) => item.chave && item.valor) && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {indentedContent
+                            .filter((item: any) => item.chave && item.valor)
+                            .map((item: any, idx: number) => (
+                              <div
+                                key={`kv-${idx}`}
+                                className="flex flex-col justify-center rounded-xl border border-[#dde3ec] bg-[#f8fafc] px-3.5 py-2.5"
+                              >
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5a6a80]">
+                                  {item.chave}
+                                </span>
+                                <span className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">
+                                  {item.valor}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+
+                      {/* Cabeçalhos, Tópicos e Textos formatados */}
+                      {indentedContent
+                        .filter((item: any) => !item.chave || !item.valor)
+                        .map((item: any, idx: number) => {
+                          if (item.tipo === 'header' || (!item.tipo && item.texto?.length < 60 && !item.texto?.startsWith('-'))) {
+                            return (
+                              <div
+                                key={`h-${idx}`}
+                                className="mt-2 text-sm font-bold text-[#1b3a60] border-l-2 border-[#1f7fe0] pl-2.5 py-0.5"
+                              >
+                                {item.texto}
+                              </div>
+                            );
+                          }
+                          if (item.tipo === 'bullet' || item.texto?.startsWith('-') || item.texto?.startsWith('•')) {
+                            const cleanText = item.texto?.replace(/^[-•]\s*/, '') || '';
+                            return (
+                              <div
+                                key={`b-${idx}`}
+                                className="flex items-start gap-2.5 rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3 text-xs sm:text-sm text-[#1d2a3d]"
+                              >
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#1f7fe0] shrink-0" />
+                                <span className="leading-relaxed">{cleanText}</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div
+                              key={`t-${idx}`}
+                              className="rounded-xl bg-[#f1f4f8] p-3 text-xs sm:text-sm leading-relaxed text-[#4a5568]"
+                            >
+                              {item.texto}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Seções de Texto Complementares (Resumo, Diagnóstico, Conclusões, etc.) */}
                 {textSections.map(([label, value]) => (
-                  <div key={label as string}>
-                    <h2 className="mb-1 text-sm font-bold text-[#1d2a3d]">{label}</h2>
-                    <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-[#5a6a80]">{value as string}</p>
+                  <div key={label as string} className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4">
+                    <h2 className="mb-1 text-xs font-bold uppercase tracking-wider text-[#1b3a60]">{label}</h2>
+                    <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-[#2d3a4d]">{value as string}</p>
                   </div>
                 ))}
-                {examResults.length === 0 && textSections.length === 0 && (
+
+                {extractedText && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white overflow-hidden shadow-xs transition-all">
+                    <div
+                      onClick={() => setShowExtractedText(!showExtractedText)}
+                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors select-none"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setShowExtractedText(!showExtractedText);
+                        }
+                      }}
+                      aria-expanded={showExtractedText}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#f1f4f8] text-[#1b3a60] flex items-center justify-center shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-[#1d2a3d] flex items-center gap-2">
+                            Texto extraído
+                          </div>
+                          <div className="text-xs text-[#5a6a80]">
+                            {showExtractedText ? 'Clique na chavinha para fechar' : 'Clique na chavinha para abrir o texto completo'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <span className="text-xs font-semibold text-[#5a6a80] hidden sm:inline">
+                          {showExtractedText ? 'Aberto' : 'Fechado'}
+                        </span>
+                        <Switch
+                          checked={showExtractedText}
+                          onCheckedChange={setShowExtractedText}
+                          className="data-[state=checked]:bg-[#1b3a60] data-[state=unchecked]:bg-slate-300 cursor-pointer"
+                          aria-label="Alternar visualização do texto extraído"
+                        />
+                        <ChevronDown
+                          size={18}
+                          className={`text-[#5a6a80] transition-transform duration-200 cursor-pointer ${
+                            showExtractedText ? 'rotate-180' : ''
+                          }`}
+                          onClick={() => setShowExtractedText(!showExtractedText)}
+                        />
+                      </div>
+                    </div>
+
+                    {showExtractedText && (
+                      <div className="border-t border-[#dde3ec] bg-[#f8fafc] p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-[#5a6a80]">
+                            Transcrição OCR original:
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleCopyExtractedText}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1b3a60] hover:text-[#24507f] hover:underline cursor-pointer"
+                          >
+                            {hasCopiedExtractedText ? (
+                              <>
+                                <Check size={13} className="text-emerald-600" />
+                                <span className="text-emerald-600">Copiado!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={13} />
+                                <span>Copiar texto</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto rounded-xl border border-[#dde3ec] bg-white p-3.5 shadow-inner">
+                          <p className="m-0 whitespace-pre-wrap font-sans text-xs leading-relaxed text-[#2d3a4d] select-text">
+                            {extractedText}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {examResults.length === 0 && textSections.length === 0 && !extractedText && (
                   <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
                     Ainda não há dados extraídos para este documento.
                   </p>
