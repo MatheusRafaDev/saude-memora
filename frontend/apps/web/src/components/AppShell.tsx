@@ -69,6 +69,7 @@ const desktopNavItems = [
 const mobileNavItems = [
   desktopNavItems[0],
   desktopNavItems[1],
+  desktopNavItems[2],
   desktopNavItems[3],
   { ...desktopNavItems[5], label: 'Perfil' },
 ];

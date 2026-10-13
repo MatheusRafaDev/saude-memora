@@ -8,7 +8,6 @@ import {
   MessageSquare,
   Plus,
   CalendarDays,
-  ChevronLeft,
 } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import ReactMarkdown from 'react-markdown';
@@ -130,7 +129,12 @@ export default function Chat() {
       if (!Array.isArray(result?.messages)) {
         throw new Error('A API retornou um histórico inválido.');
       }
-      setMessages(result.messages);
+      const latestSessionId = [...result.messages].reverse().find((message) => message.sessionId)?.sessionId;
+      const sessionMessages = latestSessionId
+        ? result.messages.filter((message) => message.sessionId === latestSessionId)
+        : result.messages;
+      if (latestSessionId) setSessionId(latestSessionId);
+      setMessages(sessionMessages);
     } catch {
       if (requestId !== archiveRequestId.current) return;
       setMessages([]);
@@ -218,7 +222,7 @@ export default function Chat() {
             disabled={isLoading}
             className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[#1b3a60] px-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#24507f] disabled:opacity-50 sm:min-h-11 sm:gap-2 sm:px-4 sm:text-sm"
           >
-            {isArchiveView ? <ChevronLeft size={16} /> : <Plus size={16} />}
+            <Plus size={16} />
             <span className="sm:hidden">Novo</span>
             <span className="hidden sm:inline">Nova conversa</span>
           </button>
@@ -293,8 +297,8 @@ export default function Chat() {
 
             {isArchiveView && !isLoadingHistory && !historyError && (
               <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-[#f1f4f8] px-3 py-2 text-xs text-[#53647b]">
-                <span>Este é um arquivo salvo. Para conversar, inicie uma nova conversa.</span>
-                <button type="button" onClick={startNewChat} className="shrink-0 font-bold text-[#1f7fe0]">Nova</button>
+                <span>Conversa de {archiveLabel}</span>
+                <button type="button" onClick={() => setSelectedArchiveDate(null)} className="shrink-0 font-bold text-[#1f7fe0]">Continuar conversa</button>
               </div>
             )}
 
