@@ -32,7 +32,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Ensure configuration provider reads from environment variables
 builder.Configuration.AddEnvironmentVariables();
 
-
+var envPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(envPort) && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    builder.WebHost.UseUrls($"http://+:{envPort}");
+}
 
 // Add services to the container.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

@@ -1,0 +1,39 @@
+# Stage 1: Build da aplicação .NET 9
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copiar arquivos de projeto e restaurar dependências
+COPY SaudeMemora.slnx ./
+COPY SaudeMemora.Api/SaudeMemora.Api.csproj SaudeMemora.Api/
+COPY SaudeMemora.Application/SaudeMemora.Application.csproj SaudeMemora.Application/
+COPY SaudeMemora.Domain/SaudeMemora.Domain.csproj SaudeMemora.Domain/
+COPY SaudeMemora.Infrastructure/SaudeMemora.Infrastructure.csproj SaudeMemora.Infrastructure/
+RUN dotnet restore SaudeMemora.Api/SaudeMemora.Api.csproj
+
+# Copiar o código fonte e os catálogos (data/ e CID/)
+COPY . ./
+WORKDIR /src/SaudeMemora.Api
+RUN dotnet publish -c Release -o /app/publish
+
+# Stage 2: Runtime ASP.NET Core
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+# Instalar utilitários: curl para healthcheck e libcap2-bin para liberar bind em portas baixas (<1024) para usuário sem root
+RUN apt-get update && apt-get install -y --no-install-recommends curl libcap2-bin && \
+    setcap 'cap_net_bind_service=+ep' /usr/share/dotnet/dotnet && \
+    apt-get purge -y libcap2-bin && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app/publish .
+
+# A Vercel encaminha o tráfego dinamicamente para a porta $PORT (padrão 80 se não especificado)
+ENV PORT=80
+EXPOSE 80 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD /bin/sh -c 'curl -fsS http://localhost:${PORT:-80}/api/ping || exit 1'
+
+USER app
+
+# Inicializa o ASP.NET Core escutando na porta fornecida pela Vercel
+ENTRYPOINT ["/bin/sh", "-c", "export ASPNETCORE_URLS=http://+:${PORT:-80}; exec dotnet SaudeMemora.Api.dll"]
