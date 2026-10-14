@@ -40,7 +40,10 @@ export default function Dashboard() {
   const { data: fichaRaw, isLoading: isFichaLoading, isError: fichaError } = useGetApiFichaMedicaMe();
 
   const user = (profile as any) || {};
-  const docs = (documentsRaw as unknown as any[]) || [];
+  // The endpoint contract is an array. Do not let an HTML/error payload from a
+  // misconfigured proxy reach the aggregations below as though it were data.
+  const docs = Array.isArray(documentsRaw) ? documentsRaw : [];
+  const hasInvalidDocumentsResponse = documentsRaw !== undefined && !Array.isArray(documentsRaw);
   const ficha = (fichaRaw as any) || {};
 
   const firstName = user.nome ? user.nome.trim().split(/\s+/)[0] : '';
@@ -94,10 +97,12 @@ export default function Dashboard() {
     const max = sorted[0]?.count || 1;
     return sorted.map((item) => ({ ...item, pct: Math.round((item.count / max) * 100) }));
   };
-  const frequentMeds = getFrequencies(docs.flatMap((doc: any) => doc.medicamentos || []));
+  const frequentMeds = getFrequencies(docs.flatMap((doc: any) =>
+    Array.isArray(doc?.medicamentos) ? doc.medicamentos : [],
+  ));
   const frequentExams = getFrequencies(docs.flatMap((doc: any) => [
-    ...(doc.resultadosExame || []),
-    doc.nomeExame,
+    ...(Array.isArray(doc?.resultadosExame) ? doc.resultadosExame : []),
+    doc?.nomeExame,
   ]));
 
   if (isProfileLoading || isDocumentsLoading || isFichaLoading) {
@@ -110,7 +115,7 @@ export default function Dashboard() {
     );
   }
 
-  if (profileError || documentsError || fichaError) {
+  if (profileError || documentsError || fichaError || hasInvalidDocumentsResponse) {
     return (
       <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center text-[#a13a30]">
         Não foi possível carregar os dados da sua conta. Atualize a página ou tente novamente mais tarde.
