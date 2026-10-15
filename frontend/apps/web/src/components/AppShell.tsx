@@ -162,6 +162,32 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </div>
 
                 <div className="py-1">
+                  <Link
+                    href="/perfil"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
+                    </svg>
+                    Meu perfil
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      setEmergencyModalOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 000-7.8z" />
+                      <path d="M3.5 12h5l2-3 3 6 2-3h5" />
+                    </svg>
+                    Emergência
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {

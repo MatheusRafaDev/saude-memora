@@ -2,11 +2,20 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { useLocation } from 'wouter';
 import {
   Check,
+  CheckCircle2,
+  ChevronDown,
+  Circle,
+  Droplet,
+  HeartPulse,
+  Info,
   LoaderCircle,
+  Moon,
+  Pill,
   Plus,
   Save,
   Search,
   ShieldCheck,
+  Sparkles,
   X,
 } from 'lucide-react';
 import {
@@ -31,6 +40,96 @@ import {
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 type Condition = { nome: string; tem: boolean; detalhes?: string };
+
+type SecaoId = 'gerais' | 'condicoes' | 'alergias' | 'habitos';
+
+/**
+ * Contagem de itens preenchidos por seção, para o resumo lateral e para os
+ * indicadores do cabeçalho de cada bloco.
+ */
+function contarSecoes(dados: {
+  bloodType: string;
+  surgeries: string;
+  observations: string;
+  conditions: Condition[];
+  allergies: string[];
+  medications: string[];
+  habits: string;
+  familyHistory: string;
+  donor: boolean;
+  smoker: boolean;
+  alcohol: boolean;
+}) {
+  const condicoesMarcadas = dados.conditions.filter((condition) => condition.tem).length;
+
+  return {
+    gerais: {
+      preenchidos:
+        (dados.bloodType ? 1 : 0) +
+        (dados.surgeries.trim() ? 1 : 0) +
+        (dados.observations.trim() ? 1 : 0),
+      total: 3,
+    },
+    condicoes: {
+      preenchidos: condicoesMarcadas,
+      total: Math.max(dados.conditions.length, 1),
+      quantidade: condicoesMarcadas,
+    },
+    alergias: {
+      preenchidos:
+        (dados.allergies.length > 0 ? 1 : 0) + (dados.medications.length > 0 ? 1 : 0),
+      total: 2,
+      quantidade: dados.allergies.length,
+      medicamentos: dados.medications.length,
+    },
+    habitos: {
+      preenchidos:
+        (dados.habits.trim() ? 1 : 0) +
+        (dados.familyHistory.trim() ? 1 : 0) +
+        1 + // doador de órgãos sempre tem resposta (Sim/Não)
+        (dados.smoker ? 1 : 0) +
+        (dados.alcohol ? 1 : 0),
+      total: 5,
+    },
+  };
+}
+
+function percentual(preenchidos: number, total: number) {
+  return total === 0 ? 0 : Math.round((preenchidos / total) * 100);
+}
+
+const SECOES: {
+  id: SecaoId;
+  titulo: string;
+  descricao: string;
+  icon: typeof Droplet;
+}[] = [
+  {
+    id: 'gerais',
+    titulo: 'Dados gerais',
+    descricao: 'Tipo sanguíneo, cirurgias e observações',
+    icon: Droplet,
+  },
+  {
+    id: 'condicoes',
+    titulo: 'Condições de saúde',
+    descricao: 'Doenças e condições que você acompanha',
+    icon: HeartPulse,
+  },
+  {
+    id: 'alergias',
+    titulo: 'Alergias e medicamentos',
+    descricao: 'O que você não pode tomar e o que usa todo dia',
+    icon: Pill,
+  },
+  {
+    id: 'habitos',
+    titulo: 'Hábitos e histórico',
+    descricao: 'Rotina, histórico familiar e doação de órgãos',
+    icon: Moon,
+  },
+];
+
 
 function EditableList({
   label,
@@ -73,11 +172,40 @@ function EditableList({
         .slice(0, 6)
     : [];
 
+  // Sugestões rápidas sempre visíveis: sem isso a seção parece vazia e o usuário não
+  // descobre que pode apenas tocar numa opção em vez de digitar.
+  const sugestoesRapidas = suggestions
+    .filter((suggestion) => !items.some((item) => normalizeAnamneseTerm(item) === normalizeAnamneseTerm(suggestion.label)))
+    .slice(0, 8);
+
   return (
     <section>
       <label className="mb-1.5 block text-sm font-bold text-[#1d2a3d]">
         {label}
       </label>
+
+      {value.trim().length < 2 && sugestoesRapidas.length > 0 && (
+        <div className="mb-2.5">
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs text-[#5a6a80]">
+            <Sparkles size={13} className="shrink-0 text-[#1f7fe0]" />
+            <span>Toque para adicionar:</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {sugestoesRapidas.map((suggestion) => (
+              <button
+                key={suggestion.label}
+                type="button"
+                onClick={() => addItem(suggestion.label)}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 text-xs font-semibold text-[#1b3a60] transition-colors hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
+              >
+                <Plus size={12} strokeWidth={2.5} className="shrink-0 text-[#1f7fe0]" />
+                <span>{suggestion.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex min-h-12 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 focus-within:border-[#1b3a60]">
         <input
           value={value}
@@ -139,7 +267,10 @@ function EditableList({
           </span>
         ))}
         {items.length === 0 && (
-          <span className="text-xs text-[#78879a]">Nenhum item informado.</span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-[#78879a]">
+            <Info size={13} className="shrink-0" />
+            Nada informado ainda — use as opções acima ou escreva no campo.
+          </span>
         )}
       </div>
     </section>
@@ -331,6 +462,9 @@ export default function AnamneseEdit() {
   const [alcohol, setAlcohol] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  // No celular as seções funcionam como acordeão; no desktop todas ficam abertas.
+  // `null` = todas recolhidas.
+  const [secaoAberta, setSecaoAberta] = useState<SecaoId | null>('gerais');
 
   useEffect(() => {
     if (!fichaRaw || hasLoaded) return;
@@ -484,9 +618,54 @@ export default function AnamneseEdit() {
 
   const conditionInput = <ConditionInput onAdd={addCondition} />;
 
+  const resumoSecoes = contarSecoes({
+    bloodType,
+    surgeries,
+    observations,
+    conditions,
+    allergies,
+    medications,
+    habits,
+    familyHistory,
+    donor,
+    smoker,
+    alcohol,
+  });
+
+  const totalPreenchidos = Object.values(resumoSecoes).reduce(
+    (soma, secao) => soma + secao.preenchidos,
+    0,
+  );
+  const totalCampos = Object.values(resumoSecoes).reduce(
+    (soma, secao) => soma + secao.total,
+    0,
+  );
+  const percentualGeral = percentual(totalPreenchidos, totalCampos);
+  const condicoesMarcadas = conditions.filter((condition) => condition.tem);
+
+  const resumoItens: { key: SecaoId; preenchidos: number; total: number; extra?: string }[] = [
+    { key: 'gerais', preenchidos: resumoSecoes.gerais.preenchidos, total: resumoSecoes.gerais.total },
+    {
+      key: 'condicoes',
+      preenchidos: resumoSecoes.condicoes.preenchidos,
+      total: resumoSecoes.condicoes.total,
+      extra: condicoesMarcadas.length > 0 ? `${condicoesMarcadas.length} em acompanhamento` : undefined,
+    },
+    {
+      key: 'alergias',
+      preenchidos: resumoSecoes.alergias.preenchidos,
+      total: resumoSecoes.alergias.total,
+      extra:
+        allergies.length + medications.length > 0
+          ? `${allergies.length} alergia(s) · ${medications.length} medicamento(s)`
+          : undefined,
+    },
+    { key: 'habitos', preenchidos: resumoSecoes.habitos.preenchidos, total: resumoSecoes.habitos.total },
+  ];
+
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[1100px] px-5 pb-16 pt-9 text-[#1d2a3d] sm:px-10">
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+    <main className="mx-auto min-h-screen w-full max-w-[1240px] px-5 pb-16 pt-9 text-[#1d2a3d] sm:px-10">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">
             Ficha de saúde
@@ -495,7 +674,7 @@ export default function AnamneseEdit() {
             Anamnese
           </h1>
           <p className="mb-0 mt-1.5 text-sm text-[#5a6a80] sm:text-base">
-            Edite todas as informações de saúde que deseja manter registradas.
+            Seu histórico de saúde, reunido em um só lugar.
           </p>
         </div>
       </div>
@@ -503,20 +682,122 @@ export default function AnamneseEdit() {
       <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#c9d9ee] bg-[#edf5ff] p-4 text-sm leading-relaxed text-[#315477]">
         <ShieldCheck size={19} className="mt-0.5 shrink-0" />
         <p className="mb-0">
-          Preencha apenas o que quiser. Você pode deixar campos vazios e
-          atualizar estas informações quando precisar.
+          Preencha apenas o que quiser — os campos são opcionais. Estas informações aparecem na
+          <strong className="font-bold"> Visão geral</strong> e na
+          <strong className="font-bold"> ficha de emergência</strong>.
         </p>
       </div>
 
-      <div className="space-y-5">
-        <section className="rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-6">
-          <h2 className="mb-1 text-xl font-bold text-[#1b3a60]">
-            Dados gerais
-          </h2>
-          <p className="mb-5 text-sm text-[#5a6a80]">
-            Tipo sanguíneo, cirurgias e outras observações.
-          </p>
-          <div className="space-y-5">
+      <div className="grid items-start gap-5 lg:grid-cols-12">
+        {/* Resumo: mostra de imediato o que já está preenchido, em vez de uma tela vazia. */}
+        <aside className="lg:col-span-4 lg:order-2 xl:col-span-4">
+          <div className="lg:sticky lg:top-24">
+            <section
+              aria-label="Resumo do preenchimento"
+              className="rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]"
+            >
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a6a80]">
+                    Preenchimento
+                  </div>
+                  <div className="mt-0.5 text-3xl font-extrabold tracking-[-0.02em] text-[#1b3a60]">
+                    {percentualGeral}%
+                  </div>
+                </div>
+                <div className="text-right text-xs text-[#5a6a80]">
+                  {totalPreenchidos} de {totalCampos}
+                  <br />
+                  itens
+                </div>
+              </div>
+
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f1f4f8]">
+                <div
+                  className="h-full rounded-full bg-[#1f7fe0] transition-all"
+                  style={{ width: `${percentualGeral}%` }}
+                />
+              </div>
+
+              <ul className="mt-4 space-y-1 border-t border-[#dde3ec] pt-3">
+                {resumoItens.map(({ key, preenchidos, total, extra }) => {
+                  const secao = SECOES.find((item) => item.id === key)!;
+                  const Icone = secao.icon;
+                  const completo = preenchidos >= total;
+                  return (
+                    <li key={key}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSecaoAberta(key);
+                          document
+                            .getElementById(`secao-${key}`)
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-[#f7f9fc]"
+                      >
+                        <span
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                            completo ? 'bg-[#e6f4ea] text-[#1f7a45]' : 'bg-[#f1f4f8] text-[#5a6a80]'
+                          }`}
+                        >
+                          {completo ? <Check size={15} strokeWidth={2.5} /> : <Icone size={15} />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[13px] font-bold text-[#1d2a3d]">
+                            {secao.titulo}
+                          </span>
+                          {extra && (
+                            <span className="block truncate text-[11px] text-[#5a6a80]">{extra}</span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+
+            <p className="mt-3 px-1 text-xs leading-relaxed text-[#78879a]">
+              O percentual considera apenas os campos desta ficha. Alterações só são gravadas
+              quando você toca em <strong className="font-bold">Salvar anamnese</strong>.
+            </p>
+          </div>
+        </aside>
+
+        {/* Formulário */}
+        <div className="space-y-5 lg:col-span-8 lg:order-1">
+          <section id="secao-gerais" className="scroll-mt-24 rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-6">
+            <button
+              type="button"
+              onClick={() => setSecaoAberta(secaoAberta === 'gerais' ? null : 'gerais')}
+              aria-expanded={secaoAberta === 'gerais'}
+              className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb] text-[#1b3a60]">
+                <Droplet size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <h2 className="m-0 text-lg font-bold text-[#1b3a60]">Dados gerais</h2>
+                  <span className="rounded-full bg-[#f1f4f8] px-2 py-0.5 text-[11px] font-bold text-[#5a6a80]">
+                    {resumoSecoes.gerais.preenchidos}/{resumoSecoes.gerais.total}
+                  </span>
+                </span>
+                <span className="mt-0.5 block text-[13px] text-[#5a6a80]">
+                  Tipo sanguíneo, cirurgias e observações
+                </span>
+              </span>
+              <ChevronDown
+                size={18}
+                className={`shrink-0 text-[#5a6a80] transition-transform lg:hidden ${
+                  secaoAberta === 'gerais' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <div className={`mt-5 ${secaoAberta === 'gerais' ? '' : 'hidden'} lg:block`}>
+              <div className="space-y-5">
             <div>
               <label
                 htmlFor="blood-type"
@@ -551,17 +832,42 @@ export default function AnamneseEdit() {
               onChange={setObservations}
               placeholder="Outras informações de saúde que deseja registrar."
             />
-          </div>
-        </section>
+              </div>
+            </div>
+          </section>
 
-        <section className="rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-6">
-          <h2 className="mb-1 text-xl font-bold text-[#1b3a60]">
-            Condições de saúde
-          </h2>
-          <p className="mb-5 text-sm text-[#5a6a80]">
-            Marque as condições que deseja registrar e inclua detalhes se
-            quiser.
-          </p>
+          <section id="secao-condicoes" className="scroll-mt-24 rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-6">
+            <button
+              type="button"
+              onClick={() => setSecaoAberta(secaoAberta === 'condicoes' ? null : 'condicoes')}
+              aria-expanded={secaoAberta === 'condicoes'}
+              className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb] text-[#1b3a60]">
+                <HeartPulse size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <h2 className="m-0 text-lg font-bold text-[#1b3a60]">Condições de saúde</h2>
+                  <span className="rounded-full bg-[#f1f4f8] px-2 py-0.5 text-[11px] font-bold text-[#5a6a80]">
+                    {condicoesMarcadas.length > 0
+                      ? `${condicoesMarcadas.length} registrada(s)`
+                      : 'nada marcado'}
+                  </span>
+                </span>
+                <span className="mt-0.5 block text-[13px] text-[#5a6a80]">
+                  Doenças e condições que você acompanha
+                </span>
+              </span>
+              <ChevronDown
+                size={18}
+                className={`shrink-0 text-[#5a6a80] transition-transform lg:hidden ${
+                  secaoAberta === 'condicoes' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <div className={`mt-5 ${secaoAberta === 'condicoes' ? '' : 'hidden'} lg:block`}>
           <div className="space-y-3">
             {conditions.map((condition, index) => (
               <div
@@ -610,21 +916,46 @@ export default function AnamneseEdit() {
               </div>
             ))}
             {conditions.length === 0 && (
-              <p className="mb-0 text-sm text-[#78879a]">
-                Nenhuma condição informada.
+              <p className="mb-0 flex items-center gap-2 rounded-xl bg-[#f7f9fc] p-3 text-sm text-[#78879a]">
+                <Info size={14} className="shrink-0" />
+                Nenhuma condição registrada ainda. Use o campo abaixo ou as sugestões.
               </p>
             )}
           </div>
           {conditionInput}
-        </section>
+            </div>
+          </section>
 
-        <section className="rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-6">
-          <h2 className="mb-1 text-xl font-bold text-[#1b3a60]">
-            Alergias e medicamentos
-          </h2>
-          <p className="mb-5 text-sm text-[#5a6a80]">
-            Adicione ou remova alergias e medicamentos de uso contínuo.
-          </p>
+          <section id="secao-alergias" className="scroll-mt-24 rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-6">
+            <button
+              type="button"
+              onClick={() => setSecaoAberta(secaoAberta === 'alergias' ? null : 'alergias')}
+              aria-expanded={secaoAberta === 'alergias'}
+              className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb] text-[#1b3a60]">
+                <Pill size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <h2 className="m-0 text-lg font-bold text-[#1b3a60]">Alergias e medicamentos</h2>
+                  <span className="rounded-full bg-[#f1f4f8] px-2 py-0.5 text-[11px] font-bold text-[#5a6a80]">
+                    {allergies.length} alergia(s) · {medications.length} medicamento(s)
+                  </span>
+                </span>
+                <span className="mt-0.5 block text-[13px] text-[#5a6a80]">
+                  O que você não pode tomar e o que usa todos os dias
+                </span>
+              </span>
+              <ChevronDown
+                size={18}
+                className={`shrink-0 text-[#5a6a80] transition-transform lg:hidden ${
+                  secaoAberta === 'alergias' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <div className={`mt-5 ${secaoAberta === 'alergias' ? '' : 'hidden'} lg:block`}>
           <div className="space-y-6">
             <EditableList
               label="Alergias"
@@ -641,15 +972,39 @@ export default function AnamneseEdit() {
               placeholder="Digite o medicamento e pressione Enter"
             />
           </div>
-        </section>
+            </div>
+          </section>
 
-        <section className="rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-6">
-          <h2 className="mb-1 text-xl font-bold text-[#1b3a60]">
-            Hábitos e rotina
-          </h2>
-          <p className="mb-5 text-sm text-[#5a6a80]">
-            Estilo de vida e informações relevantes para sua saúde.
-          </p>
+          <section id="secao-habitos" className="scroll-mt-24 rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-6">
+            <button
+              type="button"
+              onClick={() => setSecaoAberta(secaoAberta === 'habitos' ? null : 'habitos')}
+              aria-expanded={secaoAberta === 'habitos'}
+              className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb] text-[#1b3a60]">
+                <Moon size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <h2 className="m-0 text-lg font-bold text-[#1b3a60]">Hábitos e histórico</h2>
+                  <span className="rounded-full bg-[#f1f4f8] px-2 py-0.5 text-[11px] font-bold text-[#5a6a80]">
+                    {resumoSecoes.habitos.preenchidos}/{resumoSecoes.habitos.total}
+                  </span>
+                </span>
+                <span className="mt-0.5 block text-[13px] text-[#5a6a80]">
+                  Rotina, histórico familiar e doação de órgãos
+                </span>
+              </span>
+              <ChevronDown
+                size={18}
+                className={`shrink-0 text-[#5a6a80] transition-transform lg:hidden ${
+                  secaoAberta === 'habitos' ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <div className={`mt-5 ${secaoAberta === 'habitos' ? '' : 'hidden'} lg:block`}>
           <div className="space-y-5">
             <TextAreaField
               label="Hábitos gerais (sono, alimentação, atividade física)"
@@ -683,10 +1038,25 @@ export default function AnamneseEdit() {
               suggestions={FAMILY_HISTORY_SUGGESTIONS}
             />
           </div>
-        </section>
+            </div>
+          </section>
+        </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap justify-end gap-3">
+      <div className="mt-6 flex flex-wrap justify-end gap-3 rounded-2xl border border-[#dde3ec] bg-white p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+        <span className="mr-auto hidden items-center gap-2 self-center text-sm text-[#5a6a80] sm:flex">
+          {percentualGeral >= 100 ? (
+            <>
+              <CheckCircle2 size={16} className="text-[#1f7a45]" />
+              Ficha completa.
+            </>
+          ) : (
+            <>
+              <Circle size={15} className="text-[#9aa8b8]" />
+              {percentualGeral}% preenchido — você pode salvar e completar depois.
+            </>
+          )}
+        </span>
         <button
           type="button"
           onClick={() => setLocation('/visao-geral')}
