@@ -57,6 +57,32 @@ function createSessionId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+/**
+ * Normaliza o histórico vindo da API.
+ *
+ * A resposta de `/api/chat/history` traz os pares pergunta/resposta do dia (dois itens por
+ * registro) e pode conter sessões diferentes se o usuário criou mais de uma conversa no
+ * mesmo dia. Mantemos a sessão mais recente — mesma regra usada ao abrir um dia arquivado.
+ */
+function normalizeHistoryMessages(result: { messages?: Message[] }): {
+  messages: Message[];
+  sessionId: string | null;
+} {
+  const lista = Array.isArray(result?.messages) ? result.messages : [];
+  const latestSessionId = [...lista].reverse().find((message) => message.sessionId)?.sessionId;
+  const messages = latestSessionId
+    ? lista.filter((message) => message.sessionId === latestSessionId)
+    : lista;
+
+  return { messages, sessionId: latestSessionId ?? null };
+}
+
+/** Mantém as mensagens que falharam no envio: elas existem só na tela, não no servidor. */
+function preservarFalhasAtuais(atuais: Message[], doServidor: Message[]): Message[] {
+  const falhas = atuais.filter((message) => message.sendFailed);
+  return falhas.length === 0 ? doServidor : [...doServidor, ...falhas];
+}
+
 function formatDateLabel(dateKey: string) {
   const [year, month, day] = dateKey.split('-').map(Number);
   const date = new Date(year, month - 1, day);
@@ -81,8 +107,11 @@ export default function Chat() {
   const [chatDate, setChatDate] = useState(getLocalDateKey());
   const [sessionId, setSessionId] = useState<string>(createSessionId);
   const [selectedArchiveDate, setSelectedArchiveDate] = useState<string | null>(null);
+  const [avisoNovoDia, setAvisoNovoDia] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const archiveRequestId = useRef(0);
+  const todayRequestId = useRef(0);
+  const diaAtualRef = useRef(getLocalDateKey());
   const isArchiveView = selectedArchiveDate !== null;
   const latestAssistantMessage = useMemo(
     () => [...messages].reverse().find((message) => message.role === 'assistant'),
@@ -111,6 +140,87 @@ export default function Chat() {
     void loadDays();
   }, []);
 
+  /**
+   * Carrega a conversa do dia atual.
+   *
+   * Antes a tela só mostrava o que fosse enviado na sessão corrente: ao recarregar a página
+   * ou trocar de tela, a conversa do dia desaparecia da vista mesmo estando salva.
+   */
+  const loadTodayConversation = async (dateKey: string, mostrarCarregando: boolean) => {
+    const requestId = ++todayRequestId.current;
+    if (mostrarCarregando) setIsLoadingHistory(true);
+    setHistoryError(false);
+    try {
+      const result = await customFetch<{ messages: Message[] }>(
+        `/api/chat/history?date=${encodeURIComponent(dateKey)}`,
+      );
+      if (requestId !== todayRequestId.current) return;
+
+      const { messages: doServidor, sessionId: sessaoEncontrada } = normalizeHistoryMessages(result);
+      if (sessaoEncontrada) setSessionId(sessaoEncontrada);
+      setMessages((atuais) => preservarFalhasAtuais(atuais, doServidor));
+    } catch {
+      if (requestId !== todayRequestId.current) return;
+      // Falha ao restaurar o histórico do dia não deve apagar o que já está na tela.
+      setHistoryError(true);
+    } finally {
+      if (requestId === todayRequestId.current && mostrarCarregando) setIsLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadTodayConversation(getLocalDateKey(), true);
+    // Só na montagem: as atualizações seguintes são feitas após cada envio e na virada do dia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * Detecta a virada do dia com a tela aberta.
+   *
+   * Sem isso, `chatDate` continuava apontando para ontem após a meia-noite: a conversa nova
+   * era salva sob a data errada e o rótulo "Hoje" passava a se referir ao dia anterior.
+   */
+  useEffect(() => {
+    if (isArchiveView) return;
+
+    const verificar = () => {
+      const agora = getLocalDateKey();
+      if (agora === diaAtualRef.current) return;
+
+      diaAtualRef.current = agora;
+      todayRequestId.current += 1; // descarta respostas do dia anterior ainda em voo
+
+      setChatDate(agora);
+      setSessionId(createSessionId());
+      setSelectedArchiveDate(null);
+      setSendError(false);
+      setHistoryError(false);
+      setAvisoNovoDia(true);
+
+      // A conversa de ontem sai da tela, mas continua salva e acessível pelo histórico de dias.
+      void loadTodayConversation(agora, false).then(() => {
+        void loadDays();
+      });
+    };
+
+    const intervalo = window.setInterval(verificar, 30_000);
+    const aoVoltarParaAba = () => {
+      if (document.visibilityState === 'visible') verificar();
+    };
+    document.addEventListener('visibilitychange', aoVoltarParaAba);
+
+    return () => {
+      window.clearInterval(intervalo);
+      document.removeEventListener('visibilitychange', aoVoltarParaAba);
+    };
+  }, [isArchiveView]);
+
+  useEffect(() => {
+    if (!avisoNovoDia) return;
+    const temporizador = window.setTimeout(() => setAvisoNovoDia(false), 6000);
+    return () => window.clearTimeout(temporizador);
+  }, [avisoNovoDia]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isLoading]);
@@ -118,6 +228,7 @@ export default function Chat() {
   const openArchiveDay = async (date: string) => {
     if (isLoading) return;
     const requestId = ++archiveRequestId.current;
+    todayRequestId.current += 1; // a visualização do dia atual deixa de valer
     setSelectedArchiveDate(date);
     setChatDate(date);
     setHistoryError(false);
@@ -129,12 +240,9 @@ export default function Chat() {
       if (!Array.isArray(result?.messages)) {
         throw new Error('A API retornou um histórico inválido.');
       }
-      const latestSessionId = [...result.messages].reverse().find((message) => message.sessionId)?.sessionId;
-      const sessionMessages = latestSessionId
-        ? result.messages.filter((message) => message.sessionId === latestSessionId)
-        : result.messages;
-      if (latestSessionId) setSessionId(latestSessionId);
-      setMessages(sessionMessages);
+      const { messages: doServidor, sessionId: sessaoEncontrada } = normalizeHistoryMessages(result);
+      if (sessaoEncontrada) setSessionId(sessaoEncontrada);
+      setMessages(doServidor);
     } catch {
       if (requestId !== archiveRequestId.current) return;
       setMessages([]);
@@ -146,6 +254,7 @@ export default function Chat() {
 
   const startNewChat = () => {
     archiveRequestId.current += 1;
+    todayRequestId.current += 1;
     if (isLoading) return;
     setMessages([]);
     setInput('');
@@ -154,6 +263,7 @@ export default function Chat() {
     setSelectedArchiveDate(null);
     setHistoryError(false);
     setSendError(false);
+    setAvisoNovoDia(false);
   };
 
   const handleSend = async (messageText?: string) => {
@@ -190,6 +300,9 @@ export default function Chat() {
         createdAt: new Date().toISOString(),
       };
       setMessages((previous) => [...previous, assistantMessage]);
+      // Reconcilia com o servidor: a conversa do dia já está salva e passa a ter os
+      // identificadores definitivos, sem depender de recarregar a página.
+      void loadTodayConversation(chatDate, false);
       void loadDays();
     } catch {
       setMessages((current) => current.map((message) =>
@@ -299,6 +412,13 @@ export default function Chat() {
               <div className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-[#f1f4f8] px-3 py-2 text-xs text-[#53647b]">
                 <span>Conversa de {archiveLabel}</span>
                 <button type="button" onClick={() => setSelectedArchiveDate(null)} className="shrink-0 font-bold text-[#1f7fe0]">Continuar conversa</button>
+              </div>
+            )}
+
+            {avisoNovoDia && (
+              <div role="status" className="mb-2 flex items-start justify-between gap-2 rounded-lg bg-[#eaf2fc] px-3 py-2 text-xs text-[#1b3a60]">
+                <span>Começou um novo dia, então esta é uma conversa nova. A anterior continua salva em “Conversas anteriores”.</span>
+                <button type="button" onClick={() => setAvisoNovoDia(false)} aria-label="Fechar aviso" className="shrink-0 font-bold">×</button>
               </div>
             )}
 

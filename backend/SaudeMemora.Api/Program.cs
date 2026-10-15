@@ -465,6 +465,7 @@ app.MapCdosCatalogosEndpoints();
 app.MapExamesEndpoints();
 app.MapEmergenciaEndpoints();
 app.MapChatEndpoints();
+app.MapDashboardEndpoints();
 
 // MapHub removido
 

@@ -384,7 +384,7 @@ export default function Profile() {
               <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 {/* Avatar & User summary */}
                 <div className="flex gap-5 items-center mb-6">
-                  <div className="w-[88px] h-[88px] rounded-[28px] bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-white text-3xl font-extrabold flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-[88px] h-[88px] rounded-[28px] bg-[#1b3a60] text-white text-3xl font-extrabold flex items-center justify-center shrink-0 shadow-xs">
                     {initials}
                   </div>
                   <div>
@@ -718,49 +718,50 @@ export default function Profile() {
               </div>
             )}
 
+            {/* Encerramento de sessão e exclusão de conta ficam apenas em Privacidade:
+                são ações sobre a conta e os dados, não sobre os dados pessoais exibidos. */}
+            {activeTab === 'privacidade' && (
+              <>
+                <section className="mt-6 rounded-[20px] border border-[#dde3ec] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-5">
+                  <div>
+                    <h2 className="text-sm font-bold text-[#203047]">Sair da conta</h2>
+                    <p className="mt-1 text-sm text-[#5a6a80]">Encerre sua sessão neste dispositivo.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void signOut()}
+                    disabled={isSigningOut}
+                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#ead5d2] px-4 text-sm font-semibold text-[#a13a30] transition-colors hover:bg-[#fff6f5] disabled:cursor-not-allowed disabled:opacity-60 sm:mt-0 sm:w-auto"
+                  >
+                    {isSigningOut ? <LoaderCircle size={17} className="animate-spin" /> : <LogOut size={17} />}
+                    {isSigningOut ? 'Saindo...' : 'Sair da conta'}
+                  </button>
+                </section>
 
+                <div className="mt-4 flex flex-wrap items-center gap-4.5 rounded-[20px] border border-[#f0b8b2] bg-[#fff5f4] p-4 sm:p-7">
+                  <div className="w-12 h-12 rounded-2xl bg-[#fde8e6] flex items-center justify-center shrink-0">
+                    <Trash2 size={24} className="text-[#a13a30]" strokeWidth={2} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <b className="text-[17px] text-[#7a2a22] block leading-tight">
+                      Excluir conta
+                    </b>
+                    <div className="text-sm text-[#7a2a22] mt-1 leading-relaxed">
+                      Apaga sua conta e seus documentos. Essa ação não pode ser desfeita.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="min-h-[44px] px-5 rounded-xl bg-[#c0463a] hover:bg-[#a13a30] text-white font-bold text-sm inline-flex items-center transition-colors shadow-xs cursor-pointer"
+                  >
+                    Excluir conta
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-
-        <section className="mt-6 rounded-[20px] border border-[#dde3ec] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-5">
-          <div>
-            <h2 className="text-sm font-bold text-[#203047]">Sair da conta</h2>
-            <p className="mt-1 text-sm text-[#5a6a80]">Encerre sua sessão neste dispositivo.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            disabled={isSigningOut}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#ead5d2] px-4 text-sm font-semibold text-[#a13a30] transition-colors hover:bg-[#fff6f5] disabled:cursor-not-allowed disabled:opacity-60 sm:mt-0 sm:w-auto"
-          >
-            {isSigningOut ? <LoaderCircle size={17} className="animate-spin" /> : <LogOut size={17} />}
-            {isSigningOut ? 'Saindo...' : 'Sair da conta'}
-          </button>
-        </section>
-
-            {/* Exclusão da conta fica abaixo da opção de sair. */}
-            {activeTab === 'dados' && (
-              <div className="mt-4 flex flex-wrap items-center gap-4.5 rounded-[20px] border border-[#f0b8b2] bg-[#fff5f4] p-4 sm:p-7">
-                <div className="w-12 h-12 rounded-2xl bg-[#fde8e6] flex items-center justify-center shrink-0">
-                  <Trash2 size={24} className="text-[#a13a30]" strokeWidth={2} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <b className="text-[17px] text-[#7a2a22] block leading-tight">
-                    Excluir conta
-                  </b>
-                  <div className="text-sm text-[#7a2a22] mt-1 leading-relaxed">
-                    Apaga sua conta e seus documentos. Essa ação não pode ser desfeita.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="min-h-[44px] px-5 rounded-xl bg-[#c0463a] hover:bg-[#a13a30] text-white font-bold text-sm inline-flex items-center transition-colors shadow-xs cursor-pointer"
-                >
-                  Excluir conta
-                </button>
-              </div>
-            )}
 
         <p className="mt-8 text-center text-xs text-[#5a6a80]">
           Os dados e preferências exibidos pertencem à sua conta.

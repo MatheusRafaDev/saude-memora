@@ -45,34 +45,9 @@ const desktopNavItems = [
       </svg>
     ),
   },
-  {
-    href: '/emergencia',
-    label: 'Emergência',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 000-7.8z" />
-        <path d="M3.5 12h5l2-3 3 6 2-3h5" />
-      </svg>
-    ),
-  },
-  {
-    href: '/perfil',
-    label: 'Perfil',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
-      </svg>
-    ),
-  },
 ];
 
-const mobileNavItems = [
-  desktopNavItems[0],
-  desktopNavItems[1],
-  desktopNavItems[2],
-  desktopNavItems[3],
-  { ...desktopNavItems[5], label: 'Perfil' },
-];
+const mobileNavItems = [...desktopNavItems];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -136,29 +111,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav aria-label="Navegação principal" className="hidden lg:flex flex-1 items-center justify-center gap-1">
           {desktopNavItems.map(({ href, label, icon }) => {
               const isActive = activeHref === href;
-              const className = `flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] transition-colors ${
-                isActive
-                  ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]'
-                  : 'font-medium text-[#5a6a80] hover:bg-[#f1f4f8] hover:text-[#1b3a60]'
-              }`;
-              if (href === '/emergencia') {
-                return (
-                  <button
-                    key={href}
-                    type="button"
-                    onClick={() => setEmergencyModalOpen(true)}
-                    className={className}
-                  >
-                    <span className={isActive ? 'text-[#1b3a60]' : 'text-[#5a6a80]'}>{icon}</span>
-                    <span>{label}</span>
-                  </button>
-                );
-              }
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={className}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] transition-colors ${
+                    isActive
+                      ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]'
+                      : 'font-medium text-[#5a6a80] hover:bg-[#f1f4f8] hover:text-[#1b3a60]'
+                  }`}
                 >
                   <span className={isActive ? 'text-[#1b3a60]' : 'text-[#5a6a80]'}>{icon}</span>
                   <span>{label}</span>
@@ -188,7 +149,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
               aria-label="Menu do usuário"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-[14px] font-bold text-white transition-transform hover:scale-105"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1b3a60] text-[14px] font-bold text-white transition-transform hover:scale-105"
             >
               {initials}
             </button>
@@ -201,33 +162,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </div>
 
                 <div className="py-1">
-                  <Link
-                    href="/perfil"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
-                    </svg>
-                    Meu perfil
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      setEmergencyModalOpen(true);
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 000-7.8z" />
-                      <path d="M3.5 12h5l2-3 3 6 2-3h5" />
-                    </svg>
-                    Ficha de emergência
-                  </button>
-
-
                   <button
                     type="button"
                     onClick={() => {

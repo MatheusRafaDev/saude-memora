@@ -205,8 +205,11 @@ export function EmergenciaModal({
 
 
   return createPortal(
+    // Overlay translúcido em vez de tela cheia opaca: a ficha se sobrepõe ao conteúdo
+    // da página, que continua visível por trás. O desfoque preserva a legibilidade dos
+    // textos escuros da ficha mesmo sobre fundos claros.
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#f7f9fc] p-2 sm:p-4"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#eef3fa]/80 p-2 backdrop-blur-sm sm:p-4"
       onClick={handleClose}
     >
       <section
@@ -264,7 +267,7 @@ export function EmergenciaModal({
             </p>
           )}
 
-          <div className="rounded-2xl border-2 border-[#c0463a] bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-6">
+          <div className="rounded-2xl border-2 border-[#c0463a] p-4 shadow-sm sm:rounded-[24px] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#c0463a]">
