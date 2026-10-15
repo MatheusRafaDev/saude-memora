@@ -5,7 +5,7 @@ export const INVALID_DOC_MESSAGE =
   'Não conseguimos reconhecer um documento médico nesta imagem. Tire outra foto com boa iluminação, enquadrando o documento inteiro e sem cortes.';
 
 export type ProcessingOutcome =
-  | { status: 'pronto'; id: string }
+  | { status: 'pronto'; id: string; tipo?: string }
   | { status: 'rejeitado'; message: string }
   | { status: 'failed'; id: string; message: string }
   | { status: 'timeout'; id: string }
@@ -33,7 +33,7 @@ export async function waitForDocumentProcessing(
       const doc = (await customFetch(`/api/documents/${id}`)) as any;
       if (typeof doc?.progress === 'number') onProgress?.(doc.progress);
 
-      if (doc?.status === 'pronto') return { status: 'pronto', id };
+      if (doc?.status === 'pronto') return { status: 'pronto', id, tipo: doc.tipo };
       if (doc?.status === 'rejeitado') return { status: 'rejeitado', message: doc.errorMessage || INVALID_DOC_MESSAGE };
       if (doc?.status === 'failed') return { status: 'failed', id, message: doc.errorMessage || 'Falha ao processar o documento.' };
     } catch {

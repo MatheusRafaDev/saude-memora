@@ -236,9 +236,17 @@
 
 /* Animations */
 .page-transition-enter {
-  animation: page-transition-enter 0.32s cubic-bezier(.16, 1, .3, 1) both;
-  will-change: opacity;
+  /* Applied to the route container, which is remounted for every URL. */
+  animation: page-transition-enter 0.46s cubic-bezier(.16, 1, .3, 1) both;
+  will-change: opacity, transform;
 }
+
+/* Public pages intentionally reserve the original icon areas without rendering SVG artwork. */
+.logged-out-screen svg,
+.logged-out-screen img[src$=".svg"] {
+  visibility: hidden;
+}
+
 .page-enter { animation: page-enter 0.4s cubic-bezier(.16,1,.3,1) both; }
 .fade-in    { animation: fade-in 0.35s ease both; }
 .slide-up   { animation: slide-up 0.4s cubic-bezier(.16,1,.3,1) both; }
@@ -256,9 +264,14 @@
 @keyframes page-transition-enter {
   0% {
     opacity: 0;
+    transform: translateY(14px) scale(.992);
+  }
+  65% {
+    opacity: 1;
   }
   100% {
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -322,7 +335,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-transition-enter, .home-logo-arrival, .brand-logo-animated, .legal-document-section { animation: none; }
+  .page-transition-enter, .page-enter, .fade-in, .slide-up, .home-logo-arrival, .brand-logo-animated, .legal-document-section { animation: none; }
   .legal-document-dialog, .legal-document-overlay { animation: none !important; transition: none !important; }
 }
 

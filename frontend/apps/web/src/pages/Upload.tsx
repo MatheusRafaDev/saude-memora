@@ -10,6 +10,14 @@ import {
   LoaderCircle,
   Check,
   CheckCircle2,
+  Bot,
+  ClipboardList,
+  FileBarChart,
+  FileHeart,
+  FilePlus2,
+  FileSearch,
+  Send,
+  Syringe,
 } from 'lucide-react';
 import { customFetch, getGetApiDocumentsQueryKey } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
@@ -25,19 +33,24 @@ type UploadQueueItem = {
   documentId?: string;
   error?: string;
   previewUrl?: string;
+  detectedType?: string;
 };
 
 const DOC_TYPES = [
-  { id: 'auto', label: 'Detectar automático' },
-  { id: 'receita', label: 'Receita' },
-  { id: 'exame', label: 'Exame' },
-  { id: 'laudo', label: 'Laudo' },
-  { id: 'atestado', label: 'Atestado' },
-  { id: 'vacina', label: 'Vacina' },
-  { id: 'encaminhamento', label: 'Encaminhamento' },
-  { id: 'relatorio', label: 'Relatório' },
+  { id: 'auto', label: 'Detectar automático', icon: Bot },
+  { id: 'receita', label: 'Receita', icon: FilePlus2 },
+  { id: 'exame', label: 'Exame', icon: ClipboardList },
+  { id: 'laudo', label: 'Laudo', icon: FileSearch },
+  { id: 'atestado', label: 'Atestado', icon: FileHeart },
+  { id: 'vacina', label: 'Vacina', icon: Syringe },
+  { id: 'encaminhamento', label: 'Encaminhamento', icon: Send },
+  { id: 'relatorio', label: 'Relatório', icon: FileBarChart },
 ];
 const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
+
+function getDocumentTypeOption(type?: string) {
+  return DOC_TYPES.find((option) => option.id === type) ?? DOC_TYPES[0];
+}
 
 export default function Upload() {
   const [, setLocation] = useLocation();
@@ -87,6 +100,7 @@ export default function Upload() {
         status: 'processando',
         statusText: 'Processando 20%',
         previewUrl,
+        detectedType: selectedType,
       };
 
       setQueue((prev) => [newItem, ...prev]);
@@ -117,6 +131,7 @@ export default function Upload() {
                     progress: 100,
                     status: 'pronto',
                     statusText: 'Pronto',
+                    detectedType: selectedType,
                     sizeStr: `${(file.size / (1024 * 1024)).toFixed(1)} MB · enviado`,
                   }
                 : item
@@ -152,6 +167,7 @@ export default function Upload() {
                     progress: 100,
                     status: 'pronto',
                     statusText: 'Pronto',
+                    detectedType: outcome.tipo || selectedType,
                     sizeStr: `${(file.size / (1024 * 1024)).toFixed(1)} MB · concluído`,
                   }
                 : item

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
@@ -30,8 +29,6 @@ const sections = [
 ];
 
 export default function Privacidade() {
-  const [activeSection, setActiveSection] = useState('dados');
-
   return (
     <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
@@ -51,30 +48,8 @@ export default function Privacidade() {
         </section>
 
         {/* ── Content Layout ──────────────────────────────────────── */}
-        <div className="mx-auto flex max-w-[1000px] flex-col gap-12 px-6 py-14 sm:px-12 md:flex-row">
-          <aside className="w-full md:w-60 shrink-0">
-            <div className="sticky top-28 flex flex-col gap-1">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveSection(section.id);
-                    document.getElementById(section.id)?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className={`rounded-xl px-3.5 py-2.5 text-left text-[14px] transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]'
-                      : 'font-medium text-[#5a6a80] hover:bg-[#f1f4f8] hover:text-[#1d2a3d]'
-                  }`}
-                >
-                  {section.title.split('. ')[1]}
-                </button>
-              ))}
-            </div>
-          </aside>
-
-          <div className="flex-1 space-y-9">
+        <div className="mx-auto max-w-[1000px] px-6 py-14 sm:px-12">
+          <div className="space-y-9">
             {sections.map((section) => (
               <section key={section.id} id={section.id} className="scroll-mt-28">
                 <h2 className="mb-2.5 text-[24px] font-bold tracking-[-0.02em] text-[#1d2a3d]">

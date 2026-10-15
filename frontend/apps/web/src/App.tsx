@@ -41,7 +41,12 @@ const Insights = lazy(() => import('@/pages/Insights'));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,
+      // Dados da sessão só são conferidos ao entrar em uma área protegida.
+      // Atualizações explícitas invalidam as queries necessárias.
+      staleTime: Infinity,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      refetchOnMount: false,
     },
   },
   queryCache: new QueryCache({
@@ -224,24 +229,6 @@ function SessionKeepAlive() {
 }
 
 function HomeRoute() {
-  const { isSuccess } = useGetApiPacientesMe({
-    query: {
-      queryKey: getGetApiPacientesMeQueryKey(),
-      retry: false,
-      staleTime: 5 * 60 * 1000,
-      enabled: true,
-      meta: { skipUnauthorizedRedirect: true }
-    }
-  });
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (isSuccess) {
-      setLocation('/visao-geral');
-    }
-  }, [isSuccess, setLocation]);
-
-  // Keep the public landing page responsive while checking for an existing session.
   return <Home />;
 }
 
@@ -252,7 +239,6 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
-      staleTime: 5 * 60 * 1000,
       enabled: true,
       meta: { skipUnauthorizedRedirect: true }
     }
@@ -327,6 +313,17 @@ function AppPage({ children }: { children: ReactNode }) { return <AppShell>{chil
 
 function Router() {
   const [location] = useLocation();
+  const isLoggedOutScreen =
+    location === '/' ||
+    location === '/entrar' ||
+    location === '/cadastro' ||
+    location === '/criar-conta' ||
+    location === '/reset-password' ||
+    location === '/termos' ||
+    location === '/privacidade' ||
+    location === '/sobre' ||
+    location === '/recursos' ||
+    location.startsWith('/emergencia/');
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -337,7 +334,12 @@ function Router() {
       <SeoMetadata />
       <SessionKeepAlive />
       <RoutedErrorBoundary>
-        <div key={location} className="page-transition-enter min-h-[100dvh] flex flex-col flex-1">
+        <div
+          key={location}
+          className={`page-transition-enter min-h-[100dvh] flex flex-col flex-1${
+            isLoggedOutScreen ? ' logged-out-screen' : ''
+          }`}
+        >
           <Switch>
             <Route path="/" component={HomeRoute} />
             <Route path="/entrar" component={Auth} />

@@ -8,7 +8,6 @@ import {
   getGetApiPacientesMeQueryOptions,
   getGetApiDocumentsQueryOptions,
   getGetApiFichaMedicaMeQueryOptions,
-  useGetApiPacientesMe,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { BrandWordmark } from '@/components/BrandWordmark';
@@ -22,14 +21,6 @@ export interface AuthProps {
 export default function Auth({ defaultMode }: AuthProps = {}) {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
-
-  const { data: user, isLoading: isUserLoading } = useGetApiPacientesMe({
-    query: {
-      queryKey: getGetApiPacientesMeQueryOptions().queryKey,
-      retry: false,
-      meta: { skipUnauthorizedRedirect: true },
-    },
-  });
 
   const loginMutation = usePostApiAuthLogin();
   const registerMutation = usePostApiAuthRegister();
@@ -69,13 +60,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotError, setForgotError] = useState('');
   const [isForgotLoading, setIsForgotLoading] = useState(false);
-
-  useEffect(() => {
-    if (user && !isUserLoading) {
-      const justRegistered = new URLSearchParams(window.location.search).get('registered') === '1';
-      setLocation(justRegistered ? '/anamnese/inicio' : '/visao-geral');
-    }
-  }, [user, isUserLoading, setLocation]);
 
   useEffect(() => {
     if (defaultMode) {
@@ -159,14 +143,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       setIsForgotLoading(false);
     }
   };
-
-  if (isUserLoading || user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f9fc]">
-        <LoaderCircle className="h-8 w-8 animate-spin text-[#1b3a60]" />
-      </div>
-    );
-  }
 
   const isPending = loginMutation.isPending || registerMutation.isPending;
 

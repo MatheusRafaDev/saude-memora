@@ -1,25 +1,7 @@
-import { useState } from 'react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
-const SECTIONS = [
-  { id: 'sobre', title: '1. Sobre o serviço', nav: 'Sobre o serviço' },
-  { id: 'nao-e', title: '2. O que o serviço não é', nav: 'O que o serviço não é' },
-  { id: 'dados', title: '3. Dados extraídos', nav: 'Dados extraídos' },
-  { id: 'responsabilidades', title: '4. Responsabilidades', nav: 'Responsabilidades' },
-];
-
 export default function Termos() {
-  const [activeSection, setActiveSection] = useState('sobre');
-
-  const scrollTo = (id: string) => {
-    setActiveSection(id);
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-white text-[#1d2a3d] font-sans">
       <PublicPageHeader />
@@ -40,24 +22,7 @@ export default function Termos() {
       </section>
 
       {/* Content Container */}
-      <div className="max-w-[1000px] mx-auto px-6 sm:px-12 py-14 flex flex-col md:flex-row gap-10 md:gap-14">
-        {/* Sticky Sidebar */}
-        <aside className="w-full md:w-[240px] shrink-0 flex flex-col gap-1 md:sticky md:top-28 h-fit">
-          {SECTIONS.map((sec) => (
-            <button
-              key={sec.id}
-              onClick={() => scrollTo(sec.id)}
-              className={`text-left px-3.5 py-2.5 rounded-[10px] text-sm transition-colors ${
-                activeSection === sec.id
-                  ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-sm'
-                  : 'text-[#5a6a80] hover:text-[#1b3a60] hover:bg-slate-50 font-medium'
-              }`}
-            >
-              {sec.nav}
-            </button>
-          ))}
-        </aside>
-
+      <div className="max-w-[1000px] mx-auto px-6 sm:px-12 py-14">
         {/* Legal Text */}
         <div className="flex-1 space-y-10">
           <section id="sobre" className="scroll-mt-28">

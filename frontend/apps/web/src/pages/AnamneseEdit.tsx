@@ -2,9 +2,7 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { useLocation } from 'wouter';
 import {
   Check,
-  CheckCircle2,
   ChevronDown,
-  Circle,
   Droplet,
   HeartPulse,
   Info,
@@ -92,10 +90,6 @@ function contarSecoes(dados: {
       total: 5,
     },
   };
-}
-
-function percentual(preenchidos: number, total: number) {
-  return total === 0 ? 0 : Math.round((preenchidos / total) * 100);
 }
 
 const SECOES: {
@@ -632,15 +626,6 @@ export default function AnamneseEdit() {
     alcohol,
   });
 
-  const totalPreenchidos = Object.values(resumoSecoes).reduce(
-    (soma, secao) => soma + secao.preenchidos,
-    0,
-  );
-  const totalCampos = Object.values(resumoSecoes).reduce(
-    (soma, secao) => soma + secao.total,
-    0,
-  );
-  const percentualGeral = percentual(totalPreenchidos, totalCampos);
   const condicoesMarcadas = conditions.filter((condition) => condition.tem);
 
   const resumoItens: { key: SecaoId; preenchidos: number; total: number; extra?: string }[] = [
@@ -693,33 +678,19 @@ export default function AnamneseEdit() {
         <aside className="lg:col-span-4 lg:order-2 xl:col-span-4">
           <div className="lg:sticky lg:top-24">
             <section
-              aria-label="Resumo do preenchimento"
+              aria-label="Resumo da ficha"
               className="rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]"
             >
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a6a80]">
-                    Preenchimento
-                  </div>
-                  <div className="mt-0.5 text-3xl font-extrabold tracking-[-0.02em] text-[#1b3a60]">
-                    {percentualGeral}%
-                  </div>
+              <div className="px-2 pb-2">
+                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a6a80]">
+                  Sua ficha
                 </div>
-                <div className="text-right text-xs text-[#5a6a80]">
-                  {totalPreenchidos} de {totalCampos}
-                  <br />
-                  itens
-                </div>
+                <p className="mt-1 text-sm leading-relaxed text-[#5a6a80]">
+                  Escolha uma seção para adicionar ou revisar suas informações.
+                </p>
               </div>
 
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f1f4f8]">
-                <div
-                  className="h-full rounded-full bg-[#1f7fe0] transition-all"
-                  style={{ width: `${percentualGeral}%` }}
-                />
-              </div>
-
-              <ul className="mt-4 space-y-1 border-t border-[#dde3ec] pt-3">
+              <ul className="space-y-1 border-t border-[#dde3ec] pt-3">
                 {resumoItens.map(({ key, preenchidos, total, extra }) => {
                   const secao = SECOES.find((item) => item.id === key)!;
                   const Icone = secao.icon;
@@ -759,8 +730,7 @@ export default function AnamneseEdit() {
             </section>
 
             <p className="mt-3 px-1 text-xs leading-relaxed text-[#78879a]">
-              O percentual considera apenas os campos desta ficha. Alterações só são gravadas
-              quando você toca em <strong className="font-bold">Salvar anamnese</strong>.
+              Alterações só são gravadas quando você toca em <strong className="font-bold">Salvar anamnese</strong>.
             </p>
           </div>
         </aside>
@@ -1044,18 +1014,8 @@ export default function AnamneseEdit() {
       </div>
 
       <div className="mt-6 flex flex-wrap justify-end gap-3 rounded-2xl border border-[#dde3ec] bg-white p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-        <span className="mr-auto hidden items-center gap-2 self-center text-sm text-[#5a6a80] sm:flex">
-          {percentualGeral >= 100 ? (
-            <>
-              <CheckCircle2 size={16} className="text-[#1f7a45]" />
-              Ficha completa.
-            </>
-          ) : (
-            <>
-              <Circle size={15} className="text-[#9aa8b8]" />
-              {percentualGeral}% preenchido — você pode salvar e completar depois.
-            </>
-          )}
+        <span className="mr-auto hidden self-center text-sm text-[#5a6a80] sm:block">
+          Você pode salvar agora e editar sua ficha quando quiser.
         </span>
         <button
           type="button"
