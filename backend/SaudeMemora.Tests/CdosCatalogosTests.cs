@@ -99,6 +99,7 @@ public sealed class CdosCatalogosTests
         var repository = new StubCnesRepository();
         var service = new CnesCatalogoService(repository);
         const string csv = "CO_CNES;NO_RAZAO_SOCIAL;DS_ATIVIDADE\n1234567;Unidade de Saúde;Atendimento\n";
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         await using var stream = new MemoryStream(Encoding.GetEncoding(1252).GetBytes(csv));
 
         var result = await service.ImportarAsync(stream);
