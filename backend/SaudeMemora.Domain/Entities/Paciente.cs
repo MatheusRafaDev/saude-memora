@@ -28,6 +28,14 @@ public class Paciente
     [BsonElement("isDeleting")]
     public bool IsDeleting { get; set; } = false;
 
+    /// <summary>Momento em que o titular solicitou a exclusão (LGPD, art. 18, VI).</summary>
+    [BsonElement("exclusaoSolicitadaEm")]
+    public DateTime? ExclusaoSolicitadaEm { get; set; }
+
+    /// <summary>Momento em que a exclusão foi efetivamente concluída em todas as bases.</summary>
+    [BsonElement("exclusaoConcluidaEm")]
+    public DateTime? ExclusaoConcluidaEm { get; set; }
+
     [BsonElement("dataNascimento")]
     public string DataNascimento { get; set; } = string.Empty;
 

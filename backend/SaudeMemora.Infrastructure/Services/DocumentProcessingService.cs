@@ -14,7 +14,14 @@ internal readonly record struct OcrCallResult(string Text, bool Succeeded);
 
 public class DocumentProcessingService : IOcrAiService
 {
+    /// <summary>Tempo máximo por tentativa de OCR (imagem pode ser grande).</summary>
+    private static readonly TimeSpan TimeoutOcr = TimeSpan.FromSeconds(45);
+
+    /// <summary>Tempo máximo por tentativa de chamada de IA (unificação e extração).</summary>
+    private static readonly TimeSpan TimeoutIa = TimeSpan.FromSeconds(60);
+
     private readonly HttpClient _httpClient;
+    private readonly ResilientHttpSender _sender;
     private readonly string? _ocrSpaceApiKey;
     private readonly string? _geminiApiKey;
     private readonly string? _groqApiKey;
@@ -23,9 +30,14 @@ public class DocumentProcessingService : IOcrAiService
 
     private readonly ILogger<DocumentProcessingService> _logger;
 
-    public DocumentProcessingService(HttpClient httpClient, IConfiguration config, ILogger<DocumentProcessingService> logger)
+    public DocumentProcessingService(
+        HttpClient httpClient,
+        ResilientHttpSender sender,
+        IConfiguration config,
+        ILogger<DocumentProcessingService> logger)
     {
         _httpClient = httpClient;
+        _sender = sender;
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
@@ -50,14 +62,14 @@ public class DocumentProcessingService : IOcrAiService
         var engine1Task = CallOcrSpaceAsync(imageUrl, 1, cancellationToken);
         var engine2Task = CallOcrSpaceAsync(imageUrl, 2, cancellationToken);
 
-        await Task.WhenAll(engine1Task, engine2Task);
+        var resultados = await Task.WhenAll(engine1Task, engine2Task);
 
-        string textEngine1 = engine1Task.Result.Text;
-        string textEngine2 = engine2Task.Result.Text;
+        string textEngine1 = resultados[0].Text;
+        string textEngine2 = resultados[1].Text;
 
         if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
         {
-            if (engine1Task.Result.Succeeded || engine2Task.Result.Succeeded)
+            if (resultados[0].Succeeded || resultados[1].Succeeded)
                 throw new InvalidDocumentException(); // OCR funcionou, mas a imagem não tem texto legível
             throw new Exception("Nenhum texto encontrado pela OCR.space em nenhum dos motores.");
         }
@@ -80,20 +92,20 @@ public class DocumentProcessingService : IOcrAiService
         {
             var engine1Task = CallOcrSpaceAsync(url, 1, cancellationToken);
             var engine2Task = CallOcrSpaceAsync(url, 2, cancellationToken);
-            await Task.WhenAll(engine1Task, engine2Task);
-            
-            string textEngine1 = engine1Task.Result.Text;
-            string textEngine2 = engine2Task.Result.Text;
-            
+            var resultados = await Task.WhenAll(engine1Task, engine2Task);
+
+            string textEngine1 = resultados[0].Text;
+            string textEngine2 = resultados[1].Text;
+
             if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
             {
-                if (!engine1Task.Result.Succeeded && !engine2Task.Result.Succeeded) 
+                if (!resultados[0].Succeeded && !resultados[1].Succeeded)
                 {
                     throw new Exception("Falha na API de OCR ao processar uma das páginas.");
                 }
                 continue;
             }
-                
+
             string unifiedText = await UnifyTextsWithGeminiAsync(textEngine1, textEngine2, cancellationToken);
             allTexts.Add(unifiedText);
         }
@@ -115,10 +127,10 @@ public class DocumentProcessingService : IOcrAiService
 
         var engine1Task = CallOcrSpaceAsync(imageUrl, 1, cancellationToken);
         var engine2Task = CallOcrSpaceAsync(imageUrl, 2, cancellationToken);
-        await Task.WhenAll(engine1Task, engine2Task);
-        
-        string textEngine1 = engine1Task.Result.Text;
-        string textEngine2 = engine2Task.Result.Text;
+        var resultadosCarteirinha = await Task.WhenAll(engine1Task, engine2Task);
+
+        string textEngine1 = resultadosCarteirinha[0].Text;
+        string textEngine2 = resultadosCarteirinha[1].Text;
 
         if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
             return new CarteirinhaExtraidaDto();
@@ -138,34 +150,50 @@ public class DocumentProcessingService : IOcrAiService
             response_format = new { type = "json_object" }
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
-        if (!string.IsNullOrWhiteSpace(_geminiApiKey))
-            request.Headers.Add("Authorization", $"Bearer {_geminiApiKey}");
-        request.Content = JsonContent.Create(payload);
+        var response = await _sender.SendAsync(
+            _httpClient,
+            () =>
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, groqUrl);
+                if (!string.IsNullOrWhiteSpace(_geminiApiKey))
+                    req.Headers.Add("Authorization", $"Bearer {_geminiApiKey}");
+                req.Content = JsonContent.Create(payload);
+                return req;
+            },
+            "Gemini (carteirinha)",
+            TimeoutIa,
+            cancellationToken);
 
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        if (response.IsSuccessStatusCode)
+        if (response is null)
         {
-            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-            var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
-            
-            jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
-
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            options.Converters.Add(new FlexibleBooleanConverter());
-            try
-            {
-                return JsonSerializer.Deserialize<CarteirinhaExtraidaDto>(jsonResult, options) ?? new CarteirinhaExtraidaDto();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Erro ao deserializar carteirinha: {JsonResult}", jsonResult);
-            }
+            return new CarteirinhaExtraidaDto();
         }
-        else
+
+        using (response)
         {
-            var err = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogError("Gemini falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+            if (response.IsSuccessStatusCode)
+            {
+                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                options.Converters.Add(new FlexibleBooleanConverter());
+                try
+                {
+                    return JsonSerializer.Deserialize<CarteirinhaExtraidaDto>(jsonResult, options) ?? new CarteirinhaExtraidaDto();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Erro ao deserializar carteirinha: {JsonResult}", jsonResult);
+                }
+            }
+            else
+            {
+                var err = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Gemini falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+            }
         }
 
         return new CarteirinhaExtraidaDto();
@@ -175,37 +203,54 @@ public class DocumentProcessingService : IOcrAiService
     {
         var encodedUrl = Uri.EscapeDataString(imageUrl);
         var url = $"https://api.ocr.space/parse/imageurl?url={encodedUrl}&ocrengine={engine}&language=por&scale=true&isTable=true";
-        
+
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("apikey", _ocrSpaceApiKey);
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-            if (!response.IsSuccessStatusCode)
+            var response = await _sender.SendAsync(
+                _httpClient,
+                () =>
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, url);
+                    request.Headers.Add("apikey", _ocrSpaceApiKey);
+                    return request;
+                },
+                $"OCR.Space (engine {engine})",
+                TimeoutOcr,
+                cancellationToken);
+
+            if (response is null)
             {
-                _logger.LogError("Erro OCR API HTTP {StatusCode}: {RawJson}", response.StatusCode, rawJson);
-                return new OcrCallResult("", false);
-            }
-            
-            using var doc = JsonDocument.Parse(rawJson);
-            var result = doc.RootElement;
-            
-            if (result.TryGetProperty("IsErroredOnProcessing", out var isErrored) && isErrored.GetBoolean())
-            {
-                var errMessage = result.TryGetProperty("ErrorMessage", out var msg) ? msg.ToString() : "Erro desconhecido";
-                _logger.LogWarning("Erro do Motor OCR {Engine}: {ErrMessage}", engine, errMessage);
                 return new OcrCallResult("", false);
             }
 
-            if (result.TryGetProperty("ParsedResults", out var parsedResults) && parsedResults.GetArrayLength() > 0)
+            using (response)
             {
-                var parsedText = parsedResults[0].GetProperty("ParsedText").GetString();
-                return new OcrCallResult(parsedText ?? "", true);
-            }
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Erro OCR API HTTP {StatusCode}: {RawJson}", response.StatusCode, rawJson);
+                    return new OcrCallResult("", false);
+                }
 
-            // Resposta válida da API, porém sem resultados = imagem sem texto legível
-            return new OcrCallResult("", true);
+                using var doc = JsonDocument.Parse(rawJson);
+                var result = doc.RootElement;
+
+                if (result.TryGetProperty("IsErroredOnProcessing", out var isErrored) && isErrored.GetBoolean())
+                {
+                    var errMessage = result.TryGetProperty("ErrorMessage", out var msg) ? msg.ToString() : "Erro desconhecido";
+                    _logger.LogWarning("Erro do Motor OCR {Engine}: {ErrMessage}", engine, errMessage);
+                    return new OcrCallResult("", false);
+                }
+
+                if (result.TryGetProperty("ParsedResults", out var parsedResults) && parsedResults.GetArrayLength() > 0)
+                {
+                    var parsedText = parsedResults[0].GetProperty("ParsedText").GetString();
+                    return new OcrCallResult(parsedText ?? "", true);
+                }
+
+                // Resposta válida da API, porém sem resultados = imagem sem texto legível
+                return new OcrCallResult("", true);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -236,14 +281,33 @@ public class DocumentProcessingService : IOcrAiService
 
         try
         {
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            if (response.IsSuccessStatusCode)
+            var response = await _sender.SendAsync(
+                _httpClient,
+                () =>
+                {
+                    var req = new HttpRequestMessage(HttpMethod.Post, groqUrl);
+                    if (!string.IsNullOrWhiteSpace(_geminiApiKey))
+                        req.Headers.Add("Authorization", $"Bearer {_geminiApiKey}");
+                    req.Content = JsonContent.Create(payload);
+                    return req;
+                },
+                "Gemini (unificação)",
+                TimeoutIa,
+                cancellationToken);
+
+            if (response is null)
             {
-                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-                return groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+                return text1.Length > text2.Length ? text1 : text2;
             }
-            else 
+
+            using (response)
             {
+                if (response.IsSuccessStatusCode)
+                {
+                    var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                    return groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+                }
+
                 var err = await response.Content.ReadAsStringAsync(cancellationToken);
                 _logger.LogError("Gemini falhou na unificação de texto. HTTP {StatusCode}: {Error}", response.StatusCode, err);
             }
@@ -336,88 +400,119 @@ public class DocumentProcessingService : IOcrAiService
             response_format = new { type = "json_object" }
         };
         
-        var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
-        request.Headers.Add("Authorization", $"Bearer {groqKey}");
-        request.Content = JsonContent.Create(payload);
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        
-        if (response.IsSuccessStatusCode)
+        var response = await _sender.SendAsync(
+            _httpClient,
+            () =>
+            {
+                var req = new HttpRequestMessage(HttpMethod.Post, groqUrl);
+                req.Headers.Add("Authorization", $"Bearer {groqKey}");
+                req.Content = JsonContent.Create(payload);
+                return req;
+            },
+            "Gemini (extração)",
+            TimeoutIa,
+            cancellationToken);
+
+        if (response is null)
         {
-            var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-            var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
-            
-            jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
-            
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            options.Converters.Add(new FlexibleBooleanConverter());
-            var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-            dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-            _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Gemini (Flash).");
-            return dto;
+            var semResposta = ParseFallback(unifiedText);
+            semResposta.RevisaoPendente = true;
+            semResposta.Resumo = "Aviso: o serviço de IA não respondeu. Os dados abaixo foram extraídos apenas via OCR.";
+            return semResposta;
         }
-        else
+
+        using (response)
         {
-            var err = await response.Content.ReadAsStringAsync(cancellationToken);
-            _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
-            
-            if (!string.IsNullOrWhiteSpace(_groqApiKey) && !string.IsNullOrWhiteSpace(_groqModel))
+            if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Tentando extração estruturada via fallback Groq.");
-                try 
-                {
-                    var groqApiUrl = "https://api.groq.com/openai/v1/chat/completions";
-                    var groqPayload = new
-                    {
-                        model = _groqModel,
-                        messages = new[] { new { role = "user", content = prompt } },
-                        temperature = 0.0,
-                        response_format = new { type = "json_object" }
-                    };
-                    
-                    var groqRequest = new HttpRequestMessage(HttpMethod.Post, groqApiUrl);
-                    groqRequest.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
-                    groqRequest.Content = JsonContent.Create(groqPayload);
-                    
-                    var groqResponse = await _httpClient.SendAsync(groqRequest, cancellationToken);
-                    if (groqResponse.IsSuccessStatusCode)
-                    {
-                        var groqJson = await groqResponse.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-                        var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
-                        jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
-                        
-                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                        options.Converters.Add(new FlexibleBooleanConverter());
-                        var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                        dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-                        _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq.");
-                        return dto;
-                    }
-                    else 
-                    {
-                        var groqErr = await groqResponse.Content.ReadAsStringAsync(cancellationToken);
-                        _logger.LogError("Groq falhou no fallback. HTTP {StatusCode}: {Error}", groqResponse.StatusCode, groqErr);
-                    }
-                } 
-                catch (Exception groqEx) 
-                {
-                    _logger.LogError(groqEx, "Erro na chamada do Groq.");
-                }
-            }
-            
-            _logger.LogWarning("Retornando fallback básico devido à falha da API.");
-            var fallbackDto = ParseFallback(unifiedText);
-            fallbackDto.RevisaoPendente = true;
-            
-            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || err.Contains("Quota exceeded") || err.Contains("RESOURCE_EXHAUSTED"))
-            {
-                fallbackDto.Resumo = "Aviso: A API de inteligência artificial está com alto volume de uso/esgotada no momento. Os dados abaixo foram extraídos apenas via OCR.";
+                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+
+                jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                options.Converters.Add(new FlexibleBooleanConverter());
+                var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+                dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
+                _logger.LogInformation("Extração estruturada realizada com sucesso via Gemini.");
+                return dto;
             }
             else
             {
-                fallbackDto.Resumo = "Aviso: Falha na extração de IA. Os dados abaixo foram extraídos apenas via OCR.";
+                var err = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+
+                if (!string.IsNullOrWhiteSpace(_groqApiKey) && !string.IsNullOrWhiteSpace(_groqModel))
+                {
+                    _logger.LogInformation("Tentando extração estruturada via fallback Groq.");
+                    try
+                    {
+                        var groqApiUrl = "https://api.groq.com/openai/v1/chat/completions";
+                        var groqPayload = new
+                        {
+                            model = _groqModel,
+                            messages = new[] { new { role = "user", content = prompt } },
+                            temperature = 0.0,
+                            response_format = new { type = "json_object" }
+                        };
+
+                        var groqResponse = await _sender.SendAsync(
+                            _httpClient,
+                            () =>
+                            {
+                                var req = new HttpRequestMessage(HttpMethod.Post, groqApiUrl);
+                                req.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
+                                req.Content = JsonContent.Create(groqPayload);
+                                return req;
+                            },
+                            "Groq (extração)",
+                            TimeoutIa,
+                            cancellationToken);
+
+                        if (groqResponse is not null)
+                        {
+                            using (groqResponse)
+                            {
+                                if (groqResponse.IsSuccessStatusCode)
+                                {
+                                    var groqJson = await groqResponse.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+                                    var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+                                    jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
+
+                                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                                    options.Converters.Add(new FlexibleBooleanConverter());
+                                    var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
+                                    dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
+                                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq.");
+                                    return dto;
+                                }
+
+                                var groqErr = await groqResponse.Content.ReadAsStringAsync(cancellationToken);
+                                _logger.LogError("Groq falhou no fallback. HTTP {StatusCode}: {Error}", groqResponse.StatusCode, groqErr);
+                            }
+                        }
+                    }
+                    catch (Exception groqEx)
+                    {
+                        _logger.LogError(groqEx, "Erro na chamada do Groq.");
+                    }
+                }
+
+                _logger.LogWarning("Retornando fallback básico devido à falha da API.");
+                var fallbackDto = ParseFallback(unifiedText);
+                fallbackDto.RevisaoPendente = true;
+
+                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || err.Contains("Quota exceeded") || err.Contains("RESOURCE_EXHAUSTED"))
+                {
+                    fallbackDto.Resumo = "Aviso: A API de inteligência artificial está com alto volume de uso/esgotada no momento. Os dados abaixo foram extraídos apenas via OCR.";
+                }
+                else
+                {
+                    fallbackDto.Resumo = "Aviso: Falha na extração de IA. Os dados abaixo foram extraídos apenas via OCR.";
+                }
+
+                return fallbackDto;
             }
-            
-            return fallbackDto;
         }
     }
 

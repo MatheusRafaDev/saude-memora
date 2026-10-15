@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -11,13 +11,6 @@ using Microsoft.Extensions.Caching.Distributed;
 using SaudeMemora.Infrastructure.Data;
 
 namespace SaudeMemora.Api.Endpoints;
-
-public class ConsentimentoDto
-{
-    public bool Aceito { get; set; }
-    public string? Finalidade { get; set; }
-    public bool Dispensar { get; set; }
-}
 
 public record ConsentimentoStatusResponse(
     bool Aceito,

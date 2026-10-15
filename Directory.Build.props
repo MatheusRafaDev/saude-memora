@@ -1,0 +1,11 @@
+<Project>
+
+  <!--
+    Propriedades compartilhadas do repositório.
+    RepoRoot permite referências estáveis a partir de projetos em subpastas diferentes.
+  -->
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+  </PropertyGroup>
+
+</Project>

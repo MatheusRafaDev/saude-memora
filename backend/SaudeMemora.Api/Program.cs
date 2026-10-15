@@ -46,12 +46,16 @@ builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<MongoDbContext>();
+builder.Services.AddSingleton<MigracaoRunner>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IPacienteRepository, PacienteRepository>();
 builder.Services.AddScoped<IFichaMedicaRepository, FichaMedicaRepository>();
 builder.Services.AddScoped<IChatHistoryRepository, ChatHistoryRepository>();
 builder.Services.AddScoped<ISistemaLogRepository, SistemaLogRepository>();
+builder.Services.AddScoped<IAuditoriaAcessoRepository, AuditoriaAcessoRepository>();
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<IImageStorageService, CloudinaryStorageService>();
+builder.Services.AddScoped<IAccountDeletionService, AccountDeletionService>();
 builder.Services.AddScoped<IAlertaMedicamentoService, AlertaMedicamentoService>();
 builder.Services.AddScoped<IMedicamentoCatalogoRepository, MedicamentoCatalogoRepository>();
 builder.Services.AddScoped<IMedicamentoCatalogoService, MedicamentoCatalogoService>();
@@ -63,7 +67,14 @@ builder.Services.AddScoped<ICnesCatalogoService, CnesCatalogoService>();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterPacienteDto>();
 
 builder.Services.AddHttpClient();
-builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>();
+builder.Services.AddSingleton<CircuitBreakerRegistry>();
+builder.Services.AddSingleton<ResilientHttpSender>();
+// Sem Timeout no HttpClient: cada chamada define seu próprio limite por tentativa
+// (o timeout padrão de 100s do HttpClient não permitiria retentativa útil).
+builder.Services.AddHttpClient<IOcrAiService, DocumentProcessingService>(client =>
+{
+    client.Timeout = Timeout.InfiniteTimeSpan;
+});
 
 var bularioOptions = builder.Configuration.GetSection(BularioApiOptions.SectionName).Get<BularioApiOptions>()
     ?? new BularioApiOptions();
@@ -100,6 +111,12 @@ if (allowedOrigins.Length == 0)
     allowedOrigins = new[] { "http://localhost:5173", "https://localhost:5173" };
 }
 
+// Allowlist explícita por padrão. Hosts dinâmicos (ex.: previews) entram por
+// CORS_ALLOWED_ORIGIN_PATTERNS, com o curinga como rótulo inteiro no início de um
+// domínio concreto, ex.: https://*.preview.exemplo.com
+var allowedOriginPatterns = CorsSettings.ParseAllowedOriginPatterns(
+    Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGIN_PATTERNS"));
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("SaudeMemoraCors", policy =>
@@ -107,13 +124,11 @@ builder.Services.AddCors(options =>
         policy.SetIsOriginAllowed(origin =>
               {
                   if (allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase)) return true;
-                  if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-                  {
-                      return uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase)
-                          || uri.Host == "localhost"
-                          || uri.Host == "127.0.0.1";
-                  }
-                  return false;
+                  // Padrões explícitos (ex.: previews da Vercel) declarados em
+                  // CORS_ALLOWED_ORIGIN_PATTERNS. Nunca aceitamos *.vercel.app inteiro:
+                  // qualquer pessoa publica um subdomínio lá e, com AllowCredentials,
+                  // conseguiria chamar a API em nome do usuário logado.
+                  return CorsSettings.MatchesAnyPattern(origin, allowedOriginPatterns);
               })
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -123,11 +138,28 @@ builder.Services.AddCors(options =>
 
 // JWT Authentication
 
-// JWT: fallback seguro se ausente ou curto
+// JWT: sem fallback. Um segredo padrão embutido no código permitiria forjar tokens
+// de qualquer paciente, então a aplicação precisa falhar no startup em vez de degradar.
+const int MinJwtSecretLength = 32;
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? builder.Configuration["JwtSettings:Secret"];
-if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
+if (string.IsNullOrWhiteSpace(jwtSecret))
 {
-    jwtSecret = "saude-memora-default-fallback-secret-key-min-32-chars";
+    throw new InvalidOperationException(
+        "JWT_SECRET_KEY não configurada. Defina uma chave aleatória com ao menos " +
+        $"{MinJwtSecretLength} caracteres antes de iniciar a API (veja backend/.env.example).");
+}
+
+if (jwtSecret.Length < MinJwtSecretLength)
+{
+    throw new InvalidOperationException(
+        $"JWT_SECRET_KEY tem {jwtSecret.Length} caracteres, abaixo do mínimo de {MinJwtSecretLength}. " +
+        "Gere uma chave aleatória com pelo menos 32 caracteres (ex.: openssl rand -base64 48).");
+}
+
+if (jwtSecret.StartsWith("replace-with", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        "JWT_SECRET_KEY ainda contém o valor de exemplo. Gere um segredo real antes de iniciar a API.");
 }
 
 bool IsSecureRequest(HttpContext context)
@@ -180,7 +212,8 @@ void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
 string CreateJwtToken(Paciente paciente, IConfiguration config, TimeSpan expiresIn)
 {
     var tokenHandler = new JwtSecurityTokenHandler();
-    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? config["JwtSettings:Secret"] ?? throw new InvalidOperationException("JWT_SECRET_KEY is missing.");
+    // Usa exatamente o segredo já validado no startup (mesma origem da validação de assinatura).
+    var secret = jwtSecret;
     var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? config["JwtSettings:Issuer"];
     var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? config["JwtSettings:Audience"];
     var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret));
@@ -374,149 +407,28 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseForwardedHeaders();
 
-// Cria índices do MongoDB uma única vez no startup (fila + idempotência).
-// Roda em background para não atrasar o startup se o Mongo estiver inacessível.
-_ = Task.Run(async () =>
+// Migrações de banco (índices, TTL e carga inicial dos catálogos) são aplicadas de forma
+// versionada e idempotente ANTES de a aplicação aceitar tráfego. Antes isso rodava em uma
+// Task.Run não aguardada, então requisições podiam chegar sem os índices criados.
+// Controlável por RUN_MIGRATIONS_ON_STARTUP=false para implantações que migram em job separado.
+using (var startupScope = app.Services.CreateScope())
 {
-    var dbContext = app.Services.GetRequiredService<MongoDbContext>();
-    var token = app.Lifetime.ApplicationStopping;
+    var executarMigracoes = !string.Equals(
+        Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP"),
+        "false",
+        StringComparison.OrdinalIgnoreCase);
 
-    try { await DocumentRepository.EnsureIndexesAsync(dbContext, token); }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Documentos"); }
-
-    try { await PacienteRepository.EnsureIndexesAsync(dbContext, token); }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Pacientes"); }
-
-    try { await FichaMedicaRepository.EnsureIndexesAsync(dbContext, token); }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Fichas Médicas"); }
-
-    try { await ChatHistoryRepository.EnsureIndexesAsync(dbContext, token); }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção ChatHistoricos"); }
-
-    try { await SistemaLogRepository.EnsureIndexesAsync(dbContext, token); }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Logs (TTL)"); }
-
-    try
+    if (executarMigracoes)
     {
-        var catalogRepository = app.Services.GetRequiredService<IMedicamentoCatalogoRepository>();
-        await catalogRepository.EnsureIndexesAsync(token);
+        var migrationRunner = startupScope.ServiceProvider.GetRequiredService<MigracaoRunner>();
+        await migrationRunner.ExecutarAsync(CancellationToken.None);
     }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção MedicamentosCatalogo"); }
-
-    try
+    else
     {
-        using var scope = app.Services.CreateScope();
-        var catalogRepository = scope.ServiceProvider.GetRequiredService<IMedicamentoCatalogoRepository>();
-        if (await catalogRepository.ContarAsync(token) == 0)
-        {
-            var catalogPath = Path.Combine(app.Environment.ContentRootPath, "Data", "medicamentos.csv");
-            if (!File.Exists(catalogPath))
-            {
-                app.Logger.LogError("[Medicamentos] Arquivo da base ANVISA não encontrado em {CatalogPath}.", catalogPath);
-            }
-            else
-            {
-                await using var catalogStream = File.OpenRead(catalogPath);
-                var catalogService = scope.ServiceProvider.GetRequiredService<IMedicamentoCatalogoService>();
-                var importResult = await catalogService.ImportarAsync(catalogStream, token);
-                app.Logger.LogInformation(
-                    "[Medicamentos] Base ANVISA inicializada: {Imported} registros importados, {Invalid} inválidos e {Duplicates} duplicados.",
-                    importResult.RegistrosImportados,
-                    importResult.RegistrosInvalidos,
-                    importResult.RegistrosDuplicados);
-            }
-        }
+        app.Logger.LogWarning(
+            "RUN_MIGRATIONS_ON_STARTUP=false: migrações de banco não foram executadas neste processo.");
     }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Medicamentos] Falha ao inicializar o catálogo ANVISA"); }
-
-    try
-    {
-        var cid10Repository = app.Services.GetRequiredService<ICid10CatalogoRepository>();
-        await cid10Repository.EnsureIndexesAsync(token);
-    }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção Cid10Catalogo"); }
-
-    try
-    {
-        using var scope = app.Services.CreateScope();
-        var catalogRepository = scope.ServiceProvider.GetRequiredService<ICid10CatalogoRepository>();
-        if (await catalogRepository.ContarAsync(token) == 0)
-        {
-            var catalogPath = Environment.GetEnvironmentVariable("CID10_CATALOG_PATH")
-                ?? Path.Combine(app.Environment.ContentRootPath, "Data", "CID-10-SUBCATEGORIAS.CSV");
-            if (!File.Exists(catalogPath))
-            {
-                app.Logger.LogError("[CID-10] Arquivo do catálogo não encontrado em {CatalogPath}.", catalogPath);
-            }
-            else
-            {
-                await using var catalogStream = File.OpenRead(catalogPath);
-                var catalogService = scope.ServiceProvider.GetRequiredService<ICid10CatalogoService>();
-                var importResult = await catalogService.ImportarAsync(catalogStream, token);
-                app.Logger.LogInformation(
-                    "[CID-10] Catálogo inicializado: {Imported} registros importados, {Invalid} inválidos e {Duplicates} duplicados.",
-                    importResult.RegistrosImportados,
-                    importResult.RegistrosInvalidos,
-                    importResult.RegistrosDuplicados);
-            }
-        }
-    }
-    catch (Exception ex) { app.Logger.LogError(ex, "[CID-10] Falha ao inicializar o catálogo"); }
-
-    try
-    {
-        var cnesRepository = app.Services.GetRequiredService<ICnesCatalogoRepository>();
-        await cnesRepository.EnsureIndexesAsync(token);
-    }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha ao criar índices da coleção CnesCatalogo"); }
-
-    try
-    {
-        using var scope = app.Services.CreateScope();
-        var catalogRepository = scope.ServiceProvider.GetRequiredService<ICnesCatalogoRepository>();
-        if (await catalogRepository.ContarAsync(token) == 0)
-        {
-            var catalogPath = Environment.GetEnvironmentVariable("CNES_CATALOG_PATH");
-            if (string.IsNullOrWhiteSpace(catalogPath))
-                catalogPath = Path.Combine(app.Environment.ContentRootPath, "Data", "cnes_estabelecimentos.json");
-
-            if (!File.Exists(catalogPath))
-            {
-                app.Logger.LogError("[CNES] Arquivo do catálogo não encontrado em {CatalogPath}.", catalogPath);
-            }
-            else
-            {
-                await using var catalogStream = File.OpenRead(catalogPath);
-                var catalogService = scope.ServiceProvider.GetRequiredService<ICnesCatalogoService>();
-                var importResult = await catalogService.ImportarAsync(catalogStream, token);
-                app.Logger.LogInformation(
-                    "[CNES] Catálogo inicializado: {Imported} registros importados, {Invalid} inválidos e {Duplicates} duplicados.",
-                    importResult.RegistrosImportados,
-                    importResult.RegistrosInvalidos,
-                    importResult.RegistrosDuplicados);
-            }
-        }
-    }
-    catch (Exception ex) { app.Logger.LogError(ex, "[CNES] Falha ao inicializar o catálogo"); }
-    
-    try
-    {
-        var filter = Builders<Paciente>.Filter.Exists("securityStamp", false);
-        var pacientes = await dbContext.Pacientes.Find(filter).ToListAsync(token);
-        foreach(var p in pacientes)
-        {
-            await dbContext.Pacientes.UpdateOneAsync(
-                Builders<Paciente>.Filter.Eq(x => x.Id, p.Id),
-                Builders<Paciente>.Update.Set("securityStamp", Guid.NewGuid().ToString("N")),
-                cancellationToken: token);
-        }
-        if (pacientes.Count > 0)
-            app.Logger.LogInformation("[Mongo] Preenchido SecurityStamp em {Count} pacientes.", pacientes.Count);
-    }
-    catch (Exception ex) { app.Logger.LogError(ex, "[Mongo] Falha na migração do SecurityStamp"); }
-
-    app.Logger.LogInformation("[Mongo] Processo de criação de índices concluído.");
-});
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -816,10 +728,12 @@ app.MapPost("/api/auth/alterar-senha", async (ClaimsPrincipal user, IPacienteRep
 //  Paciente Endpoints 
 
 // Retorna o perfil médico completo do paciente autenticado
-app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, IImageStorageService storage) =>
+app.MapGet("/api/pacientes/me", async (ClaimsPrincipal user, IPacienteRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, IImageStorageService storage, HttpContext context, IAuditoriaService auditoria) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
+
+    await auditoria.RegistrarAsync(context.ParaAuditoria(), AuditoriaOperacao.Leitura, "Perfil", userId);
 
     var cacheKey = $"paciente_v2_{userId}";
     var cached = await cache.SafeGetStringAsync(cacheKey);
@@ -1022,7 +936,7 @@ app.MapDelete("/api/pacientes/me/carteirinha", async (ClaimsPrincipal user, IPac
 }).Produces(StatusCodes.Status200OK).RequireAuthorization();
 
 // Exclui a conta do paciente e todos os seus dados em cascata
-app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, ClaimsPrincipal user, IPacienteRepository repo, IDocumentRepository docRepo, IFichaMedicaRepository fichaRepo, IImageStorageService storage, ISistemaLogRepository logRepo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, ClaimsPrincipal user, IPacienteRepository repo, IServiceScopeFactory scopeFactory, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, ILogger<Program> logger) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -1040,8 +954,9 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
         return Results.BadRequest(new { message = "Senha incorreta." });
     }
 
-    // Em vez de apagar tudo sincronicamente, marca para exclusão
+    // Marca a conta e registra o instante do pedido (evidência do prazo de atendimento).
     paciente.IsDeleting = true;
+    paciente.ExclusaoSolicitadaEm = DateTime.UtcNow;
     paciente.SecurityStamp = Guid.NewGuid().ToString("N"); // Invalida tokens atuais
     paciente.TokenEmergencia = null;
     paciente.TokenEmergenciaExpiraEm = null;
@@ -1055,17 +970,37 @@ app.MapDelete("/api/pacientes/me", async ([FromBody] DeleteAccountDto dto, Claim
     await cache.SafeRemoveAsync($"secstamp_{userId}");
     await cache.SafeRemoveAsync($"ficha_user_{userId}");
 
-    return Results.Ok(new { message = "Sua conta foi agendada para exclusão e será removida em breve." });
+    // Dispara a exclusão efetiva imediatamente, em escopo próprio, sem bloquear a resposta.
+    // O AccountCleanupWorker continua como rede de segurança para falhas nesta execução.
+    var pacienteIdExcluir = userId;
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var deletionService = scope.ServiceProvider.GetRequiredService<IAccountDeletionService>();
+            await deletionService.ExcluirContaAsync(pacienteIdExcluir);
+        }
+        catch (Exception ex)
+        {
+            // A conta permanece marcada e será reprocessada pelo worker.
+            logger.LogError(ex, "Falha ao excluir imediatamente os dados do paciente {PacienteId}", pacienteIdExcluir);
+        }
+    });
+
+    return Results.Ok(new { message = "Sua conta e seus dados foram excluídos." });
 }).AddEndpointFilter<GlobalValidationFilter>().RequireAuthorization().RequireRateLimiting("auth").Produces<ApiMessageResponse>();
 
 // --- Logs Endpoints
 
 // --- Ficha Médica Endpoints
 
-app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
+
+    await auditoria.RegistrarAsync(context.ParaAuditoria(), AuditoriaOperacao.Leitura, "FichaMedica", userId);
 
     var cacheKey = $"ficha_v2_{userId}";
     var cached = await cache.SafeGetStringAsync(cacheKey);
@@ -1094,12 +1029,14 @@ app.MapGet("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepo
     var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
     await cache.SafeSetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(result, jsonOpts), new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) /* Reduzido de 10 para 5 min para não exceder URL assinada (15m) */ });
     return Results.Ok(result);
-}).Produces<SaudeMemora.Domain.Entities.FichaMedica>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().Produces<SaudeMemora.Domain.Entities.FichaMedica>().RequireAuthorization();
 
-app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, UpdateFichaMedicaDto dto, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+app.MapPatch("/api/ficha-medica/me", async (ClaimsPrincipal user, IFichaMedicaRepository repo, UpdateFichaMedicaDto dto, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
+
+    await auditoria.RegistrarAsync(context.ParaAuditoria(), AuditoriaOperacao.Alteracao, "FichaMedica", userId);
 
     var ficha = await repo.GetByPacienteIdAsync(userId);
     if (ficha == null)
@@ -1298,10 +1235,12 @@ app.MapPost("/api/documents/{id}/retry", async (string id, ClaimsPrincipal user,
 
 
 // Lista todos os documentos do paciente autenticado
-app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage) =>
+app.MapGet("/api/documents", async (ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, HttpContext context, IAuditoriaService auditoria) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
+
+    await auditoria.RegistrarAsync(context.ParaAuditoria(), AuditoriaOperacao.Leitura, "ListaDocumentos", userId);
 
     var docs = await repo.GetAllByPacienteIdAsync(userId);
 
@@ -1375,7 +1314,7 @@ app.MapGet("/api/documents/count", async (ClaimsPrincipal user, IDocumentReposit
 }).Produces<DocumentCountResponse>().RequireAuthorization();
 
 // Busca documento por ID
-app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, IDistributedCache cache) =>
+app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, IDistributedCache cache, HttpContext context, IAuditoriaService auditoria) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -1397,7 +1336,16 @@ app.MapGet("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocum
         }
         return Results.NotFound();
     }
-    if (doc.PacienteId != userId) return Results.NotFound();
+    if (doc.PacienteId != userId)
+    {
+        // Tentativa de leitura de documento de outro titular: registra como acesso negado.
+        await auditoria.RegistrarAsync(
+            context.ParaAuditoria(), AuditoriaOperacao.Leitura, "Documento", id, AuditoriaResultado.Negado);
+        return Results.NotFound();
+    }
+
+    await auditoria.RegistrarAsync(
+        context.ParaAuditoria(), AuditoriaOperacao.Leitura, "Documento", id, AuditoriaResultado.Sucesso);
 
     return Results.Ok(new
     {
@@ -1448,13 +1396,23 @@ app.MapPut("/api/documents/{id}", async (
     IPacienteRepository pacienteRepo,
     IFichaMedicaRepository fichaRepo,
     IAlertaMedicamentoService alertaService,
+    HttpContext context,
+    IAuditoriaService auditoria,
     Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
     var doc = await repo.GetByIdAsync(id);
-    if (doc == null || doc.PacienteId != userId) return Results.NotFound();
+    if (doc == null || doc.PacienteId != userId)
+    {
+        await auditoria.RegistrarAsync(
+            context.ParaAuditoria(), AuditoriaOperacao.Alteracao, "Documento", id, AuditoriaResultado.Negado);
+        return Results.NotFound();
+    }
+
+    await auditoria.RegistrarAsync(
+        context.ParaAuditoria(), AuditoriaOperacao.Alteracao, "Documento", id, AuditoriaResultado.Sucesso);
 
     var originallyConfirmedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     foreach (var path in updateDto.CamposConfirmados ?? new List<string>())
@@ -1648,13 +1606,21 @@ app.MapPut("/api/documents/{id}", async (
 }).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 
 // Exclui documento por ID (e remove do Cloudinary)
-app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache) =>
+app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
 
     var doc = await repo.GetByIdAsync(id);
-    if (doc == null || doc.PacienteId != userId) return Results.NotFound();
+    if (doc == null || doc.PacienteId != userId)
+    {
+        await auditoria.RegistrarAsync(
+            context.ParaAuditoria(), AuditoriaOperacao.Exclusao, "Documento", id, AuditoriaResultado.Negado);
+        return Results.NotFound();
+    }
+
+    await auditoria.RegistrarAsync(
+        context.ParaAuditoria(), AuditoriaOperacao.Exclusao, "Documento", id, AuditoriaResultado.Sucesso);
 
     await repo.DeleteAsync(id);
 
@@ -1672,7 +1638,7 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
     return Results.Ok(new { message = "Documento deletado com sucesso." });
-}).Produces<ApiMessageResponse>().RequireAuthorization();
+}).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 
 //  Relatório Endpoints 
 
@@ -1784,8 +1750,6 @@ app.Run();
 
 //  DTOs auxiliares 
 
-public record MedicamentoContinuoDto(string Nome, string Dosagem, string Horario);
-
 public record PerfilMedicoDto(
     string? TipoSanguineo,
     bool? DoadorOrgaos,
@@ -1794,11 +1758,6 @@ public record PerfilMedicoDto(
     List<MedicamentoContinuoDto>? MedicamentosContinuos
 );
 
-public record ContatoDto(string? Telefone, string? Endereco, string? ContatoEmergencia);
-
-public record PerfilUpdateDto(string? Nome, string? DataNascimento, string? Email, string? PlanoSaude, string? NumeroCarteirinha, string? SenhaAtual, string? ContatoEmergencia, string? Sexo);
-public record AlterarSenhaDto(string SenhaAtual, string NovaSenha);
-public record DeleteAccountDto(string Senha);
 public record ApiMessageResponse(string Message);
 public record ApiUserResponse(string? Id, string Nome, string Email);
 public record ApiAuthResponse(ApiUserResponse User);
@@ -1890,64 +1849,6 @@ public record DocumentDetailResponse(
     List<AlertaDocumento> Alertas,
     DateTime? RevisadoEm);
 public record ApiReportResponse(string? Report);
-
-public class DocumentUpdateDto
-{
-    public List<string>? CamposConfirmados { get; set; }
-    public string? Titulo { get; set; }
-    public string? Tipo { get; set; }
-    public string? Medico { get; set; }
-    public string? Clinica { get; set; }
-    public string? Data { get; set; }
-    public string? Resumo { get; set; }
-    public string? Diagnostico { get; set; }
-    public string? Crm { get; set; }
-    public string? Cid { get; set; }
-    public string? Cnes { get; set; }
-    public string? NomeExame { get; set; }
-    public string? TipoExame { get; set; }
-    public string? Resultado { get; set; }
-    public string? Especialidade { get; set; }
-    public string? TipoClinico { get; set; }
-    public string? Conteudo { get; set; }
-    public string? Conclusoes { get; set; }
-    public string? Observacoes { get; set; }
-    public string? TextoExtraido { get; set; }
-    public List<MedicamentoDocumentoUpdateDto>? Medicamentos { get; set; }
-    public List<LinhaIndentadaDocumentoUpdateDto>? ConteudoIndentado { get; set; }
-    public List<ResultadoExameUpdateDto>? ResultadosExame { get; set; }
-}
-
-public class MedicamentoDocumentoUpdateDto
-{
-    public string? Nome { get; set; }
-    public string? Dosagem { get; set; }
-    public string? Horario { get; set; }
-}
-
-public class LinhaIndentadaDocumentoUpdateDto
-{
-    public string? Tipo { get; set; }
-    public string? Texto { get; set; }
-    public string? Chave { get; set; }
-    public string? Valor { get; set; }
-}
-
-public class ResultadoExameUpdateDto
-{
-    public string? Nome { get; set; }
-    public string? NomeNormalizado { get; set; }
-    public double? Valor { get; set; }
-    public string? ValorTexto { get; set; }
-    public string? Unidade { get; set; }
-    public double? RefMin { get; set; }
-    public double? RefMax { get; set; }
-    public string? ReferenciaTexto { get; set; }
-    public string? Status { get; set; }
-    public double Confianca { get; set; } = 1.0;
-    public bool ConfirmacaoNecessaria { get; set; }
-    public string? MotivoConfirmacao { get; set; }
-}
 
 // --- Helpers de Upload
 

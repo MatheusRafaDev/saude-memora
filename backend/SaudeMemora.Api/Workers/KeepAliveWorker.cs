@@ -10,13 +10,15 @@ namespace SaudeMemora.Api.Workers
     public class KeepAliveWorker : BackgroundService
     {
         private readonly ILogger<KeepAliveWorker> _logger;
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly string _apiUrl;
 
-        public KeepAliveWorker(ILogger<KeepAliveWorker> logger)
+        public KeepAliveWorker(ILogger<KeepAliveWorker> logger, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
-            _httpClient = new HttpClient();
+            // IHttpClientFactory em vez de new HttpClient(): evita sockets presos e
+            // permite rotação de DNS/handler, que um HttpClient de vida longa não faz.
+            _httpClientFactory = httpClientFactory;
             // Pegamos a URL da API das variáveis de ambiente. Se não estiver configurada, não vai rodar o ping.
             _apiUrl = Environment.GetEnvironmentVariable("PUBLIC_API_URL") ?? "";
             
@@ -50,7 +52,10 @@ namespace SaudeMemora.Api.Workers
 
                     if (stoppingToken.IsCancellationRequested) break;
 
-                    var response = await _httpClient.GetAsync(pingUrl, stoppingToken);
+                    var httpClient = _httpClientFactory.CreateClient();
+                    httpClient.Timeout = TimeSpan.FromSeconds(20);
+
+                    var response = await httpClient.GetAsync(pingUrl, stoppingToken);
                     if (response.IsSuccessStatusCode)
                     {
                         _logger.LogInformation("[KeepAlive] Ping realizado com sucesso no Render.");

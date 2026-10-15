@@ -25,12 +25,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 COPY --from=build /app/publish .
 
 # A Vercel encaminha o tráfego dinamicamente para a porta $PORT (geralmente 80 ou 8080)
-ENV PORT=80
-ENV ASPNETCORE_HTTP_PORTS=80;8080
-EXPOSE 80 8080
+ENV PORT=8080
+ENV ASPNETCORE_HTTP_PORTS=8080
+EXPOSE 8080
 
-# Executa com usuário root no contêiner para garantir permissão irrestrita de bind em portas baixas (<1024)
-USER root
+# Usuário sem privilégios: a imagem aspnet já traz o usuário "app".
+# Antes rodava como root para conseguir bind em porta <1024; usar PORT >= 1024
+# elimina essa necessidade e reduz o impacto de uma eventual falha de execução.
+USER app
 
-# Inicializa o ASP.NET Core escutando na porta $PORT e também na 80/8080
-ENTRYPOINT ["/bin/sh", "-c", "export ASPNETCORE_URLS=\"http://+:${PORT:-80};http://+:8080\"; exec dotnet SaudeMemora.Api.dll"]
+ENTRYPOINT ["/bin/sh", "-c", "export ASPNETCORE_URLS=\"http://+:${PORT:-8080}\"; exec dotnet SaudeMemora.Api.dll"]

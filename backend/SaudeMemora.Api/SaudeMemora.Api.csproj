@@ -23,6 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SaudeMemora.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\data\anvisa\medicamentos.csv" Link="Data\medicamentos.csv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\CID\CID-10-SUBCATEGORIAS.CSV" Link="Data\CID-10-SUBCATEGORIAS.CSV" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\data\cnes_estabelecimentos.json" Link="Data\cnes_estabelecimentos.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

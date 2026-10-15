@@ -20,4 +20,8 @@
     <ProjectReference Include="..\SaudeMemora.Domain\SaudeMemora.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="SaudeMemora.Tests" />
+  </ItemGroup>
+
 </Project>

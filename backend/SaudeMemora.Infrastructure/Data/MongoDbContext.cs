@@ -37,4 +37,5 @@ public class MongoDbContext
     public IMongoCollection<Cid10Registro> Cid10Catalogo => _database.GetCollection<Cid10Registro>("Cid10Catalogo");
     public IMongoCollection<CnesRegistro> CnesCatalogo => _database.GetCollection<CnesRegistro>("CnesCatalogo");
     public IMongoCollection<SistemaLog> Logs => _database.GetCollection<SistemaLog>("Logs");
+    public IMongoCollection<AuditoriaAcesso> AuditoriaAcessos => _database.GetCollection<AuditoriaAcesso>("AuditoriaAcessos");
 }

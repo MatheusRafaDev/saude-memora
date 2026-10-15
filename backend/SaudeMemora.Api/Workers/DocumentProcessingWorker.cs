@@ -14,21 +14,48 @@ namespace SaudeMemora.Api.Workers;
 
 public class DocumentProcessingWorker : BackgroundService
 {
+    /// <summary>Intervalo mínimo entre consultas quando a fila está vazia.</summary>
+    private static readonly TimeSpan PollMinimo = TimeSpan.FromSeconds(5);
+
+    /// <summary>Teto do backoff: com a fila vazia, consulta a cada 30s em vez de a cada 5s.</summary>
+    private static readonly TimeSpan PollMaximo = TimeSpan.FromSeconds(30);
+
+    private static readonly TimeSpan DelayAposErro = TimeSpan.FromSeconds(10);
+
     private readonly ILogger<DocumentProcessingWorker> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly string _workerId;
 
     public DocumentProcessingWorker(ILogger<DocumentProcessingWorker> logger, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
-        _workerId = Guid.NewGuid().ToString("N");
+    }
+
+    /// <summary>
+    /// Quantidade de documentos processados em paralelo por instância.
+    /// Configurável por DOCUMENT_WORKER_CONCURRENCY (padrão 3, teto 16).
+    /// Antes o worker processava um documento por vez, então o tempo de espera
+    /// crescia linearmente com o tamanho da fila.
+    /// </summary>
+    internal static int ResolverConcorrencia()
+    {
+        const int padrao = 3;
+        const int maximo = 16;
+
+        var configurado = Environment.GetEnvironmentVariable("DOCUMENT_WORKER_CONCURRENCY");
+        if (int.TryParse(configurado, out var valor) && valor >= 1 && valor <= maximo)
+            return valor;
+
+        return padrao;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("DocumentProcessingWorker started. WorkerId: {WorkerId}", _workerId);
+        var concorrencia = ResolverConcorrencia();
+        _logger.LogInformation(
+            "DocumentProcessingWorker started. Concorrência: {Concorrencia}.", concorrencia);
 
+        // Uma única recuperação de documentos com lock expirado, antes de iniciar os loops.
         using (var scope = _scopeFactory.CreateScope())
         {
             var repo = scope.ServiceProvider.GetRequiredService<IDocumentRepository>();
@@ -46,17 +73,36 @@ public class DocumentProcessingWorker : BackgroundService
             }
         }
 
+        var loops = Enumerable.Range(0, concorrencia)
+            .Select(indice => LoopAsync(indice, stoppingToken))
+            .ToArray();
+
+        await Task.WhenAll(loops);
+
+        _logger.LogInformation("DocumentProcessingWorker is stopping.");
+    }
+
+    private async Task LoopAsync(int indice, CancellationToken stoppingToken)
+    {
+        var workerId = $"{Guid.NewGuid():N}-{indice}";
+        var espera = PollMinimo;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var processedAny = await ProcessNextDocumentAsync(stoppingToken);
+                var processedAny = await ProcessNextDocumentAsync(workerId, stoppingToken);
 
-                // Se não encontrou nenhum documento ou se houve erro rápido, dorme um pouco para não fritar a CPU e o BD
-                if (!processedAny)
+                if (processedAny)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                    // Fila com trabalho: volta imediatamente ao próximo documento.
+                    espera = PollMinimo;
+                    continue;
                 }
+
+                // Fila vazia: backoff exponencial até PollMaximo, para não martelar o MongoDB.
+                await Task.Delay(espera, stoppingToken);
+                espera = TimeSpan.FromSeconds(Math.Min(espera.TotalSeconds * 2, PollMaximo.TotalSeconds));
             }
             catch (OperationCanceledException)
             {
@@ -64,15 +110,14 @@ public class DocumentProcessingWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro fatal no loop do DocumentProcessingWorker.");
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                _logger.LogError(ex, "Erro no loop do DocumentProcessingWorker ({WorkerId}).", workerId);
+                espera = PollMinimo;
+                await Task.Delay(DelayAposErro, stoppingToken);
             }
         }
-
-        _logger.LogInformation("DocumentProcessingWorker is stopping.");
     }
 
-    private async Task<bool> ProcessNextDocumentAsync(CancellationToken stoppingToken)
+    private async Task<bool> ProcessNextDocumentAsync(string workerId, CancellationToken stoppingToken)
     {
         // Precisamos criar um escopo para resolver serviços Scoped (como Repositories e MongoDbContext)
         using var scope = _scopeFactory.CreateScope();
@@ -84,7 +129,7 @@ public class DocumentProcessingWorker : BackgroundService
 
         // Busca o próximo documento e coloca um lock de 10 minutos (tempo generoso para IA/OCR processar)
         var lockDuration = TimeSpan.FromMinutes(10);
-        var doc = await repo.DequeuePendingAsync(_workerId, lockDuration);
+        var doc = await repo.DequeuePendingAsync(workerId, lockDuration);
 
         if (doc == null)
         {

@@ -22,7 +22,7 @@ import {
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
 import { QRCodeSVG } from 'qrcode.react';
-import { getEmergencyToken, rotateEmergencyToken } from '@/lib/emergency-token';
+import { getEmergencyToken, rotateEmergencyToken, revokeEmergencyToken } from '@/lib/emergency-token';
 
 export default function Emergencia({ token }: { token?: string } = {}) {
   const { toast } = useToast();
@@ -35,6 +35,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
   const [hasRequestedToken, setHasRequestedToken] = useState(false);
   const [needsTokenRotation, setNeedsTokenRotation] = useState(false);
   const [isRotatingToken, setIsRotatingToken] = useState(false);
+  const [isRevokingToken, setIsRevokingToken] = useState(false);
 
   // Authenticated user queries (enabled if no public token provided)
   const isPublicMode = Boolean(activeToken);
@@ -53,7 +54,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
     },
   });
 
-  const [generatedToken, setGeneratedToken] = useState<string>('');
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
 
   // Detect token from URL query string if not provided via route prop
   useEffect(() => {
@@ -119,6 +120,24 @@ export default function Emergencia({ token }: { token?: string } = {}) {
       toast({ title: 'Não foi possível gerar um novo link', variant: 'destructive' });
     } finally {
       setIsRotatingToken(false);
+    }
+  };
+
+  const handleRevokeToken = async () => {
+    if (isRevokingToken) return;
+    setIsRevokingToken(true);
+    try {
+      await revokeEmergencyToken();
+      setGeneratedToken(null);
+      setNeedsTokenRotation(false);
+      toast({
+        title: 'Link de emergência revogado',
+        description: 'Quem tinha o link ou o QR Code antigo não consegue mais acessar a ficha.',
+      });
+    } catch {
+      toast({ title: 'Não foi possível revogar o link', variant: 'destructive' });
+    } finally {
+      setIsRevokingToken(false);
     }
   };
 
@@ -455,6 +474,17 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                   className="mb-4 min-h-[44px] w-full rounded-xl bg-[#c0463a] px-3 text-sm font-bold text-white hover:bg-[#a13a30] disabled:opacity-60"
                 >
                   {isRotatingToken ? 'Gerando novo link…' : 'Gerar novo link (invalidará o anterior)'}
+                </button>
+              )}
+
+              {generatedToken && (
+                <button
+                  type="button"
+                  onClick={handleRevokeToken}
+                  disabled={isRevokingToken}
+                  className="mb-4 min-h-[44px] w-full rounded-xl border border-[#c0463a] bg-white px-3 text-sm font-bold text-[#c0463a] hover:bg-[#fdf2f1] disabled:opacity-60"
+                >
+                  {isRevokingToken ? 'Revogando…' : 'Revogar link de emergência'}
                 </button>
               )}
 

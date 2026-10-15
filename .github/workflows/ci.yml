@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main, java]
+  pull_request:
+  workflow_dispatch:
+
+# Cancela execuções antigas do mesmo ref quando um novo push chega.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  backend:
+    name: Backend (.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore backend/SaudeMemora.slnx
+
+      - name: Build (Release)
+        run: dotnet build backend/SaudeMemora.slnx --no-restore --configuration Release
+
+      # Os testes usam stubs e não dependem de MongoDB/Redis.
+      - name: Test
+        run: >
+          dotnet test backend/SaudeMemora.Tests/SaudeMemora.Tests.csproj
+          --no-build --configuration Release
+          --logger "trx;LogFileName=resultados.trx"
+          --collect:"XPlat Code Coverage"
+
+      - name: Publicar resultados dos testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-testes-backend
+          path: backend/SaudeMemora.Tests/TestResults/**
+          if-no-files-found: warn
+
+  frontend:
+    name: Frontend (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        working-directory: frontend
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck (pacotes)
+        working-directory: frontend
+        run: pnpm exec tsc --build
+
+      - name: Typecheck (aplicação web)
+        working-directory: frontend
+        run: pnpm --filter @workspace/saudememora run typecheck
+
+      - name: Build
+        working-directory: frontend
+        run: pnpm --filter @workspace/saudememora run build
+        env:
+          VITE_API_URL: https://exemplo.invalid
+
+  scripts:
+    name: Scripts (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test
+        run: node --test tests/*.test.mjs

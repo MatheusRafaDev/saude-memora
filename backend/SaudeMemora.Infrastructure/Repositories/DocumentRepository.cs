@@ -76,7 +76,38 @@ public class DocumentRepository : IDocumentRepository
             new CreateIndexOptions { Name = "ix_pacienteId" }
         );
 
-        await collection.Indexes.CreateManyAsync(new[] { queueModel, idempotencyModel, pacienteIdModel }, ct);
+        // Índices compostos para as consultas reais: listagem/dashboard ordenados por data,
+        // filtro combinado por tipo (tela de Arquivo) e contagem/reprocessamento por status.
+        var listagemModel = new CreateIndexModel<RegistroDocumento>(
+            Builders<RegistroDocumento>.IndexKeys
+                .Ascending(d => d.PacienteId)
+                .Descending(d => d.CriadoEm),
+            new CreateIndexOptions { Name = "ix_pacienteId_criadoEm" });
+
+        var listagemPorTipoModel = new CreateIndexModel<RegistroDocumento>(
+            Builders<RegistroDocumento>.IndexKeys
+                .Ascending(d => d.PacienteId)
+                .Ascending(d => d.Tipo)
+                .Descending(d => d.CriadoEm),
+            new CreateIndexOptions { Name = "ix_pacienteId_tipo_criadoEm" });
+
+        var statusPorPacienteModel = new CreateIndexModel<RegistroDocumento>(
+            Builders<RegistroDocumento>.IndexKeys
+                .Ascending(d => d.PacienteId)
+                .Ascending(d => d.Status),
+            new CreateIndexOptions { Name = "ix_pacienteId_status" });
+
+        await collection.Indexes.CreateManyAsync(
+            new[]
+            {
+                queueModel,
+                idempotencyModel,
+                pacienteIdModel,
+                listagemModel,
+                listagemPorTipoModel,
+                statusPorPacienteModel
+            },
+            ct);
     }
 
     public async Task<IEnumerable<RegistroDocumento>> GetAllByPacienteIdAsync(string userId)

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SaudeMemora.Domain.Interfaces;
 using SaudeMemora.Application.Interfaces;
+using SaudeMemora.Api.Helpers;
+using SaudeMemora.Domain.Entities;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace SaudeMemora.Api.Endpoints;
@@ -55,12 +57,29 @@ public static class EmergenciaEndpoints
             return Results.Ok(new { token = rawToken, expiraEm });
         }).Produces<EmergencyTokenResponse>().RequireAuthorization();
 
+        // Revoga o token atual, invalidando qualquer link/QR code já compartilhado.
+        app.MapDelete("/api/pacientes/me/emergencia", async (ClaimsPrincipal user, IPacienteRepository repo) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Results.Unauthorized();
+
+            var paciente = await repo.GetByIdAsync(userId);
+            if (paciente == null) return Results.NotFound();
+
+            paciente.TokenEmergencia = null;
+            paciente.TokenEmergenciaExpiraEm = null;
+            await repo.UpdateAsync(paciente);
+
+            return Results.Ok(new { message = "Token de emergência revogado." });
+        }).RequireAuthorization();
+
         // Endpoint público que retorna os dados a partir do token
         app.MapGet("/api/emergencia/{token}", async (
             string token,
             HttpContext context,
             IPacienteRepository repo,
-            IFichaMedicaRepository fichaRepo) =>
+            IFichaMedicaRepository fichaRepo,
+            IAuditoriaService auditoria) =>
         {
             var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token)));
             var paciente = await repo.GetByEmergenciaTokenAsync(tokenHash);
@@ -71,8 +90,21 @@ public static class EmergenciaEndpoints
                 return Results.NotFound();
             }
 
+            // Registra apenas o paciente; o token nunca entra em log (ele é a credencial).
             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation("Acesso de emergência ao perfil do paciente {PacienteId}", paciente.Id);
+            logger.LogInformation(
+                "Acesso de emergência ao perfil do paciente {PacienteId} de {Ip}",
+                paciente.Id,
+                NetworkHelpers.GetTruncatedIp(context));
+
+            // Trilha de auditoria: acesso anônimo a dados clínicos sensíveis.
+            await auditoria.RegistrarAsync(
+                context.ParaAuditoriaAnonima(),
+                AuditoriaOperacao.AcessoEmergencia,
+                "FichaEmergencia",
+                paciente.Id,
+                AuditoriaResultado.Sucesso,
+                paciente.Id);
 
             var ficha = await fichaRepo.GetByPacienteIdAsync(paciente.Id!);
             int? idade = null;
@@ -112,16 +144,27 @@ public static class EmergenciaEndpoints
     {
         var rawToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
         var tokenHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawToken)));
-        var expirationDaysString = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_DIAS_EXPIRACAO");
-        if (!int.TryParse(expirationDaysString, out var days) || days < 1 || days > 30)
-        {
-            days = 7;
-        }
-        var expiraEm = DateTime.UtcNow.AddDays(days);
+
+        // Validade curta por padrão: o token viaja em URL/QR code e dá acesso anônimo a
+        // dados clínicos, então cada hora extra é exposição adicional. Máximo de 7 dias.
+        const int HorasPadrao = 12;
+        const int HorasMaximas = 24 * 7;
+        var expiraEm = DateTime.UtcNow.AddHours(ResolverHorasValidade(HorasPadrao, HorasMaximas));
+
         paciente.TokenEmergencia = tokenHash;
         paciente.TokenEmergenciaExpiraEm = expiraEm;
         await repo.UpdateAsync(paciente);
         return (rawToken, expiraEm);
+    }
+
+    internal static int ResolverHorasValidade(int horasPadrao, int horasMaximas)
+    {
+        // EMERGENCIA_TOKEN_HORAS_EXPIRACAO substitui a antiga EMERGENCIA_TOKEN_DIAS_EXPIRACAO.
+        var configurado = Environment.GetEnvironmentVariable("EMERGENCIA_TOKEN_HORAS_EXPIRACAO");
+        if (int.TryParse(configurado, out var horas) && horas >= 1 && horas <= horasMaximas)
+            return horas;
+
+        return horasPadrao;
     }
 }
 

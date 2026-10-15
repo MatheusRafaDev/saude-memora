@@ -10,46 +10,58 @@ type EmergencyTokenResponse = {
   expiraEm?: string | null;
 };
 
-function tokenStorageKey(patientId: string) {
-  return `saudememora:emergency-token:${patientId}`;
-}
-
-function storeToken(patientId: string, token: string) {
-  window.sessionStorage.setItem(tokenStorageKey(patientId), token);
-}
+/**
+ * O token da ficha de emergência dá acesso anônimo a dados clínicos sensíveis.
+ * Ele fica **somente em memória**: antes era gravado em `sessionStorage`/`localStorage`,
+ * onde qualquer script (ou outra pessoa no mesmo dispositivo) poderia lê-lo.
+ *
+ * Consequência assumida: ao recarregar a página o token é perdido. Como o servidor
+ * guarda apenas o hash, o token cru não pode ser recuperado — a aplicação então
+ * orienta o usuário a gerar um novo (`needsRotation`), o que também rotaciona o link
+ * anterior e reduz a janela de exposição.
+ */
+let tokenEmMemoria: { pacienteId: string; token: string } | null = null;
 
 export async function getEmergencyToken(patientId: string) {
   const status = await customFetch<EmergencyStatus>('/api/pacientes/me/emergencia/status');
-  const key = tokenStorageKey(patientId);
-  let cachedToken = window.sessionStorage.getItem(key);
-
-  // Migrate the token created by older app versions, then remove its persistent copy.
-  if (!cachedToken) {
-    cachedToken = window.localStorage.getItem(key);
-    if (cachedToken) {
-      window.sessionStorage.setItem(key, cachedToken);
-      window.localStorage.removeItem(key);
-    }
-  }
 
   if (status.possuiToken) {
-    return { token: cachedToken, needsRotation: !cachedToken };
+    const token = tokenEmMemoria?.pacienteId === patientId ? tokenEmMemoria.token : null;
+
+    if (!token) {
+      // Token existe no servidor, mas não temos o valor em memória: precisa rotacionar.
+      return { token: null, needsRotation: true, expiraEm: status.expiraEm ?? null };
+    }
+
+    return { token, needsRotation: false, expiraEm: status.expiraEm ?? null };
   }
 
-  window.sessionStorage.removeItem(tokenStorageKey(patientId));
-  const result = await customFetch<EmergencyTokenResponse>('/api/pacientes/me/emergencia', {
-    method: 'POST',
-  });
-  if (!result.token) throw new Error('A API não retornou o token da ficha de emergência.');
-  storeToken(patientId, result.token);
-  return { token: result.token, needsRotation: false };
+  return gerarNovoToken(patientId);
 }
 
 export async function rotateEmergencyToken(patientId: string) {
-  const result = await customFetch<EmergencyTokenResponse>('/api/pacientes/me/emergencia/rotate', {
+  const { token } = await gerarNovoToken(patientId);
+  return token;
+}
+
+/**
+ * Revoga o token de emergência no servidor (invalida links e QR codes já compartilhados)
+ * e limpa a cópia em memória.
+ */
+export async function revokeEmergencyToken() {
+  await customFetch('/api/pacientes/me/emergencia', { method: 'DELETE' });
+  tokenEmMemoria = null;
+}
+
+async function gerarNovoToken(patientId: string) {
+  const result = await customFetch<EmergencyTokenResponse>('/api/pacientes/me/emergencia', {
     method: 'POST',
   });
-  if (!result.token) throw new Error('A API não retornou o token da ficha de emergência.');
-  storeToken(patientId, result.token);
-  return result.token;
+
+  if (!result.token) {
+    throw new Error('A API não retornou o token da ficha de emergência.');
+  }
+
+  tokenEmMemoria = { pacienteId: patientId, token: result.token };
+  return { token: result.token, needsRotation: false, expiraEm: result.expiraEm ?? null };
 }
