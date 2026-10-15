@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { customFetch } from '@workspace/api-client-react';
 import { clearStoredAuthToken } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const signOut = async () => {
@@ -14,20 +12,17 @@ export function useAuth() {
 
     setIsSigningOut(true);
     try {
+      // Best-effort: notify server to revoke session. Ignore server errors (5xx)
+      // so that logout always succeeds client-side.
       await customFetch('/api/auth/logout', {
         method: 'POST',
+      }).catch(() => {
+        // Server error (e.g. 500) — still proceed with client-side logout
       });
-
+    } finally {
       clearStoredAuthToken();
       queryClient.clear();
       window.location.replace('/');
-    } catch (error) {
-      setIsSigningOut(false);
-      toast({
-        title: 'Não foi possível sair da conta',
-        description: error instanceof Error ? error.message : 'Verifique sua conexão e tente novamente.',
-        variant: 'destructive',
-      });
     }
   };
 
