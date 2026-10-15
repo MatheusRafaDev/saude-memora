@@ -1,4 +1,19 @@
 import { Link } from 'wouter';
+import {
+  FolderHeart,
+  Upload,
+  Search,
+  FlaskConical,
+  Pill,
+  HeartPulse,
+  ShieldCheck,
+  Smartphone,
+  FileBadge,
+  ClipboardList,
+  Syringe,
+  Send,
+  FileText,
+} from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
@@ -55,21 +70,33 @@ export default function Recursos() {
             <div className="mt-9 grid grid-cols-1 gap-4 md:grid-cols-5">
               <div className="rounded-[24px] bg-[#1b3a60] p-8 text-white md:col-span-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                  </svg>
+                  <FolderHeart size={22} className="text-white" />
                 </div>
                 <h3 className="mt-5 text-[22px] font-bold">Documentos em um só lugar</h3>
                 <p className="mt-2 text-[15px] leading-[1.65] text-[#c9d6e8]">
                   Reúna exames, receitas, laudos, atestados, vacinas e encaminhamentos no seu espaço pessoal.
                 </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {[
+                    { label: 'Exames', icon: FlaskConical },
+                    { label: 'Receitas', icon: Pill },
+                    { label: 'Laudos', icon: FileBadge },
+                    { label: 'Atestados', icon: ClipboardList },
+                    { label: 'Vacinas', icon: Syringe },
+                    { label: 'Encaminhamentos', icon: Send },
+                    { label: 'Outros', icon: FileText },
+                  ].map(({ label, icon: Icon }) => (
+                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white">
+                      <Icon size={13} className="text-[#7cc4e6]" />
+                      {label}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div className="rounded-[24px] border border-[#dde3ec] bg-[#e5eefb] p-8 md:col-span-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 16V5M7 10l5-5 5 5M5 19h14" />
-                  </svg>
+                  <Upload size={22} className="text-[#1f7fe0]" />
                 </div>
                 <h3 className="mt-5 text-[22px] font-bold text-[#1d2a3d]">Envio e leitura de arquivos</h3>
                 <p className="mt-2 text-[15px] leading-[1.65] text-[#5a6a80]">
@@ -81,9 +108,7 @@ export default function Recursos() {
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 5a6 6 0 100 12 6 6 0 000-12zM16 16l4 4" />
-                  </svg>
+                  <Search size={20} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Busca e filtros</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -93,9 +118,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                  </svg>
+                  <FlaskConical size={20} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Resultados de exames</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -105,9 +128,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
-                  </svg>
+                  <Pill size={20} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Medicamentos registrados</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -119,9 +140,7 @@ export default function Recursos() {
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
-                  </svg>
+                  <HeartPulse size={20} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Ficha de saúde</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -131,9 +150,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
-                  </svg>
+                  <ShieldCheck size={20} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Privacidade e controle</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -143,9 +160,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12l4 4 10-10" />
-                  </svg>
+                  <Smartphone size={20} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Acesso rápido</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">

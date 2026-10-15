@@ -4,6 +4,7 @@ import {
   ArrowRight,
   FileText,
   Shield,
+  ShieldCheck,
   FlaskConical,
   Pill,
   ClipboardList,
@@ -17,6 +18,9 @@ import {
   HeartPulse,
   Smartphone,
   FolderHeart,
+  Send,
+  Calendar,
+  Sparkles,
 } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
@@ -53,9 +57,7 @@ export default function Home() {
           <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-9 sm:flex-row sm:gap-16">
             <div className="w-full min-w-0 flex-1 sm:min-w-[320px] sm:max-w-[560px]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#bfd8f7] bg-[#e5eefb] px-4 py-2 text-[13px] font-bold text-[#1f7fe0]">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
-                </svg>
+                <HeartPulse size={15} className="text-[#1f7fe0]" />
                 Seu histórico de saúde, mais organizado
               </span>
 
@@ -73,9 +75,7 @@ export default function Home() {
                   className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1b3a60] px-5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(27,58,96,0.25)] transition-all hover:bg-[#244d7e] hover:-translate-y-0.5 sm:min-h-[54px] sm:w-auto sm:px-7 sm:text-base"
                 >
                   <span>Acessar plataforma</span>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
+                  <ArrowRight size={18} />
                 </Link>
 
                 <Link
@@ -88,21 +88,15 @@ export default function Home() {
 
               <div className="mt-7 flex flex-col gap-3 text-[13px] font-semibold text-[#5a6a80] sm:mt-9 sm:flex-row sm:flex-wrap sm:gap-7 sm:text-[14px]">
                 <span className="flex items-center gap-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
-                  </svg>
+                  <ShieldCheck size={18} className="text-[#1f7fe0]" />
                   Espaço pessoal
                 </span>
                 <span className="flex items-center gap-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                  </svg>
+                  <FileText size={18} className="text-[#1f7fe0]" />
                   Documentos reunidos
                 </span>
                 <span className="flex items-center gap-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12l4 4 10-10" />
-                  </svg>
+                  <CheckCircle2 size={18} className="text-[#1f7fe0]" />
                   Você confere tudo
                 </span>
               </div>
@@ -181,9 +175,7 @@ export default function Home() {
               {/* Floating review card */}
               <div className="hidden rounded-[18px] border border-[#dde3ec] bg-white p-3.5 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)] animate-in fade-in zoom-in-95 sm:absolute sm:-bottom-6 sm:-left-6 sm:flex sm:items-center sm:gap-3 sm:right-auto sm:px-5 sm:py-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#e5eefb]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12l4 4 10-10" />
-                  </svg>
+                  <CheckCircle2 size={20} className="text-[#1f7fe0]" />
                 </div>
                 <div>
                   <b className="text-[14px] text-[#1d2a3d]">Você no controle</b>
@@ -308,9 +300,15 @@ export default function Home() {
                   <span>Busque nos seus documentos</span>
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1f7fe0]">Tipo</span>
-                  <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Período</span>
-                  <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1b3a60]">Status</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1f7fe0]">
+                    <FlaskConical size={12} /> Exames
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">
+                    <Pill size={12} /> Receitas
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1b3a60]">
+                    <FileBadge size={12} /> Laudos
+                  </span>
                 </div>
               </div>
             </div>
@@ -335,9 +333,18 @@ export default function Home() {
                   Reúna exames, receitas, laudos, atestados, vacinas e encaminhamentos no seu espaço pessoal.
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {['Exames', 'Receitas', 'Laudos', 'Atestados', 'Vacinas', 'Encaminhamentos'].map((tag) => (
-                    <span key={tag} className="rounded-full bg-white/10 px-3.5 py-2 text-[13px] font-semibold text-white">
-                      {tag}
+                  {[
+                    { label: 'Exames', icon: FlaskConical },
+                    { label: 'Receitas', icon: Pill },
+                    { label: 'Laudos', icon: FileBadge },
+                    { label: 'Atestados', icon: ClipboardList },
+                    { label: 'Vacinas', icon: Syringe },
+                    { label: 'Encaminhamentos', icon: Send },
+                    { label: 'Outros', icon: FileText },
+                  ].map(({ label, icon: Icon }) => (
+                    <span key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-[13px] font-semibold text-white">
+                      <Icon size={14} className="text-[#7cc4e6]" />
+                      {label}
                     </span>
                   ))}
                 </div>
@@ -393,8 +400,15 @@ export default function Home() {
           <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-12 sm:flex-row sm:gap-16">
             <div className="flex w-full min-w-0 flex-1 flex-col gap-4 sm:min-w-[340px] sm:flex-row">
               <div className="flex-1 rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
-                <div className="text-[12px] font-bold uppercase text-[#5a6a80]">ORIGINAL</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-[12px] font-bold uppercase tracking-wider text-[#5a6a80]">DOCUMENTO ORIGINAL</div>
+                  <FileText size={16} className="text-[#5a6a80]" />
+                </div>
                 <div className="mt-3.5 space-y-2.5">
+                  <div className="flex items-center gap-2 pb-1 border-b border-[#dde3ec]/60 text-[12px] font-bold text-[#1b3a60]">
+                    <FlaskConical size={14} className="text-[#1f7fe0]" />
+                    <span>Exame_Laboratorial_2026.pdf</span>
+                  </div>
                   <div className="h-2.5 w-[90%] rounded-full bg-[#d5dce8]" />
                   <div className="h-2.5 w-[70%] rounded-full bg-[#d5dce8]" />
                   <div className="h-2.5 w-[95%] rounded-full bg-[#d5dce8]" />
@@ -404,17 +418,23 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="mt-10 flex-1 rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
-                <div className="text-[12px] font-bold uppercase text-[#1f7fe0]">DADOS LIDOS</div>
+              <div className="mt-6 sm:mt-10 flex-1 rounded-[20px] border border-[#bfd8f7] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
+                <div className="flex items-center justify-between">
+                  <div className="text-[12px] font-bold uppercase tracking-wider text-[#1f7fe0]">DADOS EXTRAÍDOS</div>
+                  <Sparkles size={16} className="text-[#1f7fe0]" />
+                </div>
                 <div className="mt-3.5 space-y-2">
-                  <div className="rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#5a6a80]">
-                    Exame · Hemograma
+                  <div className="flex items-center gap-2 rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#1d2a3d] font-medium">
+                    <FlaskConical size={14} className="text-[#1f7fe0] shrink-0" />
+                    <span>Exame · Hemograma completo</span>
                   </div>
-                  <div className="rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#5a6a80]">
-                    Data · 12/09/2026
+                  <div className="flex items-center gap-2 rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#5a6a80]">
+                    <Calendar size={14} className="text-[#5a6a80] shrink-0" />
+                    <span>Data · 12/09/2026</span>
                   </div>
-                  <div className="rounded-xl border-2 border-[#e3b95a] bg-[#fdf3d8] px-3 py-2 text-[13px] font-semibold text-[#6b4208]">
-                    Valor · confirme este campo
+                  <div className="flex items-center gap-2 rounded-xl border-2 border-[#e3b95a] bg-[#fdf3d8] px-3 py-2 text-[13px] font-semibold text-[#6b4208]">
+                    <CheckCircle2 size={14} className="text-[#e3b95a] shrink-0" />
+                    <span>Valor · confira e valide</span>
                   </div>
                 </div>
               </div>
@@ -437,9 +457,7 @@ export default function Home() {
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-[16px] font-medium text-[#1d2a3d]">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1f7fe0] text-white">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12l4 4 10-10" />
-                      </svg>
+                      <CheckCircle2 size={14} />
                     </span>
                     <span>{item}</span>
                   </li>

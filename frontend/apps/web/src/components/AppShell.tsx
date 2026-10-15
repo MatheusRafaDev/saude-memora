@@ -47,7 +47,18 @@ const desktopNavItems = [
   },
 ];
 
-const mobileNavItems = [...desktopNavItems];
+const mobileNavItems = [
+  ...desktopNavItems,
+  {
+    href: '/perfil',
+    label: 'Perfil',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
+      </svg>
+    ),
+  },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -77,7 +88,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     setLocation('/visao-geral');
   }, [location, setLocation]);
 
-  const activeHref = desktopNavItems.find((item) => location.startsWith(item.href))?.href || (location === '/visao-geral' ? '/visao-geral' : '');
+  const activeHref =
+    mobileNavItems.find((item) => location.startsWith(item.href))?.href ||
+    (location === '/visao-geral' ? '/visao-geral' : '');
 
   const initials = profile.nome
     ? profile.nome
@@ -216,32 +229,32 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      {/* ── Mobile Bottom Navigation Bar (as per Mobile reference) ── */}
+      {/* ── Mobile Bottom Navigation Bar (app-like fixed tab bar) ── */}
       <nav
-          aria-label="Navegação móvel inferior"
-          className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-stretch border-t border-[#dde3ec] bg-white px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-20px_rgba(27,58,96,0.45)] lg:hidden"
-        >
+        aria-label="Navegação móvel inferior"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom,0px))] items-center justify-around border-t border-[#dde3ec] bg-white/95 backdrop-blur-md px-1 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-4px_24px_rgba(27,58,96,0.08)] lg:hidden select-none"
+      >
         {mobileNavItems.map(({ href, label, icon }) => {
-            const isActive = activeHref === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={isActive ? 'page' : undefined}
-                className={`flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 text-[11px] leading-tight transition-colors focus-visible:outline-offset-[-2px] ${
-                  isActive ? 'font-bold text-[#1b3a60]' : 'font-medium text-[#5a6a80]'
+          const isActive = activeHref === href || (href === '/perfil' && location.startsWith('/perfil'));
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] leading-tight transition-all active:scale-95 touch-manipulation focus-visible:outline-offset-[-2px] ${
+                isActive ? 'font-bold text-[#1b3a60]' : 'font-medium text-[#5a6a80]'
+              }`}
+            >
+              <div
+                className={`flex h-7 w-10 items-center justify-center rounded-xl transition-colors ${
+                  isActive ? 'bg-[#e5eefb] text-[#1b3a60]' : 'text-[#5a6a80]'
                 }`}
               >
-                <div
-                  className={`flex h-8 w-10 items-center justify-center rounded-xl ${
-                    isActive ? 'bg-[#e5eefb] text-[#1b3a60]' : 'text-[#5a6a80]'
-                  }`}
-                >
-                  <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
-                </div>
-                <span className="max-w-full truncate">{label}</span>
-              </Link>
-            );
+                <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+              </div>
+              <span className="max-w-full truncate text-[11px]">{label}</span>
+            </Link>
+          );
         })}
       </nav>
 

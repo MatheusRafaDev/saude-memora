@@ -1,6 +1,17 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Eye, EyeOff, LoaderCircle, X } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  X,
+  FolderHeart,
+  CheckCircle2,
+  ShieldCheck,
+  FlaskConical,
+  Pill,
+  FileBadge,
+} from 'lucide-react';
 import {
   usePostApiAuthLogin,
   usePostApiAuthRegister,
@@ -176,30 +187,36 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               Organize seus documentos de saúde com clareza, contexto e o cuidado que a sua história merece.
             </p>
 
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white">
+                <FlaskConical size={13} className="text-[#7cc4e6]" /> Exames
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white">
+                <Pill size={13} className="text-[#7cc4e6]" /> Receitas
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white">
+                <FileBadge size={13} className="text-[#7cc4e6]" /> Laudos
+              </span>
+            </div>
+
             <div className="mt-6 space-y-2.5 text-[14px] font-medium">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                  </svg>
+                  <FolderHeart size={18} className="text-[#7cc4e6]" />
                 </div>
                 <span>Exames, receitas e laudos reunidos</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12l4 4 10-10" />
-                  </svg>
+                  <CheckCircle2 size={18} className="text-[#7cc4e6]" />
                 </div>
                 <span>Você confere e corrige o que foi lido</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
-                  </svg>
+                  <ShieldCheck size={18} className="text-[#7cc4e6]" />
                 </div>
                 <span>Espaço pessoal, com você no controle</span>
               </div>

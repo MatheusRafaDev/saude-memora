@@ -372,14 +372,18 @@ export default function Profile() {
           </div>
 
           {/* Right Column: Cards (flex: 1) */}
-          <div className={`w-full min-w-0 flex-1 flex-col gap-5 ${mobileSectionOpen ? 'flex animate-in fade-in slide-in-from-right-2 duration-200' : 'hidden'} sm:flex`}>
+          <div className={`w-full min-w-0 flex-1 flex-col gap-5 ${mobileSectionOpen ? 'flex' : 'hidden'} sm:flex`}>
+            {/* Top header bar stays static without animation */}
             <div className="mb-1 flex items-center gap-3 sm:hidden">
               <button type="button" onClick={() => setMobileSectionOpen(false)} aria-label="Voltar às opções do perfil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dde3ec] bg-white text-[#1b3a60] shadow-sm transition-colors hover:bg-[#f1f4f8]">
                 <ArrowLeft size={19} />
               </button>
               <h2 className="m-0 text-xl font-bold text-[#1b3a60]">{sectionTitles[activeTab]}</h2>
             </div>
-            {/* Card 1: Dados pessoais */}
+
+            {/* Content items with smooth entrance animation */}
+            <div key={activeTab} className="w-full flex flex-col gap-5 animate-in fade-in slide-in-from-right-2 duration-200">
+              {/* Card 1: Dados pessoais */}
             {activeTab === 'dados' && (
               <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
                 {/* Avatar & User summary */}
@@ -760,6 +764,7 @@ export default function Profile() {
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
 
