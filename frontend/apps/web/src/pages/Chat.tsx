@@ -256,16 +256,6 @@ export default function Chat() {
               Sua conversa do dia fica salva automaticamente. Use “Nova conversa” para começar um assunto novo.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={startNewChat}
-            disabled={isLoading}
-            className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[#1b3a60] px-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#24507f] disabled:opacity-50 sm:min-h-11 sm:gap-2 sm:px-4 sm:text-sm"
-          >
-            <Plus size={16} />
-            <span className="sm:hidden">Novo</span>
-            <span className="hidden sm:inline">Nova conversa</span>
-          </button>
         </div>
 
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:gap-5">

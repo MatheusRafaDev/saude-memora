@@ -291,24 +291,6 @@ export default function Dashboard() {
                 />
               </div>
 
-              {resumoFicha.itensPendentes.length > 0 ? (
-                <>
-                  <p className="mt-3 text-[13px] text-[#5a6a80]">
-                    Falta preencher: {resumoFicha.itensPendentes.slice(0, 3).join(', ')}
-                    {resumoFicha.itensPendentes.length > 3 ? ` e mais ${resumoFicha.itensPendentes.length - 3}` : ''}.
-                  </p>
-                  <Link
-                    href="/anamnese"
-                    className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-[13px] font-bold text-[#1b3a60] transition-colors hover:bg-[#f7f9fc]"
-                  >
-                    Completar ficha <ArrowRight size={14} />
-                  </Link>
-                </>
-              ) : (
-                <p className="mt-3 flex items-center gap-2 text-[13px] text-[#1b3a60]">
-                  <CheckCircle2 size={15} /> Tudo preenchido.
-                </p>
-              )}
             </div>
           </div>
         </div>
