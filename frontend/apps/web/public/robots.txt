@@ -1,2 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /visao-geral
+Disallow: /documentos
+Disallow: /enviar
+Disallow: /anamnese
+Disallow: /perfil
+Disallow: /emergencia
+Disallow: /chat
+Disallow: /analises
+Disallow: /reset-password
+
+Sitemap: https://saude-memora.vercel.app/sitemap.xml

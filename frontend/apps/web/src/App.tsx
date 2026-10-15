@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { AppShell } from '@/components/AppShell';
+import { SeoMetadata } from '@/components/SeoMetadata';
 import {
   Route,
   Switch,
@@ -333,6 +334,7 @@ function Router() {
 
   return (
     <>
+      <SeoMetadata />
       <SessionKeepAlive />
       <RoutedErrorBoundary>
         <div key={location} className="page-transition-enter min-h-[100dvh] flex flex-col flex-1">
