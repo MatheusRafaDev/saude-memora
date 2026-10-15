@@ -22,7 +22,7 @@ export default function Recursos() {
     <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
 
-      <main className="flex-1">
+      <main className="flex-1 page-transition-enter">
         {/* ── Hero Section ────────────────────────────────────────── */}
         <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 py-16 sm:px-12 md:py-20">
           <div className="mx-auto flex max-w-[1100px] flex-col flex-wrap items-center gap-10 sm:flex-row sm:gap-14">

@@ -261,25 +261,15 @@
 .stagger-4 { animation-delay: 240ms; }
 .stagger-5 { animation-delay: 300ms; }
 
-/* Transição de página: fade limpo para a área logada (não quebra position: fixed no mobile) */
+/* Transição suave e elegante com subida apenas para os objetos da tela (não afeta o header) */
+.page-transition-enter {
+  animation: page-transition-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @keyframes page-transition-enter {
   0% {
     opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-/* Transição com subida para telas institucionais/deslogadas sem bottom bar fixa */
-.logged-out-screen.page-transition-enter {
-  animation: page-transition-slide-up 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes page-transition-slide-up {
-  0% {
-    opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(20px);
   }
   100% {
     opacity: 1;

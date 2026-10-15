@@ -336,7 +336,7 @@ function Router() {
       <RoutedErrorBoundary>
         <div
           key={location}
-          className={`page-transition-enter min-h-[100dvh] flex flex-col flex-1${
+          className={`min-h-[100dvh] flex flex-col flex-1${
             isLoggedOutScreen ? ' logged-out-screen' : ''
           }`}
         >

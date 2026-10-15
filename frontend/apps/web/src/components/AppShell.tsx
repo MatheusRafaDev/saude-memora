@@ -221,10 +221,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Main page content */}
+      {/* Main page content - anima apenas os objetos da tela */}
       <div
         id="main-content"
-        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8"
+        key={location}
+        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 page-transition-enter"
       >
         {children}
       </div>

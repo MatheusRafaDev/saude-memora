@@ -105,7 +105,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     try {
       if (mode === 'login') {
         await loginMutation.mutateAsync({ data: { email: form.email.trim(), senha: form.password } });
-        setMessage('Carregando seu histórico...');
         await Promise.allSettled([
           queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
           queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
@@ -161,8 +160,48 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
-    <div className={`bg-white font-sans text-[#1d2a3d] flex flex-col ${mode === 'login' ? 'h-[100dvh] overflow-hidden lg:h-auto lg:min-h-screen' : 'min-h-screen'}`}>
-      <div className={`flex flex-1 flex-col lg:flex-row ${mode === 'login' ? 'min-h-0' : 'min-h-[820px]'}`}>
+    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
+      {/* ── Mobile Blue Brand Header (para mobile não ficar branco) ── */}
+      <section className="bg-[#1b3a60] px-5 pt-6 pb-7 text-white rounded-b-[28px] shadow-sm lg:hidden">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="inline-flex items-center gap-2 font-extrabold text-[16px] text-white">
+            <img src="/logo.svg" alt="SaúdeMemora" className="h-8 w-8 object-contain flex-none" />
+            <BrandWordmark inverse />
+          </Link>
+          <Link href="/" className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#7cc4e6] hover:text-white transition-colors">
+            ← Voltar ao início
+          </Link>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[20px] font-extrabold leading-[1.15] tracking-[-0.03em] text-white">
+              Tudo o que importa, <span className="text-[#7cc4e6]">em um só lugar.</span>
+            </h1>
+            <p className="mt-1 text-xs text-[#c9d6e8]">
+              Seus exames, receitas e laudos organizados.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
+                <FlaskConical size={11} className="text-[#7cc4e6]" /> Exames
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
+                <Pill size={11} className="text-[#7cc4e6]" /> Receitas
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
+                <FileBadge size={11} className="text-[#7cc4e6]" /> Laudos
+              </span>
+            </div>
+          </div>
+          <img
+            src="/login-illustration.svg"
+            alt=""
+            className="h-16 w-16 object-contain flex-none drop-shadow-sm opacity-95"
+          />
+        </div>
+      </section>
+
+      <div className="flex flex-1 flex-col lg:flex-row min-h-0 lg:min-h-screen">
         {/* ── Left Illustration & Highlights Panel (Desktop 44%) ── */}
         <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
           {/* Logo */}
@@ -226,15 +265,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
         {/* ── Right Form Panel ───────────────────────────────────── */}
         <section className={`flex flex-1 flex-col justify-between ${mode === 'login' ? 'p-4 sm:p-8 lg:p-12' : 'p-6 sm:p-12'}`}>
-          {/* Mobile brand and return link */}
-          <div className="flex flex-col gap-4">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2.5 font-extrabold text-[17px] text-[#1b3a60] lg:hidden"
-            >
-              <img src="/logo.svg" alt="" className="h-9 w-9 object-contain flex-none" />
-              <BrandWordmark />
-            </Link>
+          {/* Desktop return link */}
+          <div className="hidden lg:flex flex-col gap-4">
             <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">
               ← Voltar ao início
             </Link>
@@ -258,8 +290,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <button
                 type="button"
                 onClick={() => handleModeChange('login')}
-                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-semibold transition-all ${
-                  mode === 'login' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
+                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-bold transition-all ${
+                  mode === 'login' ? 'bg-[#1b3a60] text-white shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
                 }`}
               >
                 Entrar
@@ -267,8 +299,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <button
                 type="button"
                 onClick={() => handleModeChange('register')}
-                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-semibold transition-all ${
-                  mode === 'register' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
+                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-bold transition-all ${
+                  mode === 'register' ? 'bg-[#1b3a60] text-white shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
                 }`}
               >
                 Criar conta

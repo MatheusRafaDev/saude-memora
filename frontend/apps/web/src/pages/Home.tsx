@@ -51,7 +51,7 @@ export default function Home() {
     <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
 
-      <main className="flex-1">
+      <main className="flex-1 page-transition-enter">
         {/* ── Hero Section ────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-[radial-gradient(900px_500px_at_8%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_100%_40%,#e5eefb,transparent_60%),#fff] px-4 py-10 sm:px-12 sm:py-20 md:py-24">
           <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-9 sm:flex-row sm:gap-16">
