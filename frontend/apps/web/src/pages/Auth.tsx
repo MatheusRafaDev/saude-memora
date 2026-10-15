@@ -38,6 +38,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   };
 
   const [mode, setMode] = useState<'login' | 'register'>(getInitialMode);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -71,16 +72,19 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     }
   }, [defaultMode, location]);
 
-  const handleModeChange = (newMode: 'login' | 'register') => {
-    setMode(newMode);
-    setError('');
-    setMessage('');
-    if (newMode === 'register') {
-      window.history.replaceState(null, '', '/cadastro');
-    } else {
-      window.history.replaceState(null, '', '/entrar');
-    }
+  const switchMode = (newMode: 'login' | 'register', successMessage = '') => {
+    if (newMode === mode && !successMessage) return;
+    setIsAnimating(true);
+    setTimeout(() => {
+      setMode(newMode);
+      setError('');
+      setMessage(successMessage);
+      window.history.replaceState(null, '', newMode === 'register' ? '/cadastro' : '/entrar');
+      setIsAnimating(false);
+    }, 160);
   };
+
+  const handleModeChange = (newMode: 'login' | 'register') => switchMode(newMode);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -114,9 +118,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           },
         });
 
-        setForm((prev) => ({ ...prev, password: '' }));
-        setMessage('Conta criada com sucesso. Entre com seu e-mail e senha para continuar.');
-        setLocation('/entrar?registered=1');
+        setForm((prev) => ({ ...prev, password: '', name: '', birthDate: '', sex: '', email: '', termsAccepted: false }));
+        switchMode('login', 'Conta criada com sucesso. Entre com seu e-mail e senha para continuar.');
       }
     } catch (err: any) {
       setError(getApiErrorMessage(err, 'Ocorreu um erro. Verifique seus dados.'));
@@ -221,7 +224,11 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           </div>
 
           {/* Form Container (max-w 420px centered) */}
-          <div className={`mx-auto my-auto w-full max-w-[420px] ${mode === 'login' ? 'py-3 sm:py-5 lg:py-8' : 'py-8'}`}>
+          <div
+            className={`mx-auto my-auto w-full max-w-[420px] ${mode === 'login' ? 'py-3 sm:py-5 lg:py-8' : 'py-8'} transition-[opacity,transform] duration-150 ease-out ${
+              isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
+            }`}
+          >
             <h2 className="text-[26px] sm:text-[32px] font-extrabold tracking-[-0.035em]">
               {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
             </h2>
