@@ -47,22 +47,16 @@ export default defineConfig(async ({ mode, command }) => {
           id: '/',
           scope: '/',
           start_url: '/',
-          theme_color: '#1b3a60',
+          theme_color: '#1f7fe0',
           background_color: '#ffffff',
           display: 'standalone',
           display_override: ['window-controls-overlay', 'standalone'],
           orientation: 'any',
           icons: [
             {
-              src: '/pwa-192x192.jpg',
-              sizes: '192x192',
-              type: 'image/jpeg',
-              purpose: 'any'
-            },
-            {
-              src: '/pwa-512x512.jpg',
-              sizes: '512x512',
-              type: 'image/jpeg',
+              src: '/logo.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
               purpose: 'any'
             }
           ],
@@ -72,7 +66,7 @@ export default defineConfig(async ({ mode, command }) => {
               short_name: 'Enviar',
               description: 'Envie um novo documento',
               url: '/enviar',
-              icons: [{ src: '/pwa-192x192.jpg', sizes: '192x192', type: 'image/jpeg' }]
+              icons: [{ src: '/logo.svg', sizes: 'any', type: 'image/svg+xml' }]
             }
           ]
         },

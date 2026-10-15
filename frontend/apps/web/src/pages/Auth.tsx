@@ -177,7 +177,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[17px] text-white">
-            <img src="/logo.png" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+            <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
             <BrandWordmark inverse />
           </Link>
 
@@ -236,7 +236,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               href="/"
               className="inline-flex items-center gap-2.5 font-extrabold text-[17px] text-[#1b3a60] lg:hidden"
             >
-              <img src="/logo.png" alt="" className="h-9 w-9 object-contain flex-none" />
+              <img src="/logo.svg" alt="" className="h-9 w-9 object-contain flex-none" />
               <BrandWordmark />
             </Link>
             <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">

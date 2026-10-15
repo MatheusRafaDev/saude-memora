@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col items-center justify-center text-center p-8 bg-[radial-gradient(700px_400px_at_50%_0,#e6eef9,transparent_60%),#fff]">
       <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[20px] text-[#1b3a60] tracking-[-0.03em]">
-        <img src="/logo.png" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
+        <img src="/logo.svg" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
         <BrandWordmark />
       </Link>
 

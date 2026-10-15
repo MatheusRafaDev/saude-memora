@@ -103,7 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           href="/visao-geral"
           className="flex items-center gap-2.5 shrink-0 text-[#1b3a60] font-extrabold text-[18px] tracking-[-0.03em]"
         >
-          <img src="/logo.png" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
           <BrandWordmark />
         </Link>
 

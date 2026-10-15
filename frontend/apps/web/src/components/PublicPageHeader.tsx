@@ -13,7 +13,7 @@ export function PublicPageHeader() {
     <header className="sticky top-0 z-40 w-full border-b border-[#dde3ec] bg-white">
       <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between px-6 sm:px-12">
         <Link href="/" className="flex items-center gap-2.5" aria-label="SaúdeMemora — início">
-          <img src="/logo.png" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
+          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
           <BrandWordmark className="text-[18px] tracking-[-0.03em] text-[#1d2a3d]" />
         </Link>
 
