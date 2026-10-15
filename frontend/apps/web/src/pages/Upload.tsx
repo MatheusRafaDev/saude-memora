@@ -313,20 +313,25 @@ export default function Upload() {
               </div>
               <p className="mb-3 text-xs text-[#5a6a80]">No modo automático, a IA identifica o tipo de cada arquivo separadamente.</p>
               <div className="flex gap-2.5 flex-wrap">
-                {DOC_TYPES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setSelectedType(t.id)}
-                    className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
-                      selectedType === t.id
-                        ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs'
-                        : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+                {DOC_TYPES.map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = selectedType === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedType(t.id)}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs scale-[1.02]'
+                          : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb] hover:bg-slate-50'
+                      }`}
+                    >
+                      <Icon size={16} className={isSelected ? 'text-white' : 'text-[#1f7fe0]'} />
+                      <span>{t.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

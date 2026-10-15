@@ -13,8 +13,18 @@ import {
   Trash2,
   Plus,
   RefreshCw,
+  Sparkles,
+  Pill,
+  Activity,
+  FileSearch,
+  FileHeart,
+  Syringe,
+  Send,
+  FileBarChart,
+  Layers,
+  FileCheck,
 } from 'lucide-react';
-import { customFetch } from '@workspace/api-client-react';
+import { customFetch, getGetApiDocumentsQueryKey } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
 
 interface UploadModalProps {
@@ -31,14 +41,14 @@ interface FilePreviewItem {
 }
 
 const TYPE_OPTIONS = [
-  { id: 'outro', label: 'Automático' },
-  { id: 'receita', label: 'Receita' },
-  { id: 'exame', label: 'Exame' },
-  { id: 'laudo', label: 'Laudo' },
-  { id: 'atestado', label: 'Atestado' },
-  { id: 'vacina', label: 'Vacina' },
-  { id: 'encaminhamento', label: 'Encaminhamento' },
-  { id: 'relatorio', label: 'Relatório' },
+  { id: 'outro', label: 'Automático', icon: Sparkles },
+  { id: 'receita', label: 'Receita', icon: Pill },
+  { id: 'exame', label: 'Exame', icon: Activity },
+  { id: 'laudo', label: 'Laudo', icon: FileSearch },
+  { id: 'atestado', label: 'Atestado', icon: FileHeart },
+  { id: 'vacina', label: 'Vacina', icon: Syringe },
+  { id: 'encaminhamento', label: 'Encaminhamento', icon: Send },
+  { id: 'relatorio', label: 'Relatório', icon: FileBarChart },
 ];
 const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 
@@ -58,10 +68,14 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   const [filePreviews, setFilePreviews] = useState<FilePreviewItem[]>([]);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; name: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isBatchMode, setIsBatchMode] = useState(true); // Enviar em lote (cada arquivo = 1 documento)
   const [status, setStatus] = useState<'idle' | 'uploading' | 'processing' | 'done' | 'error' | 'timeout'>('idle');
   const [progress, setProgress] = useState(0);
+  const [batchCurrentIndex, setBatchCurrentIndex] = useState(0);
+  const [batchTotalCount, setBatchTotalCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [resultId, setResultId] = useState<string | null>(null);
+  const [processedDocsCount, setProcessedDocsCount] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAppendingRef = useRef(false);
@@ -73,6 +87,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
       setStatus('idle');
       setFiles([]);
       setProgress(0);
+      setBatchCurrentIndex(0);
+      setBatchTotalCount(0);
+      setProcessedDocsCount(0);
       setErrorMessage('');
       setZoomedImage(null);
     };
@@ -184,9 +201,58 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
       return;
     }
 
+    setErrorMessage('');
+
+    // Se houver mais de um arquivo e a opção de envio em lote estiver ativa:
+    if (files.length > 1 && isBatchMode) {
+      setStatus('uploading');
+      setBatchTotalCount(files.length);
+      setBatchCurrentIndex(1);
+      setProcessedDocsCount(0);
+
+      let successCount = 0;
+      let lastDocId: string | null = null;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setBatchCurrentIndex(i + 1);
+        setProgress(Math.round(((i) / files.length) * 100));
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('documentType', selectedType);
+
+          const res = (await customFetch('/api/documents/upload', {
+            method: 'POST',
+            body: formData as any,
+          })) as any;
+
+          lastDocId = res.id;
+          successCount++;
+          setProcessedDocsCount(successCount);
+          window.dispatchEvent(new CustomEvent('document-uploaded'));
+        } catch (err) {
+          console.error('Erro ao enviar arquivo no lote:', file.name, err);
+        }
+      }
+
+      setProgress(100);
+      setResultId(lastDocId);
+
+      if (successCount > 0) {
+        setStatus('done');
+        if (lastDocId && onSuccess) onSuccess(lastDocId);
+      } else {
+        setStatus('error');
+        setErrorMessage('Não foi possível enviar os arquivos do lote. Tente novamente.');
+      }
+      return;
+    }
+
+    // Envio tradicional de 1 documento (podendo conter 1 ou várias páginas)
     setStatus('uploading');
     setProgress(20);
-    setErrorMessage('');
 
     try {
       const formData = new FormData();
@@ -200,6 +266,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
       window.dispatchEvent(new CustomEvent('document-uploaded'));
       setResultId(res.id);
+      setProcessedDocsCount(1);
 
       if (res.status === 'pronto') {
         setProgress(100);
@@ -533,6 +600,48 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               </div>
             )}
 
+            {/* Opção de Envio em Lote (exibida quando há 2 ou mais arquivos) */}
+            {files.length > 1 && (
+              <div className="mt-4 rounded-2xl border border-[#bfd8f7] bg-[#f0f6fd] p-3.5 sm:p-4 text-[#1b3a60] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shrink-0 text-[#1f7fe0] shadow-xs">
+                    <Layers size={18} />
+                  </div>
+                  <div>
+                    <span className="block text-sm font-bold text-[#1d2a3d]">
+                      Enviar em lote ({files.length} documentos)
+                    </span>
+                    <span className="block text-xs text-[#5a6a80]">
+                      {isBatchMode
+                        ? 'Cada arquivo será processado como um documento individual no seu acervo.'
+                        : 'Todos os arquivos serão agrupados como páginas de 1 único documento.'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsBatchMode(!isBatchMode)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                      isBatchMode ? 'bg-[#1b3a60]' : 'bg-[#c6cfdb]'
+                    }`}
+                    role="switch"
+                    aria-checked={isBatchMode}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        isBatchMode ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className="text-xs font-bold text-[#1b3a60]">
+                    {isBatchMode ? 'Ativado' : 'Desativado'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Error Message if any */}
             {errorMessage && (
               <p className="text-center text-xs font-bold text-red-600 mt-3 mb-0">
@@ -540,22 +649,32 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               </p>
             )}
 
-            {/* Document Type Pills */}
-            <div className="flex gap-2 my-4.5 mb-5.5 flex-wrap">
-              {TYPE_OPTIONS.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setSelectedType(t.id)}
-                  className={`px-3.5 py-2 rounded-full text-[13px] font-semibold transition-colors cursor-pointer ${
-                    selectedType === t.id
-                      ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
-                      : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+            {/* Document Type Pills with Icons */}
+            <div className="my-4.5 mb-5.5">
+              <span className="block text-xs font-bold uppercase tracking-wider text-[#5a6a80] mb-2.5">
+                Tipo do documento
+              </span>
+              <div className="flex gap-2 flex-wrap">
+                {TYPE_OPTIONS.map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = selectedType === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedType(t.id)}
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs scale-[1.02]'
+                          : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb] hover:bg-slate-50'
+                      }`}
+                    >
+                      <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1f7fe0]'} />
+                      <span>{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Action buttons */}
@@ -572,7 +691,11 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 onClick={handleUpload}
                 className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors cursor-pointer shadow-xs"
               >
-                {files.length > 0 ? 'Enviar documento' : 'Escolher arquivo'}
+                {files.length > 1 && isBatchMode
+                  ? `Enviar ${files.length} documentos em lote`
+                  : files.length > 0
+                  ? 'Enviar documento'
+                  : 'Escolher arquivo'}
               </button>
             </div>
           </>
@@ -583,10 +706,16 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             <LoaderCircle size={36} className="mx-auto text-[#1b3a60] animate-spin" />
             <div>
               <b className="text-lg text-[#1d2a3d] block">
-                {status === 'uploading' ? 'Enviando documento...' : 'Extraindo informações com IA...'}
+                {batchTotalCount > 1
+                  ? `Enviando em lote: ${batchCurrentIndex} de ${batchTotalCount} arquivos...`
+                  : status === 'uploading'
+                  ? 'Enviando documento...'
+                  : 'Extraindo informações com IA...'}
               </b>
               <p className="text-sm text-[#5a6a80] mt-1">
-                Aguarde um instante enquanto organizamos os dados.
+                {batchTotalCount > 1
+                  ? 'Cada arquivo está sendo catalogado no seu acervo.'
+                  : 'Aguarde um instante enquanto organizamos os dados.'}
               </p>
             </div>
             <div className="h-2 rounded-full bg-[#f1f4f8] max-w-sm mx-auto overflow-hidden">
@@ -602,9 +731,15 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
           <div className="py-6 text-center space-y-4">
             <CheckCircle2 size={42} className="mx-auto text-[#1b3a60]" />
             <div>
-              <b className="text-lg text-[#1d2a3d] block">Documento processado com sucesso!</b>
+              <b className="text-lg text-[#1d2a3d] block">
+                {processedDocsCount > 1
+                  ? `${processedDocsCount} documentos enviados com sucesso!`
+                  : 'Documento processado com sucesso!'}
+              </b>
               <p className="text-sm text-[#5a6a80] mt-1">
-                As informações foram catalogadas e já estão prontas para visualização.
+                {processedDocsCount > 1
+                  ? 'Todos os arquivos foram catalogados individualmente no seu histórico.'
+                  : 'As informações foram catalogadas e já estão prontas para visualização.'}
               </p>
             </div>
             <div className="flex gap-2.5 justify-center pt-2">
@@ -612,12 +747,12 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 type="button"
                 onClick={() => {
                   handleClose();
-                  if (resultId) setLocation(`/documentos/${resultId}`);
+                  if (resultId && processedDocsCount <= 1) setLocation(`/documentos/${resultId}`);
                   else setLocation('/documentos');
                 }}
                 className="min-h-[44px] px-6 rounded-xl bg-[#1b3a60] text-white font-bold text-sm hover:bg-[#24507f] transition-colors cursor-pointer"
               >
-                Ver documento
+                {processedDocsCount > 1 ? 'Ir para o acervo de documentos' : 'Ver documento'}
               </button>
             </div>
           </div>

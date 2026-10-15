@@ -274,24 +274,6 @@ export default function Dashboard() {
               </div>
             </button>
 
-            {/* Completude da ficha */}
-            <div className="rounded-[20px] border border-[#dde3ec] bg-white p-5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <ClipboardCheck size={18} className="text-[#1b3a60]" />
-                </div>
-                <b className="text-sm text-[#1d2a3d] flex-1">Ficha médica</b>
-                <span className="text-sm font-bold text-[#1b3a60]">{resumoFicha.coberturaPercentual}%</span>
-              </div>
-
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#f1f4f8]">
-                <div
-                  className="h-full rounded-full bg-[#1f7fe0] transition-all"
-                  style={{ width: `${resumoFicha.coberturaPercentual}%` }}
-                />
-              </div>
-
-            </div>
           </div>
         </div>
 

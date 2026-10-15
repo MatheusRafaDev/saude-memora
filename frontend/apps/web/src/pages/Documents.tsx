@@ -27,21 +27,37 @@ import { triggerUploadModal } from '@/components/UploadModal';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import {
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  FileSearch,
+  FileHeart,
+  Syringe,
+  Send,
+  FileBarChart,
+  Layers,
+} from 'lucide-react';
 
 const DOCUMENT_TYPES = [
-  { id: 'receita', label: 'Receitas' },
-  { id: 'exame', label: 'Exames' },
-  { id: 'laudo', label: 'Laudos' },
-  { id: 'atestado', label: 'Atestados' },
-  { id: 'vacina', label: 'Vacinas' },
-  { id: 'encaminhamento', label: 'Encaminhamentos' },
-  { id: 'relatorio', label: 'Relatórios' },
-  { id: 'outro', label: 'Outros' },
+  { id: 'receita', label: 'Receitas', icon: Pill },
+  { id: 'exame', label: 'Exames', icon: Activity },
+  { id: 'laudo', label: 'Laudos', icon: FileSearch },
+  { id: 'atestado', label: 'Atestados', icon: FileHeart },
+  { id: 'vacina', label: 'Vacinas', icon: Syringe },
+  { id: 'encaminhamento', label: 'Encaminhamentos', icon: Send },
+  { id: 'relatorio', label: 'Relatórios', icon: FileBarChart },
+  { id: 'outro', label: 'Outros', icon: FileText },
 ];
 
 const DOCUMENT_TYPE_LABELS = Object.fromEntries(
@@ -52,10 +68,10 @@ function getDocumentTypeIcon(type: string) {
   const normalized = type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   if (normalized.includes('receit')) return Pill;
   if (normalized.includes('exam')) return Activity;
-  if (normalized.includes('atest')) return ShieldCheck;
-  if (normalized.includes('vacin')) return Plus;
-  if (normalized.includes('encaminh')) return ChevronRight;
-  if (normalized.includes('relat')) return LayoutGrid;
+  if (normalized.includes('atest')) return FileHeart;
+  if (normalized.includes('vacin')) return Syringe;
+  if (normalized.includes('encaminh')) return Send;
+  if (normalized.includes('relat')) return FileBarChart;
   return FileText;
 }
 
@@ -96,7 +112,6 @@ function DocumentThumbnail({
           <span className={`font-semibold text-[#718096] ${compact ? 'text-[9px]' : 'text-[11px]'}`}>Sem imagem</span>
         </div>
       )}
-      {src && !hasLoadError && !compact && <span className="absolute bottom-2 left-2 rounded-md bg-black/55 px-2 py-1 text-[10px] font-semibold text-white">Prévia</span>}
     </div>
   );
 }
@@ -317,20 +332,6 @@ export default function Documents() {
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <button
-              onClick={() => triggerUploadModal()}
-              className="min-h-[44px] w-full rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#24507f] sm:w-auto"
-            >
-              <span className="inline-flex items-center gap-2"><Plus size={16} strokeWidth={2.5} /> Adicionar documento</span>
-            </button>
-            <Link
-              href="/upload"
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-5 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f1f4f8] sm:w-auto"
-            >
-              <UploadCloud size={16} /> Enviar em lote
-            </Link>
-          </div>
         </div>
 
         <section aria-label="Filtros de documentos" className="mb-7 rounded-2xl border border-[#dde3ec] bg-white p-3 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-4">

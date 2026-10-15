@@ -1,6 +1,23 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
-import { ArrowRight, FileText, Shield } from 'lucide-react';
+import {
+  ArrowRight,
+  FileText,
+  Shield,
+  FlaskConical,
+  Pill,
+  ClipboardList,
+  Syringe,
+  FileBadge,
+  Upload,
+  Search,
+  Lock,
+  Trash2,
+  CheckCircle2,
+  HeartPulse,
+  Smartphone,
+  FolderHeart,
+} from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
@@ -110,30 +127,36 @@ export default function Home() {
                     Entre na sua conta para consultar os dados e documentos que você cadastrou.
                   </p>
 
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Documentos</span>
-                    <span className="rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">Ficha médica</span>
-                    <span className="rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1f7fe0]">Acesso seguro</span>
+                  {/* Tipos de documento com ícones */}
+                  <div className="mb-4 grid grid-cols-3 gap-2">
+                    {[
+                      { icon: <FlaskConical size={15} />, label: 'Exames', color: '#1f7fe0', bg: '#e5eefb' },
+                      { icon: <Pill size={15} />, label: 'Receitas', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <FileBadge size={15} />, label: 'Laudos', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <Syringe size={15} />, label: 'Vacinas', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <ClipboardList size={15} />, label: 'Atestados', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <FileText size={15} />, label: 'Outros', color: '#1b3a60', bg: '#f1f4f8' },
+                    ].map(({ icon, label, color, bg }) => (
+                      <span key={label} className="flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-[11px] font-bold" style={{ background: bg, color }}>
+                        {icon} {label}
+                      </span>
+                    ))}
                   </div>
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
-                      </svg>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb]">
+                      <FlaskConical size={18} className="text-[#1f7fe0]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-bold truncate">Documentos de saúde</div>
-                      <div className="text-[12px] text-[#5a6a80]">Adicione os documentos que deseja organizar</div>
+                      <div className="text-[14px] font-bold truncate">Exames e Laudos</div>
+                      <div className="text-[12px] text-[#5a6a80]">Resultados e relatórios médicos</div>
                     </div>
                     <FileText size={18} className="text-[#1b3a60]" />
                   </div>
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                      </svg>
+                      <ClipboardList size={18} className="text-[#1b3a60]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[14px] font-bold truncate">Ficha médica</div>
@@ -144,9 +167,7 @@ export default function Home() {
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                      </svg>
+                      <FolderHeart size={18} className="text-[#1b3a60]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[14px] font-bold truncate">Histórico organizado</div>
@@ -179,9 +200,7 @@ export default function Home() {
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
-                  </svg>
+                  <Lock size={22} className="text-[#1f7fe0]" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Espaço pessoal</b>
@@ -191,9 +210,7 @@ export default function Home() {
 
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                  </svg>
+                  <FolderHeart size={22} className="text-[#1f7fe0]" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Tudo reunido</b>
@@ -203,9 +220,7 @@ export default function Home() {
 
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12l4 4 10-10" />
-                  </svg>
+                  <CheckCircle2 size={22} className="text-[#1f7fe0]" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Você confere</b>
@@ -215,9 +230,7 @@ export default function Home() {
 
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13" />
-                  </svg>
+                  <Trash2 size={22} className="text-[#1f7fe0]" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Você apaga</b>
@@ -252,9 +265,7 @@ export default function Home() {
                   Adicione uma foto ou PDF de exames, receitas e laudos.
                 </p>
                 <div className="flex h-28 flex-col items-center justify-center gap-1.5 rounded-[16px] border-2 border-dashed border-[#b8c4d6] bg-[#f7f9fc] text-[13px] text-[#5a6a80]">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 16V5M7 10l5-5 5 5M5 19h14" />
-                  </svg>
+                  <Upload size={26} className="text-[#1b3a60]" />
                   <span>Arraste um arquivo ou toque para enviar</span>
                 </div>
               </div>
@@ -293,9 +304,7 @@ export default function Home() {
                   Busque por título ou conteúdo e filtre por tipo, status e período.
                 </p>
                 <div className="flex h-11 items-center gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5a6a80" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 5a6 6 0 100 12 6 6 0 000-12zM16 16l4 4" />
-                  </svg>
+                  <Search size={16} className="text-[#5a6a80]" />
                   <span>Busque nos seus documentos</span>
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -319,9 +328,7 @@ export default function Home() {
             <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-5">
               <div className="rounded-[28px] bg-[#1b3a60] p-9 text-white md:col-span-3">
                 <div className="flex h-13 w-13 items-center justify-center rounded-[17px] bg-white/15">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
-                  </svg>
+                  <FolderHeart size={26} className="text-white" />
                 </div>
                 <h3 className="mt-6 text-[26px] font-bold">Documentos em um só lugar</h3>
                 <p className="mt-2 mb-6 max-w-[460px] text-[16px] leading-[1.65] text-[#c9d6e8]">
@@ -338,9 +345,7 @@ export default function Home() {
 
               <div className="rounded-[28px] border border-[#bfd8f7] bg-[#e5eefb] p-9 md:col-span-2">
                 <div className="flex h-13 w-13 items-center justify-center rounded-[17px] bg-white shadow-sm">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
-                  </svg>
+                  <Pill size={26} className="text-[#1f7fe0]" />
                 </div>
                 <h3 className="mt-6 text-[26px] font-bold text-[#1d2a3d]">Medicamentos</h3>
                 <p className="mt-2 text-[16px] leading-[1.65] text-[#5a6a80]">
@@ -352,9 +357,7 @@ export default function Home() {
             <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
               <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12h4l3-7 4 14 3-7h4" />
-                  </svg>
+                  <FlaskConical size={22} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[19px] font-bold">Exames</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -364,9 +367,7 @@ export default function Home() {
 
               <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
-                  </svg>
+                  <HeartPulse size={22} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[19px] font-bold">Histórico de saúde</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -376,9 +377,7 @@ export default function Home() {
 
               <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M8 3h8v18H8zM11 18h2" />
-                  </svg>
+                  <Smartphone size={22} className="text-[#1b3a60]" />
                 </div>
                 <h3 className="mt-4 text-[19px] font-bold">Celular e computador</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -512,9 +511,7 @@ export default function Home() {
             <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-3">
               <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
-                  </svg>
+                  <Lock size={24} className="text-[#7cc4e6]" />
                 </div>
                 <h3 className="mt-5 text-[20px] font-bold">Consentimento</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
@@ -524,9 +521,7 @@ export default function Home() {
 
               <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13" />
-                  </svg>
+                  <Trash2 size={24} className="text-[#7cc4e6]" />
                 </div>
                 <h3 className="mt-5 text-[20px] font-bold">Apague documentos</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
@@ -536,9 +531,7 @@ export default function Home() {
 
               <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7cc4e6" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
-                  </svg>
+                  <Shield size={24} className="text-[#7cc4e6]" />
                 </div>
                 <h3 className="mt-5 text-[20px] font-bold">Exclua a conta</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
