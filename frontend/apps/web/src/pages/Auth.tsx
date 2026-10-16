@@ -166,37 +166,39 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     <div className="min-h-screen bg-[#fafbfc] lg:bg-white font-sans text-[#1d2a3d] flex flex-col">
       <div className="flex flex-1 flex-col lg:flex-row min-h-0 lg:min-h-screen">
         {/* ── Left Illustration & Highlights Panel (Desktop only 44%) ── */}
-        <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
+        <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-center items-center bg-[#1b3a60] p-8 xl:p-12 text-white relative overflow-hidden">
+          {/* Centered Editorial Block */}
+          <div className="my-auto w-full max-w-[420px] flex flex-col items-center text-center">
+            {/* Framed Editorial Card */}
+            <div className="w-full max-w-[340px] overflow-hidden rounded-[26px] border border-white/15 bg-white/10 p-2 shadow-2xl backdrop-blur-xs transition-transform duration-300 hover:scale-[1.01]">
+              <img
+                src="/login-illustration.jpg"
+                alt="Ilustração de consulta e cuidado com a saúde"
+                className="block h-auto w-full rounded-[20px] object-cover shadow-sm"
+              />
+            </div>
 
-          {/* Editorial Illustration */}
-          <div className="my-auto py-8">
-            <img
-              src="/login-illustration.jpg"
-              alt="Ilustração de consulta e cuidado com a saúde"
-              className="mx-auto block h-auto w-full max-w-[340px] rounded-[24px] object-cover shadow-lg"
-            />
-
-            <h1 className="mt-6 max-w-[400px] text-[38px] font-extrabold leading-[1.05] tracking-[-0.04em]">
+            <h1 className="mt-7 text-[32px] xl:text-[36px] font-extrabold leading-[1.1] tracking-[-0.035em]">
               Tudo o que importa, <span className="text-[#7cc4e6]">em um só lugar.</span>
             </h1>
 
-            <p className="mt-3 max-w-[400px] text-[15px] leading-relaxed text-[#c9d6e8]">
+            <p className="mt-3 max-w-[380px] text-[15px] leading-relaxed text-[#c9d6e8]">
               Organize seus documentos de saúde com clareza, contexto e o cuidado que a sua história merece.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white">
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 text-[12px] font-semibold text-white">
                 <FlaskConical size={13} className="text-[#7cc4e6]" /> Exames
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 text-[12px] font-semibold text-white">
                 <Pill size={13} className="text-[#7cc4e6]" /> Receitas
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 text-[12px] font-semibold text-white">
                 <FileBadge size={13} className="text-[#7cc4e6]" /> Laudos
               </span>
             </div>
 
-            <div className="mt-6 space-y-2.5 text-[14px] font-medium">
+            <div className="mt-6 inline-flex flex-col items-start gap-2.5 text-[14px] font-medium text-left">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
                   <FolderHeart size={18} className="text-[#7cc4e6]" />
@@ -232,10 +234,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <ArrowLeft size={14} />
               <span>Início</span>
             </Link>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f1f4f8] px-3 py-1 text-[11px] font-medium text-[#5a6a80]">
-              <ShieldCheck size={13} className="text-[#1f7fe0]" />
-              <span>Ambiente seguro</span>
-            </span>
+   
           </div>
 
           {/* Desktop return link and logo */}
@@ -252,9 +251,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             }`}
           >
             {/* Centered Brand & Header */}
-            <div className="mb-6 flex flex-col items-center text-center">
-              <div className="mb-3 flex justify-center">
+            <div className="mb-6 flex flex-col items-center justify-center text-center w-full">
+              <div className="mb-3 flex w-full justify-center text-center">
                 <BrandLogo
+                  className="mx-auto"
                   iconClassName="h-12 w-12 drop-shadow-sm transition-transform hover:scale-105"
                   wordmarkClassName="text-[25px] sm:text-[26px] text-[#1d2a3d]"
                 />

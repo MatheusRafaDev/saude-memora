@@ -69,7 +69,7 @@ export function BrandLogo({
 
   if (withLink) {
     return (
-      <Link href={href} aria-label="SaúdeMemora — início" className="group">
+      <Link href={href} aria-label="SaúdeMemora — início" className="group inline-flex items-center">
         {content}
       </Link>
     );
