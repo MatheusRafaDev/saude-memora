@@ -17,6 +17,8 @@ import {
 import {
   usePostApiAuthLogin,
   usePostApiAuthRegister,
+  useGetApiPacientesMe,
+  getGetApiPacientesMeQueryKey,
   customFetch,
   getGetApiPacientesMeQueryOptions,
   getGetApiDocumentsQueryOptions,
@@ -35,6 +37,21 @@ export interface AuthProps {
 export default function Auth({ defaultMode }: AuthProps = {}) {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  const { data: currentUser } = useGetApiPacientesMe({
+    query: {
+      queryKey: getGetApiPacientesMeQueryKey(),
+      retry: false,
+      staleTime: 5 * 60 * 1000,
+      meta: { skipUnauthorizedRedirect: true },
+    },
+  });
+
+  useEffect(() => {
+    if (currentUser) {
+      setLocation('/visao-geral');
+    }
+  }, [currentUser, setLocation]);
 
   const loginMutation = usePostApiAuthLogin();
   const registerMutation = usePostApiAuthRegister();
