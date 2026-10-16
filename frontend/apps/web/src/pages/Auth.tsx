@@ -167,12 +167,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       <div className="flex flex-1 flex-col lg:flex-row min-h-0 lg:min-h-screen">
         {/* ── Left Illustration & Highlights Panel (Desktop only 44%) ── */}
         <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
-          {/* Logo */}
-          <BrandLogo
-            inverse
-            iconClassName="h-9 w-9 transition-transform group-hover:scale-105"
-            wordmarkClassName="text-[18px] text-white"
-          />
 
           {/* Editorial Illustration */}
           <div className="my-auto py-8">
@@ -257,9 +251,9 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
             }`}
           >
-            {/* Centered Brand on Mobile, Left-aligned on Desktop */}
-            <div className="mb-6 flex flex-col items-center sm:items-start text-center sm:text-left">
-              <div className="mb-3">
+            {/* Centered Brand & Header */}
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="mb-3 flex justify-center">
                 <BrandLogo
                   iconClassName="h-12 w-12 drop-shadow-sm transition-transform hover:scale-105"
                   wordmarkClassName="text-[25px] sm:text-[26px] text-[#1d2a3d]"
