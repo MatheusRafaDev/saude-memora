@@ -70,6 +70,9 @@ export function SeoMetadata() {
 
   useEffect(() => {
     const path = location.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
+    if (path === '/sitemap.xml' || path === '/robots.txt' || path.startsWith('/google')) {
+      return;
+    }
 
     // Check for /documentos/:id pattern
     const isDocDetail = path.startsWith('/documentos/') && path !== '/documentos';

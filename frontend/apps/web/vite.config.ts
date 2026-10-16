@@ -102,6 +102,13 @@ export default defineConfig(async ({ mode, command }) => {
         },
         workbox: {
           navigateFallback: 'index.html',
+          navigateFallbackDenylist: [
+            /^\/api/,
+            /\.xml$/,
+            /\.txt$/,
+            /\.json$/,
+            /^\/google[a-zA-Z0-9]+\.html$/,
+          ],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,

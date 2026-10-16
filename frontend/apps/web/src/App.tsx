@@ -344,6 +344,26 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
 function AppPage({ children }: { children: ReactNode }) { return <AppShell>{children}</AppShell>; }
 
+function StaticFileViewer({ path, mimeType }: { path: string; mimeType: string }) {
+  useEffect(() => {
+    fetch(path, { cache: 'no-cache' })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
+      .then((content) => {
+        document.open(mimeType);
+        document.write(content);
+        document.close();
+      })
+      .catch(() => {
+        window.location.replace(path);
+      });
+  }, [path, mimeType]);
+
+  return null;
+}
+
 function Router() {
   const [location] = useLocation();
 
@@ -359,6 +379,9 @@ function Router() {
         <div key={location} className="min-h-[100dvh] flex flex-col flex-1">
           <Switch>
             <Route path="/" component={HomeRoute} />
+            <Route path="/sitemap.xml">{() => <StaticFileViewer path="/sitemap.xml" mimeType="application/xml" />}</Route>
+            <Route path="/robots.txt">{() => <StaticFileViewer path="/robots.txt" mimeType="text/plain" />}</Route>
+            <Route path="/googleac2641f37da00fc5.html">{() => <StaticFileViewer path="/googleac2641f37da00fc5.html" mimeType="text/html" />}</Route>
             <Route path="/entrar" component={Auth} />
             <Route path="/cadastro">{() => <Auth defaultMode="register" />}</Route>
             <Route path="/criar-conta">{() => <Auth defaultMode="register" />}</Route>
