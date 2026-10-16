@@ -611,7 +611,7 @@ export default function Home() {
 
               <div className="flex flex-wrap gap-3">
                 <Link
-                  href="/cadastro"
+                  href="/entrar?mode=register"
                   className="inline-flex min-h-[52px] items-center rounded-[14px] bg-white px-7 text-[16px] font-bold text-[#1b3a60] transition-all hover:bg-[#f1f4f8]"
                 >
                   Criar conta

@@ -40,7 +40,7 @@ export default function Recursos() {
                 Conheça as ferramentas do SaúdeMemora para reunir documentos, laudos e receitas em um espaço seguro com suporte de inteligência artificial.
               </p>
               <Link
-                href="/cadastro"
+                href="/entrar?mode=register"
                 className="inline-flex min-h-[48px] items-center rounded-xl bg-[#1b3a60] px-6 text-[15px] font-bold text-white transition-all hover:bg-[#244d7e]"
               >
                 Experimentar agora
@@ -211,7 +211,7 @@ export default function Recursos() {
             </div>
             <div className="flex gap-3">
               <Link
-                href="/cadastro"
+                href="/entrar?mode=register"
                 className="inline-flex min-h-[48px] items-center rounded-xl bg-white px-6 text-[15px] font-bold text-[#1b3a60] transition-colors hover:bg-[#f1f4f8]"
               >
                 Criar conta

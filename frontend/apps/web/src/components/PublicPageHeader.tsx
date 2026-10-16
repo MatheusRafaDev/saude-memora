@@ -45,7 +45,7 @@ export function PublicPageHeader() {
             Entrar
           </Link>
           <Link
-            href="/cadastro"
+            href="/entrar?mode=register"
             className="rounded-xl bg-[#1b3a60] px-5 py-3 text-[15px] font-bold text-white transition-all hover:bg-[#244d7e]"
           >
             Criar conta
@@ -56,7 +56,7 @@ export function PublicPageHeader() {
           <Link href="/entrar" className="rounded-lg px-2.5 py-2 text-sm font-semibold text-[#1d2a3d]">
             Entrar
           </Link>
-          <Link href="/cadastro" className="rounded-lg bg-[#1b3a60] px-3 py-2 text-sm font-bold text-white">
+          <Link href="/entrar?mode=register" className="rounded-lg bg-[#1b3a60] px-3 py-2 text-sm font-bold text-white">
             Criar conta
           </Link>
         </div>

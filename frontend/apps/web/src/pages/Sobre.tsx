@@ -150,7 +150,7 @@ export default function Sobre() {
             </div>
             <div className="flex gap-3">
               <Link
-                href="/cadastro"
+                href="/entrar?mode=register"
                 className="inline-flex min-h-[48px] items-center rounded-xl bg-white px-6 text-[15px] font-bold text-[#1b3a60] transition-colors hover:bg-[#f1f4f8]"
               >
                 Criar conta

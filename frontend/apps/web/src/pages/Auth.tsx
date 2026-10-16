@@ -99,7 +99,13 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     } else if (location === '/cadastro' || location === '/criar-conta') {
       setMode('register');
     } else if (location === '/entrar') {
-      setMode('login');
+      if (typeof window !== 'undefined' && (window.location.search.includes('mode=register') || window.location.search.includes('cadastro'))) {
+        setMode('register');
+      }
+    }
+    // Compartilha a mesma tela e a mesma URL (/entrar) para Login e Criar conta
+    if (typeof window !== 'undefined' && (window.location.pathname === '/cadastro' || window.location.pathname === '/criar-conta')) {
+      window.history.replaceState(null, '', '/entrar');
     }
   }, [defaultMode, location]);
 
@@ -108,7 +114,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     setMode(newMode);
     setError('');
     setMessage(successMessage);
-    window.history.replaceState(null, '', newMode === 'register' ? '/cadastro' : '/entrar');
+    // Mantém a mesma tela e a mesma URL (/entrar) sem recarregar ou navegar
+    if (typeof window !== 'undefined' && window.location.pathname !== '/entrar') {
+      window.history.replaceState(null, '', '/entrar');
+    }
   };
 
   const handleModeChange = (newMode: 'login' | 'register') => switchMode(newMode);
@@ -183,17 +192,27 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     <div className="min-h-screen bg-[#fafbfc] lg:bg-white font-sans text-[#1d2a3d] flex flex-col">
       <div className="flex flex-1 flex-col lg:flex-row min-h-0 lg:min-h-screen">
         {/* ── Left Illustration & Highlights Panel (Desktop only 44%) ── */}
-        <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-center items-center bg-[#1b3a60] p-8 xl:p-12 text-white relative overflow-hidden">
+        <motion.section
+          initial={{ opacity: 0, x: -24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden lg:flex flex-[0_0_44%] flex-col justify-center items-center bg-[#1b3a60] p-8 xl:p-12 text-white relative overflow-hidden"
+        >
           {/* Centered Editorial Block */}
           <div className="my-auto w-full max-w-[420px] flex flex-col items-center text-center">
             {/* Framed Editorial Card */}
-            <div className="w-full max-w-[340px] overflow-hidden rounded-[26px] border border-white/15 bg-white/10 p-2 shadow-2xl backdrop-blur-xs transition-transform duration-300 hover:scale-[1.01]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 14 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[340px] overflow-hidden rounded-[26px] border border-white/15 bg-white/10 p-2 shadow-2xl backdrop-blur-xs transition-transform duration-300 hover:scale-[1.01]"
+            >
               <img
                 src="/login-illustration.jpg"
                 alt="Ilustração de consulta e cuidado com a saúde"
                 className="block h-auto w-full rounded-[20px] object-cover shadow-sm"
               />
-            </div>
+            </motion.div>
 
             <h1 className="mt-7 text-[32px] xl:text-[36px] font-extrabold leading-[1.1] tracking-[-0.035em]">
               Tudo o que importa, <span className="text-[#7cc4e6]">em um só lugar.</span>
@@ -238,12 +257,17 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* ── Right Form Panel (Clean, polished single canvas on mobile) ── */}
         <section className="flex flex-1 flex-col justify-between p-5 sm:p-8 lg:p-10">
           {/* Mobile top bar */}
-          <div className="flex items-center justify-between pb-4 pt-1 lg:hidden">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="flex items-center justify-between pb-4 pt-1 lg:hidden"
+          >
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 rounded-full border border-[#dde3ec] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#5a6a80] shadow-xs transition-all hover:border-[#c6cfdb] hover:text-[#1b3a60]"
@@ -255,19 +279,31 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <ShieldCheck size={13} className="text-[#1f7fe0]" />
               <span>Ambiente seguro</span>
             </span>
-          </div>
+          </motion.div>
 
           {/* Desktop return link and logo */}
-          <div className="hidden lg:flex items-center justify-between gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="hidden lg:flex items-center justify-between gap-4"
+          >
             <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">
               ← Voltar ao início
             </Link>
-          </div>
+          </motion.div>
 
           {/* Form Container (compact, max-w 380px centered) */}
           <motion.div
             layout
-            transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
+            initial={{ opacity: 0, y: 22, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              opacity: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+              y: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+              scale: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+              layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
+            }}
             className="mx-auto my-auto w-full max-w-[370px] sm:max-w-[380px] py-4 sm:py-6"
           >
             {/* Centered Brand & Header */}
