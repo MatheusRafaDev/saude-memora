@@ -5,7 +5,7 @@ interface IconProps extends SVGProps<SVGSVGElement> {
   color?: string;
 }
 
-export function SvgHeartPulse({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgHeartPulse({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -17,7 +17,7 @@ export function SvgHeartPulse({ size = 20, color = 'currentColor', className, ..
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
@@ -25,7 +25,7 @@ export function SvgHeartPulse({ size = 20, color = 'currentColor', className, ..
   );
 }
 
-export function SvgArrowRight({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgArrowRight({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -37,7 +37,7 @@ export function SvgArrowRight({ size = 20, color = 'currentColor', className, ..
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M5 12h14M13 6l6 6-6 6" />
@@ -45,7 +45,7 @@ export function SvgArrowRight({ size = 20, color = 'currentColor', className, ..
   );
 }
 
-export function SvgShield({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgShield({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -57,7 +57,7 @@ export function SvgShield({ size = 20, color = 'currentColor', className, ...pro
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
@@ -65,7 +65,7 @@ export function SvgShield({ size = 20, color = 'currentColor', className, ...pro
   );
 }
 
-export function SvgFileText({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgFileText({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -77,7 +77,7 @@ export function SvgFileText({ size = 20, color = 'currentColor', className, ...p
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />
@@ -85,7 +85,7 @@ export function SvgFileText({ size = 20, color = 'currentColor', className, ...p
   );
 }
 
-export function SvgCheck({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgCheck({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -97,7 +97,7 @@ export function SvgCheck({ size = 20, color = 'currentColor', className, ...prop
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M5 12l4 4 10-10" />
@@ -105,7 +105,7 @@ export function SvgCheck({ size = 20, color = 'currentColor', className, ...prop
   );
 }
 
-export function SvgLock({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgLock({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -117,7 +117,7 @@ export function SvgLock({ size = 20, color = 'currentColor', className, ...props
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
@@ -125,7 +125,7 @@ export function SvgLock({ size = 20, color = 'currentColor', className, ...props
   );
 }
 
-export function SvgTrash({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgTrash({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -137,7 +137,7 @@ export function SvgTrash({ size = 20, color = 'currentColor', className, ...prop
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13" />
@@ -145,7 +145,7 @@ export function SvgTrash({ size = 20, color = 'currentColor', className, ...prop
   );
 }
 
-export function SvgUpload({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgUpload({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -157,7 +157,7 @@ export function SvgUpload({ size = 20, color = 'currentColor', className, ...pro
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M12 16V5M7 10l5-5 5 5M5 19h14" />
@@ -165,7 +165,7 @@ export function SvgUpload({ size = 20, color = 'currentColor', className, ...pro
   );
 }
 
-export function SvgSearch({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgSearch({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -177,7 +177,7 @@ export function SvgSearch({ size = 20, color = 'currentColor', className, ...pro
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M11 5a6 6 0 100 12 6 6 0 000-12zM16 16l4 4" />
@@ -185,7 +185,7 @@ export function SvgSearch({ size = 20, color = 'currentColor', className, ...pro
   );
 }
 
-export function SvgPill({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgPill({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -197,7 +197,7 @@ export function SvgPill({ size = 20, color = 'currentColor', className, ...props
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M8 4a4 4 0 015.7 0l6.3 6.3a4 4 0 01-5.7 5.7L8 9.7A4 4 0 018 4zM11 7l6 6" />
@@ -205,7 +205,7 @@ export function SvgPill({ size = 20, color = 'currentColor', className, ...props
   );
 }
 
-export function SvgFlask({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgFlask({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -217,7 +217,7 @@ export function SvgFlask({ size = 20, color = 'currentColor', className, ...prop
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M3 12h4l3-7 4 14 3-7h4" />
@@ -225,7 +225,7 @@ export function SvgFlask({ size = 20, color = 'currentColor', className, ...prop
   );
 }
 
-export function SvgSmartphone({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgSmartphone({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -237,7 +237,7 @@ export function SvgSmartphone({ size = 20, color = 'currentColor', className, ..
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M8 3h8v18H8zM11 18h2" />
@@ -245,7 +245,7 @@ export function SvgSmartphone({ size = 20, color = 'currentColor', className, ..
   );
 }
 
-export function SvgFolderHeart({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgFolderHeart({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -257,7 +257,7 @@ export function SvgFolderHeart({ size = 20, color = 'currentColor', className, .
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
@@ -265,7 +265,7 @@ export function SvgFolderHeart({ size = 20, color = 'currentColor', className, .
   );
 }
 
-export function SvgSyringe({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgSyringe({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -277,7 +277,7 @@ export function SvgSyringe({ size = 20, color = 'currentColor', className, ...pr
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M18 2l4 4-2 2-4-4 2-2zM14 6l4 4-8 8H6v-4l8-8zM4 20l2 2" />
@@ -285,7 +285,7 @@ export function SvgSyringe({ size = 20, color = 'currentColor', className, ...pr
   );
 }
 
-export function SvgClipboard({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgClipboard({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -297,7 +297,7 @@ export function SvgClipboard({ size = 20, color = 'currentColor', className, ...
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -305,7 +305,7 @@ export function SvgClipboard({ size = 20, color = 'currentColor', className, ...
   );
 }
 
-export function SvgFileBadge({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgFileBadge({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -317,7 +317,7 @@ export function SvgFileBadge({ size = 20, color = 'currentColor', className, ...
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M12 18a3 3 0 100-6 3 3 0 000 6z" />
@@ -325,7 +325,7 @@ export function SvgFileBadge({ size = 20, color = 'currentColor', className, ...
   );
 }
 
-export function SvgSend({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgSend({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -337,7 +337,7 @@ export function SvgSend({ size = 20, color = 'currentColor', className, ...props
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
@@ -345,7 +345,7 @@ export function SvgSend({ size = 20, color = 'currentColor', className, ...props
   );
 }
 
-export function SvgCalendar({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgCalendar({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -357,7 +357,7 @@ export function SvgCalendar({ size = 20, color = 'currentColor', className, ...p
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -368,7 +368,7 @@ export function SvgCalendar({ size = 20, color = 'currentColor', className, ...p
   );
 }
 
-export function SvgSparkles({ size = 20, color = 'currentColor', className, ...props }: IconProps) {
+export function SvgSparkles({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
   return (
     <svg
       width={size}
@@ -380,10 +380,53 @@ export function SvgSparkles({ size = 20, color = 'currentColor', className, ...p
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={`inline-block shrink-0 ${className}`}
       {...props}
     >
       <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
     </svg>
   );
 }
+
+export function SvgAlertTriangle({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={`inline-block shrink-0 ${className}`}
+      {...props}
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" />
+    </svg>
+  );
+}
+
+export function SvgInfo({ size = 20, color = 'currentColor', className = '', ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={`inline-block shrink-0 ${className}`}
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
+  );
+}
+

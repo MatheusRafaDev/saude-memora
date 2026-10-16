@@ -201,7 +201,7 @@ export default function Home() {
 
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <SvgFolderHeart size={22} color="#1f7fe0" />
+                  <SvgFileText size={22} color="#1f7fe0" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Tudo reunido</b>
@@ -273,10 +273,14 @@ export default function Home() {
                   A plataforma organiza as informações lidas e você revisa e corrige o que precisar.
                 </p>
                 <div className="flex h-11 items-center gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
+                  <SvgFileText size={16} color="#1f7fe0" />
                   <span>Informações extraídas do documento</span>
                 </div>
                 <div className="mt-2 flex h-11 items-center justify-between gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
-                  <span>Confira e corrija os dados</span>
+                  <span className="flex items-center gap-2">
+                    <SvgCheck size={16} color="#1b3a60" />
+                    <span>Confira e corrija os dados</span>
+                  </span>
                   <span className="rounded-full bg-[#fdf3d8] px-2.5 py-0.5 text-[11px] font-bold text-[#6b4208]">
                     Revisar
                   </span>

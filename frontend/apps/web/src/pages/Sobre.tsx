@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
-import { SvgHeartPulse, SvgShield, SvgCheck } from '@/components/SvgIcons';
+import { SvgHeartPulse, SvgShield, SvgCheck, SvgAlertTriangle } from '@/components/SvgIcons';
 
 export default function Sobre() {
   return (
@@ -43,7 +43,10 @@ export default function Sobre() {
               </p>
 
               <div className="rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a] text-[15px] leading-relaxed">
-                <b className="text-[16px]">Importante</b>
+                <div className="flex items-center gap-2">
+                  <SvgAlertTriangle size={18} color="#9a620b" />
+                  <b className="text-[16px]">Importante</b>
+                </div>
                 <p className="mt-1">
                   É uma ferramenta de organização. Não realiza diagnósticos nem substitui profissionais de saúde.
                 </p>

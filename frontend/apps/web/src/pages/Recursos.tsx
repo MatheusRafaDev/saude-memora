@@ -1,19 +1,21 @@
 import { Link } from 'wouter';
 import {
-  FolderHeart,
-  Upload,
-  Search,
-  FlaskConical,
-  Pill,
-  HeartPulse,
-  ShieldCheck,
-  Smartphone,
-  FileBadge,
-  ClipboardList,
-  Syringe,
-  Send,
-  FileText,
-} from 'lucide-react';
+  SvgFolderHeart,
+  SvgUpload,
+  SvgSearch,
+  SvgFlask,
+  SvgPill,
+  SvgHeartPulse,
+  SvgShield,
+  SvgSmartphone,
+  SvgFileBadge,
+  SvgClipboard,
+  SvgSyringe,
+  SvgSend,
+  SvgFileText,
+  SvgAlertTriangle,
+  SvgInfo,
+} from '@/components/SvgIcons';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
@@ -70,7 +72,7 @@ export default function Recursos() {
             <div className="mt-9 grid grid-cols-1 gap-4 md:grid-cols-5">
               <div className="rounded-[24px] bg-[#1b3a60] p-8 text-white md:col-span-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15">
-                  <FolderHeart size={22} className="text-white" />
+                  <SvgFolderHeart size={22} color="#ffffff" />
                 </div>
                 <h3 className="mt-5 text-[22px] font-bold">Documentos em um só lugar</h3>
                 <p className="mt-2 text-[15px] leading-[1.65] text-[#c9d6e8]">
@@ -78,16 +80,16 @@ export default function Recursos() {
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {[
-                    { label: 'Exames', icon: FlaskConical },
-                    { label: 'Receitas', icon: Pill },
-                    { label: 'Laudos', icon: FileBadge },
-                    { label: 'Atestados', icon: ClipboardList },
-                    { label: 'Vacinas', icon: Syringe },
-                    { label: 'Encaminhamentos', icon: Send },
-                    { label: 'Outros', icon: FileText },
-                  ].map(({ label, icon: Icon }) => (
+                    { label: 'Exames', IconComponent: SvgFlask },
+                    { label: 'Receitas', IconComponent: SvgPill },
+                    { label: 'Laudos', IconComponent: SvgFileBadge },
+                    { label: 'Atestados', IconComponent: SvgClipboard },
+                    { label: 'Vacinas', IconComponent: SvgSyringe },
+                    { label: 'Encaminhamentos', IconComponent: SvgSend },
+                    { label: 'Outros', IconComponent: SvgFileText },
+                  ].map(({ label, IconComponent }) => (
                     <span key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white">
-                      <Icon size={13} className="text-[#7cc4e6]" />
+                      <IconComponent size={13} color="#7cc4e6" />
                       {label}
                     </span>
                   ))}
@@ -96,7 +98,7 @@ export default function Recursos() {
 
               <div className="rounded-[24px] border border-[#dde3ec] bg-[#e5eefb] p-8 md:col-span-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
-                  <Upload size={22} className="text-[#1f7fe0]" />
+                  <SvgUpload size={22} color="#1f7fe0" />
                 </div>
                 <h3 className="mt-5 text-[22px] font-bold text-[#1d2a3d]">Envio e leitura de arquivos</h3>
                 <p className="mt-2 text-[15px] leading-[1.65] text-[#5a6a80]">
@@ -108,7 +110,7 @@ export default function Recursos() {
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <Search size={20} className="text-[#1b3a60]" />
+                  <SvgSearch size={20} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Busca e filtros</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -118,7 +120,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <FlaskConical size={20} className="text-[#1b3a60]" />
+                  <SvgFlask size={20} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Resultados de exames</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -128,7 +130,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <Pill size={20} className="text-[#1b3a60]" />
+                  <SvgPill size={20} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Medicamentos registrados</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -140,7 +142,7 @@ export default function Recursos() {
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <HeartPulse size={20} className="text-[#1b3a60]" />
+                  <SvgHeartPulse size={20} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Ficha de saúde</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -150,7 +152,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <ShieldCheck size={20} className="text-[#1b3a60]" />
+                  <SvgShield size={20} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Privacidade e controle</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -160,7 +162,7 @@ export default function Recursos() {
 
               <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <Smartphone size={20} className="text-[#1b3a60]" />
+                  <SvgSmartphone size={20} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Acesso rápido</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -175,14 +177,20 @@ export default function Recursos() {
         <section className="px-6 py-6 pb-16 sm:px-12">
           <div className="mx-auto flex max-w-[1100px] flex-col gap-4 sm:flex-row sm:flex-wrap">
             <div className="w-full min-w-0 flex-1 sm:min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
-              <b>Confira os dados extraídos</b>
+              <div className="flex items-center gap-2">
+                <SvgAlertTriangle size={18} color="#9a620b" />
+                <b className="text-[16px]">Confira os dados extraídos</b>
+              </div>
               <p className="mt-2 text-[15px] leading-relaxed">
                 Os dados extraídos automaticamente podem conter erros; confira-os sempre.
               </p>
             </div>
 
             <div className="w-full min-w-0 flex-1 sm:min-w-[300px] rounded-[16px] border border-[#e3b95a] bg-[#fdf3d8] p-5 text-[#4a2c0a]">
-              <b>Uma ferramenta de organização</b>
+              <div className="flex items-center gap-2">
+                <SvgInfo size={18} color="#9a620b" />
+                <b className="text-[16px]">Uma ferramenta de organização</b>
+              </div>
               <p className="mt-2 text-[15px] leading-relaxed">
                 O SaúdeMemora não faz diagnósticos e não substitui avaliação médica nem atendimento de emergência. Em emergência no Brasil, ligue 192 (SAMU).
               </p>
