@@ -11,6 +11,8 @@ import {
   FlaskConical,
   Pill,
   FileBadge,
+  ArrowLeft,
+  Lock,
 } from 'lucide-react';
 import {
   usePostApiAuthLogin,
@@ -21,6 +23,7 @@ import {
   getGetApiFichaMedicaMeQueryOptions,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { BrandLogo } from '@/components/BrandLogo';
 import { BrandWordmark } from '@/components/BrandWordmark';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 
@@ -160,55 +163,16 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
-      {/* ── Mobile Blue Brand Header (para mobile não ficar branco) ── */}
-      <section className="bg-[#1b3a60] px-5 pt-6 pb-7 text-white rounded-b-[28px] shadow-sm lg:hidden">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 font-extrabold text-[16px] text-white">
-            <img src="/logo.svg" alt="SaúdeMemora" className="h-8 w-8 object-contain flex-none" />
-            <BrandWordmark inverse />
-          </Link>
-          <Link href="/" className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#7cc4e6] hover:text-white transition-colors">
-            ← Voltar ao início
-          </Link>
-        </div>
-
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[20px] font-extrabold leading-[1.15] tracking-[-0.03em] text-white">
-              Tudo o que importa, <span className="text-[#7cc4e6]">em um só lugar.</span>
-            </h1>
-            <p className="mt-1 text-xs text-[#c9d6e8]">
-              Seus exames, receitas e laudos organizados.
-            </p>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
-                <FlaskConical size={11} className="text-[#7cc4e6]" /> Exames
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
-                <Pill size={11} className="text-[#7cc4e6]" /> Receitas
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
-                <FileBadge size={11} className="text-[#7cc4e6]" /> Laudos
-              </span>
-            </div>
-          </div>
-          <img
-            src="/login-illustration.svg"
-            alt=""
-            className="h-16 w-16 object-contain flex-none drop-shadow-sm opacity-95"
-          />
-        </div>
-      </section>
-
+    <div className="min-h-screen bg-[#fafbfc] lg:bg-white font-sans text-[#1d2a3d] flex flex-col">
       <div className="flex flex-1 flex-col lg:flex-row min-h-0 lg:min-h-screen">
-        {/* ── Left Illustration & Highlights Panel (Desktop 44%) ── */}
+        {/* ── Left Illustration & Highlights Panel (Desktop only 44%) ── */}
         <section className="hidden lg:flex flex-[0_0_44%] flex-col justify-between bg-[#1b3a60] p-12 text-white relative overflow-hidden">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[17px] text-white">
-            <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
-            <BrandWordmark inverse />
-          </Link>
+          <BrandLogo
+            inverse
+            iconClassName="h-9 w-9 transition-transform group-hover:scale-105"
+            wordmarkClassName="text-[18px] text-white"
+          />
 
           {/* SVG Illustration from Design Board */}
           <div className="my-auto py-8">
@@ -263,10 +227,29 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           </div>
         </section>
 
-        {/* ── Right Form Panel ───────────────────────────────────── */}
-        <section className={`flex flex-1 flex-col justify-between ${mode === 'login' ? 'p-4 sm:p-8 lg:p-12' : 'p-6 sm:p-12'}`}>
-          {/* Desktop return link */}
-          <div className="hidden lg:flex flex-col gap-4">
+        {/* ── Right Form Panel (Clean, polished single canvas on mobile) ── */}
+        <section className={`flex flex-1 flex-col justify-between ${mode === 'login' ? 'p-5 sm:p-8 lg:p-12' : 'p-5 sm:p-12'}`}>
+          {/* Mobile top bar */}
+          <div className="flex items-center justify-between pb-4 pt-1 lg:hidden">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#dde3ec] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#5a6a80] shadow-xs transition-all hover:border-[#c6cfdb] hover:text-[#1b3a60]"
+            >
+              <ArrowLeft size={14} />
+              <span>Início</span>
+            </Link>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f1f4f8] px-3 py-1 text-[11px] font-medium text-[#5a6a80]">
+              <ShieldCheck size={13} className="text-[#1f7fe0]" />
+              <span>Ambiente seguro</span>
+            </span>
+          </div>
+
+          {/* Desktop return link and logo */}
+          <div className="hidden lg:flex items-center justify-between gap-4">
+            <BrandLogo
+              iconClassName="h-8 w-8 transition-transform group-hover:scale-105"
+              wordmarkClassName="text-[17px] text-[#1d2a3d]"
+            />
             <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">
               ← Voltar ao início
             </Link>
@@ -274,16 +257,26 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
           {/* Form Container (max-w 420px centered) */}
           <div
-            className={`mx-auto my-auto w-full max-w-[420px] ${mode === 'login' ? 'py-3 sm:py-5 lg:py-8' : 'py-8'} transition-[opacity,transform] duration-150 ease-out ${
+            className={`mx-auto my-auto w-full max-w-[420px] ${mode === 'login' ? 'py-4 sm:py-6 lg:py-8' : 'py-6 sm:py-8'} transition-[opacity,transform] duration-150 ease-out ${
               isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
             }`}
           >
-            <h2 className="text-[26px] sm:text-[32px] font-extrabold tracking-[-0.035em]">
-              {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
-            </h2>
-            <p className="mt-2 mb-4 sm:mb-6 text-[15px] text-[#5a6a80]">
-              {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
-            </p>
+            {/* Centered Brand on Mobile, Left-aligned on Desktop */}
+            <div className="mb-6 flex flex-col items-center sm:items-start text-center sm:text-left">
+              <div className="mb-3">
+                <BrandLogo
+                  iconClassName="h-12 w-12 drop-shadow-sm transition-transform hover:scale-105"
+                  wordmarkClassName="text-[25px] sm:text-[26px] text-[#1d2a3d]"
+                />
+              </div>
+
+              <h2 className="text-[24px] sm:text-[30px] font-extrabold tracking-[-0.035em] text-[#1d2a3d]">
+                {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
+              </h2>
+              <p className="mt-1 text-[14px] sm:text-[15px] text-[#5a6a80]">
+                {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
+              </p>
+            </div>
 
             {/* Segmented Pill Tabs */}
             <div className="mb-4 sm:mb-6 flex rounded-xl border border-[#dde3ec] bg-[#f1f4f8] p-1">
@@ -454,9 +447,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               </button>
             </form>
 
-            <p className="mt-4 sm:mt-6 text-[12px] leading-relaxed text-[#5a6a80]">
-              Seu espaço é pessoal: você decide quais documentos e informações adicionar.
-            </p>
+            <div className="mt-5 sm:mt-6 flex items-center justify-center gap-1.5 text-center text-[12px] text-[#7a8ba0]">
+              <Lock size={13} className="text-[#1f7fe0] shrink-0" />
+              <span>Espaço seguro e pessoal: controle total dos seus dados</span>
+            </div>
           </div>
 
           <div />

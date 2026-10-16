@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
+import { BrandLogo } from '@/components/BrandLogo';
 import { BrandWordmark } from '@/components/BrandWordmark';
 import { useGetApiPacientesMe } from '@workspace/api-client-react';
 import { EmergenciaModal } from '@/components/EmergenciaModal';
@@ -112,13 +113,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* ── Desktop Header ─────────────────────────────────────── */}
       <header className="sticky top-0 z-40 hidden h-[72px] items-center gap-7 border-b border-[#dde3ec] bg-white px-6 sm:px-10 lg:flex">
-        <Link
+        <BrandLogo
           href="/visao-geral"
-          className="flex items-center gap-2.5 shrink-0 text-[#1b3a60] font-extrabold text-[18px] tracking-[-0.03em]"
-        >
-          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
-          <BrandWordmark />
-        </Link>
+          iconClassName="h-9 w-9 transition-transform group-hover:scale-105"
+          wordmarkClassName="text-[18px] text-[#1b3a60] tracking-[-0.03em]"
+        />
 
         {/* Navigation center */}
         <nav aria-label="Navegação principal" className="hidden lg:flex flex-1 items-center justify-center gap-1">

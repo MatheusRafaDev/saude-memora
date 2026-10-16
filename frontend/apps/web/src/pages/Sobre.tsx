@@ -1,13 +1,14 @@
 import { Link } from 'wouter';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
+import { SvgHeartPulse, SvgShield, SvgCheck } from '@/components/SvgIcons';
 
 export default function Sobre() {
   return (
     <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
       <PublicPageHeader />
 
-      <main className="flex-1">
+      <main className="flex-1 page-transition-enter">
         {/* ── Hero Section ────────────────────────────────────────── */}
         <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 py-20 sm:px-12">
           <div className="mx-auto max-w-[1000px]">
@@ -50,7 +51,7 @@ export default function Sobre() {
             </div>
 
             <div className="w-full min-w-0 flex-1 sm:min-w-[320px]">
-              <div className="rounded-[32px] border border-[#dde3ec] bg-white p-3 shadow-sm">
+              <div className="rounded-[32px] border border-[#dde3ec] bg-white p-3 shadow-sm transition-all hover:shadow-md">
                 <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-5">
                   <img
                     src="/sobre-illustration.svg"
@@ -82,11 +83,9 @@ export default function Sobre() {
             </h2>
 
             <div className="mt-9 grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.5-7 10-7 10z" />
-                  </svg>
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6 transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e5eefb]">
+                  <SvgHeartPulse size={20} color="#1f7fe0" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Mais contexto para você</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -94,11 +93,9 @@ export default function Sobre() {
                 </p>
               </div>
 
-              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z" />
-                  </svg>
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6 transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e5eefb]">
+                  <SvgShield size={20} color="#1f7fe0" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Privacidade como prioridade</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -106,11 +103,9 @@ export default function Sobre() {
                 </p>
               </div>
 
-              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b3a60" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12l4 4 10-10" />
-                  </svg>
+              <div className="rounded-[16px] border border-[#dde3ec] bg-white p-6 transition-all hover:shadow-md hover:-translate-y-0.5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e5eefb]">
+                  <SvgCheck size={20} color="#1f7fe0" />
                 </div>
                 <h3 className="mt-4 text-[17px] font-bold">Organização com tecnologia</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -123,7 +118,7 @@ export default function Sobre() {
 
         {/* ── Quem criou ──────────────────────────────────────────── */}
         <section className="px-6 py-16 sm:px-12">
-          <div className="mx-auto flex max-w-[1000px] flex-wrap items-center gap-7 rounded-[32px] border border-[#dde3ec] bg-white p-10 shadow-sm">
+          <div className="mx-auto flex max-w-[1000px] flex-wrap items-center gap-7 rounded-[32px] border border-[#dde3ec] bg-white p-10 shadow-sm transition-all hover:shadow-md">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#1f7fe0] to-[#1b3a60] text-[26px] font-extrabold text-white shadow-md">
               MR
             </div>
@@ -141,7 +136,7 @@ export default function Sobre() {
 
         {/* ── CTA Banner ─────────────────────────────────────────── */}
         <section className="px-6 pb-16 sm:px-12">
-          <div className="mx-auto flex max-w-[1100px] flex flex-col items-start justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-6 sm:flex-row sm:items-center sm:p-14 text-white">
+          <div className="mx-auto flex max-w-[1100px] flex flex-col items-start justify-between gap-8 rounded-[32px] bg-[#1b3a60] p-6 sm:flex-row sm:items-center sm:p-14 text-white shadow-xl">
             <div className="max-w-[520px]">
               <h2 className="text-[28px] sm:text-[32px] font-extrabold tracking-[-0.03em]">
                 Comece a reunir sua história de saúde.

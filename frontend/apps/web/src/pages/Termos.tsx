@@ -5,7 +5,7 @@ export default function Termos() {
   return (
     <div className="min-h-screen bg-white text-[#1d2a3d] font-sans">
       <PublicPageHeader />
-
+      <main className="flex-1 page-transition-enter">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 sm:px-12 py-16 border-b border-[#dde3ec]">
         <div className="max-w-[1000px] mx-auto">
@@ -77,6 +77,7 @@ export default function Termos() {
           </section>
         </div>
       </div>
+      </main>
 
       <PublicPageFooter />
     </div>

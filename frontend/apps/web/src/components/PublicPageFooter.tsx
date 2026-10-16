@@ -1,12 +1,15 @@
 import { Link } from 'wouter';
-import { BrandWordmark } from '@/components/BrandWordmark';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export function PublicPageFooter() {
   return (
     <footer className="border-t border-[#dde3ec] bg-[#f1f4f8] px-6 py-10 sm:px-8 sm:py-12">
       <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 text-[#5a6a80] sm:gap-x-8 lg:grid-cols-[44%_21%_24%_11%] lg:gap-x-0 lg:gap-y-0">
-        <div className="col-span-2 max-w-[300px] lg:col-span-1">
-          <BrandWordmark className="text-[18px] text-[#1d2a3d]" />
+        <div className="col-span-2 max-w-[320px] lg:col-span-1">
+          <BrandLogo
+            iconClassName="h-8 w-8 transition-transform group-hover:scale-105"
+            wordmarkClassName="text-[18px] text-[#1d2a3d]"
+          />
           <p className="mt-3 text-[14px] leading-relaxed">
             Organização e acesso às suas informações de saúde.
           </p>

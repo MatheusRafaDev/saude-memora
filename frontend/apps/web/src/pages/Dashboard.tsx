@@ -180,24 +180,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Indicadores */}
-        {dados && (
-          <section aria-label="Indicadores" className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {indicadoresExibidos.map((item) => (
-              <div
-                key={item.rotulo}
-                className={`rounded-2xl border p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] ${TOM_CLASSES[item.tom]}`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[12px] font-bold uppercase tracking-wider text-[#5a6a80]">{item.rotulo}</span>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">{item.icon}</span>
-                </div>
-                <div className="mt-2 text-3xl font-extrabold tracking-[-0.02em] text-[#1d2a3d]">{item.valor}</div>
-                <div className="mt-0.5 text-[13px] text-[#5a6a80]">{item.detalhe}</div>
-              </div>
-            ))}
-          </section>
-        )}
 
         {/* Carteirinha + emergência */}
         <div className="mb-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
@@ -276,6 +258,26 @@ export default function Dashboard() {
 
           </div>
         </div>
+
+
+                {/* Indicadores */}
+        {dados && (
+          <section aria-label="Indicadores" className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {indicadoresExibidos.map((item) => (
+              <div
+                key={item.rotulo}
+                className={`rounded-2xl border p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] ${TOM_CLASSES[item.tom]}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-bold uppercase tracking-wider text-[#5a6a80]">{item.rotulo}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">{item.icon}</span>
+                </div>
+                <div className="mt-2 text-3xl font-extrabold tracking-[-0.02em] text-[#1d2a3d]">{item.valor}</div>
+                <div className="mt-0.5 text-[13px] text-[#5a6a80]">{item.detalhe}</div>
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* Atenção + Documentos por tipo */}
         <div className="mb-5 grid gap-5 lg:grid-cols-3">

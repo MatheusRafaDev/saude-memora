@@ -1,27 +1,26 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
 import {
-  ArrowRight,
-  FileText,
-  Shield,
-  ShieldCheck,
-  FlaskConical,
-  Pill,
-  ClipboardList,
-  Syringe,
-  FileBadge,
-  Upload,
-  Search,
-  Lock,
-  Trash2,
-  CheckCircle2,
-  HeartPulse,
-  Smartphone,
-  FolderHeart,
-  Send,
-  Calendar,
-  Sparkles,
-} from 'lucide-react';
+  SvgHeartPulse,
+  SvgArrowRight,
+  SvgShield,
+  SvgFileText,
+  SvgCheck,
+  SvgLock,
+  SvgTrash,
+  SvgUpload,
+  SvgSearch,
+  SvgPill,
+  SvgFlask,
+  SvgSmartphone,
+  SvgFolderHeart,
+  SvgSyringe,
+  SvgClipboard,
+  SvgFileBadge,
+  SvgSend,
+  SvgCalendar,
+  SvgSparkles,
+} from '@/components/SvgIcons';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
 
@@ -57,7 +56,7 @@ export default function Home() {
           <div className="mx-auto flex max-w-[1140px] flex-col flex-wrap items-center gap-9 sm:flex-row sm:gap-16">
             <div className="w-full min-w-0 flex-1 sm:min-w-[320px] sm:max-w-[560px]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#bfd8f7] bg-[#e5eefb] px-4 py-2 text-[13px] font-bold text-[#1f7fe0]">
-                <HeartPulse size={15} className="text-[#1f7fe0]" />
+                <SvgHeartPulse size={15} color="#1f7fe0" />
                 Seu histórico de saúde, mais organizado
               </span>
 
@@ -75,7 +74,7 @@ export default function Home() {
                   className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1b3a60] px-5 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(27,58,96,0.25)] transition-all hover:bg-[#244d7e] hover:-translate-y-0.5 sm:min-h-[54px] sm:w-auto sm:px-7 sm:text-base"
                 >
                   <span>Acessar plataforma</span>
-                  <ArrowRight size={18} />
+                  <SvgArrowRight size={18} color="#fff" />
                 </Link>
 
                 <Link
@@ -88,21 +87,21 @@ export default function Home() {
 
               <div className="mt-7 flex flex-col gap-3 text-[13px] font-semibold text-[#5a6a80] sm:mt-9 sm:flex-row sm:flex-wrap sm:gap-7 sm:text-[14px]">
                 <span className="flex items-center gap-2">
-                  <ShieldCheck size={18} className="text-[#1f7fe0]" />
+                  <SvgShield size={18} color="#1f7fe0" />
                   Espaço pessoal
                 </span>
                 <span className="flex items-center gap-2">
-                  <FileText size={18} className="text-[#1f7fe0]" />
+                  <SvgFileText size={18} color="#1f7fe0" />
                   Documentos reunidos
                 </span>
                 <span className="flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-[#1f7fe0]" />
+                  <SvgCheck size={18} color="#1f7fe0" />
                   Você confere tudo
                 </span>
               </div>
             </div>
 
-            {/* Product overview without invented patient records. */}
+            {/* Product overview mockup card */}
             <div className="relative w-full min-w-0 flex-1 sm:min-w-[340px] sm:max-w-[500px]">
               <div className="overflow-hidden rounded-[28px] border border-[#dde3ec] bg-white shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)]">
                 <div className="flex items-center gap-2 border-b border-[#dde3ec] bg-[#f1f4f8] px-5 py-3.5">
@@ -121,15 +120,15 @@ export default function Home() {
                     Entre na sua conta para consultar os dados e documentos que você cadastrou.
                   </p>
 
-                  {/* Tipos de documento com ícones */}
+                  {/* Tipos de documento com ícones SVG */}
                   <div className="mb-4 grid grid-cols-3 gap-2">
                     {[
-                      { icon: <FlaskConical size={15} />, label: 'Exames', color: '#1f7fe0', bg: '#e5eefb' },
-                      { icon: <Pill size={15} />, label: 'Receitas', color: '#1b3a60', bg: '#f1f4f8' },
-                      { icon: <FileBadge size={15} />, label: 'Laudos', color: '#1b3a60', bg: '#f1f4f8' },
-                      { icon: <Syringe size={15} />, label: 'Vacinas', color: '#1b3a60', bg: '#f1f4f8' },
-                      { icon: <ClipboardList size={15} />, label: 'Atestados', color: '#1b3a60', bg: '#f1f4f8' },
-                      { icon: <FileText size={15} />, label: 'Outros', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <SvgFlask size={15} color="#1f7fe0" />, label: 'Exames', color: '#1f7fe0', bg: '#e5eefb' },
+                      { icon: <SvgPill size={15} color="#1b3a60" />, label: 'Receitas', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <SvgFileBadge size={15} color="#1b3a60" />, label: 'Laudos', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <SvgSyringe size={15} color="#1b3a60" />, label: 'Vacinas', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <SvgClipboard size={15} color="#1b3a60" />, label: 'Atestados', color: '#1b3a60', bg: '#f1f4f8' },
+                      { icon: <SvgFileText size={15} color="#1b3a60" />, label: 'Outros', color: '#1b3a60', bg: '#f1f4f8' },
                     ].map(({ icon, label, color, bg }) => (
                       <span key={label} className="flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-[11px] font-bold" style={{ background: bg, color }}>
                         {icon} {label}
@@ -139,35 +138,35 @@ export default function Home() {
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb]">
-                      <FlaskConical size={18} className="text-[#1f7fe0]" />
+                      <SvgFlask size={18} color="#1f7fe0" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[14px] font-bold truncate">Exames e Laudos</div>
                       <div className="text-[12px] text-[#5a6a80]">Resultados e relatórios médicos</div>
                     </div>
-                    <FileText size={18} className="text-[#1b3a60]" />
+                    <SvgFileText size={18} color="#1b3a60" />
                   </div>
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                      <ClipboardList size={18} className="text-[#1b3a60]" />
+                      <SvgClipboard size={18} color="#1b3a60" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[14px] font-bold truncate">Ficha médica</div>
                       <div className="text-[12px] text-[#5a6a80]">Informações cadastradas por você</div>
                     </div>
-                    <Shield size={18} className="text-[#1b3a60]" />
+                    <SvgShield size={18} color="#1b3a60" />
                   </div>
 
                   <div className="flex items-center gap-3 border-t border-[#dde3ec] py-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]">
-                      <FolderHeart size={18} className="text-[#1b3a60]" />
+                      <SvgFolderHeart size={18} color="#1b3a60" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[14px] font-bold truncate">Histórico organizado</div>
                       <div className="text-[12px] text-[#5a6a80]">Consulte o que estiver salvo na sua conta</div>
                     </div>
-                    <ArrowRight size={18} className="text-[#1b3a60]" />
+                    <SvgArrowRight size={18} color="#1b3a60" />
                   </div>
                 </div>
               </div>
@@ -175,7 +174,7 @@ export default function Home() {
               {/* Floating review card */}
               <div className="hidden rounded-[18px] border border-[#dde3ec] bg-white p-3.5 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.35)] animate-in fade-in zoom-in-95 sm:absolute sm:-bottom-6 sm:-left-6 sm:flex sm:items-center sm:gap-3 sm:right-auto sm:px-5 sm:py-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#e5eefb]">
-                  <CheckCircle2 size={20} className="text-[#1f7fe0]" />
+                  <SvgCheck size={20} color="#1f7fe0" />
                 </div>
                 <div>
                   <b className="text-[14px] text-[#1d2a3d]">Você no controle</b>
@@ -192,7 +191,7 @@ export default function Home() {
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <Lock size={22} className="text-[#1f7fe0]" />
+                  <SvgLock size={22} color="#1f7fe0" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Espaço pessoal</b>
@@ -202,7 +201,7 @@ export default function Home() {
 
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <FolderHeart size={22} className="text-[#1f7fe0]" />
+                  <SvgFolderHeart size={22} color="#1f7fe0" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Tudo reunido</b>
@@ -212,7 +211,7 @@ export default function Home() {
 
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <CheckCircle2 size={22} className="text-[#1f7fe0]" />
+                  <SvgCheck size={22} color="#1f7fe0" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Você confere</b>
@@ -222,7 +221,7 @@ export default function Home() {
 
               <div className="flex items-start gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e5eefb]">
-                  <Trash2 size={22} className="text-[#1f7fe0]" />
+                  <SvgTrash size={22} color="#1f7fe0" />
                 </div>
                 <div>
                   <b className="text-[16px] text-[#1d2a3d]">Você apaga</b>
@@ -257,7 +256,7 @@ export default function Home() {
                   Adicione uma foto ou PDF de exames, receitas e laudos.
                 </p>
                 <div className="flex h-28 flex-col items-center justify-center gap-1.5 rounded-[16px] border-2 border-dashed border-[#b8c4d6] bg-[#f7f9fc] text-[13px] text-[#5a6a80]">
-                  <Upload size={26} className="text-[#1b3a60]" />
+                  <SvgUpload size={26} color="#1b3a60" />
                   <span>Arraste um arquivo ou toque para enviar</span>
                 </div>
               </div>
@@ -296,18 +295,18 @@ export default function Home() {
                   Busque por título ou conteúdo e filtre por tipo, status e período.
                 </p>
                 <div className="flex h-11 items-center gap-2 rounded-[12px] border border-[#dde3ec] bg-[#f1f4f8] px-3.5 text-[13px] text-[#5a6a80]">
-                  <Search size={16} className="text-[#5a6a80]" />
+                  <SvgSearch size={16} color="#5a6a80" />
                   <span>Busque nos seus documentos</span>
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1f7fe0]">
-                    <FlaskConical size={12} /> Exames
+                    <SvgFlask size={12} color="#1f7fe0" /> Exames
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#f1f4f8] px-2.5 py-1 text-[12px] font-bold text-[#1d2a3d]">
-                    <Pill size={12} /> Receitas
+                    <SvgPill size={12} color="#1d2a3d" /> Receitas
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#e5eefb] px-2.5 py-1 text-[12px] font-bold text-[#1b3a60]">
-                    <FileBadge size={12} /> Laudos
+                    <SvgFileBadge size={12} color="#1b3a60" /> Laudos
                   </span>
                 </div>
               </div>
@@ -326,7 +325,7 @@ export default function Home() {
             <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-5">
               <div className="rounded-[28px] bg-[#1b3a60] p-9 text-white md:col-span-3">
                 <div className="flex h-13 w-13 items-center justify-center rounded-[17px] bg-white/15">
-                  <FolderHeart size={26} className="text-white" />
+                  <SvgFolderHeart size={26} color="#fff" />
                 </div>
                 <h3 className="mt-6 text-[26px] font-bold">Documentos em um só lugar</h3>
                 <p className="mt-2 mb-6 max-w-[460px] text-[16px] leading-[1.65] text-[#c9d6e8]">
@@ -334,16 +333,16 @@ export default function Home() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { label: 'Exames', icon: FlaskConical },
-                    { label: 'Receitas', icon: Pill },
-                    { label: 'Laudos', icon: FileBadge },
-                    { label: 'Atestados', icon: ClipboardList },
-                    { label: 'Vacinas', icon: Syringe },
-                    { label: 'Encaminhamentos', icon: Send },
-                    { label: 'Outros', icon: FileText },
-                  ].map(({ label, icon: Icon }) => (
+                    { label: 'Exames', IconComponent: SvgFlask },
+                    { label: 'Receitas', IconComponent: SvgPill },
+                    { label: 'Laudos', IconComponent: SvgFileBadge },
+                    { label: 'Atestados', IconComponent: SvgClipboard },
+                    { label: 'Vacinas', IconComponent: SvgSyringe },
+                    { label: 'Encaminhamentos', IconComponent: SvgSend },
+                    { label: 'Outros', IconComponent: SvgFileText },
+                  ].map(({ label, IconComponent }) => (
                     <span key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-[13px] font-semibold text-white">
-                      <Icon size={14} className="text-[#7cc4e6]" />
+                      <IconComponent size={14} color="#7cc4e6" />
                       {label}
                     </span>
                   ))}
@@ -352,7 +351,7 @@ export default function Home() {
 
               <div className="rounded-[28px] border border-[#bfd8f7] bg-[#e5eefb] p-9 md:col-span-2">
                 <div className="flex h-13 w-13 items-center justify-center rounded-[17px] bg-white shadow-sm">
-                  <Pill size={26} className="text-[#1f7fe0]" />
+                  <SvgPill size={26} color="#1f7fe0" />
                 </div>
                 <h3 className="mt-6 text-[26px] font-bold text-[#1d2a3d]">Medicamentos</h3>
                 <p className="mt-2 text-[16px] leading-[1.65] text-[#5a6a80]">
@@ -364,7 +363,7 @@ export default function Home() {
             <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
               <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
-                  <FlaskConical size={22} className="text-[#1b3a60]" />
+                  <SvgFlask size={22} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[19px] font-bold">Exames</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -374,7 +373,7 @@ export default function Home() {
 
               <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
-                  <HeartPulse size={22} className="text-[#1b3a60]" />
+                  <SvgHeartPulse size={22} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[19px] font-bold">Histórico de saúde</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -384,7 +383,7 @@ export default function Home() {
 
               <div className="rounded-[24px] border border-[#dde3ec] bg-white p-7">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f1f4f8]">
-                  <Smartphone size={22} className="text-[#1b3a60]" />
+                  <SvgSmartphone size={22} color="#1b3a60" />
                 </div>
                 <h3 className="mt-4 text-[19px] font-bold">Celular e computador</h3>
                 <p className="mt-1 text-[15px] leading-relaxed text-[#5a6a80]">
@@ -402,11 +401,11 @@ export default function Home() {
               <div className="flex-1 rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
                 <div className="flex items-center justify-between">
                   <div className="text-[12px] font-bold uppercase tracking-wider text-[#5a6a80]">DOCUMENTO ORIGINAL</div>
-                  <FileText size={16} className="text-[#5a6a80]" />
+                  <SvgFileText size={16} color="#5a6a80" />
                 </div>
                 <div className="mt-3.5 space-y-2.5">
                   <div className="flex items-center gap-2 pb-1 border-b border-[#dde3ec]/60 text-[12px] font-bold text-[#1b3a60]">
-                    <FlaskConical size={14} className="text-[#1f7fe0]" />
+                    <SvgFlask size={14} color="#1f7fe0" />
                     <span>Exame_Laboratorial_2026.pdf</span>
                   </div>
                   <div className="h-2.5 w-[90%] rounded-full bg-[#d5dce8]" />
@@ -421,19 +420,19 @@ export default function Home() {
               <div className="mt-6 sm:mt-10 flex-1 rounded-[20px] border border-[#bfd8f7] bg-white p-6 shadow-[0_30px_70px_-30px_rgba(27,58,96,0.25)]">
                 <div className="flex items-center justify-between">
                   <div className="text-[12px] font-bold uppercase tracking-wider text-[#1f7fe0]">DADOS EXTRAÍDOS</div>
-                  <Sparkles size={16} className="text-[#1f7fe0]" />
+                  <SvgSparkles size={16} color="#1f7fe0" />
                 </div>
                 <div className="mt-3.5 space-y-2">
                   <div className="flex items-center gap-2 rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#1d2a3d] font-medium">
-                    <FlaskConical size={14} className="text-[#1f7fe0] shrink-0" />
+                    <SvgFlask size={14} color="#1f7fe0" className="shrink-0" />
                     <span>Exame · Hemograma completo</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl border border-[#dde3ec] bg-[#f1f4f8] px-3 py-2 text-[13px] text-[#5a6a80]">
-                    <Calendar size={14} className="text-[#5a6a80] shrink-0" />
+                    <SvgCalendar size={14} color="#5a6a80" className="shrink-0" />
                     <span>Data · 12/09/2026</span>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl border-2 border-[#e3b95a] bg-[#fdf3d8] px-3 py-2 text-[13px] font-semibold text-[#6b4208]">
-                    <CheckCircle2 size={14} className="text-[#e3b95a] shrink-0" />
+                    <SvgCheck size={14} color="#e3b95a" className="shrink-0" />
                     <span>Valor · confira e valide</span>
                   </div>
                 </div>
@@ -457,7 +456,7 @@ export default function Home() {
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-[16px] font-medium text-[#1d2a3d]">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1f7fe0] text-white">
-                      <CheckCircle2 size={14} />
+                      <SvgCheck size={14} color="#fff" />
                     </span>
                     <span>{item}</span>
                   </li>
@@ -487,9 +486,7 @@ export default function Home() {
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-[16px] font-medium text-[#1d2a3d]">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1f7fe0] text-white">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12l4 4 10-10" />
-                      </svg>
+                      <SvgCheck size={14} color="#fff" />
                     </span>
                     <span>{item}</span>
                   </li>
@@ -529,7 +526,7 @@ export default function Home() {
             <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-3">
               <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                  <Lock size={24} className="text-[#7cc4e6]" />
+                  <SvgLock size={24} color="#7cc4e6" />
                 </div>
                 <h3 className="mt-5 text-[20px] font-bold">Consentimento</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
@@ -539,7 +536,7 @@ export default function Home() {
 
               <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                  <Trash2 size={24} className="text-[#7cc4e6]" />
+                  <SvgTrash size={24} color="#7cc4e6" />
                 </div>
                 <h3 className="mt-5 text-[20px] font-bold">Apague documentos</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">
@@ -549,7 +546,7 @@ export default function Home() {
 
               <div className="rounded-[22px] border border-white/20 bg-white/10 p-7 backdrop-blur-sm">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                  <Shield size={24} className="text-[#7cc4e6]" />
+                  <SvgShield size={24} color="#7cc4e6" />
                 </div>
                 <h3 className="mt-5 text-[20px] font-bold">Exclua a conta</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-[#c9d6e8]">

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { customFetch } from '@workspace/api-client-react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
-import { BrandWordmark } from '@/components/BrandWordmark';
+import { BrandLogo } from '@/components/BrandLogo';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 
 export default function ResetPassword() {
@@ -67,10 +67,12 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen bg-[#f7f9fc] font-sans text-[#1d2a3d] flex flex-col justify-center items-center p-6 bg-[radial-gradient(800px_500px_at_20%_0,#e6eef9,transparent_60%),radial-gradient(700px_500px_at_90%_90%,#e5eefb,transparent_60%),#fff]">
       {/* Brand */}
-      <Link href="/" className="flex items-center gap-2.5 font-extrabold text-[20px] text-[#1b3a60] tracking-[-0.03em] mb-8">
-        <img src="/logo.svg" alt="SaúdeMemora" className="h-10 w-10 object-contain" />
-        <BrandWordmark />
-      </Link>
+      <div className="mb-8">
+        <BrandLogo
+          iconClassName="h-10 w-10 transition-transform group-hover:scale-105"
+          wordmarkClassName="text-[22px] tracking-[-0.03em] text-[#1b3a60]"
+        />
+      </div>
 
       {/* Card */}
       <div className="w-full max-w-[460px] rounded-[28px] border border-[#dde3ec] bg-white p-9 shadow-[0_30px_70px_-40px_rgba(27,58,96,0.4)]">

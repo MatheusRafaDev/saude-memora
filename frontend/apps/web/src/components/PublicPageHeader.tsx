@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'wouter';
-import { BrandWordmark } from '@/components/BrandWordmark';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export function PublicPageHeader() {
   const [location] = useLocation();
@@ -12,10 +12,10 @@ export function PublicPageHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#dde3ec] bg-white">
       <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between px-6 sm:px-12">
-        <Link href="/" className="flex items-center gap-2.5" aria-label="SaúdeMemora — início">
-          <img src="/logo.svg" alt="SaúdeMemora" className="h-9 w-9 object-contain flex-none" />
-          <BrandWordmark className="text-[18px] tracking-[-0.03em] text-[#1d2a3d]" />
-        </Link>
+        <BrandLogo
+          iconClassName="h-9 w-9 transition-transform group-hover:scale-105"
+          wordmarkClassName="text-[19px] tracking-[-0.03em] text-[#1d2a3d]"
+        />
 
         <nav aria-label="Navegação principal" className="hidden items-center gap-9 md:flex">
           {navigation.map(({ href, label }) => {
