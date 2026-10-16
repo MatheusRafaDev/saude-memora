@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye,
   EyeOff,
@@ -69,7 +70,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   };
 
   const [mode, setMode] = useState<'login' | 'register'>(getInitialMode);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -105,14 +105,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
   const switchMode = (newMode: 'login' | 'register', successMessage = '') => {
     if (newMode === mode && !successMessage) return;
-    setIsAnimating(true);
-    setTimeout(() => {
-      setMode(newMode);
-      setError('');
-      setMessage(successMessage);
-      window.history.replaceState(null, '', newMode === 'register' ? '/cadastro' : '/entrar');
-      setIsAnimating(false);
-    }, 160);
+    setMode(newMode);
+    setError('');
+    setMessage(successMessage);
+    window.history.replaceState(null, '', newMode === 'register' ? '/cadastro' : '/entrar');
   };
 
   const handleModeChange = (newMode: 'login' | 'register') => switchMode(newMode);
@@ -245,7 +241,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         </section>
 
         {/* ── Right Form Panel (Clean, polished single canvas on mobile) ── */}
-        <section className={`flex flex-1 flex-col justify-between ${mode === 'login' ? 'p-5 sm:p-8 lg:p-12' : 'p-5 sm:p-12'}`}>
+        <section className="flex flex-1 flex-col justify-between p-5 sm:p-8 lg:p-10">
           {/* Mobile top bar */}
           <div className="flex items-center justify-between pb-4 pt-1 lg:hidden">
             <Link
@@ -268,114 +264,165 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             </Link>
           </div>
 
-          {/* Form Container (max-w 420px centered) */}
-          <div
-            className={`mx-auto my-auto w-full max-w-[420px] ${mode === 'login' ? 'py-4 sm:py-6 lg:py-8' : 'py-6 sm:py-8'} transition-[opacity,transform] duration-150 ease-out ${
-              isAnimating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
-            }`}
+          {/* Form Container (compact, max-w 380px centered) */}
+          <motion.div
+            layout
+            transition={{ layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] } }}
+            className="mx-auto my-auto w-full max-w-[370px] sm:max-w-[380px] py-4 sm:py-6"
           >
             {/* Centered Brand & Header */}
-            <div className="mb-6 flex flex-col items-center justify-center text-center w-full">
-              <div className="mb-3 flex w-full justify-center text-center">
+            <div className="mb-5 flex flex-col items-center justify-center text-center w-full">
+              <div className="mb-2.5 flex w-full justify-center text-center">
                 <BrandLogo
                   className="mx-auto"
-                  iconClassName="h-12 w-12 drop-shadow-sm transition-transform hover:scale-105"
-                  wordmarkClassName="text-[25px] sm:text-[26px] text-[#1d2a3d]"
+                  iconClassName="h-11 w-11 drop-shadow-sm transition-transform hover:scale-105"
+                  wordmarkClassName="text-[23px] sm:text-[24px] text-[#1d2a3d]"
                 />
               </div>
 
-              <h2 className="text-[24px] sm:text-[30px] font-extrabold tracking-[-0.035em] text-[#1d2a3d]">
-                {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
-              </h2>
-              <p className="mt-1 text-[14px] sm:text-[15px] text-[#5a6a80]">
-                {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
-              </p>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={mode}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="flex flex-col items-center"
+                >
+                  <h2 className="text-[22px] sm:text-[26px] font-extrabold tracking-[-0.03em] text-[#1d2a3d]">
+                    {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
+                  </h2>
+                  <p className="mt-1 text-[13px] sm:text-[14px] text-[#5a6a80]">
+                    {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Segmented Pill Tabs */}
-            <div className="mb-4 sm:mb-6 flex rounded-xl border border-[#dde3ec] bg-[#f1f4f8] p-1">
+            {/* Segmented Pill Tabs with Animated Indicator */}
+            <div className="relative mb-5 flex rounded-xl border border-[#dde3ec] bg-[#f1f4f8] p-1">
               <button
                 type="button"
                 onClick={() => handleModeChange('login')}
-                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-bold transition-all ${
-                  mode === 'login' ? 'bg-[#1b3a60] text-white shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
+                className={`relative z-10 flex-1 rounded-lg py-2 text-center text-[13.5px] font-bold transition-colors duration-150 ${
+                  mode === 'login' ? 'text-white' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
                 }`}
               >
                 Entrar
+                {mode === 'login' && (
+                  <motion.div
+                    layoutId="auth-tab-pill"
+                    className="absolute inset-0 -z-10 rounded-lg bg-[#1b3a60] shadow-sm"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  />
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => handleModeChange('register')}
-                className={`flex-1 rounded-lg py-2.5 text-center text-[14px] font-bold transition-all ${
-                  mode === 'register' ? 'bg-[#1b3a60] text-white shadow-sm' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
+                className={`relative z-10 flex-1 rounded-lg py-2 text-center text-[13.5px] font-bold transition-colors duration-150 ${
+                  mode === 'register' ? 'text-white' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
                 }`}
               >
                 Criar conta
+                {mode === 'register' && (
+                  <motion.div
+                    layoutId="auth-tab-pill"
+                    className="absolute inset-0 -z-10 rounded-lg bg-[#1b3a60] shadow-sm"
+                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  />
+                )}
               </button>
             </div>
 
             {/* Messages */}
-            {error && (
-              <div role="alert" className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
-                {error}
-              </div>
-            )}
-            {message && (
-              <div className="mb-5 rounded-xl border border-[#bfd8f7] bg-[#e5eefb] p-3.5 text-[14px] text-[#1f7fe0]">
-                {message}
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  role="alert"
+                  className="overflow-hidden rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3 text-[13.5px] text-[#a13a30]"
+                >
+                  {error}
+                </motion.div>
+              )}
+              {message && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  className="overflow-hidden rounded-xl border border-[#bfd8f7] bg-[#e5eefb] p-3 text-[13.5px] text-[#1f7fe0]"
+                >
+                  {message}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Form */}
-            <form onSubmit={submit} className={`${mode === 'login' ? 'space-y-3 sm:space-y-4' : 'space-y-4'}`}>
-              {mode === 'register' && (
-                <>
-                  <label className="block">
-                    <span className="block mb-1.5 text-[13px] font-semibold">Nome completo</span>
-                    <input
-                      type="text"
-                      required
-                      autoComplete="name"
-                      pattern=".*\S.*"
-                      placeholder="Seu nome completo"
-                      value={form.name}
-                      onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                      className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
-                    />
-                  </label>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="block mb-1.5 text-[13px] font-semibold">Data de nascimento</span>
-                      <input
-                        type="date"
-                        required
-                        autoComplete="bday"
-                        max={new Date().toISOString().slice(0, 10)}
-                        value={form.birthDate}
-                        onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
-                        className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="block mb-1.5 text-[13px] font-semibold">Sexo biológico</span>
-                      <select
-                        required
-                        value={form.sex}
-                        onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
-                        className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
-                      >
-                        <option value="">Selecione</option>
-                        <option value="Feminino">Feminino</option>
-                        <option value="Masculino">Masculino</option>
-                        <option value="Outro">Outro</option>
-                      </select>
-                    </label>
-                  </div>
-                </>
+            <form onSubmit={submit} className="space-y-3">
+              {/* Register-only fields with smooth expanding collapse */}
+              <AnimatePresence initial={false}>
+                {mode === 'register' && (
+                  <motion.div
+                    key="register-fields"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-3 pb-3">
+                      <label className="block">
+                        <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Nome completo</span>
+                        <input
+                          type="text"
+                          required
+                          autoComplete="name"
+                          pattern=".*\S.*"
+                          placeholder="Seu nome completo"
+                          value={form.name}
+                          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                          className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 placeholder:text-[#94a3b8]"
+                        />
+                      </label>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <label className="block">
+                          <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Nascimento</span>
+                          <input
+                            type="date"
+                            required
+                            autoComplete="bday"
+                            max={new Date().toISOString().slice(0, 10)}
+                            value={form.birthDate}
+                            onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
+                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Sexo biológico</span>
+                          <select
+                            required
+                            value={form.sex}
+                            onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
+                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 text-[#1d2a3d]"
+                          >
+                            <option value="">Selecione</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Outro">Outro</option>
+                          </select>
+                        </label>
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
+              </AnimatePresence>
 
+              {/* E-mail (Common field) */}
               <label className="block">
-                <span className="block mb-1.5 text-[13px] font-semibold">E-mail</span>
+                <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">E-mail</span>
                 <input
                   type="email"
                   required
@@ -384,12 +431,13 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                   onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
-                  className="h-11 sm:h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                  className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 placeholder:text-[#94a3b8]"
                 />
               </label>
 
+              {/* Senha (Common field) */}
               <label className="block">
-                <span className="block mb-1.5 text-[13px] font-semibold">Senha</span>
+                <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Senha</span>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -399,73 +447,103 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                     placeholder={mode === 'register' ? 'No mínimo 8 caracteres' : 'Sua senha'}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-11 sm:h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 pr-11 text-[15px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                    className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 pr-10 text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 placeholder:text-[#94a3b8]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5a6a80] hover:text-[#1d2a3d]"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#5a6a80] hover:text-[#1d2a3d] transition-colors"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </label>
 
-              {mode === 'login' ? (
-                <div className="text-right">
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotModal(true)}
-                    className="text-[14px] font-semibold text-[#1b3a60] hover:underline"
-                  >
-                    Esqueci minha senha
-                  </button>
-                </div>
-              ) : (
-                <label className="flex items-start gap-2.5 pt-1 text-[13px] text-[#5a6a80] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.termsAccepted}
-                    onChange={(e) => setForm((prev) => ({ ...prev, termsAccepted: e.target.checked }))}
-                    className="mt-0.5 h-4 w-4 rounded border-[#c6cfdb] text-[#1b3a60] focus:ring-[#1b3a60]"
-                  />
-                  <span>
-                    Li e concordo com os{' '}
-                    <Link href="/termos" className="font-semibold text-[#1b3a60] hover:underline">
-                      Termos de Uso
-                    </Link>{' '}
-                    e a{' '}
-                    <Link href="/privacidade" className="font-semibold text-[#1b3a60] hover:underline">
-                      Política de Privacidade
-                    </Link>
-                    .
-                  </span>
-                </label>
-              )}
+              {/* Sub-form actions (Forgot password or Terms) */}
+              <div className="pt-0.5">
+                <AnimatePresence mode="wait" initial={false}>
+                  {mode === 'login' ? (
+                    <motion.div
+                      key="forgot-password"
+                      initial={{ opacity: 0, y: 3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -3 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-right"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotModal(true)}
+                        className="text-[13px] font-semibold text-[#1b3a60] hover:underline"
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="terms"
+                      initial={{ opacity: 0, y: 3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -3 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <label className="flex items-start gap-2.5 text-[12.5px] leading-snug text-[#5a6a80] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.termsAccepted}
+                          onChange={(e) => setForm((prev) => ({ ...prev, termsAccepted: e.target.checked }))}
+                          className="mt-0.5 h-3.5 w-3.5 rounded border-[#c6cfdb] text-[#1b3a60] focus:ring-[#1b3a60]"
+                        />
+                        <span>
+                          Li e concordo com os{' '}
+                          <Link href="/termos" className="font-semibold text-[#1b3a60] hover:underline">
+                            Termos de Uso
+                          </Link>{' '}
+                          e a{' '}
+                          <Link href="/privacidade" className="font-semibold text-[#1b3a60] hover:underline">
+                            Política de Privacidade
+                          </Link>
+                          .
+                        </span>
+                      </label>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-3 sm:mt-4 flex h-11 sm:h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1b3a60] font-bold text-white transition-all hover:bg-[#244d7e] disabled:opacity-50"
+                className="mt-3 flex h-10 sm:h-[42px] w-full items-center justify-center gap-2 rounded-xl bg-[#1b3a60] text-[14px] font-bold text-white shadow-xs transition-all hover:bg-[#244d7e] disabled:opacity-50"
               >
                 {isPending ? (
-                  <LoaderCircle className="h-5 w-5 animate-spin" />
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <span>{mode === 'login' ? 'Entrar na minha conta' : 'Criar minha conta'}</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
-                  </>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={mode}
+                      initial={{ opacity: 0, y: 2 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -2 }}
+                      transition={{ duration: 0.15 }}
+                      className="inline-flex items-center gap-2"
+                    >
+                      <span>{mode === 'login' ? 'Entrar na minha conta' : 'Criar minha conta'}</span>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </motion.span>
+                  </AnimatePresence>
                 )}
               </button>
             </form>
 
-            <div className="mt-5 sm:mt-6 flex items-center justify-center gap-1.5 text-center text-[12px] text-[#7a8ba0]">
-              <Lock size={13} className="text-[#1f7fe0] shrink-0" />
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-center text-[11.5px] sm:text-[12px] text-[#7a8ba0]">
+              <Lock size={12} className="text-[#1f7fe0] shrink-0" />
               <span>Espaço seguro e pessoal: controle total dos seus dados</span>
             </div>
-          </div>
+          </motion.div>
 
           <div />
         </section>
@@ -518,14 +596,14 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                     setForgotEmail(e.target.value);
                     setForgotError('');
                   }}
-                  className="h-12 w-full rounded-xl border border-[#c6cfdb] bg-white px-4 text-[14px] outline-none focus:border-[#1b3a60]"
+                  className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none focus:border-[#1b3a60] placeholder:text-[#94a3b8]"
                 />
                 <button
                   type="submit"
                   disabled={isForgotLoading}
-                  className="flex h-12 w-full items-center justify-center rounded-xl bg-[#1b3a60] text-[15px] font-bold text-white transition-all hover:bg-[#244d7e]"
+                  className="flex h-10 sm:h-[42px] w-full items-center justify-center rounded-xl bg-[#1b3a60] text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
                 >
-                  {isForgotLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : 'Enviar link de recuperação'}
+                  {isForgotLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : 'Enviar link de recuperação'}
                 </button>
               </form>
             )}
