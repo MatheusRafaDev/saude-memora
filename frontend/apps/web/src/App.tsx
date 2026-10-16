@@ -264,24 +264,28 @@ function HomeRoute() {
 function ProtectedRoute({ children }: { children: ReactNode }) {
   // Authentication is cookie-backed, so the fetch layer relies on the browser's
   // credentials policy instead of reading a JS-accessible token from storage.
-  const { isLoading, isError } = useGetApiPacientesMe({
+  const { isLoading, isError, error } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
-      retry: false,
+      retry: (failureCount, err) => {
+        const status = getHttpStatus(err);
+        return status !== 401 && failureCount < 2;
+      },
+      staleTime: 5 * 60 * 1000,
       enabled: true,
-      meta: { skipUnauthorizedRedirect: true }
-    }
+      meta: { skipUnauthorizedRedirect: true },
+    },
   });
 
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (isError) {
+    if (isError && getHttpStatus(error) === 401) {
       setLocation('/entrar');
     }
-  }, [isError, setLocation]);
+  }, [isError, error, setLocation]);
 
-  if (isError) {
+  if (isError && getHttpStatus(error) === 401) {
     return null;
   }
 
