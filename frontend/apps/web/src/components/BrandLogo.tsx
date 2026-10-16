@@ -19,7 +19,7 @@ export function BrandLogoIcon({ className = 'h-9 w-9', inverse = false }: BrandL
 
   return (
     <img
-      src="/logo.png"
+      src="/logo.svg"
       alt="SaúdeMemora"
       className={`${className} flex-none object-contain`}
     />
