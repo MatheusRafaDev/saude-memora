@@ -39,12 +39,6 @@ export default function Recursos() {
               <p className="mt-5 mb-7 text-[17px] sm:text-[18px] leading-[1.65] text-[#5a6a80]">
                 Conheça as ferramentas do SaúdeMemora para reunir documentos, laudos e receitas em um espaço seguro com suporte de inteligência artificial.
               </p>
-              <Link
-                href="/entrar?mode=register"
-                className="inline-flex min-h-[48px] items-center rounded-xl bg-[#1b3a60] px-6 text-[15px] font-bold text-white transition-all hover:bg-[#244d7e]"
-              >
-                Experimentar agora
-              </Link>
             </div>
 
             <div className="w-full min-w-0 flex-1 sm:min-w-[320px]">
