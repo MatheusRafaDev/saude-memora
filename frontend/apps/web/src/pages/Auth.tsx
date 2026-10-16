@@ -174,12 +174,12 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             wordmarkClassName="text-[18px] text-white"
           />
 
-          {/* SVG Illustration from Design Board */}
+          {/* Editorial Illustration */}
           <div className="my-auto py-8">
             <img
-              src="/login-illustration.svg"
-              alt="Ilustração de segurança e saúde"
-              className="mx-auto block h-auto w-full max-w-[340px]"
+              src="/login-illustration.jpg"
+              alt="Ilustração de consulta e cuidado com a saúde"
+              className="mx-auto block h-auto w-full max-w-[340px] rounded-[24px] object-cover shadow-lg"
             />
 
             <h1 className="mt-6 max-w-[400px] text-[38px] font-extrabold leading-[1.05] tracking-[-0.04em]">

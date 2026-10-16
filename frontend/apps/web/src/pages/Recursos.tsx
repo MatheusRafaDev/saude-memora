@@ -48,11 +48,11 @@ export default function Recursos() {
             </div>
 
             <div className="w-full min-w-0 flex-1 sm:min-w-[320px]">
-              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-5 shadow-sm">
+              <div className="rounded-[28px] border border-[#dde3ec] bg-white p-3 sm:p-4 shadow-sm">
                 <img
-                  src="/recursos-illustration.svg"
-                  alt="Ilustração recursos"
-                  className="h-auto w-full block"
+                  src="/recursos-illustration.jpg"
+                  alt="Organização de prontuários e exames médicos"
+                  className="h-auto w-full rounded-[20px] object-cover block shadow-sm"
                 />
               </div>
             </div>

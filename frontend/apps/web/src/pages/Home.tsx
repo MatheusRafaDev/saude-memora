@@ -508,11 +508,11 @@ export default function Home() {
             </div>
 
             <div className="w-full min-w-0 flex-1 sm:min-w-[340px]">
-              <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-6 shadow-sm flex items-center justify-center">
+              <div className="rounded-[28px] border border-[#dde3ec] bg-white p-3 sm:p-4 shadow-sm flex items-center justify-center">
                 <img
-                  src="/home-illustration.svg"
-                  alt="Ilustração família e saúde"
-                  className="h-auto w-full max-w-[420px] block"
+                  src="/home-illustration.jpg"
+                  alt="Consulta médica com idoso e família"
+                  className="h-auto w-full max-w-[440px] rounded-[20px] object-cover block shadow-sm"
                 />
               </div>
             </div>

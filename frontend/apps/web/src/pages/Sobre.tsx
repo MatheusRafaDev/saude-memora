@@ -55,11 +55,11 @@ export default function Sobre() {
 
             <div className="w-full min-w-0 flex-1 sm:min-w-[320px]">
               <div className="rounded-[32px] border border-[#dde3ec] bg-white p-3 shadow-sm transition-all hover:shadow-md">
-                <div className="rounded-[28px] border border-[#dde3ec] bg-gradient-to-br from-[#e5eefb] to-[#dfe9f5] p-5">
+                <div className="rounded-[28px] border border-[#dde3ec] bg-white p-2">
                   <img
-                    src="/sobre-illustration.svg"
-                    alt="Ilustração missão"
-                    className="h-auto w-full block"
+                    src="/sobre-illustration.jpg"
+                    alt="Acolhimento e consulta médica com carinho"
+                    className="h-auto w-full rounded-[20px] object-cover block shadow-sm"
                   />
                 </div>
                 <div className="p-5">
