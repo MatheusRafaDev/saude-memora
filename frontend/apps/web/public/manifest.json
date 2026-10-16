@@ -2,7 +2,7 @@
   "name": "SaúdeMemora",
   "short_name": "SaúdeMemora",
   "description": "Seu histórico médico inteligente e unificado.",
-  "start_url": "/",
+  "start_url": "/visao-geral",
   "id": "/",
   "scope": "/",
   "display": "standalone",

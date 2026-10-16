@@ -46,7 +46,7 @@ export default defineConfig(async ({ mode, command }) => {
           description: 'Prontuário Médico Inteligente',
           id: '/',
           scope: '/',
-          start_url: '/',
+          start_url: '/visao-geral',
           theme_color: '#1f7fe0',
           background_color: '#ffffff',
           display: 'standalone',

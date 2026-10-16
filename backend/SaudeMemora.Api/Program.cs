@@ -164,13 +164,14 @@ if (jwtSecret.StartsWith("replace-with", StringComparison.OrdinalIgnoreCase))
 
 bool IsSecureRequest(HttpContext context)
 {
-    return context.Request.IsHttps;
+    return context.Request.IsHttps ||
+           string.Equals(context.Request.Headers["X-Forwarded-Proto"], "https", StringComparison.OrdinalIgnoreCase);
 }
 
 TimeSpan GetJwtLifetime(IConfiguration config)
 {
     var jwtExpiresInStr = Environment.GetEnvironmentVariable("JWT_EXPIRES_IN")?.Trim()?.ToLowerInvariant() ?? config["JwtSettings:ExpiresIn"]?.Trim()?.ToLowerInvariant();
-    var lifetime = TimeSpan.FromDays(7);
+    var lifetime = TimeSpan.FromDays(30);
 
     if (!string.IsNullOrEmpty(jwtExpiresInStr) && jwtExpiresInStr.EndsWith("h") && double.TryParse(jwtExpiresInStr.TrimEnd('h'), out var hours))
         lifetime = TimeSpan.FromHours(hours);
@@ -179,7 +180,7 @@ TimeSpan GetJwtLifetime(IConfiguration config)
     else if (double.TryParse(jwtExpiresInStr, out var rawDays))
         lifetime = TimeSpan.FromDays(rawDays);
 
-    return lifetime <= TimeSpan.Zero ? TimeSpan.FromDays(7) : TimeSpan.FromMinutes(Math.Min(lifetime.TotalMinutes, TimeSpan.FromDays(30).TotalMinutes));
+    return lifetime <= TimeSpan.Zero ? TimeSpan.FromDays(30) : TimeSpan.FromMinutes(Math.Min(lifetime.TotalMinutes, TimeSpan.FromDays(180).TotalMinutes));
 }
 
 void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
@@ -204,6 +205,7 @@ void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
         SameSite = sameSiteMode,
         Secure = cookieSecure,
         Expires = DateTimeOffset.UtcNow.Add(expiresIn),
+        MaxAge = expiresIn,
         IsEssential = true,
         Path = "/"
     });

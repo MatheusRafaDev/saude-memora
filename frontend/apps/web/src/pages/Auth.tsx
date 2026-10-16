@@ -234,7 +234,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <ArrowLeft size={14} />
               <span>Início</span>
             </Link>
-   
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f1f4f8] px-3 py-1 text-[11px] font-medium text-[#5a6a80]">
+              <ShieldCheck size={13} className="text-[#1f7fe0]" />
+              <span>Ambiente seguro</span>
+            </span>
           </div>
 
           {/* Desktop return link and logo */}

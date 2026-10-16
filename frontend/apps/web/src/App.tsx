@@ -214,6 +214,7 @@ function SessionKeepAlive() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleVisibilityChange);
+    window.addEventListener('pageshow', handleVisibilityChange);
 
     return () => {
       window.clearInterval(interval);
@@ -222,6 +223,7 @@ function SessionKeepAlive() {
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleVisibilityChange);
+      window.removeEventListener('pageshow', handleVisibilityChange);
     };
   }, [isProtectedRoute, setLocation]);
 
@@ -229,6 +231,33 @@ function SessionKeepAlive() {
 }
 
 function HomeRoute() {
+  const [, setLocation] = useLocation();
+  const { data: user, isLoading } = useGetApiPacientesMe({
+    query: {
+      queryKey: getGetApiPacientesMeQueryKey(),
+      retry: false,
+      meta: { skipUnauthorizedRedirect: true },
+    },
+  });
+
+  const isStandalone =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.includes('android-app://'));
+
+  useEffect(() => {
+    if (user) {
+      setLocation('/visao-geral');
+    } else if (isStandalone && !isLoading) {
+      setLocation('/entrar');
+    }
+  }, [user, isStandalone, isLoading, setLocation]);
+
+  if (user || (isStandalone && isLoading)) {
+    return <PageLoading />;
+  }
+
   return <Home />;
 }
 
