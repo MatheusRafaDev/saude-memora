@@ -130,11 +130,17 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     try {
       if (mode === 'login') {
         await loginMutation.mutateAsync({ data: { email: form.email.trim(), senha: form.password } });
-        await Promise.allSettled([
-          queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
+
+        // Limpa cache não-autenticado e busca os dados do paciente com a nova sessão antes de redirecionar
+        queryClient.removeQueries({ queryKey: getGetApiPacientesMeQueryKey() });
+        await queryClient.fetchQuery(getGetApiPacientesMeQueryOptions());
+
+        // Pré-carrega documentos e ficha em background sem bloquear
+        void Promise.allSettled([
           queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
           queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
         ]);
+
         const justRegistered = new URLSearchParams(window.location.search).get('registered') === '1';
         setLocation(justRegistered ? '/anamnese/inicio' : '/visao-geral');
       } else {
