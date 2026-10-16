@@ -179,6 +179,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
   const isPending = loginMutation.isPending || registerMutation.isPending;
 
+  if (currentUser) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-[#fafbfc] lg:bg-white font-sans text-[#1d2a3d] flex flex-col">
       <div className="flex flex-1 flex-col lg:flex-row min-h-0 lg:min-h-screen">
