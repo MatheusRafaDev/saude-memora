@@ -246,10 +246,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
           {/* Desktop return link and logo */}
           <div className="hidden lg:flex items-center justify-between gap-4">
-            <BrandLogo
-              iconClassName="h-8 w-8 transition-transform group-hover:scale-105"
-              wordmarkClassName="text-[17px] text-[#1d2a3d]"
-            />
             <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">
               ← Voltar ao início
             </Link>

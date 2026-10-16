@@ -313,17 +313,6 @@ function AppPage({ children }: { children: ReactNode }) { return <AppShell>{chil
 
 function Router() {
   const [location] = useLocation();
-  const isLoggedOutScreen =
-    location === '/' ||
-    location === '/entrar' ||
-    location === '/cadastro' ||
-    location === '/criar-conta' ||
-    location === '/reset-password' ||
-    location === '/termos' ||
-    location === '/privacidade' ||
-    location === '/sobre' ||
-    location === '/recursos' ||
-    location.startsWith('/emergencia/');
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -334,12 +323,7 @@ function Router() {
       <SeoMetadata />
       <SessionKeepAlive />
       <RoutedErrorBoundary>
-        <div
-          key={location}
-          className={`min-h-[100dvh] flex flex-col flex-1${
-            isLoggedOutScreen ? ' logged-out-screen' : ''
-          }`}
-        >
+        <div key={location} className="min-h-[100dvh] flex flex-col flex-1">
           <Switch>
             <Route path="/" component={HomeRoute} />
             <Route path="/entrar" component={Auth} />

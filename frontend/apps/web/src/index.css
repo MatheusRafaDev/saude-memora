@@ -241,11 +241,6 @@
   will-change: opacity, transform;
 }
 
-/* Public pages intentionally reserve the original icon areas without rendering SVG artwork. */
-.logged-out-screen svg,
-.logged-out-screen img[src$=".svg"] {
-  visibility: hidden;
-}
 
 .page-enter { animation: page-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .fade-in    { animation: fade-in 0.35s ease both; }
