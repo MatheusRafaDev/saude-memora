@@ -17,6 +17,23 @@ import {
   ExternalLink,
   ChevronRight,
   RotateCw,
+  FileSearch,
+  FileHeart,
+  Syringe,
+  Send,
+  FileBarChart,
+  Layers,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  Clock,
+  CalendarDays,
+  UserCheck,
+  Building2,
+  Eye,
+  Sparkles,
+  Stethoscope,
+  Tag,
 } from 'lucide-react';
 import {
   useGetApiDocuments,
@@ -39,14 +56,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  FileSearch,
-  FileHeart,
-  Syringe,
-  Send,
-  FileBarChart,
-  Layers,
-} from 'lucide-react';
 
 const DOCUMENT_TYPES = [
   { id: 'receita', label: 'Receitas', icon: Pill },
@@ -57,6 +66,12 @@ const DOCUMENT_TYPES = [
   { id: 'encaminhamento', label: 'Encaminhamentos', icon: Send },
   { id: 'relatorio', label: 'Relatórios', icon: FileBarChart },
   { id: 'outro', label: 'Outros', icon: FileText },
+];
+
+const PERIOD_OPTIONS = [
+  { id: 'all', label: 'Qualquer período', icon: Calendar },
+  { id: '30days', label: 'Últimos 30 dias', icon: Clock },
+  { id: 'thisyear', label: 'Este ano', icon: CalendarDays },
 ];
 
 const DOCUMENT_TYPE_LABELS = Object.fromEntries(
@@ -74,12 +89,36 @@ function getDocumentTypeIcon(type: string) {
   return FileText;
 }
 
+function getCategoryTheme(type: string) {
+  const normalized = type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (normalized.includes('receit')) {
+    return { bg: 'bg-blue-50 text-blue-700 border-blue-200/60', iconColor: 'text-blue-600' };
+  }
+  if (normalized.includes('exam')) {
+    return { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200/60', iconColor: 'text-indigo-600' };
+  }
+  if (normalized.includes('atest')) {
+    return { bg: 'bg-amber-50 text-amber-700 border-amber-200/60', iconColor: 'text-amber-600' };
+  }
+  if (normalized.includes('vacin')) {
+    return { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200/60', iconColor: 'text-emerald-600' };
+  }
+  if (normalized.includes('laud')) {
+    return { bg: 'bg-purple-50 text-purple-700 border-purple-200/60', iconColor: 'text-purple-600' };
+  }
+  if (normalized.includes('encaminh')) {
+    return { bg: 'bg-cyan-50 text-cyan-700 border-cyan-200/60', iconColor: 'text-cyan-600' };
+  }
+  return { bg: 'bg-[#F4F7FC] text-[#14211F] border-[#E3E8F0]', iconColor: 'text-[#1D4ED8]' };
+}
+
 function DocumentTypeBadge({ type }: { type: string }) {
   const Icon = getDocumentTypeIcon(type);
+  const theme = getCategoryTheme(type);
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F] whitespace-nowrap">
-      <Icon size={13} className="text-[#1D4ED8]" aria-hidden="true" />
-      {type}
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${theme.bg}`}>
+      <Icon size={12} className={theme.iconColor} aria-hidden="true" />
+      <span>{type}</span>
     </span>
   );
 }
@@ -100,15 +139,21 @@ function DocumentThumbnail({
   const TypeIcon = getDocumentTypeIcon(type);
 
   return (
-    <div className={`group relative flex shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[#E3E8F0] bg-[#F4F7FC] transition-colors hover:border-[#CFE0FF] ${compact ? 'h-16 w-16 sm:h-[72px] sm:w-[72px]' : 'h-[150px] w-full'}`}>
+    <div className={`group relative flex shrink-0 items-center justify-center overflow-hidden rounded-[16px] border border-[#E3E8F0] bg-[#F4F7FC] transition-colors hover:border-[#CFE0FF] ${compact ? 'h-16 w-16 sm:h-[72px] sm:w-[72px]' : 'h-[160px] w-full'}`}>
       {src && !hasLoadError ? (
-        <img src={src} alt={`Prévia de ${title}`} loading="lazy" onError={() => setHasLoadError(true)} className="h-full w-full object-cover" />
+        <img
+          src={src}
+          alt={`Prévia de ${title}`}
+          loading="lazy"
+          onError={() => setHasLoadError(true)}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
       ) : (
         <div className={`flex flex-col items-center justify-center gap-1.5 text-[#14211F] ${compact ? '' : 'px-4'}`}>
           <span className={`flex items-center justify-center rounded-xl bg-white shadow-xs ${compact ? 'h-8 w-8' : 'h-14 w-14 rounded-2xl'}`}>
             <TypeIcon size={compact ? 17 : 25} strokeWidth={1.8} className="text-[#1D4ED8]" />
           </span>
-          <span className={`font-medium text-[#5B6878] ${compact ? 'text-[9px]' : 'text-[11px]'}`}>Sem imagem</span>
+          <span className={`font-medium text-[#5B6878] ${compact ? 'text-[9px]' : 'text-[11px]'}`}>Documento digital</span>
         </div>
       )}
     </div>
@@ -121,8 +166,16 @@ export default function Documents() {
   const deleteMutation = useDeleteApiDocumentsId();
 
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tipo = params.get('tipo')?.toLowerCase();
+      if (tipo && (DOCUMENT_TYPE_LABELS[tipo] || tipo === 'all')) {
+        return tipo;
+      }
+    }
+    return 'all';
+  });
   const [selectedPeriod, setSelectedPeriod] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [retryingId, setRetryingId] = useState<string | null>(null);
@@ -157,6 +210,30 @@ export default function Documents() {
         (url: unknown): url is string => typeof url === 'string' && url.trim().length > 0,
       ) || (typeof doc.fileUrl === 'string' ? doc.fileUrl : undefined);
 
+      const parsedMedicamentos = Array.isArray(doc.medicamentos)
+        ? doc.medicamentos.map((m: any) => {
+            if (typeof m === 'string') {
+              return { nome: m.trim(), dosagem: '', horario: '', instrucoes: '' };
+            }
+            return {
+              nome: typeof m?.nome === 'string' ? m.nome.trim() : '',
+              dosagem: typeof m?.dosagem === 'string' ? m.dosagem.trim() : '',
+              horario: typeof m?.horario === 'string' ? m.horario.trim() : (typeof m?.posologia === 'string' ? m.posologia.trim() : ''),
+              instrucoes: typeof m?.instrucoes === 'string' ? m.instrucoes.trim() : '',
+            };
+          }).filter((m: any) => m.nome.length > 0)
+        : [];
+
+      const cnes = typeof doc.cnes === 'string' ? doc.cnes.trim() : '';
+      const cid = typeof doc.cid === 'string' ? doc.cid.trim() : '';
+      const crm = typeof doc.crm === 'string' ? doc.crm.trim() : '';
+      const medico = typeof doc.medico === 'string' ? doc.medico.trim() : '';
+      const clinica = typeof doc.clinica === 'string' ? doc.clinica.trim() : '';
+      const resumo = typeof doc.resumo === 'string' ? doc.resumo.trim() : '';
+      const diagnostico = typeof doc.diagnostico === 'string' ? doc.diagnostico.trim() : '';
+      const nomeExame = typeof doc.nomeExame === 'string' ? doc.nomeExame.trim() : '';
+      const tipoExame = typeof doc.tipoExame === 'string' ? doc.tipoExame.trim() : '';
+
       return {
         id: doc.id,
         titulo: doc.titulo || `${normalizedType} ${dateStr}`,
@@ -166,13 +243,16 @@ export default function Documents() {
         status: doc.status || 'pronto',
         revisaoPendente: Boolean(doc.revisaoPendente),
         dataDocumento: typeof doc.data === 'string' ? doc.data : '',
-        medico: typeof doc.medico === 'string' ? doc.medico : '',
-        clinica: typeof doc.clinica === 'string' ? doc.clinica : '',
-        resumo: typeof doc.resumo === 'string' ? doc.resumo : '',
-        diagnostico: typeof doc.diagnostico === 'string' ? doc.diagnostico : '',
-        nomeExame: typeof doc.nomeExame === 'string' ? doc.nomeExame : '',
-        tipoExame: typeof doc.tipoExame === 'string' ? doc.tipoExame : '',
-        medicamentos: Array.isArray(doc.medicamentos) ? doc.medicamentos : [],
+        medico,
+        crm,
+        clinica,
+        cnes,
+        cid,
+        resumo,
+        diagnostico,
+        nomeExame,
+        tipoExame,
+        medicamentos: parsedMedicamentos,
         exames: Array.isArray(doc.resultadosExame) ? doc.resultadosExame : [],
         quantidadeAlertas: Array.isArray(doc.alertas) ? doc.alertas.filter((alerta: any) => alerta.dispensado !== true).length : 0,
         dateStr,
@@ -181,15 +261,16 @@ export default function Documents() {
         searchText: [
           doc.titulo,
           doc.tipo,
-          doc.nomeExame,
-          doc.tipoExame,
-          doc.resumo,
-          doc.diagnostico,
-          doc.medico,
-          doc.clinica,
-          doc.cid,
-          doc.cnes,
-          ...(Array.isArray(doc.medicamentos) ? doc.medicamentos.flatMap((medicamento: any) => [medicamento.nome, medicamento.dosagem]) : []),
+          nomeExame,
+          tipoExame,
+          resumo,
+          diagnostico,
+          medico,
+          crm,
+          clinica,
+          cnes,
+          cid,
+          ...parsedMedicamentos.flatMap((m: any) => [m.nome, m.dosagem, m.horario, m.instrucoes]),
           ...(Array.isArray(doc.resultadosExame) ? doc.resultadosExame.map((exame: any) => exame.nome) : []),
         ].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR'),
       };
@@ -212,14 +293,6 @@ export default function Documents() {
         if (item.tipoKey !== selectedCategory) return false;
       }
 
-      // Status
-      if (selectedStatus !== 'all') {
-        if (selectedStatus === 'revisar' && !item.revisaoPendente && item.status !== 'revisar') return false;
-        if (selectedStatus === 'pronto' && item.status !== 'pronto') return false;
-        if (selectedStatus === 'processing' && item.status !== 'processing' && item.status !== 'pending') return false;
-        if (selectedStatus === 'failed' && item.status !== 'failed') return false;
-      }
-
       if (selectedPeriod !== 'all' && item.createdAt) {
         const createdAt = new Date(item.createdAt);
         const now = new Date();
@@ -236,7 +309,7 @@ export default function Documents() {
 
       return true;
     });
-  }, [allItems, search, selectedCategory, selectedStatus, selectedPeriod]);
+  }, [allItems, search, selectedCategory, selectedPeriod]);
 
   // Counts by category
   const counts = useMemo(() => {
@@ -247,6 +320,38 @@ export default function Documents() {
     });
     return c;
   }, [allItems]);
+
+  // Status highlights
+  const pendingReviewCount = useMemo(() => {
+    return allItems.filter((i) => i.revisaoPendente || i.status === 'revisar').length;
+  }, [allItems]);
+
+  const activeCategoryInfo = useMemo(() => {
+    if (selectedCategory === 'all') {
+      return {
+        label: 'Todos os tipos',
+        count: counts.all ?? 0,
+        icon: Layers,
+      };
+    }
+    const found = DOCUMENT_TYPES.find((t) => t.id === selectedCategory);
+    if (found) {
+      return {
+        label: found.label,
+        count: counts[found.id] ?? 0,
+        icon: found.icon,
+      };
+    }
+    return {
+      label: 'Outros',
+      count: counts.outro ?? 0,
+      icon: FileText,
+    };
+  }, [selectedCategory, counts]);
+
+  const activePeriodInfo = useMemo(() => {
+    return PERIOD_OPTIONS.find((p) => p.id === selectedPeriod) || PERIOD_OPTIONS[0];
+  }, [selectedPeriod]);
 
   // Group by month
   const groupedByMonth = useMemo(() => {
@@ -292,87 +397,215 @@ export default function Documents() {
   const renderBadge = (doc: { status: string; revisaoPendente: boolean }) => {
     if (doc.status === 'processing' || doc.status === 'pending') {
       return (
-        <span className="inline-block px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] text-[#14211F] text-xs font-medium whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] text-[#14211F] text-xs font-semibold whitespace-nowrap">
+          <LoaderCircle size={11} className="animate-spin text-[#1D4ED8]" />
           Processando
         </span>
       );
     }
     if (doc.status === 'failed') {
-      return <span className="inline-block whitespace-nowrap rounded-full bg-[#FDE1DA] border border-[#E8664A]/30 px-2.5 py-1 text-xs font-semibold text-[#9B2C16]">Falhou</span>;
+      return (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-rose-50 border border-rose-200 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+          <AlertCircle size={11} />
+          Falhou
+        </span>
+      );
     }
     if (doc.revisaoPendente || doc.status === 'revisar') {
       return (
-        <span className="inline-block px-2.5 py-1 rounded-full bg-[#FDE1DA] border border-[#E8664A]/30 text-[#9B2C16] text-xs font-semibold whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold whitespace-nowrap">
+          <AlertTriangle size={11} className="text-amber-600" />
           Conferir dados
         </span>
       );
     }
     return (
-      <span className="inline-block px-2.5 py-1 rounded-full bg-[#CFE0FF] text-[#1D4ED8] text-xs font-semibold whitespace-nowrap">
-        Revisado
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#CFE0FF]/60 border border-[#CFE0FF] text-[#1D4ED8] text-xs font-semibold whitespace-nowrap">
+        <CheckCircle2 size={11} />
+        Pronto
       </span>
     );
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
-      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
-        {/* Header Title & CTA */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-7">
+    <div className="min-h-screen bg-[#F8FAFD] text-[#14211F] font-sans pb-16">
+      <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
+        {/* Header Title & CTA Actions */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-5 mb-5 sm:mb-6">
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1">
               <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
-              Seu acervo
+              Seu acervo médico
             </div>
             <h1 className="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-[#14211F]">
               Documentos
             </h1>
             <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
-              Receitas, exames e laudos reunidos e pesquisáveis.
+              Receitas, exames laboratoriais e laudos organizados e pesquisáveis.
             </p>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => triggerUploadModal({ mode: 'batch' })}
+              className="min-h-[44px] flex-1 sm:flex-none px-4 rounded-xl border border-[#CFE0FF] bg-white text-[#1D4ED8] hover:bg-[#CFE0FF]/40 font-semibold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98"
+            >
+              <Layers size={16} />
+              <span>Enviar em lote</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => triggerUploadModal({ mode: 'single' })}
+              className="btn-primary min-h-[44px] flex-1 sm:flex-none shadow-xs inline-flex items-center justify-center gap-2"
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              <span>Adicionar documento</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Card Destaque Acervo Médico Seguro (Card Azul Escuro Clínico Padrão) */}
+        <div className="mb-6 rounded-[22px] sm:rounded-[24px] bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] border border-[#25416B]/60 border-t-4 border-t-[#1D4ED8] p-5 sm:p-6 text-white shadow-md relative overflow-hidden">
+          {/* Glow lights */}
+          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#1D4ED8]/25 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-[#3B82F6]/10 blur-xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] sm:text-[11px] font-bold text-[#93C5FD] shadow-xs backdrop-blur-xs">
+                  <ShieldCheck size={13} className="text-[#60A5FA]" />
+                  ACERVO AUDITÁVEL & SEGURO
+                </span>
+                <span className="text-[11px] font-medium text-slate-300 hidden sm:inline">
+                  • Criptografia AES-256 e LGPD Art. 11
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-2 mb-1">
+                Central de Prontuário e Laudos
+              </h2>
+              <p className="text-xs sm:text-sm text-blue-100/80 max-w-xl leading-relaxed m-0">
+                Todos os seus exames, prescrições e laudos são arquivados com índice de busca rápido, extração assistida por IA e conferência auditável.
+              </p>
+            </div>
+
+            {/* Quick Micro-Metrics */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 shrink-0">
+              <div className="flex-1 sm:flex-none rounded-xl bg-white/10 backdrop-blur-xs border border-white/15 px-3.5 py-2.5 min-w-[100px]">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#93C5FD]">DOCUMENTOS</div>
+                <div className="text-xl font-black text-white mt-0.5">{allItems.length}</div>
+                <div className="text-[10px] text-blue-100/70 truncate">{counts.exame || 0} exames · {counts.receita || 0} receitas</div>
+              </div>
+
+              <div className="flex-1 sm:flex-none rounded-xl bg-white/10 backdrop-blur-xs border border-white/15 px-3.5 py-2.5 min-w-[100px]">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#93C5FD]">STATUS</div>
+                <div className="text-xl font-black text-white mt-0.5 flex items-center gap-1.5">
+                  {pendingReviewCount > 0 ? (
+                    <>
+                      <span className="text-amber-400">{pendingReviewCount}</span>
+                      <span className="text-[10px] font-bold text-amber-300">a revisar</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={18} className="text-emerald-400" />
+                      <span className="text-[10px] font-bold text-emerald-300">100% OK</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-[10px] text-blue-100/70 truncate">
+                  {pendingReviewCount > 0 ? 'Conferência pendente' : 'Acervo atualizado'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pending Review Alert Banner if needed */}
+        {pendingReviewCount > 0 && (
+          <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900 shadow-2xs animate-in fade-in">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                <AlertTriangle size={15} />
+              </div>
+              <div>
+                <strong className="font-semibold block sm:inline">
+                  {pendingReviewCount} {pendingReviewCount === 1 ? 'documento precisa' : 'documentos precisam'} de conferência:
+                </strong>{' '}
+                <span className="text-amber-800">
+                  Alguns dados extraídos requerem sua validação para máxima precisão clínica.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Category Filter Pills Bar */}
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar sm:flex-wrap">
           <button
             type="button"
-            onClick={() => triggerUploadModal()}
-            className="btn-primary min-h-[44px] w-full sm:w-auto shadow-xs"
+            onClick={() => setSelectedCategory('all')}
+            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
+              selectedCategory === 'all'
+                ? 'bg-[#1D4ED8] text-white shadow-xs'
+                : 'bg-[#F4F7FC] text-[#5B6878] hover:bg-[#E3E8F0] hover:text-[#14211F] border border-[#E3E8F0]'
+            }`}
           >
-            <Plus size={16} strokeWidth={2.5} />
-            <span>Adicionar documento</span>
+            <Layers size={14} />
+            <span>Todos os tipos</span>
+            <span className={`rounded-full px-2 py-0.2 text-[11px] font-bold ${selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-white text-[#5B6878] border border-[#E3E8F0]'}`}>
+              {counts.all}
+            </span>
           </button>
+
+          {DOCUMENT_TYPES.map(({ id, label, icon: Icon }) => {
+            const isSelected = selectedCategory === id;
+            const count = counts[id] || 0;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSelectedCategory(id)}
+                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#1D4ED8] text-white shadow-xs'
+                    : 'bg-[#F4F7FC] text-[#5B6878] hover:bg-[#E3E8F0] hover:text-[#14211F] border border-[#E3E8F0]'
+                }`}
+              >
+                <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
+                <span>{label}</span>
+                <span className={`rounded-full px-2 py-0.2 text-[11px] font-bold ${isSelected ? 'bg-white/20 text-white' : 'bg-white text-[#5B6878] border border-[#E3E8F0]'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* AI Disclaimer Banner */}
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#CFE0FF] bg-gradient-to-r from-[#CFE0FF]/35 to-[#F4F7FC] px-4.5 py-3 text-[13px] text-[#14211F] shadow-xs">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1D4ED8]/10 text-[#1D4ED8]">
-            <ShieldCheck size={15} />
-          </div>
-          <span className="text-[#5B6878] leading-relaxed">
-            <b className="font-semibold text-[#14211F]">Aviso de IA:</b> Os dados extraídos por inteligência artificial podem conter imprecisões. Confira sempre com o documento original.
-          </span>
-        </div>
-
-        <section aria-label="Filtros de documentos" className="mb-7 rounded-2xl border border-[#E3E8F0] bg-white p-3 shadow-xs sm:p-4">
+        {/* Filter Bar with Search, View Mode, and Dropdowns */}
+        <section aria-label="Filtros de documentos" className="mb-7 rounded-2xl border border-[#E3E8F0] bg-white p-3.5 shadow-xs sm:p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <label className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] px-3.5 text-sm text-[#5B6878] transition-colors focus-within:border-[#1D4ED8] focus-within:ring-1 focus-within:ring-[#1D4ED8]">
-              <Search size={18} className="shrink-0" />
+              <Search size={18} className="shrink-0 text-[#5B6878]" />
               <input
                 type="search"
                 aria-label="Buscar documentos"
-                placeholder="Buscar por título, tipo ou conteúdo"
+                placeholder="Buscar por médico, medicamento, exame, clínica ou diagnóstico..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="w-full min-w-0 bg-transparent text-sm text-[#14211F] outline-none placeholder:text-[#5B6878]"
+                className="w-full min-w-0 bg-transparent text-base sm:text-sm text-[#14211F] outline-none placeholder:text-[#5B6878]"
               />
             </label>
 
+            {/* Grid / List Switcher */}
             <div className="flex h-11 shrink-0 items-center justify-between rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1 sm:justify-start">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 aria-label="Visualizar em grade"
                 aria-pressed={viewMode === 'grid'}
-                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors sm:flex-none ${viewMode === 'grid' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
+                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors sm:flex-none cursor-pointer ${viewMode === 'grid' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
               >
                 <LayoutGrid size={16} /> <span>Grade</span>
               </button>
@@ -381,78 +614,226 @@ export default function Documents() {
                 onClick={() => setViewMode('list')}
                 aria-label="Visualizar em lista"
                 aria-pressed={viewMode === 'list'}
-                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors sm:flex-none ${viewMode === 'list' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
+                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors sm:flex-none cursor-pointer ${viewMode === 'list' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
               >
                 <List size={16} /> <span>Lista</span>
               </button>
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <label className="block min-w-0">
-              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Tipo</span>
-              <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)} className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8]">
-                <option value="all">Todos os tipos ({counts.all})</option>
-                {DOCUMENT_TYPES.map(({ id, label }) => <option key={id} value={id}>{label} ({counts[id]})</option>)}
-              </select>
-            </label>
-            <label className="block min-w-0">
-              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Status</span>
-              <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8]">
-                <option value="all">Todos os status</option>
-                <option value="pronto">Pronto</option>
-                <option value="revisar">Revisar</option>
-                <option value="processing">Processando</option>
-                <option value="failed">Falhou</option>
-              </select>
-            </label>
-            <label className="block min-w-0">
-              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Período</span>
-              <select value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)} className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8]">
-                <option value="all">Qualquer período</option>
-                <option value="30days">Últimos 30 dias</option>
-                <option value="thisyear">Este ano</option>
-              </select>
-            </label>
+          {/* Deep Dropdown Selectors */}
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
+              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Tipo de documento</span>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger
+                  aria-label="Filtrar por tipo de documento"
+                  className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] shadow-none hover:border-[#1D4ED8]/50 focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8] transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 truncate text-left">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#CFE0FF]/40 text-[#1D4ED8]">
+                      <activeCategoryInfo.icon size={14} />
+                    </div>
+                    <span className="font-medium text-[#14211F] truncate">{activeCategoryInfo.label}</span>
+                    <span className="text-xs text-[#5B6878] shrink-0 font-normal">({activeCategoryInfo.count})</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="max-h-80 rounded-2xl border border-[#E3E8F0] bg-white p-1.5 shadow-xl">
+                  <SelectItem
+                    value="all"
+                    className="cursor-pointer rounded-xl py-2 px-2.5 text-sm transition-colors focus:bg-[#F4F7FC] focus:text-[#14211F]"
+                  >
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#CFE0FF]/40 text-[#1D4ED8]">
+                          <Layers size={15} />
+                        </div>
+                        <span className="font-medium text-[#14211F] truncate">Todos os tipos</span>
+                      </div>
+                      <span className="text-xs text-[#5B6878] font-medium shrink-0 ml-auto mr-1">
+                        ({counts.all})
+                      </span>
+                    </div>
+                  </SelectItem>
+                  {DOCUMENT_TYPES.map(({ id, label, icon: Icon }) => (
+                    <SelectItem
+                      key={id}
+                      value={id}
+                      className="cursor-pointer rounded-xl py-2 px-2.5 text-sm transition-colors focus:bg-[#F4F7FC] focus:text-[#14211F]"
+                    >
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#CFE0FF]/40 text-[#1D4ED8]">
+                            <Icon size={15} />
+                          </div>
+                          <span className="font-medium text-[#14211F] truncate">{label}</span>
+                        </div>
+                        <span className="text-xs text-[#5B6878] font-medium shrink-0 ml-auto mr-1">
+                          ({counts[id] || 0})
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="min-w-0">
+              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Período de envio</span>
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger
+                  aria-label="Filtrar por período"
+                  className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] shadow-none hover:border-[#1D4ED8]/50 focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8] transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 truncate text-left">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#CFE0FF]/40 text-[#1D4ED8]">
+                      <activePeriodInfo.icon size={14} />
+                    </div>
+                    <span className="font-medium text-[#14211F] truncate">{activePeriodInfo.label}</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border border-[#E3E8F0] bg-white p-1.5 shadow-xl">
+                  {PERIOD_OPTIONS.map(({ id, label, icon: Icon }) => (
+                    <SelectItem
+                      key={id}
+                      value={id}
+                      className="cursor-pointer rounded-xl py-2 px-2.5 text-sm transition-colors focus:bg-[#F4F7FC] focus:text-[#14211F]"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#CFE0FF]/40 text-[#1D4ED8]">
+                          <Icon size={15} />
+                        </div>
+                        <span className="font-medium text-[#14211F]">{label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
+          {/* Filter Footer Info */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#E3E8F0] pt-3 text-xs text-[#5B6878]">
-            <span>{filteredItems.length} {filteredItems.length === 1 ? 'documento encontrado' : 'documentos encontrados'}</span>
-            {(search || selectedCategory !== 'all' || selectedStatus !== 'all' || selectedPeriod !== 'all') && (
-              <button type="button" onClick={() => { setSearch(''); setSelectedCategory('all'); setSelectedStatus('all'); setSelectedPeriod('all'); }} className="min-h-9 rounded-lg px-3 font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/30 transition-colors">
-                Limpar filtros
+            <span className="font-medium">
+              {filteredItems.length} {filteredItems.length === 1 ? 'documento encontrado' : 'documentos encontrados'}
+              {filteredItems.length !== allItems.length && ` (de ${allItems.length} no total)`}
+            </span>
+            {(search || selectedCategory !== 'all' || selectedPeriod !== 'all') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSelectedCategory('all');
+                  setSelectedPeriod('all');
+                }}
+                className="min-h-8 rounded-lg px-3 font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/30 transition-colors cursor-pointer"
+              >
+                Limpar todos os filtros
               </button>
             )}
           </div>
         </section>
 
-        {/* Grouped Month Sections */}
+        {/* Documents Content */}
         {isLoading ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-[#E3E8F0] text-[#5B6878]">
-            <LoaderCircle size={24} className="mx-auto animate-spin mb-3 text-[#1D4ED8]" />
-            Carregando documentos…
+          <div className="bg-white rounded-2xl p-16 text-center border border-[#E3E8F0] text-[#5B6878]">
+            <LoaderCircle size={28} className="mx-auto animate-spin mb-3 text-[#1D4ED8]" />
+            <p className="text-sm font-semibold text-[#14211F]">Carregando seus documentos...</p>
+            <p className="text-xs text-[#5B6878] mt-1">Recuperando histórico com criptografia segura.</p>
           </div>
         ) : isError ? (
-          <div role="alert" className="bg-white rounded-2xl p-12 text-center border border-[#E8664A]/30 text-[#9B2C16] bg-[#FDE1DA]">
-            Não foi possível carregar seus documentos. Tente novamente mais tarde.
+          <div role="alert" className="bg-white rounded-2xl p-12 text-center border border-[#E8664A]/30 text-[#9B2C16] bg-[#FDE1DA]/60">
+            <AlertCircle size={36} className="mx-auto mb-2 text-[#E8664A]" />
+            <p className="text-base font-bold">Não foi possível carregar seus documentos.</p>
+            <p className="text-xs text-[#5B6878] mt-1 mb-4">Verifique sua conexão ou tente novamente.</p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="px-4 py-2 rounded-xl bg-[#1D4ED8] text-white text-xs font-semibold hover:bg-[#1E40AF]"
+            >
+              Tentar novamente
+            </button>
           </div>
         ) : Object.keys(groupedByMonth).length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-[#E3E8F0] shadow-xs">
-            <FileText size={40} className="mx-auto text-[#5B6878] opacity-40 mb-3" />
-            <h3 className="text-lg font-bold text-[#14211F]">
-              {activeDocs.length === 0 ? 'Você ainda não tem documentos' : 'Nenhum documento encontrado'}
-            </h3>
-            <p className="text-sm text-[#5B6878] mt-1">
-              {activeDocs.length === 0
-                ? 'Adicione um documento para começar seu acervo.'
-                : 'Tente ajustar a busca ou os filtros acima.'}
-            </p>
-          </div>
+          /* Empty State */
+          activeDocs.length === 0 ? (
+            /* First time onboarding empty state */
+            <div className="bg-white rounded-3xl p-8 sm:p-14 text-center border border-[#E3E8F0] shadow-sm max-w-2xl mx-auto my-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] text-white mx-auto mb-4 flex items-center justify-center shadow-md">
+                <UploadCloud size={32} />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[#14211F]">
+                Seu acervo médico começa aqui
+              </h3>
+              <p className="text-xs sm:text-sm text-[#5B6878] mt-2 mb-6 max-w-md mx-auto leading-relaxed">
+                Envie receitas médicas, exames de sangue ou imagem, laudos e atestados. Nossa IA extrai biomarcadores e dosagens com total privacidade.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+                <button
+                  type="button"
+                  onClick={() => triggerUploadModal({ mode: 'single' })}
+                  className="btn-primary min-h-[44px] px-5 text-sm inline-flex items-center gap-2"
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Adicionar primeiro documento</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => triggerUploadModal({ mode: 'batch' })}
+                  className="min-h-[44px] px-4 rounded-xl border border-[#CFE0FF] bg-[#F4F7FC] text-[#1D4ED8] hover:bg-[#CFE0FF]/40 font-semibold text-sm inline-flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+                >
+                  <Layers size={16} />
+                  <span>Enviar vários em lote</span>
+                </button>
+              </div>
+
+              {/* Supported examples pill hints */}
+              <div className="pt-6 border-t border-[#E3E8F0] flex flex-wrap items-center justify-center gap-2 text-xs text-[#5B6878]">
+                <span className="font-semibold text-[#14211F]">Tipos suportados:</span>
+                <span className="px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] inline-flex items-center gap-1"><Pill size={11} className="text-blue-600" /> Receitas</span>
+                <span className="px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] inline-flex items-center gap-1"><Activity size={11} className="text-indigo-600" /> Exames de sangue</span>
+                <span className="px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] inline-flex items-center gap-1"><FileSearch size={11} className="text-purple-600" /> Laudos</span>
+                <span className="px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] inline-flex items-center gap-1"><FileHeart size={11} className="text-amber-600" /> Atestados</span>
+                <span className="px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] inline-flex items-center gap-1"><Syringe size={11} className="text-emerald-600" /> Vacinas</span>
+              </div>
+            </div>
+          ) : (
+            /* No search results found */
+            <div className="bg-white rounded-2xl p-12 text-center border border-[#E3E8F0] shadow-xs my-6">
+              <Search size={36} className="mx-auto text-[#5B6878] opacity-40 mb-3" />
+              <h3 className="text-lg font-bold text-[#14211F]">
+                Nenhum documento encontrado
+              </h3>
+              <p className="text-xs sm:text-sm text-[#5B6878] mt-1 mb-4">
+                Não encontramos resultados para os filtros ou busca aplicados.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch('');
+                  setSelectedCategory('all');
+                  setSelectedPeriod('all');
+                }}
+                className="px-4 py-2 rounded-xl bg-[#1D4ED8] text-white text-xs font-semibold hover:bg-[#1E40AF] transition-colors"
+              >
+                Limpar filtros de busca
+              </button>
+            </div>
+          )
         ) : (
+          /* Grouped by Month Sections */
           Object.entries(groupedByMonth).map(([month, docs]) => (
             <div key={month} className="mb-8">
-              <div className="text-sm font-bold text-[#5a6a80] tracking-[0.06em] uppercase mb-3.5">
-                {month}
+              {/* Month Header Banner */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-xs sm:text-sm font-bold text-[#5B6878] tracking-[0.06em] uppercase flex items-center gap-2">
+                  <Calendar size={14} className="text-[#1D4ED8]" />
+                  <span>{month}</span>
+                </div>
+                <span className="text-xs text-[#5B6878] font-semibold bg-[#F4F7FC] border border-[#E3E8F0] px-2.5 py-0.5 rounded-full">
+                  {docs.length} {docs.length === 1 ? 'documento' : 'documentos'}
+                </span>
               </div>
 
               {viewMode === 'grid' ? (
@@ -461,71 +842,217 @@ export default function Documents() {
                   {docs.map((doc) => (
                     <div
                       key={doc.id}
-                      className="bg-white border border-[#dde3ec] rounded-[20px] p-3.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] hover:shadow-md transition-shadow group flex flex-col justify-between"
+                      className="bg-white border border-[#E3E8F0] hover:border-[#CFE0FF] rounded-[22px] p-4 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between"
                     >
-                      <Link href={`/documentos/${doc.id}`} className="block">
-                        <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} type={doc.tipo} />
-
-                        {/* Title & Date */}
-                        <div className="mt-3.5 text-[15px] font-bold text-[#1d2a3d] truncate">
-                          {doc.titulo}
-                        </div>
-                        <div className="text-[13px] text-[#5a6a80] mt-0.5">Adicionado {doc.dateStr}</div>
-                      </Link>
-
-                      <div className="my-3 space-y-2 text-xs text-[#52627a]">
-                        {(doc.dataDocumento || doc.medico || doc.clinica) && (
-                          <div className="flex flex-wrap gap-x-3 gap-y-1">
-                            {doc.dataDocumento && <span><b className="text-[#34445b]">Data:</b> {doc.dataDocumento}</span>}
-                            {doc.medico && <span><b className="text-[#34445b]">Profissional:</b> {doc.medico}</span>}
+                      <div>
+                        {/* Header: Type Badge, CID/CNES & Status Badge */}
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <DocumentTypeBadge type={doc.tipo} />
+                            {doc.cid && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] font-bold border border-purple-200/80"
+                                title={`Classificação Internacional de Doenças (CID): ${doc.cid}`}
+                              >
+                                <Tag size={9} /> CID {doc.cid}
+                              </span>
+                            )}
                           </div>
-                        )}
-                        {doc.clinica && <div className="truncate"><b className="text-[#34445b]">Local:</b> {doc.clinica}</div>}
-                        {(doc.resumo || doc.diagnostico) && (
-                          <p className="m-0 line-clamp-2 leading-relaxed">{doc.resumo || doc.diagnostico}</p>
-                        )}
-                        {(doc.nomeExame || doc.tipoExame || doc.exames.length > 0) && (
-                          <div className="flex items-start gap-1.5"><Activity size={14} className="mt-0.5 shrink-0 text-[#1D4ED8]" /><span className="line-clamp-1">{doc.nomeExame || doc.exames.map((exame: any) => exame.nome).filter(Boolean).join(', ') || doc.tipoExame}</span></div>
-                        )}
-                        {doc.medicamentos.length > 0 && (
-                          <div className="flex items-start gap-1.5"><Pill size={14} className="mt-0.5 shrink-0 text-[#1D4ED8]" /><span className="line-clamp-1">{doc.medicamentos.map((medicamento: any) => medicamento.nome).filter(Boolean).join(', ')}</span></div>
-                        )}
-                        {doc.quantidadeAlertas > 0 && <div className="flex items-center gap-1.5 text-amber-800"><AlertTriangle size={14} />{doc.quantidadeAlertas} {doc.quantidadeAlertas === 1 ? 'alerta ativo' : 'alertas ativos'}</div>}
-                      </div>
-
-                      {/* Footer tags & delete */}
-                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-50">
-                        <div className="flex gap-1.5 flex-wrap">
-                          <DocumentTypeBadge type={doc.tipo} />
                           {renderBadge(doc)}
                         </div>
 
+                        {/* Thumbnail */}
+                        <Link href={`/documentos/${doc.id}`} className="block relative group/thumb">
+                          <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} type={doc.tipo} />
+                        </Link>
+
+                        {/* Title & Date */}
+                        <Link href={`/documentos/${doc.id}`} className="block mt-3.5 group/title">
+                          <div className="text-[15px] font-bold text-[#14211F] group-hover/title:text-[#1D4ED8] transition-colors truncate" title={doc.titulo}>
+                            {doc.titulo}
+                          </div>
+                          <div className="text-xs text-[#5B6878] mt-1 flex items-center gap-1.5 truncate">
+                            <Clock size={12} className="shrink-0 text-[#5B6878]" />
+                            <span>Adicionado {doc.dateStr}</span>
+                            {doc.dataDocumento && (
+                              <>
+                                <span>•</span>
+                                <span className="truncate">Doc: {doc.dataDocumento}</span>
+                              </>
+                            )}
+                          </div>
+                        </Link>
+
+                        {/* Clinical Findings & Metadata */}
+                        <div className="my-3 space-y-2 text-xs text-[#5B6878]">
+                          {/* Doctor & CRM */}
+                          {(doc.medico || doc.crm) && (
+                            <div className="flex items-center gap-1.5 text-xs text-[#14211F] font-semibold min-w-0">
+                              <UserCheck size={13} className="shrink-0 text-[#1D4ED8]" />
+                              <span className="truncate">{doc.medico || 'Médico Responsável'}</span>
+                              {doc.crm && (
+                                <span className="shrink-0 rounded bg-[#F4F7FC] border border-[#E3E8F0] px-1.5 py-0.2 text-[10px] font-semibold text-[#5B6878]">
+                                  CRM {doc.crm}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Clinic & CNES */}
+                          {(doc.clinica || doc.cnes) && (
+                            <div className="flex items-center gap-1.5 text-xs text-[#5B6878] min-w-0">
+                              <Building2 size={13} className="shrink-0 text-[#5B6878]" />
+                              <span className="truncate">{doc.clinica || 'Estabelecimento de Saúde'}</span>
+                              {doc.cnes && (
+                                <span
+                                  className="shrink-0 rounded bg-blue-50 border border-blue-200/70 px-1.5 py-0.2 text-[10px] font-bold text-blue-700"
+                                  title={`Código CNES do Estabelecimento: ${doc.cnes}`}
+                                >
+                                  CNES {doc.cnes}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Diagnosis & CID block */}
+                          {(doc.diagnostico || doc.resumo) && (
+                            <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-2.5 text-xs space-y-1">
+                              <div className="flex items-center justify-between gap-1.5">
+                                <div className="flex items-center gap-1.5 font-bold text-purple-900 text-[10.5px] uppercase tracking-wider">
+                                  <Stethoscope size={12} className="text-purple-600 shrink-0" />
+                                  <span>Diagnóstico Clínico</span>
+                                </div>
+                                {doc.cid && (
+                                  <span className="inline-flex items-center gap-1 rounded bg-purple-100/90 px-1.5 py-0.5 text-[10px] font-extrabold text-purple-800 border border-purple-200 shrink-0">
+                                    CID {doc.cid}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="m-0 text-[11px] leading-relaxed text-[#3B4252] line-clamp-2 font-medium">
+                                {doc.diagnostico || doc.resumo}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Medications with dosage and schedules */}
+                          {doc.medicamentos.length > 0 && (
+                            <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-2.5 text-xs space-y-1.5">
+                              <div className="flex items-center justify-between gap-1">
+                                <div className="flex items-center gap-1.5 font-bold text-blue-900 text-[10.5px] uppercase tracking-wider">
+                                  <Pill size={12} className="text-blue-600 shrink-0" />
+                                  <span>Medicamentos ({doc.medicamentos.length})</span>
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                {doc.medicamentos.slice(0, 2).map((med: any, idx: number) => (
+                                  <div key={idx} className="flex items-baseline justify-between gap-1.5 text-[11px]">
+                                    <span className="font-semibold text-[#14211F] truncate" title={med.nome}>
+                                      {med.nome}
+                                    </span>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {med.dosagem && (
+                                        <span className="px-1.5 py-0.2 rounded bg-white text-blue-700 font-bold text-[10px] border border-blue-200/80 shadow-2xs">
+                                          {med.dosagem}
+                                        </span>
+                                      )}
+                                      {med.horario && (
+                                        <span className="text-[10px] text-[#5B6878] truncate max-w-[85px]" title={med.horario}>
+                                          {med.horario}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                                {doc.medicamentos.length > 2 && (
+                                  <div className="text-[10px] font-medium text-blue-700 pt-0.5">
+                                    +{doc.medicamentos.length - 2} outro{doc.medicamentos.length - 2 > 1 ? 's' : ''} medicamento{doc.medicamentos.length - 2 > 1 ? 's' : ''}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Exam biomarkers tags */}
+                          {(doc.nomeExame || doc.tipoExame || doc.exames.length > 0) && (
+                            <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-2.5 text-xs space-y-1">
+                              <div className="flex items-center gap-1.5 font-bold text-indigo-900 text-[10.5px] uppercase tracking-wider">
+                                <Activity size={12} className="text-indigo-600 shrink-0" />
+                                <span>Exames & Biomarcadores</span>
+                              </div>
+                              <div className="text-[11.5px] font-semibold text-[#14211F] truncate">
+                                {doc.nomeExame || (doc.exames.length > 0 ? doc.exames.map((e: any) => e.nome).filter(Boolean).slice(0, 2).join(', ') : doc.tipoExame)}
+                              </div>
+                              {doc.exames.length > 0 && (
+                                <div className="flex flex-wrap gap-1 pt-0.5">
+                                  {doc.exames.slice(0, 3).map((ex: any, idx: number) => (
+                                    <span key={idx} className="px-1.5 py-0.5 rounded bg-white text-[#14211F] text-[10px] font-medium border border-indigo-200/60 shadow-2xs truncate max-w-[130px]">
+                                      {ex.nome || ex.nomeNormalizado}
+                                    </span>
+                                  ))}
+                                  {doc.exames.length > 3 && (
+                                    <span className="text-[10px] text-indigo-600 self-center font-medium">+{doc.exames.length - 3}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {doc.quantidadeAlertas > 0 && (
+                            <div className="flex items-center gap-1.5 text-amber-800 font-semibold text-[11px] bg-amber-50 px-2.5 py-1.5 rounded-xl border border-amber-200/80">
+                              <AlertTriangle size={13} className="text-amber-600 shrink-0" />
+                              <span>{doc.quantidadeAlertas} {doc.quantidadeAlertas === 1 ? 'alerta ativo' : 'alertas ativos'}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div className="flex items-center justify-between pt-2.5 border-t border-[#E3E8F0] mt-1">
+                        <Link
+                          href={`/documentos/${doc.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#1D4ED8] hover:underline"
+                        >
+                          <span>Ver prontuário</span>
+                          <ChevronRight size={14} />
+                        </Link>
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-1 rounded-md text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F] transition-colors">
+                            <button
+                              type="button"
+                              aria-label="Opções do documento"
+                              className="p-1.5 rounded-lg text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F] transition-colors cursor-pointer"
+                            >
                               <MoreVertical size={16} />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="rounded-xl border border-[#E3E8F0] bg-white shadow-lg p-1">
                             <DropdownMenuItem asChild>
-                              <Link href={`/documentos/${doc.id}`} className="flex items-center gap-2 cursor-pointer">
+                              <Link href={`/documentos/${doc.id}`} className="flex items-center gap-2 cursor-pointer text-xs py-2">
                                 <ExternalLink size={14} /> Abrir detalhes
                               </Link>
                             </DropdownMenuItem>
+                            {doc.previewUrl && (
+                              <DropdownMenuItem asChild>
+                                <a href={doc.previewUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer text-xs py-2">
+                                  <Eye size={14} /> Ver arquivo original
+                                </a>
+                              </DropdownMenuItem>
+                            )}
                             {doc.status === 'failed' && (
                               <DropdownMenuItem
                                 disabled={retryingId === doc.id}
                                 onClick={(event) => handleRetry(doc.id, event)}
-                                className="flex cursor-pointer items-center gap-2"
+                                className="flex cursor-pointer items-center gap-2 text-xs py-2"
                               >
                                 <RotateCw size={14} /> Tentar novamente
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
                               onClick={(e) => handleDelete(doc.id, e)}
-                              className="text-[#E8664A] focus:text-[#E8664A] flex items-center gap-2 cursor-pointer"
+                              className="text-rose-600 focus:text-rose-600 flex items-center gap-2 cursor-pointer text-xs py-2"
                             >
-                              <Trash2 size={14} /> Excluir
+                              <Trash2 size={14} /> Excluir documento
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -535,11 +1062,11 @@ export default function Documents() {
                 </div>
               ) : (
                 /* List View */
-                <div className="bg-white border border-[#E3E8F0] rounded-[20px] divide-y divide-[#E3E8F0] overflow-hidden shadow-xs">
+                <div className="bg-white border border-[#E3E8F0] rounded-[22px] divide-y divide-[#E3E8F0] overflow-hidden shadow-xs">
                   {docs.map((doc) => (
                     <div
                       key={doc.id}
-                      className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-3 p-3 transition-colors hover:bg-[#F4F7FC]/70 sm:grid-cols-[72px_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-4 sm:p-4"
+                      className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-3 p-3.5 transition-colors hover:bg-[#F4F7FC]/70 sm:grid-cols-[72px_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-4 sm:p-4"
                     >
                       <Link href={`/documentos/${doc.id}`} aria-label={`Abrir ${doc.titulo}`} className="group block">
                         <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} type={doc.tipo} compact />
@@ -547,42 +1074,127 @@ export default function Documents() {
 
                       <div className="flex-1 min-w-0">
                         <Link href={`/documentos/${doc.id}`} className="block">
-                          <div className="text-[15px] font-bold text-[#14211F] hover:text-[#1D4ED8] transition-colors truncate">
-                            {doc.titulo}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[15px] font-bold text-[#14211F] hover:text-[#1D4ED8] transition-colors truncate">
+                              {doc.titulo}
+                            </span>
+                            {doc.cid && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200 shrink-0"
+                                title={`Código CID: ${doc.cid}`}
+                              >
+                                <Tag size={9} /> CID {doc.cid}
+                              </span>
+                            )}
+                            {doc.cnes && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-extrabold border border-blue-200 shrink-0"
+                                title={`Código CNES do Estabelecimento: ${doc.cnes}`}
+                              >
+                                <Building2 size={9} /> CNES {doc.cnes}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-xs text-[#5B6878] mt-0.5">
-                            Adicionado {doc.dateStr}{doc.dataDocumento ? ` · Documento: ${doc.dataDocumento}` : ''}
+                          <div className="text-xs text-[#5B6878] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock size={11} className="text-[#5B6878]" />
+                              <span>Adicionado {doc.dateStr}</span>
+                            </span>
+                            {doc.dataDocumento && (
+                              <>
+                                <span>•</span>
+                                <span>Data do documento: {doc.dataDocumento}</span>
+                              </>
+                            )}
+                            {(doc.medico || doc.crm) && (
+                              <>
+                                <span>•</span>
+                                <span className="font-semibold text-[#14211F] inline-flex items-center gap-1">
+                                  <UserCheck size={11} className="text-[#1D4ED8]" />
+                                  {doc.medico || 'Médico'} {doc.crm && <span className="font-normal text-[#5B6878]">(CRM {doc.crm})</span>}
+                                </span>
+                              </>
+                            )}
+                            {(doc.clinica || doc.cnes) && (
+                              <>
+                                <span>•</span>
+                                <span className="text-[#5B6878] inline-flex items-center gap-1">
+                                  <Building2 size={11} />
+                                  {doc.clinica || 'Estabelecimento'} {doc.cnes && <span className="text-blue-700 font-semibold">(CNES {doc.cnes})</span>}
+                                </span>
+                              </>
+                            )}
                           </div>
-                          {(doc.resumo || doc.diagnostico || doc.medico || doc.clinica || doc.medicamentos.length > 0 || doc.exames.length > 0) && (
-                            <div className="mt-1.5 space-y-0.5 text-xs text-[#5B6878]">
-                              {(doc.medico || doc.clinica) && <div className="truncate">{[doc.medico, doc.clinica].filter(Boolean).join(' · ')}</div>}
-                              {(doc.resumo || doc.diagnostico) && <div className="line-clamp-1">{doc.resumo || doc.diagnostico}</div>}
-                              {doc.medicamentos.length > 0 && <div className="line-clamp-1">Medicamentos: {doc.medicamentos.map((medicamento: any) => medicamento.nome).filter(Boolean).join(', ')}</div>}
-                              {doc.exames.length > 0 && <div className="line-clamp-1">Exames: {doc.exames.map((exame: any) => exame.nome).filter(Boolean).join(', ')}</div>}
+                          {(doc.resumo || doc.diagnostico || doc.medicamentos.length > 0 || doc.exames.length > 0) && (
+                            <div className="mt-2 space-y-1 text-xs">
+                              {(doc.diagnostico || doc.resumo) && (
+                                <div className="flex items-start gap-1.5 text-[#3B4252]">
+                                  <Stethoscope size={12} className="text-purple-600 mt-0.5 shrink-0" />
+                                  <span className="line-clamp-1">
+                                    <strong className="text-purple-900 font-semibold mr-1">Diagnóstico:</strong>
+                                    {doc.diagnostico || doc.resumo}
+                                  </span>
+                                </div>
+                              )}
+                              {doc.medicamentos.length > 0 && (
+                                <div className="flex items-start gap-1.5 text-[#14211F]">
+                                  <Pill size={12} className="text-blue-600 mt-0.5 shrink-0" />
+                                  <div className="line-clamp-1">
+                                    <strong className="text-blue-900 font-semibold mr-1">Medicamentos:</strong>
+                                    {doc.medicamentos.map((m: any, idx: number) => (
+                                      <span key={idx} className="mr-2 inline-flex items-center gap-1">
+                                        <span className="font-medium">{m.nome}</span>
+                                        {m.dosagem && (
+                                          <span className="bg-blue-50 text-blue-700 px-1 py-0.2 rounded text-[10px] font-bold border border-blue-200">
+                                            {m.dosagem}
+                                          </span>
+                                        )}
+                                        {m.horario && <span className="text-[#5B6878] text-[11px]">({m.horario})</span>}
+                                        {idx < doc.medicamentos.length - 1 ? ',' : ''}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {doc.exames.length > 0 && (
+                                <div className="flex items-start gap-1.5 text-[#14211F]">
+                                  <Activity size={12} className="text-indigo-600 mt-0.5 shrink-0" />
+                                  <div className="line-clamp-1">
+                                    <strong className="text-indigo-900 font-semibold mr-1">Exames:</strong>
+                                    {doc.exames.map((exame: any) => exame.nome || exame.nomeNormalizado).filter(Boolean).join(', ')}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </Link>
                       </div>
 
                       <div className="col-span-2 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-[#E3E8F0] pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
-                        {doc.quantidadeAlertas > 0 && <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800"><AlertTriangle size={14} />{doc.quantidadeAlertas}</span>}
+                        {doc.quantidadeAlertas > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                            <AlertTriangle size={13} className="text-amber-600" />
+                            {doc.quantidadeAlertas}
+                          </span>
+                        )}
                         {doc.status === 'failed' && (
                           <button
                             type="button"
                             onClick={(event) => handleRetry(doc.id, event)}
                             disabled={retryingId === doc.id}
-                            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#E8664A]/30 px-3 text-xs font-semibold text-[#E8664A] hover:bg-[#FDE1DA] transition-colors disabled:opacity-50"
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-colors disabled:opacity-50"
                           >
-                            <RotateCw size={14} /> Tentar novamente
+                            <RotateCw size={13} /> Tentar novamente
                           </button>
                         )}
                         <DocumentTypeBadge type={doc.tipo} />
                         {renderBadge(doc)}
                       </div>
 
-                      <div className="hidden items-center gap-2 sm:flex">
+                      <div className="hidden items-center gap-1.5 sm:flex">
                         <Link
                           href={`/documentos/${doc.id}`}
+                          aria-label={`Abrir detalhes de ${doc.titulo}`}
                           className="p-2 text-[#5B6878] hover:text-[#1D4ED8] hover:bg-[#F4F7FC] rounded-lg transition-colors"
                         >
                           <ChevronRight size={18} />
@@ -596,8 +1208,8 @@ export default function Documents() {
           ))
         )}
 
-        <p className="mt-8 text-center text-xs text-[#5a6a80]">
-          Seus documentos são carregados com segurança da sua conta.
+        <p className="mt-8 text-center text-xs text-[#5B6878]">
+          Seus documentos médicos são protegidos com criptografia de ponta a ponta e total conformidade com a LGPD.
         </p>
       </main>
     </div>

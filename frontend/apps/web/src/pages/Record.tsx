@@ -399,9 +399,9 @@ export default function Record() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FC] text-[#14211F] font-sans pb-16">
-      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
+      <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
-        <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
+        <div className="flex justify-between items-end gap-4 sm:gap-5 mb-5 sm:mb-7 flex-wrap">
           <div>
             <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1D4ED8]">
               Ficha de saúde
@@ -416,8 +416,46 @@ export default function Record() {
         </div>
 
         {/* Stepper Header Bar */}
-        <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-5.5 shadow-xs mb-5 overflow-x-auto">
-          <div className="flex gap-4 items-center min-w-[600px]">
+        <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-4 sm:p-5.5 shadow-xs mb-5">
+          {/* Mobile Step Indicator & Bar (<sm) */}
+          <div className="sm:hidden">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="font-bold text-[#1D4ED8]">Passo {currentStep} de {STEPS.length}</span>
+              <span className="font-bold text-[#14211F]">{STEPS[currentStep - 1]?.name}</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-[#F4F7FC] overflow-hidden mb-2.5">
+              <div
+                className="h-full bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] transition-all duration-300 rounded-full"
+                style={{ width: `${(currentStep / STEPS.length) * 100}%` }}
+              />
+            </div>
+            {/* Quick step bubbles on mobile */}
+            <div className="flex items-center justify-between pt-1">
+              {STEPS.map((s) => {
+                const isPassed = s.id < currentStep;
+                const isCurrent = s.id === currentStep;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setCurrentStep(s.id)}
+                    className={`flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold transition-all ${
+                      isPassed
+                        ? 'bg-[#CFE0FF] text-[#1D4ED8]'
+                        : isCurrent
+                        ? 'bg-[#1D4ED8] text-white ring-2 ring-[#CFE0FF]'
+                        : 'bg-[#F4F7FC] text-[#5B6878]'
+                    }`}
+                  >
+                    {isPassed ? <Check size={14} strokeWidth={2.5} /> : s.id}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Desktop Full Stepper (>=sm) */}
+          <div className="hidden sm:flex gap-4 items-center">
             {STEPS.map((s, idx) => {
               const isPassed = s.id < currentStep;
               const isCurrent = s.id === currentStep;

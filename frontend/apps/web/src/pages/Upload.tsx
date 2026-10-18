@@ -10,14 +10,19 @@ import {
   LoaderCircle,
   Check,
   CheckCircle2,
-  Bot,
-  ClipboardList,
+  ShieldCheck,
   FileBarChart,
   FileHeart,
-  FilePlus2,
   FileSearch,
   Send,
   Syringe,
+  Pill,
+  Activity,
+  Sparkles,
+  Camera,
+  Clipboard,
+  Info,
+  Layers,
 } from 'lucide-react';
 import { customFetch, getGetApiDocumentsQueryKey } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
@@ -37,9 +42,9 @@ type UploadQueueItem = {
 };
 
 const DOC_TYPES = [
-  { id: 'auto', label: 'Detectar automático', icon: Bot },
-  { id: 'receita', label: 'Receita', icon: FilePlus2 },
-  { id: 'exame', label: 'Exame', icon: ClipboardList },
+  { id: 'auto', label: 'Triagem Automática', icon: Sparkles, badge: 'IA' },
+  { id: 'receita', label: 'Receita', icon: Pill },
+  { id: 'exame', label: 'Exame', icon: Activity },
   { id: 'laudo', label: 'Laudo', icon: FileSearch },
   { id: 'atestado', label: 'Atestado', icon: FileHeart },
   { id: 'vacina', label: 'Vacina', icon: Syringe },
@@ -59,9 +64,33 @@ export default function Upload() {
 
   const [selectedType, setSelectedType] = useState('auto');
   const [isDragging, setIsDragging] = useState(false);
+  const [isBatchMode, setIsBatchMode] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [queue, setQueue] = useState<UploadQueueItem[]>([]);
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const pastedFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const ext = file.type.split('/')[1] || 'png';
+            pastedFiles.push(new File([file], `colado-${Date.now()}.${ext}`, { type: file.type }));
+          }
+        }
+      }
+      if (pastedFiles.length > 0) {
+        void handleFiles(pastedFiles);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [selectedType]);
 
   const handleFiles = async (files: File[]) => {
     if (files.length === 0) return;
@@ -261,13 +290,40 @@ export default function Upload() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* Left Column (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-5">
+            {/* Mode Selector Tabs */}
+            <div className="grid grid-cols-2 gap-1 rounded-2xl border border-[#E3E8F0] bg-[#F4F7FC] p-1.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setIsBatchMode(false)}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  !isBatchMode
+                    ? 'bg-white text-[#1D4ED8] shadow-xs'
+                    : 'text-[#5B6878] hover:text-[#14211F]'
+                }`}
+              >
+                <FileText size={16} />
+                <span>Documento único</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBatchMode(true)}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  isBatchMode
+                    ? 'bg-white text-[#1D4ED8] shadow-xs ring-1 ring-[#1D4ED8]/20'
+                    : 'text-[#5B6878] hover:text-[#14211F]'
+                }`}
+              >
+                <Layers size={16} />
+                <span>Enviar em lote (vários arquivos)</span>
+              </button>
+            </div>
+
             {/* Drag & Drop Zone */}
             <div
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={onDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-[24px] bg-[#F4F7FC] py-14 px-6 text-center cursor-pointer transition-all duration-200 ${
+              className={`border-2 border-dashed rounded-[24px] bg-[#F4F7FC] py-12 px-6 text-center transition-all duration-200 ${
                 isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30 scale-[1.01]' : 'border-[#E3E8F0] hover:border-[#1D4ED8] hover:bg-[#F8FAFC]'
               }`}
             >
@@ -283,37 +339,72 @@ export default function Upload() {
                   void handleFiles(files);
                 }}
               />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  e.target.value = '';
+                  void handleFiles(files);
+                }}
+              />
 
-              <div className="w-[76px] h-[76px] rounded-[24px] bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] mx-auto mb-4.5 flex items-center justify-center shadow-md">
-                <UploadCloud size={34} className="text-white" strokeWidth={2} />
+              <div className="w-[72px] h-[72px] rounded-[24px] bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] mx-auto mb-4 flex items-center justify-center shadow-md">
+                <UploadCloud size={32} className="text-white" strokeWidth={2} />
               </div>
 
               <div className="text-[22px] font-bold tracking-tight text-[#14211F]">
-                Arraste arquivos aqui
+                Arraste seus documentos aqui
               </div>
-              <p className="mt-2 mb-5.5 text-[#5B6878] text-base">
-                ou toque para escolher fotos e PDFs do seu aparelho
+              <p className="mt-1.5 mb-5 text-[#5B6878] text-sm sm:text-base">
+                ou utilize uma das opções rápidas abaixo para enviar suas fotos e laudos
               </p>
 
-              <button
-                type="button"
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1D4ED8] text-white hover:bg-[#1e40af] transition-colors shadow-xs pointer-events-none"
-              >
-                Escolher arquivos
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-white border border-[#E3E8F0] text-[#14211F] hover:border-[#1D4ED8] hover:bg-[#F4F7FC] transition-colors cursor-pointer shadow-xs active:scale-98"
+                >
+                  <Camera size={16} className="text-[#1D4ED8]" />
+                  <span>Tirar foto agora</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1D4ED8] text-white hover:bg-[#1E40AF] transition-colors cursor-pointer shadow-xs active:scale-98"
+                >
+                  <UploadCloud size={16} />
+                  <span>Escolher arquivos / PDF</span>
+                </button>
+              </div>
 
-              <div className="mt-4.5 text-[13px] text-[#5B6878]">
+              <div className="mt-4 text-[12px] text-[#5B6878] flex items-center justify-center gap-1.5">
+                <Clipboard size={13} className="text-[#1D4ED8]" />
+                <span>Dica: Você também pode colar capturas de tela com <strong>Ctrl+V</strong></span>
+              </div>
+              <div className="mt-1 text-[11px] text-[#5B6878]">
                 PDF, JPG ou PNG · até 10 MB por arquivo
               </div>
             </div>
 
             {/* Document Type Selector Card */}
             <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-5.5 shadow-xs">
-              <div className="text-sm font-bold text-[#14211F] mb-1">
-                Tipo dos documentos
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-sm font-bold text-[#14211F]">
+                  Tipo dos documentos
+                </div>
+                <span className="text-xs text-[#1D4ED8] font-semibold">
+                  Classificação inteligente
+                </span>
               </div>
-              <p className="mb-3 text-xs text-[#5B6878]">No modo automático, a IA identifica o tipo de cada arquivo separadamente.</p>
-              <div className="flex gap-2.5 flex-wrap">
+              <p className="mb-3.5 text-xs text-[#5B6878]">
+                Na Triagem Automática, a IA identifica e categoriza o tipo de cada exame, receita ou laudo separadamente.
+              </p>
+              <div className="flex gap-2 flex-wrap">
                 {DOC_TYPES.map((t) => {
                   const Icon = t.icon;
                   const isSelected = selectedType === t.id;
@@ -322,14 +413,19 @@ export default function Upload() {
                       key={t.id}
                       type="button"
                       onClick={() => setSelectedType(t.id)}
-                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#14211F] text-white border border-[#14211F] shadow-xs'
+                          ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8] shadow-xs scale-[1.02]'
                           : 'bg-white text-[#14211F] border border-[#E3E8F0] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
                       }`}
                     >
-                      <Icon size={16} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
+                      <Icon size={15} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
                       <span>{t.label}</span>
+                      {t.badge && (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-[#CFE0FF] text-[#1D4ED8]'}`}>
+                          {t.badge}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -459,9 +555,9 @@ export default function Upload() {
                     2
                   </div>
                   <div>
-                    <b className="text-[15px] font-bold text-[#14211F] block">Aguarde a leitura</b>
+                    <b className="text-[15px] font-bold text-[#14211F] block">Processamento e Triagem</b>
                     <div className="text-[13px] text-[#5B6878] leading-relaxed mt-0.5">
-                      Organizamos as informações automaticamente com auxílio de IA.
+                      Digitalização estruturada e catalogação dos parâmetros laboratoriais.
                     </div>
                   </div>
                 </div>
@@ -494,11 +590,11 @@ export default function Upload() {
             </div>
 
             {/* Accuracy & Privacy Disclaimer Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="flex gap-2.5 items-start text-[13px] leading-relaxed text-[#5a6a80]">
-                <AlertTriangle size={18} className="text-[#5a6a80] shrink-0 mt-0.5" />
+            <div className="bg-white border border-[#CFE0FF] rounded-[20px] p-4.5 shadow-2xs">
+              <div className="flex gap-2.5 items-start text-[13px] leading-relaxed text-[#14211F]">
+                <ShieldCheck size={18} className="text-[#1D4ED8] shrink-0 mt-0.5" />
                 <span>
-                  Os dados lidos podem conter erros: confira sempre. Você pode apagar qualquer documento depois.
+                  <strong>Conferência Documental:</strong> Compare as informações digitalizadas com o laudo original para validar resultados e dosagens. Você mantém autonomia total para auditar, retificar ou excluir arquivos a qualquer momento.
                 </span>
               </div>
             </div>

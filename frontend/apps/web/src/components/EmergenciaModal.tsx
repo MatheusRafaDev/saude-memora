@@ -30,26 +30,36 @@ interface EmergenciaModalProps {
 function displayList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((item) => (typeof item === "string" ? item : item?.nome))
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") {
+        if ("tem" in item && !(item as any).tem) return null;
+        const name = (item as any).nome || (item as any).name;
+        return typeof name === "string" ? name.trim() : null;
+      }
+      return null;
+    })
     .filter(
       (item): item is string =>
-        typeof item === "string" && item.trim().length > 0,
+        typeof item === "string" && item.length > 0,
     );
 }
 
 function InfoSection({
   title,
   children,
+  dark = false,
 }: {
   title: string;
   children: React.ReactNode;
+  dark?: boolean;
 }) {
   return (
     <section className="min-w-0">
-      <h3 className="mb-1.5 text-xs font-extrabold uppercase tracking-[0.1em] text-[#5a6a80]">
+      <h3 className={`mb-1.5 text-xs font-extrabold uppercase tracking-[0.1em] ${dark ? 'text-[#93C5FD]' : 'text-[#5a6a80]'}`}>
         {title}
       </h3>
-      <div className="whitespace-pre-line break-words text-sm font-medium leading-relaxed text-[#1d2a3d]">
+      <div className={`whitespace-pre-line break-words text-sm font-medium leading-relaxed ${dark ? 'text-white' : 'text-[#1d2a3d]'}`}>
         {children || "Não informado"}
       </div>
     </section>
@@ -163,7 +173,13 @@ export function EmergenciaModal({
     sexValue === "Masculino" ? "M" : sexValue === "Feminino" ? "F" : sexValue;
   const bloodType = ficha.tipoSanguineo || "Não informado";
   const allergies = displayList(ficha.alergias);
-  const conditions = displayList(ficha.doencasCronicas);
+  const conditions = Array.from(
+    new Set([
+      ...displayList(ficha.doencasCronicas),
+      ...displayList(ficha.condicoes),
+      ...(ficha.outrasDoencas ? [ficha.outrasDoencas.trim()] : []),
+    ]),
+  ).filter(Boolean);
   const medications = displayList(ficha.medicamentosContinuos);
   const emergencyContact =
     typeof user.contatoEmergencia === "string"
@@ -267,16 +283,16 @@ export function EmergenciaModal({
             </p>
           )}
 
-          <div className="rounded-2xl border-2 border-[#E8664A] bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-6">
+          <div className="rounded-2xl border-2 border-[#E8664A] bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-white p-4 shadow-xl sm:rounded-[24px] sm:p-6 relative overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#E8664A]">
                   Ficha de emergência
                 </div>
-                <h3 className="mb-0 mt-1 text-2xl font-bold tracking-tight text-[#14211F] sm:text-4xl">
+                <h3 className="mb-0 mt-1 text-2xl font-bold tracking-tight text-white sm:text-4xl">
                   {user.nome || "Não informado"}
                 </h3>
-                <p className="mb-0 mt-1 text-sm text-[#5B6878] sm:text-base">
+                <p className="mb-0 mt-1 text-sm text-slate-300 sm:text-base">
                   {age !== null ? `${age} anos` : "Idade não informada"}
                   {birthDateFormatted
                     ? ` · Nascimento ${birthDateFormatted}`
@@ -284,7 +300,7 @@ export function EmergenciaModal({
                   {sex ? ` · ${sex}` : ""}
                 </p>
               </div>
-              <div className="flex h-[92px] w-[100px] shrink-0 flex-col items-center justify-center rounded-2xl bg-[#E8664A] text-white shadow-sm sm:h-[110px] sm:w-[120px]">
+              <div className="flex h-[92px] w-[100px] shrink-0 flex-col items-center justify-center rounded-2xl bg-[#E8664A] text-white shadow-md sm:h-[110px] sm:w-[120px]">
                 <span className="text-[11px] font-bold tracking-[0.1em]">
                   SANGUE
                 </span>
@@ -294,26 +310,26 @@ export function EmergenciaModal({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 border-t border-[#E3E8F0] pt-4 sm:grid-cols-2">
-              <InfoSection title="Alergias">
+            <div className="mt-5 grid gap-4 border-t border-white/10 pt-4 sm:grid-cols-2">
+              <InfoSection dark title="Alergias">
                 {allergies.length ? allergies.join(" · ") : ""}
               </InfoSection>
-              <InfoSection title="Condições de saúde">
+              <InfoSection dark title="Condições de saúde">
                 {conditions.length ? conditions.join(" · ") : ""}
               </InfoSection>
-              <InfoSection title="Medicamentos contínuos">
+              <InfoSection dark title="Medicamentos contínuos">
                 {medications.length ? medications.join(" · ") : ""}
               </InfoSection>
-              <InfoSection title="Doador de órgãos">{donorLabel}</InfoSection>
-              <InfoSection title="Cirurgias anteriores">
+              <InfoSection dark title="Doador de órgãos">{donorLabel}</InfoSection>
+              <InfoSection dark title="Cirurgias anteriores">
                 {ficha.cirurgias?.trim()}
               </InfoSection>
-              <InfoSection title="Plano de saúde">
+              <InfoSection dark title="Plano de saúde">
                 {user.planoSaude?.trim()
                   ? `${user.planoSaude.trim()} · Carteirinha: ${user.numeroCarteirinha?.trim() || "Não informada"}`
                   : `Não informado · Carteirinha: ${user.numeroCarteirinha?.trim() || "Não informada"}`}
               </InfoSection>
-              <InfoSection title="Hábitos e rotina">
+              <InfoSection dark title="Hábitos e rotina">
                 {[
                   ficha.habitosGerais?.trim(),
                   `Tabagismo: ${smokingLabel} · Álcool: ${alcoholLabel}`,
@@ -322,13 +338,13 @@ export function EmergenciaModal({
                   .join("\n")}
               </InfoSection>
               <div className="sm:col-span-2">
-                <InfoSection title="Histórico familiar">
+                <InfoSection dark title="Histórico familiar">
                   {ficha.historicoFamiliar?.trim()}
                 </InfoSection>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#E3E8F0] text-[12px] text-[#5B6878]">
+            <div className="mt-4 pt-3 border-t border-white/10 text-[12px] text-slate-300">
               ⚠️ Informado por você na ficha médica. Confira com um profissional de saúde.
             </div>
           </div>

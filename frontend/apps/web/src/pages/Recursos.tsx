@@ -37,7 +37,7 @@ export default function Recursos() {
                 <span className="text-[#1D4ED8] italic font-medium">organizar e encontrar.</span>
               </h1>
               <p className="mt-5 mb-7 text-[17px] sm:text-[18px] leading-[1.65] text-[#5B6878]">
-                Conheça as ferramentas do Saúde Memora para reunir documentos, laudos e receitas em um espaço seguro com suporte de inteligência artificial.
+                Conheça as ferramentas do Saúde Memora para reunir documentos, laudos e receitas em um espaço seguro, estruturado e com rigorosa privacidade.
               </p>
             </div>
 
@@ -173,10 +173,10 @@ export default function Recursos() {
             <div className="w-full min-w-0 flex-1 sm:min-w-[300px] rounded-[18px] border border-[#E8664A]/30 bg-[#FDE1DA] p-5 text-[#9B2C16]">
               <div className="flex items-center gap-2">
                 <SvgAlertTriangle size={18} color="#E8664A" />
-                <b className="text-[16px] font-bold">Confira sempre os dados extraídos</b>
+                <b className="text-[16px] font-bold">Autonomia e Auditoria do Paciente</b>
               </div>
               <p className="mt-2 text-[14px] leading-relaxed">
-                Os dados extraídos por IA podem conter erros. Confira sempre com o documento original antes de tomar qualquer decisão.
+                As informações são digitalizadas de forma assistida para simplificar suas consultas. Você tem autonomia total para conferir, auditar e validar cada dado diretamente com o laudo original.
               </p>
             </div>
 

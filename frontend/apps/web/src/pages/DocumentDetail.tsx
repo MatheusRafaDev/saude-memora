@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Copy,
   RotateCw,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   useGetApiDocumentsId,
@@ -381,7 +382,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       const result = await customFetch<any>(`/api/medicamentos/${encodeURIComponent(nome.trim())}/descricao`);
       setBulaResults((previous) => ({ ...previous, [index]: result }));
     } catch (error) {
-      setBulaErrors((previous) => ({ ...previous, [index]: getApiErrorMessage(error, 'NÃ£o foi possÃ­vel localizar a bula deste medicamento.') }));
+      setBulaErrors((previous) => ({ ...previous, [index]: getApiErrorMessage(error, 'Não foi possível localizar a bula deste medicamento.') }));
     } finally {
       setLoadingBulaIndex(null);
     }
@@ -430,7 +431,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
   return (
     <div className="min-h-screen bg-white pb-16 font-sans text-[#14211F]">
-      <main className="mx-auto max-w-[1240px] px-5 pb-16 pt-8 sm:px-10">
+      <main className="mx-auto max-w-[1240px] px-3.5 sm:px-8 lg:px-10 pb-16 pt-5 sm:pt-8">
         <Link
           href="/documentos"
           className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] px-4 text-sm font-semibold text-[#14211F] shadow-xs transition-colors hover:bg-[#E3E8F0]"
@@ -447,12 +448,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           <span className="font-medium text-[#14211F]">{docTitle}</span>
         </div>
 
-        <div className="mb-5.5 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+        <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 sm:gap-5">
           <div>
-            <h1 className="m-0 text-3xl font-bold tracking-tight text-[#14211F] sm:text-4xl">
+            <h1 className="m-0 text-2xl sm:text-4xl font-bold tracking-tight text-[#14211F]">
               {docTitle}
             </h1>
-            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="whitespace-nowrap rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F]">
                 {doc.tipo || 'Tipo não informado'}
               </span>
@@ -480,7 +481,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             </div>
           </div>
 
-          <div className="flex gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {doc.status === 'failed' && (
               <button
                 type="button"
@@ -522,11 +523,18 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
         </div>
 
-        {/* AI Disclaimer Mandatory Notice */}
-        <div className="mb-5 flex items-center gap-3 rounded-2xl border border-[#CFE0FF] bg-[#F4F7FC] px-4 py-3 text-[13px] text-[#14211F]">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1D4ED8] text-white text-[11px] font-bold">i</span>
-          <span className="text-[#5B6878]">
-            <b className="font-semibold text-[#14211F]">Aviso importante:</b> Os dados extraídos por IA podem conter erros. Confira sempre com o documento original ao lado.
+        {/* Auditoria & Conferência Documental */}
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#CFE0FF] bg-[#F8FAFD] px-4.5 py-3 text-[13px] text-[#14211F] shadow-2xs">
+          <div className="flex items-start sm:items-center gap-3 min-w-0">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8]">
+              <ShieldCheck size={16} />
+            </div>
+            <span className="text-[#475569] leading-relaxed">
+              <strong className="font-semibold text-[#14211F]">Conferência Documental:</strong> Dados digitalizados a partir do documento anexado. Compare as informações transcritas com o laudo original ao lado para auditar ou retificar resultados antes de finalizar.
+            </span>
+          </div>
+          <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] border border-[#CFE0FF] shadow-2xs">
+            SBPC/ML · Auditoria Ativa
           </span>
         </div>
 
@@ -552,8 +560,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
-          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 shadow-xs lg:col-span-6">
+        <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-12">
+          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-4 sm:p-6 shadow-xs lg:col-span-6">
             <div className="mb-4 flex items-center gap-2.5">
               <b className="flex-1 font-serif text-base font-semibold text-[#14211F]">Documento original</b>
               <button
@@ -583,7 +591,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             )}
           </section>
 
-          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 shadow-xs lg:col-span-6">
+          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-4 sm:p-6 shadow-xs lg:col-span-6">
             <div className="mb-5 flex border-b border-[#E3E8F0]">
               {([
                 ['dados', 'Dados lidos'],
@@ -998,7 +1006,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           onChange={(event) => updateTextField(key, event.target.value)}
                           maxLength={key === 'data' ? 10 : key === 'cnes' ? 7 : key === 'crm' ? 20 : undefined}
                           placeholder={key === 'data' ? 'DD/MM/AAAA' : undefined}
-                          className={`h-11 w-full rounded-xl border px-3 outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
+                          className={`h-11 w-full rounded-xl border px-3 text-base sm:text-sm outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                         />
                       )}
                       {confidencePath(key) && (

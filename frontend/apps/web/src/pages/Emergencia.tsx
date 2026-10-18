@@ -170,7 +170,17 @@ export default function Emergencia({ token }: { token?: string } = {}) {
     : Array.isArray(ficha.alergias) ? ficha.alergias : [];
   const conditions = publicData
     ? Array.isArray(publicData.doencasCronicas) ? publicData.doencasCronicas : []
-    : Array.isArray(ficha.doencasCronicas) ? ficha.doencasCronicas : [];
+    : Array.from(
+        new Set([
+          ...(Array.isArray(ficha.doencasCronicas) ? ficha.doencasCronicas : []),
+          ...(Array.isArray(ficha.condicoes)
+            ? ficha.condicoes
+                .filter((c: any) => (typeof c === 'string' ? Boolean(c.trim()) : Boolean(c?.tem)))
+                .map((c: any) => (typeof c === 'string' ? c.trim() : c.nome?.trim()))
+            : []),
+          ...(ficha.outrasDoencas ? [ficha.outrasDoencas.trim()] : []),
+        ]),
+      ).filter(Boolean);
   const medications = publicData
     ? Array.isArray(publicData.medicamentosContinuos) ? publicData.medicamentosContinuos : []
     : Array.isArray(ficha.medicamentosContinuos) ? ficha.medicamentosContinuos : [];
@@ -250,17 +260,17 @@ export default function Emergencia({ token }: { token?: string } = {}) {
           <>
           {/* Main Card (flex: 2) */}
           <div className="min-w-0 flex-[2]">
-            <div className="bg-white border-2 border-[#E8664A] rounded-[28px] p-7 sm:p-9 shadow-md">
+            <div className="bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-white border-2 border-[#E8664A] rounded-[28px] p-7 sm:p-9 shadow-xl relative overflow-hidden">
               {/* Header inside card with Blood Badge */}
               <div className="flex justify-between items-center gap-4 flex-wrap">
                 <div>
                   <div className="text-[13px] font-extrabold tracking-[0.16em] text-[#E8664A] uppercase">
                     Ficha de emergência
                   </div>
-                  <div className="text-3xl sm:text-[42px] font-extrabold tracking-[-0.03em] mt-1.5 text-[#14211F] font-serif">
+                  <div className="text-3xl sm:text-[42px] font-extrabold tracking-[-0.03em] mt-1.5 text-white font-serif">
                     {name}
                   </div>
-                  <div className="text-base sm:text-lg text-[#5B6878] mt-0.5">
+                  <div className="text-base sm:text-lg text-slate-300 mt-0.5">
                     {displayedAge !== null ? `${displayedAge} anos` : 'Idade não informada'}
                     {hasValidBirthDate ? ` · Nascimento ${birthDateFormatted}` : ''}
                     {sex ? ` · ${sex}` : ''}
@@ -277,101 +287,101 @@ export default function Emergencia({ token }: { token?: string } = {}) {
 
               {/* Alergias */}
               <div className="mt-7">
-                <div className="text-sm font-bold text-[#5B6878] mb-2.5 uppercase tracking-[0.08em]">
+                <div className="text-sm font-bold text-[#93C5FD] mb-2.5 uppercase tracking-[0.08em]">
                   Alergias
                 </div>
                 <div className="flex gap-2.5 flex-wrap">
                   {allergies.length > 0 ? allergies.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-[#E8664A]/10 text-[#E8664A] text-[15px] font-bold whitespace-nowrap"
+                      className="inline-block px-4 py-2 rounded-full bg-[#E8664A]/20 border border-[#E8664A]/40 text-[#FF9E8A] text-[15px] font-bold whitespace-nowrap"
                     >
                       {item}
                     </span>
-                  )) : <span className="text-sm text-[#5B6878]">Não informado</span>}
+                  )) : <span className="text-sm text-slate-400">Não informado</span>}
                 </div>
               </div>
 
               {/* Condições de saúde */}
               <div className="mt-7">
-                <div className="text-sm font-bold text-[#5a6a80] mb-2.5 uppercase tracking-[0.08em]">
+                <div className="text-sm font-bold text-[#93C5FD] mb-2.5 uppercase tracking-[0.08em]">
                   Condições de saúde
                 </div>
                 <div className="flex gap-2.5 flex-wrap">
                   {conditions.length > 0 ? conditions.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-[#fff4df] text-[#8a5b10] text-[15px] font-bold whitespace-nowrap"
+                      className="inline-block px-4 py-2 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-200 text-[15px] font-bold whitespace-nowrap"
                     >
                       {item}
                     </span>
-                  )) : <span className="text-sm text-[#5a6a80]">Não informado</span>}
+                  )) : <span className="text-sm text-slate-400">Não informado</span>}
                 </div>
               </div>
 
               {/* Medicamentos contínuos */}
               <div className="mt-7">
-                <div className="text-sm font-bold text-[#5a6a80] mb-2.5 uppercase tracking-[0.08em]">
+                <div className="text-sm font-bold text-[#93C5FD] mb-2.5 uppercase tracking-[0.08em]">
                   Medicamentos contínuos
                 </div>
                 <div className="flex gap-2.5 flex-wrap">
                   {medications.length > 0 ? medications.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-[#CFE0FF]/40 border border-[#CFE0FF] text-[#1D4ED8] text-[15px] font-bold whitespace-nowrap"
+                      className="inline-block px-4 py-2 rounded-full bg-[#1D4ED8]/30 border border-[#1D4ED8]/50 text-blue-200 text-[15px] font-bold whitespace-nowrap"
                     >
                       {item}
                     </span>
-                  )) : <span className="text-sm text-[#5a6a80]">Não informado</span>}
+                  )) : <span className="text-sm text-slate-400">Não informado</span>}
                 </div>
               </div>
 
               {/* Doador de órgãos */}
-              <div className="mt-7 text-base text-[#1d2a3d]">
+              <div className="mt-7 text-base text-white">
                 Doador de órgãos:{' '}
-                <b className={isDonor === undefined || isDonor === null ? 'text-[#5a6a80]' : isDonor ? 'text-[#1D4ED8]' : 'text-[#E8664A]'}>
+                <b className={isDonor === undefined || isDonor === null ? 'text-slate-400' : isDonor ? 'text-[#93C5FD]' : 'text-[#FF8E75]'}>
                   {isDonor === undefined || isDonor === null ? 'não informado' : isDonor ? 'sim' : 'não'}
                 </b>
               </div>
 
-              <div className="mt-7 grid gap-4 border-t border-[#dde3ec] pt-6 sm:grid-cols-2">
+              <div className="mt-7 grid gap-4 border-t border-white/10 pt-6 sm:grid-cols-2">
                 <div>
-                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#5a6a80]">
+                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#93C5FD]">
                     Cirurgias anteriores
                   </div>
-                  <p className="mb-0 mt-1.5 whitespace-pre-line text-sm text-[#1d2a3d]">
+                  <p className="mb-0 mt-1.5 whitespace-pre-line text-sm text-slate-200">
                     {surgeries?.trim() || 'Não informado'}
                   </p>
                 </div>
                 {!isPublicMode && <>
                 <div>
-                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#5a6a80]">
+                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#93C5FD]">
                     Plano de saúde
                   </div>
-                  <p className="mb-0 mt-1.5 text-sm text-[#1d2a3d]">
+                  <p className="mb-0 mt-1.5 text-sm text-slate-200">
                     {healthPlan?.trim() || 'Não informado'}
                   </p>
-                  <p className="mb-0 mt-1.5 text-sm text-[#1d2a3d]">
+                  <p className="mb-0 mt-1.5 text-sm text-slate-300 font-mono">
                     Carteirinha: {insuranceCardNumber?.trim() || 'Não informada'}
                   </p>
                 </div>
                 <div>
-                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#5a6a80]">
+                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#93C5FD]">
                     Hábitos e rotina
                   </div>
-                  <p className="mb-0 mt-1.5 whitespace-pre-line text-sm text-[#1d2a3d]">
+                  <p className="mb-0 mt-1.5 whitespace-pre-line text-sm text-slate-200">
                     {generalHabits?.trim() || 'Não informado'}
                   </p>
-                  <p className="mb-0 mt-1.5 text-sm text-[#1d2a3d]">
+                  <p className="mb-0 mt-1.5 text-sm text-slate-300">
                     Tabagismo: {smokes === true ? 'Sim' : 'Não informado'} · Álcool:{' '}
                     {drinksAlcohol === true ? 'Sim' : 'Não informado'}
                   </p>
                 </div>
                 <div className="sm:col-span-2">
-                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#5a6a80]">
+                  <div className="text-sm font-bold uppercase tracking-[0.08em] text-[#93C5FD]">
                     Histórico familiar
                   </div>
-                  <p className="mb-0 mt-1.5 whitespace-pre-line text-sm text-[#1d2a3d]">
+                  <p className="mb-0 mt-1.5 whitespace-pre-line text-sm text-slate-200">
                     {familyHistory?.trim() || 'Não informado'}
                   </p>
                 </div>

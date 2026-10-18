@@ -70,10 +70,10 @@ public static class DashboardEndpoints
             Prontos: prontos.Count,
             Processando: documentos.Count(d => d.Status is "pending" or "processing"),
             Falhados: documentos.Count(d => d.Status == "failed"),
-            Exames: prontos.Count(d => d.Tipo == "exame"),
-            Receitas: prontos.Count(d => d.Tipo == "receita"),
+            Exames: prontos.Count(d => string.Equals(d.Tipo, "exame", StringComparison.OrdinalIgnoreCase)),
+            Receitas: prontos.Count(d => string.Equals(d.Tipo, "receita", StringComparison.OrdinalIgnoreCase)),
             ReceitasAtivas: prontos.Count(d =>
-                d.Tipo == "receita"
+                string.Equals(d.Tipo, "receita", StringComparison.OrdinalIgnoreCase)
                 && (string.IsNullOrEmpty(d.Data) || ExtrairData(d.Data) is { } data && data >= limiarReceitaAtiva)),
             RevisaoPendente: documentos.Count(d => d.RevisaoPendente));
     }
@@ -159,7 +159,10 @@ public static class DashboardEndpoints
         return rotulos
             .Select(item =>
             {
-                var quantidade = documentos.Count(d => d.Tipo == item.Tipo);
+                var quantidade = item.Tipo == "outro"
+                    ? documentos.Count(d => string.Equals(d.Tipo, "outro", StringComparison.OrdinalIgnoreCase)
+                        || (!string.IsNullOrWhiteSpace(d.Tipo) && !rotulos.Any(r => r.Tipo != "outro" && string.Equals(r.Tipo, d.Tipo, StringComparison.OrdinalIgnoreCase))))
+                    : documentos.Count(d => string.Equals(d.Tipo, item.Tipo, StringComparison.OrdinalIgnoreCase));
                 var percentual = total == 0 ? 0 : (int)Math.Round(quantidade * 100d / total);
                 return new DashboardDistribuicao(item.Tipo, item.Rotulo, quantidade, percentual);
             })

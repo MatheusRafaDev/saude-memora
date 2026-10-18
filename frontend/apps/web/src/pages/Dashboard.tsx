@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   FileText,
   Pill,
   Plus,
   Shield,
+  ShieldCheck,
   ArrowRight,
   Activity,
-  X,
   ZoomIn,
-  ZoomOut,
   AlertTriangle,
   CheckCircle2,
   ClipboardCheck,
@@ -18,6 +16,13 @@ import {
   HeartPulse,
   CalendarDays,
   LoaderCircle,
+  CreditCard,
+  FileSearch,
+  FileHeart,
+  Syringe,
+  Send,
+  FileBarChart,
+  Layers,
 } from 'lucide-react';
 import {
   useGetApiPacientesMe,
@@ -25,6 +30,8 @@ import {
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
 import { triggerEmergencyModal } from '@/lib/emergency-modal';
+import { CarteirinhaModal } from '@/components/CarteirinhaModal';
+import { BrandLogo } from '@/components/BrandLogo';
 import {
   useDashboardResumo,
   ROTULO_TIPO_DOCUMENTO,
@@ -36,9 +43,31 @@ type Indicador = {
   rotulo: string;
   valor: number;
   detalhe: string;
-  tom: 'neutro' | 'atencao' | 'alerta';
+  tom: 'destaque' | 'neutro' | 'atencao' | 'alerta';
   icon: React.ReactNode;
+  href?: string;
 };
+
+function getTipoIcon(tipo: string) {
+  switch (tipo.toLowerCase()) {
+    case 'exame':
+      return <Activity size={18} className="text-[#1D4ED8]" />;
+    case 'receita':
+      return <Pill size={18} className="text-[#1D4ED8]" />;
+    case 'laudo':
+      return <FileSearch size={18} className="text-[#1D4ED8]" />;
+    case 'atestado':
+      return <FileHeart size={18} className="text-[#1D4ED8]" />;
+    case 'vacina':
+      return <Syringe size={18} className="text-[#1D4ED8]" />;
+    case 'encaminhamento':
+      return <Send size={18} className="text-[#1D4ED8]" />;
+    case 'relatorio':
+      return <FileBarChart size={18} className="text-[#1D4ED8]" />;
+    default:
+      return <Layers size={18} className="text-[#1D4ED8]" />;
+  }
+}
 
 function pluralizar(quantidade: number, singular: string, plural: string) {
   return `${quantidade} ${quantidade === 1 ? singular : plural}`;
@@ -60,14 +89,14 @@ function valorExibido(biomarcador: DashboardBiomarcador) {
 }
 
 const TOM_CLASSES: Record<Indicador['tom'], string> = {
-  neutro: 'border-[#E3E8F0] bg-white',
+  destaque: 'border-[#25416B]/60 bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-white shadow-md hover:border-[#3B82F6]/60',
+  neutro: 'border-[#E3E8F0] bg-white text-[#14211F]',
   atencao: 'border-[#f0d9b2] bg-[#fffaf0]',
   alerta: 'border-[#E8664A]/30 bg-[#E8664A]/10',
 };
 
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
-  const [cardZoom, setCardZoom] = useState(1);
 
   const { data: profile, isLoading: isProfileLoading, isError: profileError } = useGetApiPacientesMe();
   const { data: fichaRaw, isLoading: isFichaLoading, isError: fichaError } = useGetApiFichaMedicaMe();
@@ -92,8 +121,10 @@ export default function Dashboard() {
     ? Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 86400000))
     : null;
 
-  const bloodType = ficha.tipoSanguineo || 'Não informado';
-  const allergiesList: string[] = Array.isArray(ficha.alergias) ? ficha.alergias : [];
+  const bloodType = ficha.tipoSanguineo || dados?.ficha?.tipoSanguineo || 'Não informado';
+  const allergiesList: string[] = (Array.isArray(ficha.alergias) && ficha.alergias.length > 0)
+    ? ficha.alergias
+    : (Array.isArray(dados?.ficha?.alergias) ? dados.ficha.alergias : []);
   const allergiesDisplay = allergiesList.length > 0 ? allergiesList.join(' · ') : 'Não informado';
 
   const isLoading = isProfileLoading || isFichaLoading || resumo.isLoading;
@@ -101,7 +132,7 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-[1240px] space-y-5 px-5 pb-16 pt-9 sm:px-10" aria-busy="true" aria-label="Carregando visão geral">
+      <div className="mx-auto w-full max-w-[1240px] space-y-5 px-3.5 sm:px-6 lg:px-10 pb-16 pt-5 sm:pt-9" aria-busy="true" aria-label="Carregando visão geral">
         <div className="space-y-2"><div className="animate-shimmer h-3 w-32 rounded-lg" /><div className="animate-shimmer h-9 w-56 max-w-full rounded-lg" /><div className="animate-shimmer h-4 w-72 max-w-full rounded-lg" /></div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div className="animate-shimmer h-28 rounded-2xl" /><div className="animate-shimmer h-28 rounded-2xl" /><div className="animate-shimmer h-28 rounded-2xl" /><div className="animate-shimmer h-28 rounded-2xl" /></div>
         <div className="grid gap-5 lg:grid-cols-3"><div className="animate-shimmer h-80 rounded-[24px] lg:col-span-2" /><div className="animate-shimmer h-80 rounded-[24px]" /></div>
@@ -120,61 +151,115 @@ export default function Dashboard() {
   const { indicadores, atencao, distribuicao, biomarcadores, consultas, medicamentosRecentes, ficha: resumoFicha, documentosRecentes, alertas } = dados;
   const alertaAlta = atencao.some((item) => item.severidade === 'alta') || alertas.some((a) => a.severidade === 'alta');
 
+  // Constrói cards dinâmicos para TODOS os tipos de documentos adicionados no acervo
+  const tiposPresentesCards: Indicador[] = distribuicao.map((item) => {
+    let detalhe = `${item.percentual}% do acervo`;
+    if (item.tipo === 'exame') {
+      detalhe = biomarcadores.length > 0
+        ? pluralizar(biomarcadores.length, 'tipo de biomarcador', 'tipos de biomarcadores')
+        : `${item.percentual}% do acervo`;
+    } else if (item.tipo === 'receita') {
+      detalhe = indicadores.receitasAtivas > 0
+        ? `${indicadores.receitasAtivas} ${indicadores.receitasAtivas === 1 ? 'ativa' : 'ativas'} de ${item.quantidade}`
+        : `de ${item.quantidade} ${item.quantidade === 1 ? 'receita' : 'receitas'}`;
+    } else if (item.tipo === 'vacina') {
+      detalhe = 'imunizações registradas';
+    } else if (item.tipo === 'atestado') {
+      detalhe = 'atestados médicos';
+    } else if (item.tipo === 'laudo') {
+      detalhe = 'laudos e pareceres';
+    } else if (item.tipo === 'encaminhamento') {
+      detalhe = 'referências clínicas';
+    } else if (item.tipo === 'relatorio') {
+      detalhe = 'relatórios clínicos';
+    }
+
+    return {
+      rotulo: item.rotulo,
+      valor: item.quantidade,
+      detalhe,
+      tom: 'neutro',
+      icon: getTipoIcon(item.tipo),
+      href: `/documentos?tipo=${encodeURIComponent(item.tipo)}`,
+    };
+  });
+
+  const fallbackCards: Indicador[] = [
+    {
+      rotulo: 'Exames',
+      valor: 0,
+      detalhe: 'nenhum exame adicionado',
+      tom: 'neutro',
+      icon: <Activity size={18} className="text-[#1D4ED8]" />,
+      href: '/documentos?tipo=exame',
+    },
+    {
+      rotulo: 'Receitas',
+      valor: 0,
+      detalhe: 'nenhuma receita adicionada',
+      tom: 'neutro',
+      icon: <Pill size={18} className="text-[#1D4ED8]" />,
+      href: '/documentos?tipo=receita',
+    },
+  ];
+
+  const tomAtencao: Indicador['tom'] = alertaAlta ? 'alerta' : atencao.length > 0 ? 'atencao' : 'neutro';
+
   const indicadoresExibidos: Indicador[] = [
     {
       rotulo: 'Documentos arquivados',
       valor: indicadores.total,
       detalhe: pluralizar(indicadores.prontos, 'processado', 'processados'),
-      tom: 'neutro',
-      icon: <FileText size={18} className="text-[#1D4ED8]" />,
+      tom: 'destaque',
+      icon: <FileText size={18} className="text-[#93C5FD]" />,
+      href: '/documentos',
     },
-    {
-      rotulo: 'Exames',
-      valor: indicadores.exames,
-      detalhe: pluralizar(biomarcadores.length, 'tipo de biomarcador', 'tipos de biomarcadores'),
-      tom: 'neutro',
-      icon: <Activity size={18} className="text-[#1D4ED8]" />,
-    },
-    {
-      rotulo: 'Receitas ativas',
-      valor: indicadores.receitasAtivas,
-      detalhe: `de ${indicadores.receitas} ${indicadores.receitas === 1 ? 'receita' : 'receitas'}`,
-      tom: 'neutro',
-      icon: <Pill size={18} className="text-[#1D4ED8]" />,
-    },
+    // Mostra os tipos de documentos que o usuário TEM adicionados
+    ...(tiposPresentesCards.length > 0 ? tiposPresentesCards : fallbackCards),
     {
       rotulo: 'Precisam de atenção',
       valor: atencao.length,
       detalhe: indicadores.revisaoPendente > 0
         ? pluralizar(indicadores.revisaoPendente, 'revisão pendente', 'revisões pendentes')
         : 'tudo em ordem',
-      tom: alertaAlta ? 'alerta' : atencao.length > 0 ? 'atencao' : 'neutro',
+      tom: tomAtencao,
       icon: <AlertTriangle size={18} className={alertaAlta ? 'text-[#E8664A]' : 'text-[#1D4ED8]'} />,
+      href: atencao.length > 0 ? (atencao[0].documentoId ? `/documentos/${atencao[0].documentoId}` : '/documentos') : undefined,
     },
   ];
 
   return (
     <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
-      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-8 pb-16">
+      <main className="max-w-[1240px] mx-auto px-3.5 sm:px-6 lg:px-10 pt-4 sm:pt-8 pb-16">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-5 mb-5 sm:mb-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1.5 sm:mb-2">
               <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
               Visão geral
             </div>
-            <h1 className="mt-1 mb-0 text-[32px] sm:text-[38px] font-bold tracking-[-0.035em] text-[#14211F]">
+            <h1 className="mt-1 mb-0 text-2xl sm:text-[38px] font-bold tracking-[-0.035em] text-[#14211F]">
               Olá{firstName ? `, ${firstName}` : ''}
             </h1>
-            <p className="mt-1 mb-0 text-[#5B6878] text-sm sm:text-base">
+            <p className="mt-1 mb-0 text-[#5B6878] text-xs sm:text-base">
               Veja o que precisa de atenção e a evolução dos seus exames.
             </p>
           </div>
 
-          <div className="flex w-full gap-2 sm:w-auto">
+          <div className="flex flex-wrap items-center w-full gap-2.5 sm:w-auto">
             <button
-              onClick={() => triggerUploadModal()}
-              className="btn-primary min-h-[44px] flex-1 sm:flex-none shadow-xs"
+              type="button"
+              onClick={() => triggerUploadModal({ mode: 'batch' })}
+              className="min-h-[44px] flex-1 sm:flex-none px-4 rounded-xl border border-[#CFE0FF] bg-[#F4F7FC] text-[#1D4ED8] hover:bg-[#CFE0FF]/40 font-semibold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98"
+            >
+              <Layers size={16} />
+              <span>Enviar em lote</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => triggerUploadModal({ mode: 'single' })}
+              className="btn-primary min-h-[44px] flex-1 sm:flex-none shadow-xs inline-flex items-center justify-center gap-2"
             >
               <Plus size={16} strokeWidth={2.5} />
               <span>Adicionar documento</span>
@@ -182,71 +267,104 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* AI Disclaimer Banner (desing.md Seção 5 & 8) */}
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#CFE0FF] bg-gradient-to-r from-[#CFE0FF]/40 to-[#F4F7FC] px-4.5 py-3 text-[13px] text-[#1D4ED8] shadow-xs">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1D4ED8]/10 text-[#1D4ED8]">
-            <Shield size={16} />
+        {/* Prontuário Pessoal Auditável & Conformidade */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-[#CFE0FF] bg-gradient-to-r from-[#F8FAFD] via-white to-[#F4F7FC] p-4 text-[13px] shadow-xs">
+          <div className="flex items-start sm:items-center gap-3 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8]">
+              <ShieldCheck size={18} />
+            </div>
+            <div className="leading-relaxed text-[#14211F] min-w-0">
+              <span className="font-bold text-[#1D4ED8]">Prontuário Pessoal Auditável:</span>{' '}
+              <span className="text-[#475569]">
+                Seus laudos e prescrições são organizados com checagem assistida. Você possui autonomia total para auditar, retificar e validar qualquer dado clínico com base nos documentos originais.
+              </span>
+            </div>
           </div>
-          <span className="leading-relaxed text-[#14211F]">
-            <b className="font-semibold text-[#1D4ED8]">Aviso de IA:</b> Os dados extraídos por inteligência artificial podem conter imprecisões. Confira sempre com o documento original.
-          </span>
+          <div className="flex shrink-0 items-center gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E3E8F0] text-xs font-semibold text-[#5B6878]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-[#E3E8F0] shadow-2xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+              LGPD Art. 11
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-[#E3E8F0] shadow-2xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8]" />
+              AES-256
+            </span>
+          </div>
         </div>
 
-        {/* Carteirinha (--sky) + Emergência (1 card Navy com faixa coral de 4px) */}
+        {/* Carteirinha Digital (Navy Card Azul Escuro Clínico) + Emergência (Navy com faixa coral) */}
         <div className="mb-6 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-3">
-          {/* Carteirinha de saúde com fundo --sky e gradiente suave */}
+          {/* Carteirinha de saúde com visual azul escuro padrão ficha clínica */}
           <button
             type="button"
             onClick={() => setIsCarteirinhaOpen(true)}
             aria-label="Abrir carteirinha de saúde em tela inteira"
-            className="group block w-full cursor-zoom-in bg-gradient-to-br from-[#CFE0FF] via-[#DBE8FF] to-[#CFE0FF] text-left text-[#14211F] rounded-[24px] p-6 sm:p-7 border border-[#1D4ED8]/20 shadow-xs relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] lg:col-span-2 flex flex-col justify-between"
+            className="group block w-full cursor-zoom-in bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-left text-white rounded-[22px] sm:rounded-[24px] p-5 sm:p-7 border border-[#25416B]/60 border-t-4 border-t-[#1D4ED8] shadow-md relative overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 hover:border-[#3B82F6]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6] lg:col-span-2 flex flex-col justify-between"
           >
-            {/* Subtle background glow */}
-            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/40 blur-2xl pointer-events-none" />
+            {/* Subtle background glow & security pattern */}
+            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#1D4ED8]/20 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-[#3B82F6]/10 blur-xl pointer-events-none" />
 
             <div>
-              <div className="flex justify-between items-center text-xs tracking-[0.14em] font-bold text-[#1D4ED8]">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#1D4ED8]" />
-                  CARTEIRINHA DIGITAL
-                </span>
-                <span className="opacity-75 font-semibold text-[13px]">Saúde Memora</span>
-              </div>
-
-              <div className="text-2xl sm:text-[26px] font-bold mt-4 mb-1 tracking-tight text-[#14211F]">
-                {fullName}
-              </div>
-
-              <div className="mt-3 text-[14px]">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#1D4ED8] block">Plano de Saúde</span>
-                <span className="text-[17px] font-bold text-[#14211F]">
-                  {healthPlan || 'Plano particular / Não informado'}
-                </span>
-                <div className="text-[13px] text-[#5B6878] font-medium mt-0.5">
-                  Nº {insuranceCardNumber || 'Não informado'}
+              {/* Header: Badge + Contactless wave + Brand Logo */}
+              <div className="flex justify-between items-center text-xs tracking-[0.14em] font-bold">
+                <div className="inline-flex items-center gap-1.5 sm:gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] sm:text-[11px] font-bold text-[#93C5FD] shadow-xs backdrop-blur-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#60A5FA] animate-pulse" />
+                    CARTEIRINHA DIGITAL
+                  </span>
+                </div>
+                <div className="opacity-95 transition-opacity group-hover:opacity-100">
+                  <BrandLogo
+                    withLink={false}
+                    inverse={true}
+                    iconClassName="h-6 w-6 sm:h-7 sm:w-7"
+                    wordmarkClassName="text-xs sm:text-sm"
+                    layout="inline"
+                  />
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-5">
-                <div className="flex-1 bg-white/80 backdrop-blur-xs rounded-2xl p-3.5 border border-[#1D4ED8]/15 shadow-xs">
-                  <div className="text-[10px] text-[#1D4ED8] font-bold tracking-wider uppercase">TIPO SANGUÍNEO</div>
-                  <div className="text-xl font-extrabold mt-0.5 text-[#14211F]">{bloodType}</div>
+              {/* Beneficiary name and health plan */}
+              <div className="mt-4 sm:mt-5">
+                <div className="text-xl sm:text-2xl lg:text-[26px] font-extrabold tracking-tight text-white truncate group-hover:text-[#93C5FD] transition-colors">
+                  {fullName}
                 </div>
-                <div className="flex-[2] bg-white/80 backdrop-blur-xs rounded-2xl p-3.5 border border-[#1D4ED8]/15 shadow-xs">
-                  <div className="text-[10px] text-[#1D4ED8] font-bold tracking-wider uppercase">ALERGIAS</div>
-                  <div className="text-sm font-semibold mt-0.5 line-clamp-2 text-[#14211F]">{allergiesDisplay}</div>
+
+                <div className="mt-2.5 text-[13px] sm:text-[14px] bg-white/10 backdrop-blur-xs rounded-xl p-3 border border-white/10">
+                  <span className="text-[9.5px] sm:text-[10px] font-extrabold uppercase tracking-wider text-[#93C5FD] block">
+                    Plano de Saúde
+                  </span>
+                  <span className="text-sm sm:text-base font-bold text-white block truncate">
+                    {healthPlan || 'Plano particular / Não informado'}
+                  </span>
+                  <div className="text-xs sm:text-[13px] text-slate-300 font-mono tracking-wider font-semibold mt-0.5">
+                    Nº {insuranceCardNumber || 'Não informado'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mini Badges: Sangue & Alergias em vidro translúcido */}
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mt-4 sm:mt-5">
+                <div className="flex-1 bg-white/10 backdrop-blur-xs rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 shadow-xs">
+                  <div className="text-[9.5px] sm:text-[10px] text-[#93C5FD] font-extrabold tracking-wider uppercase">TIPO SANGUÍNEO</div>
+                  <div className="text-lg sm:text-xl font-extrabold mt-0.5 text-white">{bloodType}</div>
+                </div>
+                <div className="flex-[2] bg-white/10 backdrop-blur-xs rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 shadow-xs">
+                  <div className="text-[9.5px] sm:text-[10px] text-[#93C5FD] font-extrabold tracking-wider uppercase">ALERGIAS</div>
+                  <div className="text-xs sm:text-sm font-semibold mt-0.5 line-clamp-1 text-white/90">{allergiesDisplay}</div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-white/85 py-2.5 text-xs font-bold text-[#1D4ED8] shadow-xs group-hover:bg-white transition-colors">
-              <ZoomIn size={14} />
-              <span>Toque para ampliar a carteirinha</span>
+            <div className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 py-2.5 text-xs font-bold shadow-xs transition-all">
+              <ZoomIn size={14} className="group-hover:scale-110 transition-transform text-[#93C5FD]" />
+              <span>Toque para abrir a carteirinha completa</span>
             </div>
           </button>
 
           {/* Card Destaque de Emergência: Navy com faixa coral de 4px */}
-          <div className="rounded-[24px] bg-gradient-to-br from-[#1C2438] via-[#212C45] to-[#171E2E] text-white p-6 sm:p-7 shadow-md border-t-4 border-t-[#E8664A] flex flex-col justify-between relative overflow-hidden">
+          <div className="rounded-[24px] bg-gradient-to-br from-[#0F1E36] via-[#1A253C] to-[#0D1726] text-white p-6 sm:p-7 shadow-md border border-[#25416B]/60 border-t-4 border-t-[#E8664A] flex flex-col justify-between relative overflow-hidden">
             <div>
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#E8664A]">
@@ -266,7 +384,7 @@ export default function Dashboard() {
                 Informado por você na ficha médica. Confira com um profissional de saúde.
               </p>
 
-              <div className="mt-4 space-y-2.5 border-t border-[#36425F] pt-3.5 text-[13px]">
+              <div className="mt-4 space-y-2.5 border-t border-[#25416B]/60 pt-3.5 text-[13px]">
                 <div className="flex justify-between items-center">
                   <span className="text-[#A9B6CE]">Contato:</span>
                   <span className="font-semibold text-white truncate max-w-[140px]">
@@ -285,7 +403,7 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={triggerEmergencyModal}
-              className="mt-6 w-full min-h-[44px] rounded-xl bg-gradient-to-r from-[#E8664A] to-[#F07055] px-4 text-sm font-bold text-white transition-all duration-150 hover:shadow-lg hover:shadow-[#E8664A]/25 hover:-translate-y-0.5 active:translate-y-0 shadow-xs flex items-center justify-center gap-2"
+              className="mt-6 w-full min-h-[44px] rounded-xl bg-gradient-to-r from-[#E8664A] to-[#F07055] px-4 text-sm font-bold text-white transition-all duration-150 hover:shadow-lg hover:shadow-[#E8664A]/25 hover:-translate-y-0.5 active:translate-y-0 shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Abrir modo emergência</span>
               <ArrowRight size={16} />
@@ -293,22 +411,65 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Indicadores */}
+        {/* Indicadores Dinâmicos por Tipo de Documento */}
         {dados && (
-          <section aria-label="Indicadores" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {indicadoresExibidos.map((item) => (
-              <div
-                key={item.rotulo}
-                className="rounded-[20px] border border-[#E3E8F0] bg-white p-5 shadow-xs transition-all duration-200 hover:shadow-sm hover:-translate-y-0.5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B6878]">{item.rotulo}</span>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8]">{item.icon}</span>
+          <section
+            aria-label="Indicadores"
+            className={`mb-6 grid gap-3 sm:gap-4 grid-cols-2 ${
+              indicadoresExibidos.length <= 4
+                ? 'sm:grid-cols-2 xl:grid-cols-4'
+                : indicadoresExibidos.length === 5
+                ? 'sm:grid-cols-3 xl:grid-cols-5'
+                : 'sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6'
+            }`}
+          >
+            {indicadoresExibidos.map((item) => {
+              const isDestaque = item.tom === 'destaque';
+              const cardInner = (
+                <div
+                  className={`h-full rounded-[18px] sm:rounded-[20px] border p-3.5 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${TOM_CLASSES[item.tom]} ${
+                    item.href ? (isDestaque ? 'hover:border-[#60A5FA]/80 cursor-pointer' : 'hover:border-[#1D4ED8]/40 cursor-pointer') : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+                    <span className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider truncate transition-colors ${
+                      isDestaque ? 'text-[#93C5FD]' : 'text-[#5B6878] group-hover:text-[#1D4ED8]'
+                    }`}>
+                      {item.rotulo}
+                    </span>
+                    <span className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg sm:rounded-xl ${
+                      isDestaque ? 'bg-white/10 text-[#93C5FD]' : 'bg-[#1D4ED8]/10 text-[#1D4ED8]'
+                    }`}>
+                      {item.icon}
+                    </span>
+                  </div>
+                  <div className={`mt-2.5 sm:mt-3 text-2xl sm:text-[38px] font-bold leading-none tracking-tight ${
+                    isDestaque ? 'text-white' : 'text-[#14211F]'
+                  }`}>
+                    {item.valor}
+                  </div>
+                  <div className={`mt-1 text-xs sm:text-[13px] truncate ${
+                    isDestaque ? 'text-blue-100/80 font-medium' : 'text-[#5B6878]'
+                  }`}>
+                    {item.detalhe}
+                  </div>
                 </div>
-                <div className="mt-3 text-[38px] font-bold leading-none tracking-tight text-[#14211F]">{item.valor}</div>
-                <div className="mt-1 text-[13px] text-[#5B6878]">{item.detalhe}</div>
-              </div>
-            ))}
+              );
+
+              return item.href ? (
+                <Link
+                  key={item.rotulo}
+                  href={item.href}
+                  className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1D4ED8] rounded-[18px] sm:rounded-[20px]"
+                >
+                  {cardInner}
+                </Link>
+              ) : (
+                <div key={item.rotulo} className="group">
+                  {cardInner}
+                </div>
+              );
+            })}
           </section>
         )}
 
@@ -390,11 +551,16 @@ export default function Dashboard() {
           </section>
 
           <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 shadow-xs">
-            <div className="mb-4 flex items-center gap-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4F7FC]">
-                <FileText size={18} className="text-[#1D4ED8]" />
+            <div className="mb-4 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4F7FC]">
+                  <FileText size={18} className="text-[#1D4ED8]" />
+                </div>
+                <h2 className="text-base font-bold text-[#14211F]">Documentos por tipo</h2>
               </div>
-              <h2 className="text-base font-bold text-[#14211F] flex-1">Documentos por tipo</h2>
+              <Link href="/documentos" className="text-[13px] font-bold text-[#1D4ED8] hover:underline">
+                Ver todos
+              </Link>
             </div>
 
             {distribuicao.length === 0 ? (
@@ -404,15 +570,27 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {distribuicao.map((item) => (
-                  <div key={item.tipo}>
-                    <div className="mb-1.5 flex justify-between text-[13px]">
-                      <span className="font-semibold text-[#14211F]">{item.rotulo}</span>
-                      <span className="text-[#5B6878]">{item.quantidade} · {item.percentual}%</span>
+                  <Link
+                    key={item.tipo}
+                    href={`/documentos?tipo=${encodeURIComponent(item.tipo)}`}
+                    className="group block transition-opacity hover:opacity-95"
+                  >
+                    <div className="mb-1.5 flex items-center justify-between text-[13px]">
+                      <span className="flex items-center gap-1.5 font-semibold text-[#14211F] group-hover:text-[#1D4ED8] transition-colors">
+                        {getTipoIcon(item.tipo)}
+                        <span>{item.rotulo}</span>
+                      </span>
+                      <span className="text-[#5B6878]">
+                        {item.quantidade} {item.quantidade === 1 ? 'doc' : 'docs'} · {item.percentual}%
+                      </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-[#F4F7FC]">
-                      <div className="h-full rounded-full bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6]" style={{ width: `${item.percentual}%` }} />
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6]"
+                        style={{ width: `${item.percentual}%` }}
+                      />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -437,8 +615,8 @@ export default function Dashboard() {
                 Ainda não há resultados de exames com valores registrados. Envie um exame para começar a acompanhar a evolução.
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left text-sm">
+              <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
+                <table className="w-full min-w-[480px] border-collapse text-left text-sm">
                   <thead>
                     <tr className="border-b border-[#E3E8F0] text-[11px] uppercase tracking-wider text-[#5B6878]">
                       <th className="py-2.5 pr-3 font-bold">Analito</th>
@@ -659,95 +837,13 @@ export default function Dashboard() {
       </main>
 
       {/* Carteirinha Modal */}
-      <DialogPrimitive.Root open={isCarteirinhaOpen} onOpenChange={setIsCarteirinhaOpen}>
-        <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#F4F7FC] p-3 outline-none sm:p-6">
-            <div className="mb-3 flex shrink-0 items-center justify-between border-b border-[#E3E8F0] bg-white px-2 py-3 sm:px-4">
-              <DialogPrimitive.Title className="text-sm font-bold tracking-tight text-[#14211F] sm:text-base">
-                Carteirinha de Saúde
-              </DialogPrimitive.Title>
-              <div className="flex items-center gap-2">
-                <button type="button" aria-label="Diminuir zoom" onClick={() => setCardZoom((zoom) => Math.max(0.75, Number((zoom - 0.15).toFixed(2))))} disabled={cardZoom <= 0.75} className="flex h-10 w-10 items-center justify-center rounded-xl text-[#1D4ED8] hover:bg-[#F4F7FC] disabled:opacity-40">
-                  <ZoomOut size={19} />
-                </button>
-                <span className="min-w-12 text-center text-xs font-semibold text-[#5B6878]">{Math.round(cardZoom * 100)}%</span>
-                <button type="button" aria-label="Aumentar zoom" onClick={() => setCardZoom((zoom) => Math.min(1.6, Number((zoom + 0.15).toFixed(2))))} disabled={cardZoom >= 1.6} className="flex h-10 w-10 items-center justify-center rounded-xl text-[#1D4ED8] hover:bg-[#F4F7FC] disabled:opacity-40">
-                  <ZoomIn size={19} />
-                </button>
-                <DialogPrimitive.Close aria-label="Fechar carteirinha" className="flex h-10 w-10 items-center justify-center rounded-xl text-[#5B6878] hover:bg-[#F4F7FC] transition-colors">
-                  <X size={18} />
-                </DialogPrimitive.Close>
-              </div>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-auto overscroll-contain p-1 sm:p-4">
-              <div style={{ zoom: cardZoom }} className="mx-auto max-w-3xl">
-                <div className="bg-gradient-to-br from-[#CFE0FF] via-[#DBE8FF] to-[#CFE0FF] text-[#14211F] rounded-3xl p-6 sm:p-8 border border-[#1D4ED8]/25 shadow-lg mb-4">
-                  <div className="text-xs tracking-wider text-[#1D4ED8] font-bold">
-                    SAÚDE MEMORA · IDENTIFICAÇÃO PESSOAL
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-bold mt-2 tracking-tight text-[#14211F]">{fullName}</div>
-                  <div className="text-xs text-[#5B6878] mt-1 font-medium">
-                    Nascimento: {birthDateFormatted}{age !== null ? ` · Idade: ${age} anos` : ''}
-                  </div>
-                  <div className="mt-2 text-sm text-[#14211F]"><strong>Sexo:</strong> {user.sexo || 'Não informado'}</div>
-
-                  <div className="grid grid-cols-2 gap-3 mt-5">
-                    <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-3.5 border border-[#1D4ED8]/15 shadow-xs">
-                      <div className="text-[10px] text-[#1D4ED8] font-bold uppercase tracking-wider">TIPO SANGUÍNEO</div>
-                      <div className="text-2xl font-black text-[#14211F] mt-0.5">{bloodType}</div>
-                    </div>
-                    <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-3.5 border border-[#1D4ED8]/15 shadow-xs">
-                      <div className="text-[10px] text-[#1D4ED8] font-bold uppercase tracking-wider">DOADOR DE ÓRGÃOS</div>
-                      <div className="text-sm font-bold mt-1 text-[#14211F]">{resumoFicha.doadorOrgaos ? 'Sim, doador' : 'Não informado'}</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-[#1D4ED8]/20 space-y-1.5 text-xs text-[#5B6878]">
-                    <div><strong className="text-[#14211F]">Alergias:</strong> {allergiesDisplay}</div>
-                    <div>
-                      <strong className="text-[#14211F]">Condições:</strong>{' '}
-                      {[...resumoFicha.condicoes, resumoFicha.outrasDoencas].filter(Boolean).join(' · ') || 'Não informado'}
-                    </div>
-                    <div><strong className="text-[#14211F]">Remédios contínuos:</strong> {resumoFicha.medicamentosContinuos.join(', ') || 'Nenhum'}</div>
-                    <div><strong className="text-[#14211F]">Cirurgias:</strong> {resumoFicha.cirurgias || 'Não informado'}</div>
-                    <div><strong className="text-[#14211F]">Contato de emergência:</strong> {resumoFicha.contatoEmergencia || 'Não informado'}</div>
-                    <div><strong className="text-[#14211F]">Plano de saúde:</strong> {resumoFicha.planoSaude || 'Não cadastrado'}</div>
-                    <div><strong className="text-[#14211F]">Número da carteirinha:</strong> {resumoFicha.numeroCarteirinha || 'Não informado'}</div>
-                  </div>
-                </div>
-
-                {registeredCardUrl && (
-                  <div className="mb-4 overflow-hidden rounded-xl border border-[#E3E8F0] bg-[#F4F7FC]">
-                    {/\.pdf(?:[?#]|$)/i.test(registeredCardUrl) ? (
-                      <a
-                        href={registeredCardUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex min-h-14 items-center gap-2 px-4 text-sm font-semibold text-[#1D4ED8] hover:bg-[#F4F7FC]"
-                      >
-                        <FileText size={18} />
-                        Abrir carteirinha cadastrada
-                      </a>
-                    ) : (
-                      <img
-                        src={registeredCardUrl}
-                        alt="Carteirinha do plano de saúde cadastrada"
-                        className="max-h-[70vh] w-full object-contain"
-                      />
-                    )}
-                  </div>
-                )}
-
-                <div className="mt-4 rounded-xl border border-[#E3E8F0] bg-white p-4 text-sm text-[#14211F]">
-                  <strong>Histórico familiar:</strong> {resumoFicha.historicoFamiliar || 'Não informado'}
-                </div>
-              </div>
-            </div>
-          </DialogPrimitive.Content>
-        </DialogPrimitive.Portal>
-      </DialogPrimitive.Root>
+      <CarteirinhaModal
+        open={isCarteirinhaOpen}
+        onOpenChange={setIsCarteirinhaOpen}
+        user={user}
+        ficha={ficha}
+        resumoFicha={resumoFicha}
+      />
     </div>
   );
 }

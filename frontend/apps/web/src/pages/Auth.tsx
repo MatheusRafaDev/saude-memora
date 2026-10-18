@@ -1,19 +1,18 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye,
   EyeOff,
   LoaderCircle,
   X,
-  FolderHeart,
-  CheckCircle2,
-  ShieldCheck,
-  FlaskConical,
-  Pill,
-  FileBadge,
-  ArrowLeft,
   Lock,
+  Mail,
+  User,
+  Calendar,
+  AlertCircle,
+  CheckCircle2,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   usePostApiAuthLogin,
@@ -27,7 +26,6 @@ import {
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { BrandLogo } from '@/components/BrandLogo';
-import { BrandWordmark } from '@/components/BrandWordmark';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 
 export interface AuthProps {
@@ -81,7 +79,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   });
   const [message, setMessage] = useState(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('registered') === '1'
-      ? 'Conta criada com sucesso. Entre com seu e-mail e senha para continuar.'
+      ? 'Conta criada com sucesso! Faça login para acessar seu painel.'
       : '',
   );
   const [error, setError] = useState('');
@@ -103,7 +101,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         setMode('register');
       }
     }
-    // Compartilha a mesma tela e a mesma URL (/entrar) para Login e Criar conta
     if (typeof window !== 'undefined' && (window.location.pathname === '/cadastro' || window.location.pathname === '/criar-conta')) {
       window.history.replaceState(null, '', '/entrar');
     }
@@ -114,7 +111,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     setMode(newMode);
     setError('');
     setMessage(successMessage);
-    // Mantém a mesma tela e a mesma URL (/entrar) sem recarregar ou navegar
     if (typeof window !== 'undefined' && window.location.pathname !== '/entrar') {
       window.history.replaceState(null, '', '/entrar');
     }
@@ -131,11 +127,9 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       if (mode === 'login') {
         await loginMutation.mutateAsync({ data: { email: form.email.trim(), senha: form.password } });
 
-        // Limpa cache não-autenticado e busca os dados do paciente com a nova sessão antes de redirecionar
         queryClient.removeQueries({ queryKey: getGetApiPacientesMeQueryKey() });
         await queryClient.fetchQuery(getGetApiPacientesMeQueryOptions());
 
-        // Pré-carrega documentos e ficha em background sem bloquear
         void Promise.allSettled([
           queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
           queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
@@ -149,40 +143,72 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           return;
         }
 
+        const trimmedName = form.name.trim();
+        if (!trimmedName) {
+          setError('O nome completo é obrigatório.');
+          return;
+        }
+
+        if (!form.birthDate) {
+          setError('A data de nascimento é obrigatória.');
+          return;
+        }
+
+        const hoje = new Date().toISOString().slice(0, 10);
+        if (form.birthDate > hoje) {
+          setError('A data de nascimento não pode estar no futuro.');
+          return;
+        }
+
+        if (form.password.length < 8) {
+          setError('A senha deve ter no mínimo 8 caracteres.');
+          return;
+        }
+
         await registerMutation.mutateAsync({
           data: {
-            nome: form.name.trim(),
+            nome: trimmedName,
             dataNascimento: form.birthDate,
-            sexo: form.sex,
+            sexo: form.sex || undefined,
             email: form.email.trim(),
             senha: form.password,
           },
         });
 
-        setForm((prev) => ({ ...prev, password: '', name: '', birthDate: '', sex: '', email: '', termsAccepted: false }));
-        switchMode('login', 'Conta criada com sucesso. Entre com seu e-mail e senha para continuar.');
+        // Login automático após cadastro
+        await loginMutation.mutateAsync({ data: { email: form.email.trim(), senha: form.password } });
+
+        queryClient.removeQueries({ queryKey: getGetApiPacientesMeQueryKey() });
+        await queryClient.fetchQuery(getGetApiPacientesMeQueryOptions());
+
+        void Promise.allSettled([
+          queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
+          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
+        ]);
+
+        setLocation('/anamnese/inicio');
       }
-    } catch (err: any) {
-      setError(getApiErrorMessage(err, 'Ocorreu um erro. Verifique seus dados.'));
+    } catch (err: unknown) {
+      const fallback = mode === 'login' ? 'E-mail ou senha incorretos.' : 'Não foi possível criar sua conta.';
+      setError(getApiErrorMessage(err, fallback));
     }
   };
 
-  const handleForgotPassword = async (e: FormEvent) => {
-    e.preventDefault();
-    const email = forgotEmail.trim();
-    if (!email) return;
-    setIsForgotLoading(true);
-    setForgotMessage('');
+  const handleForgotPassword = async (event: FormEvent) => {
+    event.preventDefault();
     setForgotError('');
+    setForgotMessage('');
+    setIsForgotLoading(true);
+
     try {
       await customFetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: forgotEmail.trim() }),
       });
-      setForgotMessage('Se o e-mail estiver cadastrado, enviamos as instruções de recuperação.');
+      setForgotMessage('Se o e-mail estiver cadastrado, você receberá um link com instruções para redefinir sua senha.');
     } catch (err) {
-      setForgotError(getApiErrorMessage(err, 'Não foi possível solicitar a recuperação agora. Tente novamente.'));
+      setForgotError(getApiErrorMessage(err, 'Não foi possível solicitar a recuperação. Tente novamente mais tarde.'));
     } finally {
       setIsForgotLoading(false);
     }
@@ -190,441 +216,319 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
   const isPending = loginMutation.isPending || registerMutation.isPending;
 
-  if (currentUser) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-[#fafbfc] lg:bg-white font-sans text-[#1d2a3d] flex flex-col">
-      <div className="flex flex-1 flex-col lg:flex-row min-h-0 lg:min-h-screen">
-        {/* ── Left Illustration & Highlights Panel (Desktop only 44%) ── */}
-        <motion.section
-          initial={{ opacity: 0, x: -24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden lg:flex flex-[0_0_44%] flex-col justify-center items-center bg-[#1C2438] p-8 xl:p-12 text-white relative overflow-hidden"
+    <div className="min-h-screen bg-[#F8FAFC] text-[#14211F] flex flex-col justify-between selection:bg-[#CFE0FF] selection:text-[#1D4ED8]">
+      
+      {/* ── Top Header Bar ────────────────────────────────────────── */}
+      <header className="w-full px-6 py-5 flex items-center justify-between max-w-[1200px] mx-auto">
+        <BrandLogo
+          iconClassName="h-9 w-9"
+          wordmarkClassName="text-xl font-bold text-[#14211F]"
+        />
+
+        <Link
+          href="/"
+          className="text-xs sm:text-sm font-semibold text-[#5B6878] hover:text-[#1D4ED8] transition-colors inline-flex items-center gap-1"
         >
-          {/* Centered Editorial Block */}
-          <div className="my-auto w-full max-w-[420px] flex flex-col items-center text-center">
-            {/* Framed Editorial Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 14 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[340px] overflow-hidden rounded-[26px] border border-white/15 bg-white/10 p-2 shadow-2xl backdrop-blur-xs transition-transform duration-300 hover:scale-[1.01]"
-            >
-              <img
-                src="/login-illustration.jpg"
-                alt="Ilustração de consulta e cuidado com a saúde"
-                className="block h-auto w-full rounded-[20px] object-cover shadow-sm"
-              />
-            </motion.div>
+          <span>Voltar ao início</span>
+          <ArrowRight size={14} />
+        </Link>
+      </header>
 
-            <h1 className="mt-7 text-[32px] xl:text-[36px] font-semibold leading-[1.1] tracking-[-0.035em] font-serif">
-              Tudo o que importa, <span className="text-[#CFE0FF] font-serif italic">em um só lugar.</span>
-            </h1>
-
-            <p className="mt-3 max-w-[380px] text-[15px] leading-relaxed text-[#A9B6CE]">
-              Seu histórico de saúde, sempre à mão. Organize exames, receitas e laudos com clareza e segurança.
-            </p>
-
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 text-[12px] font-semibold text-white">
-                <FlaskConical size={13} className="text-[#7cc4e6]" /> Exames
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 text-[12px] font-semibold text-white">
-                <Pill size={13} className="text-[#7cc4e6]" /> Receitas
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 text-[12px] font-semibold text-white">
-                <FileBadge size={13} className="text-[#7cc4e6]" /> Laudos
-              </span>
+      {/* ── Center Login/Register Card ─────────────────────────────── */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+        <div className="w-full max-w-[460px]">
+          
+          {/* Card Container */}
+          <div className="rounded-[28px] border border-[#E2E8F0] bg-white p-7 sm:p-9 shadow-[0_20px_50px_-20px_rgba(20,33,31,0.07)]">
+            
+            {/* Header Titles */}
+            <div className="text-center mb-6">
+              <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#14211F]">
+                {mode === 'login' ? 'Acesse seu espaço' : 'Crie sua conta'}
+              </h1>
+              <p className="mt-1.5 text-xs sm:text-sm text-[#5B6878]">
+                {mode === 'login'
+                  ? 'Entre com suas credenciais para ver seu histórico'
+                  : 'Organize seus exames e receitas em menos de 1 minuto'}
+              </p>
             </div>
 
-            <div className="mt-6 inline-flex flex-col items-start gap-2.5 text-[14px] font-medium text-left">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                  <FolderHeart size={18} className="text-[#7cc4e6]" />
-                </div>
-                <span>Exames, receitas e laudos reunidos</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                  <CheckCircle2 size={18} className="text-[#7cc4e6]" />
-                </div>
-                <span>Você confere e corrige o que foi lido</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                  <ShieldCheck size={18} className="text-[#7cc4e6]" />
-                </div>
-                <span>Espaço pessoal, com você no controle</span>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── Right Form Panel (Clean, polished single canvas on mobile) ── */}
-        <section className="flex flex-1 flex-col justify-between p-5 sm:p-8 lg:p-10">
-          {/* Mobile top bar */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="flex items-center justify-between pb-4 pt-1 lg:hidden"
-          >
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#dde3ec] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#5a6a80] shadow-xs transition-all hover:border-[#CFE0FF] hover:text-[#1D4ED8]"
-            >
-              <ArrowLeft size={14} />
-              <span>Início</span>
-            </Link>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f1f4f8] px-3 py-1 text-[11px] font-medium text-[#5a6a80]">
-              <ShieldCheck size={13} className="text-[#1D4ED8]" />
-              <span>Ambiente seguro</span>
-            </span>
-          </motion.div>
-
-          {/* Desktop return link and logo */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="hidden lg:flex items-center justify-between gap-4"
-          >
-            <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1D4ED8] transition-colors">
-              ← Voltar ao início
-            </Link>
-          </motion.div>
-
-          {/* Form Container (compact, max-w 380px centered) */}
-          <motion.div
-            layout
-            initial={{ opacity: 0, y: 22, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{
-              opacity: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-              y: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
-              scale: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
-              layout: { duration: 0.28, ease: [0.16, 1, 0.3, 1] },
-            }}
-            className="mx-auto my-auto w-full max-w-[370px] sm:max-w-[380px] py-4 sm:py-6"
-          >
-            {/* Centered Brand & Header */}
-            <div className="mb-5 flex flex-col items-center justify-center text-center w-full">
-              <div className="mb-2.5 flex w-full justify-center text-center">
-                <BrandLogo
-                  className="mx-auto"
-                  iconClassName="h-11 w-11 drop-shadow-sm transition-transform hover:scale-105"
-                  wordmarkClassName="text-[23px] sm:text-[24px] text-[#14211F]"
-                />
-              </div>
-
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={mode}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
-                  className="flex flex-col items-center"
-                >
-                  <h2 className="text-[22px] sm:text-[26px] font-bold tracking-[-0.03em] text-[#14211F]">
-                    {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
-                  </h2>
-                  <p className="mt-1 text-[13px] sm:text-[14px] text-[#5B6878]">
-                    {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Segmented Pill Tabs with Animated Indicator */}
-            <div className="relative mb-5 flex rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1">
+            {/* Segmented Mode Switcher (Sleek Apple-style) */}
+            <div className="mb-6 flex rounded-2xl bg-[#F1F5F9] p-1 border border-[#E2E8F0]">
               <button
                 type="button"
                 onClick={() => handleModeChange('login')}
-                className={`relative z-10 flex-1 rounded-lg py-2 text-center text-[13.5px] font-bold transition-colors duration-150 ${
-                  mode === 'login' ? 'text-white' : 'text-[#5B6878] hover:text-[#14211F]'
+                className={`flex-1 rounded-xl py-2.5 text-center text-sm font-bold transition-all duration-200 cursor-pointer ${
+                  mode === 'login'
+                    ? 'bg-white text-[#1D4ED8] shadow-xs'
+                    : 'text-[#64748B] hover:text-[#14211F]'
                 }`}
               >
                 Entrar
-                {mode === 'login' && (
-                  <motion.div
-                    layoutId="auth-tab-pill"
-                    className="absolute inset-0 -z-10 rounded-lg bg-[#1D4ED8] shadow-sm"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  />
-                )}
               </button>
               <button
                 type="button"
                 onClick={() => handleModeChange('register')}
-                className={`relative z-10 flex-1 rounded-lg py-2 text-center text-[13.5px] font-bold transition-colors duration-150 ${
-                  mode === 'register' ? 'text-white' : 'text-[#5B6878] hover:text-[#14211F]'
+                className={`flex-1 rounded-xl py-2.5 text-center text-sm font-bold transition-all duration-200 cursor-pointer ${
+                  mode === 'register'
+                    ? 'bg-white text-[#1D4ED8] shadow-xs'
+                    : 'text-[#64748B] hover:text-[#14211F]'
                 }`}
               >
                 Criar conta
-                {mode === 'register' && (
-                  <motion.div
-                    layoutId="auth-tab-pill"
-                    className="absolute inset-0 -z-10 rounded-lg bg-[#1D4ED8] shadow-sm"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  />
-                )}
               </button>
             </div>
 
-            {/* Messages */}
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  role="alert"
-                  className="overflow-hidden rounded-xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-3 text-[13.5px] text-[#E8664A]"
-                >
-                  {error}
-                </motion.div>
-              )}
-              {message && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  className="overflow-hidden rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/40 p-3 text-[13.5px] text-[#1D4ED8]"
-                >
-                  {message}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Error & Success Messages */}
+            {error && (
+              <div role="alert" className="mb-4 rounded-xl border border-[#E8664A]/30 bg-[#FFF5F3] p-3 text-xs sm:text-sm text-[#E8664A] flex items-start gap-2.5 animate-in fade-in">
+                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+            {message && (
+              <div className="mb-4 rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/40 p-3 text-xs sm:text-sm text-[#1D4ED8] flex items-start gap-2.5 animate-in fade-in">
+                <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-[#10B981]" />
+                <span>{message}</span>
+              </div>
+            )}
 
-            {/* Form */}
-            <form onSubmit={submit} className="space-y-3">
-              {/* Register-only fields with smooth expanding collapse */}
-              <AnimatePresence initial={false}>
-                {mode === 'register' && (
-                  <motion.div
-                    key="register-fields"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="space-y-3 pb-3">
-                      <label className="block">
-                        <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Nome completo</span>
-                        <input
-                          type="text"
-                          required
-                          autoComplete="name"
-                          pattern=".*\S.*"
-                          placeholder="Seu nome completo"
-                          value={form.name}
-                          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                          className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
-                        />
-                      </label>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <label className="block">
-                          <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Nascimento</span>
-                          <input
-                            type="date"
-                            required
-                            autoComplete="bday"
-                            max={new Date().toISOString().slice(0, 10)}
-                            value={form.birthDate}
-                            onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
-                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Sexo biológico</span>
-                          <select
-                            required
-                            value={form.sex}
-                            onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
-                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 text-[#1d2a3d]"
-                          >
-                            <option value="">Selecione</option>
-                            <option value="Feminino">Feminino</option>
-                            <option value="Masculino">Masculino</option>
-                            <option value="Outro">Outro</option>
-                          </select>
-                        </label>
-                      </div>
+            {/* The Form */}
+            <form onSubmit={submit} className="space-y-4">
+              
+              {/* Register-only fields */}
+              {mode === 'register' && (
+                <div className="space-y-3.5 animate-in fade-in duration-200">
+                  <div>
+                    <label className="block mb-1 text-xs font-bold text-[#14211F]">
+                      Nome completo
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        autoComplete="name"
+                        placeholder="Ex.: Maria Clara Santos"
+                        value={form.name}
+                        onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                        className="h-12 w-full rounded-xl border border-[#D5DCE6] bg-[#FAFBFC] px-4 pl-10 text-sm text-[#14211F] outline-none transition-all focus:bg-white focus:border-[#1D4ED8] focus:ring-4 focus:ring-[#1D4ED8]/10 placeholder:text-[#94A3B8]"
+                      />
+                      <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7F8EA3]" />
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
 
-              {/* E-mail (Common field) */}
-              <label className="block">
-                <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">E-mail</span>
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  placeholder="voce@email.com"
-                  value={form.email}
-                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                  onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
-                  className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
-                />
-              </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block mb-1 text-xs font-bold text-[#14211F]">
+                        Nascimento
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        autoComplete="bday"
+                        max={new Date().toISOString().slice(0, 10)}
+                        value={form.birthDate}
+                        onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
+                        className="h-12 w-full rounded-xl border border-[#D5DCE6] bg-[#FAFBFC] px-3.5 text-sm text-[#14211F] outline-none transition-all focus:bg-white focus:border-[#1D4ED8] focus:ring-4 focus:ring-[#1D4ED8]/10"
+                      />
+                    </div>
 
-              {/* Senha (Common field) */}
-              <label className="block">
-                <span className="block mb-1 text-[12.5px] font-semibold text-[#334155]">Senha</span>
+                    <div>
+                      <label className="block mb-1 text-xs font-bold text-[#14211F]">
+                        Sexo biológico
+                      </label>
+                      <select
+                        required
+                        value={form.sex}
+                        onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
+                        className="h-12 w-full rounded-xl border border-[#D5DCE6] bg-[#FAFBFC] px-3 text-sm text-[#14211F] outline-none transition-all focus:bg-white focus:border-[#1D4ED8] focus:ring-4 focus:ring-[#1D4ED8]/10"
+                      >
+                        <option value="">Selecione</option>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* E-mail (Both modes) */}
+              <div>
+                <label className="block mb-1 text-xs font-bold text-[#14211F]">
+                  E-mail
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="seu.email@exemplo.com"
+                    value={form.email}
+                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                    onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
+                    className="h-12 w-full rounded-xl border border-[#D5DCE6] bg-[#FAFBFC] px-4 pl-10 text-sm text-[#14211F] outline-none transition-all focus:bg-white focus:border-[#1D4ED8] focus:ring-4 focus:ring-[#1D4ED8]/10 placeholder:text-[#94A3B8]"
+                  />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7F8EA3]" />
+                </div>
+              </div>
+
+              {/* Password (Both modes) */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-[#14211F]">
+                    Senha
+                  </label>
+                  {mode === 'login' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotModal(true)}
+                      className="text-xs font-semibold text-[#1D4ED8] hover:underline cursor-pointer"
+                    >
+                      Esqueceu a senha?
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     minLength={mode === 'register' ? 8 : undefined}
                     autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-                    placeholder={mode === 'register' ? 'No mínimo 8 caracteres' : 'Sua senha'}
+                    placeholder={mode === 'register' ? 'Mínimo de 8 caracteres' : 'Sua senha'}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 pr-10 text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
+                    className="h-12 w-full rounded-xl border border-[#D5DCE6] bg-[#FAFBFC] px-4 pl-10 pr-10 text-sm text-[#14211F] outline-none transition-all focus:bg-white focus:border-[#1D4ED8] focus:ring-4 focus:ring-[#1D4ED8]/10 placeholder:text-[#94A3B8]"
                   />
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7F8EA3]" />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#5a6a80] hover:text-[#1d2a3d] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7F8EA3] hover:text-[#14211F] transition-colors p-1 cursor-pointer"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-              </label>
-
-              {/* Sub-form actions (Forgot password or Terms) */}
-              <div className="pt-0.5">
-                <AnimatePresence mode="wait" initial={false}>
-                  {mode === 'login' ? (
-                    <motion.div
-                      key="forgot-password"
-                      initial={{ opacity: 0, y: 3 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -3 }}
-                      transition={{ duration: 0.15 }}
-                      className="text-right"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setShowForgotModal(true)}
-                        className="text-[13px] font-semibold text-[#1D4ED8] hover:underline"
-                      >
-                        Esqueci minha senha
-                      </button>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="terms"
-                      initial={{ opacity: 0, y: 3 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -3 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <label className="flex items-start gap-2.5 text-[12.5px] leading-snug text-[#5a6a80] cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.termsAccepted}
-                          onChange={(e) => setForm((prev) => ({ ...prev, termsAccepted: e.target.checked }))}
-                          className="mt-0.5 h-3.5 w-3.5 rounded border-[#c6cfdb] text-[#1D4ED8] focus:ring-[#1D4ED8]"
-                        />
-                        <span>
-                          Li e concordo com os{' '}
-                          <Link href="/termos" className="font-semibold text-[#1D4ED8] hover:underline">
-                            Termos de Uso
-                          </Link>{' '}
-                          e a{' '}
-                          <Link href="/privacidade" className="font-semibold text-[#1D4ED8] hover:underline">
-                            Política de Privacidade
-                          </Link>
-                          .
-                        </span>
-                      </label>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
 
-              {/* Submit Button */}
+              {/* Terms checkbox in register mode */}
+              {mode === 'register' && (
+                <div className="pt-1">
+                  <label className="flex items-start gap-2.5 text-xs text-[#5B6878] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.termsAccepted}
+                      onChange={(e) => setForm((prev) => ({ ...prev, termsAccepted: e.target.checked }))}
+                      className="mt-0.5 h-4 w-4 rounded border-[#D5DCE6] text-[#1D4ED8] focus:ring-[#1D4ED8]"
+                    />
+                    <span>
+                      Li e concordo com os{' '}
+                      <Link href="/termos" className="font-semibold text-[#1D4ED8] underline hover:text-[#1E40AF]">
+                        Termos de Uso
+                      </Link>{' '}
+                      e a{' '}
+                      <Link href="/privacidade" className="font-semibold text-[#1D4ED8] underline hover:text-[#1E40AF]">
+                        Política de Privacidade
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {/* Submit CTA Button */}
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] text-[14px] font-bold text-white shadow-xs transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-50"
+                className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] text-sm font-bold text-white shadow-sm transition-all hover:bg-[#1E40AF] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 cursor-pointer"
               >
                 {isPending ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  <LoaderCircle className="h-5 w-5 animate-spin" />
                 ) : (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={mode}
-                      initial={{ opacity: 0, y: 2 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -2 }}
-                      transition={{ duration: 0.15 }}
-                      className="inline-flex items-center gap-2"
-                    >
-                      <span>{mode === 'login' ? 'Entrar na minha conta' : 'Criar minha conta'}</span>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M13 6l6 6-6 6" />
-                      </svg>
-                    </motion.span>
-                  </AnimatePresence>
+                  <span>{mode === 'login' ? 'Entrar no sistema' : 'Criar minha conta gratuita'}</span>
                 )}
               </button>
             </form>
 
-            <div className="mt-4 flex items-center justify-center gap-1.5 text-center text-[11.5px] sm:text-[12px] text-[#5B6878]">
-              <Lock size={12} className="text-[#1D4ED8] shrink-0" />
-              <span>Espaço seguro e pessoal: controle total dos seus dados</span>
+            {/* Quick Switch Link at bottom */}
+            <div className="mt-6 pt-5 border-t border-[#E2E8F0] text-center text-xs text-[#5B6878]">
+              {mode === 'login' ? (
+                <span>
+                  Ainda não tem conta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('register')}
+                    className="font-bold text-[#1D4ED8] hover:underline cursor-pointer"
+                  >
+                    Cadastre-se gratuitamente
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  Já possui uma conta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('login')}
+                    className="font-bold text-[#1D4ED8] hover:underline cursor-pointer"
+                  >
+                    Fazer login
+                  </button>
+                </span>
+              )}
             </div>
-          </motion.div>
 
-          <div />
-        </section>
-      </div>
+          </div>
 
-      {/* ── Modal Recuperar Senha (matches ModalRecuperarSenha.html) ── */}
+          {/* Reassurance Badge below card */}
+          <div className="mt-6 text-center text-xs text-[#7F8EA3] flex items-center justify-center gap-1.5">
+            <ShieldCheck size={14} className="text-[#10B981]" />
+            <span>Seus dados são confidenciais e protegidos pela LGPD</span>
+          </div>
+
+        </div>
+      </main>
+
+      {/* ── Footer ────────────────────────────────────────────────── */}
+      <footer className="w-full px-6 py-4 text-center text-xs text-[#7F8EA3]">
+        Saúde Memora © {new Date().getFullYear()} · Tecnologia médica a serviço da sua tranquilidade
+      </footer>
+
+      {/* ── Modal Recuperar Senha ── */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f1e3c]/60 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-[500px] rounded-[28px] bg-white p-8 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.4)] animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-[440px] rounded-[24px] bg-white p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 border border-[#E2E8F0]">
             <button
               type="button"
               onClick={() => {
                 setShowForgotModal(false);
                 setForgotMessage('');
+                setForgotError('');
               }}
-              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f1f4f8] text-[#5a6a80] hover:text-[#1d2a3d]"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl bg-[#F4F7FC] text-[#5B6878] hover:text-[#14211F] transition-colors"
+              aria-label="Fechar"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
-              </svg>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#CFE0FF] text-[#1D4ED8]">
+              <Lock size={20} />
             </div>
 
-            <h2 className="mt-4 mb-1.5 text-[22px] font-bold">Recuperar senha</h2>
-            <p className="mb-5 text-[14px] leading-relaxed text-[#5a6a80]">
-              Digite o e-mail da sua conta para recebermos as instruções de recuperação.
+            <h2 className="mt-4 text-xl font-bold text-[#14211F]">Recuperar senha</h2>
+            <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#5B6878]">
+              Digite o e-mail da sua conta para enviarmos as instruções de redefinição de senha.
             </p>
 
             {forgotMessage ? (
-              <div className="rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/40 p-4 text-[14px] text-[#1D4ED8]">
+              <div className="mt-5 rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/40 p-4 text-xs sm:text-sm text-[#1D4ED8]">
                 {forgotMessage}
               </div>
             ) : (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
+              <form onSubmit={handleForgotPassword} className="mt-5 space-y-3.5">
                 {forgotError && (
-                  <div role="alert" className="rounded-xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-3.5 text-[14px] text-[#E8664A]">
+                  <div role="alert" className="rounded-xl border border-[#E8664A]/30 bg-[#FFF5F3] p-3 text-xs sm:text-sm text-[#E8664A]">
                     {forgotError}
                   </div>
                 )}
@@ -632,20 +536,20 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   type="email"
                   required
                   autoComplete="email"
-                  placeholder="voce@email.com"
+                  placeholder="seu.email@exemplo.com"
                   value={forgotEmail}
                   onChange={(e) => {
                     setForgotEmail(e.target.value);
                     setForgotError('');
                   }}
-                  className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
+                  className="h-11 w-full rounded-xl border border-[#D5DCE6] bg-[#FAFBFC] px-3.5 text-sm text-[#14211F] outline-none focus:bg-white focus:border-[#1D4ED8] focus:ring-4 focus:ring-[#1D4ED8]/10 placeholder:text-[#94A3B8]"
                 />
                 <button
                   type="submit"
                   disabled={isForgotLoading}
-                  className="flex min-h-11 w-full items-center justify-center rounded-xl bg-[#1D4ED8] text-[14px] font-bold text-white shadow-xs transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A]"
+                  className="flex min-h-11 w-full items-center justify-center rounded-xl bg-[#1D4ED8] text-sm font-bold text-white shadow-xs transition-all hover:bg-[#1E40AF] disabled:opacity-50 cursor-pointer"
                 >
-                  {isForgotLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : 'Enviar link de recuperação'}
+                  {isForgotLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : 'Enviar instruções de recuperação'}
                 </button>
               </form>
             )}

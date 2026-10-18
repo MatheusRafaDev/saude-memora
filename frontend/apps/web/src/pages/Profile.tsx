@@ -11,13 +11,15 @@ import {
   Check,
   LoaderCircle,
   AlertTriangle,
-  X,  LogOut,
+  X,  LogOut,
   ArrowLeft,
   ChevronRight,
+  ZoomIn,
 } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   useGetApiPacientesMe,
+  useGetApiFichaMedicaMe,
   usePatchApiPacientesMePerfil,
   deleteApiPacientesMe,
   customFetch,
@@ -26,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { useConsentimento, useSaveConsentimento } from '@/hooks/useConsentimento';
+import { CarteirinhaModal } from '@/components/CarteirinhaModal';
 
 export default function Profile() {
   const { toast } = useToast();
@@ -36,12 +39,14 @@ export default function Profile() {
     isLoading: isProfileLoading,
     isError: profileError,
   } = useGetApiPacientesMe();
+  const { data: fichaRaw } = useGetApiFichaMedicaMe();
   const { data: consentimento } = useConsentimento();
   const patchPerfil = usePatchApiPacientesMePerfil();
   const saveConsentimento = useSaveConsentimento();
 
   const [activeTab, setActiveTab] = useState<'dados' | 'carteirinha' | 'seguranca' | 'privacidade'>('dados');
   const [mobileSectionOpen, setMobileSectionOpen] = useState(false);
+  const [isCarteirinhaModalOpen, setIsCarteirinhaModalOpen] = useState(false);
   const sectionTitles = { dados: 'Dados pessoais', carteirinha: 'Carteirinha', seguranca: 'Segurança', privacidade: 'Privacidade' } as const;
 
   // Form State
@@ -302,9 +307,9 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FC] text-[#14211F] font-sans pb-16">
-      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
+      <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
-        <div className={`flex justify-between items-end gap-5 mb-7 flex-wrap ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
+        <div className={`flex justify-between items-end gap-4 sm:gap-5 mb-5 sm:mb-7 flex-wrap ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
           <div>
             <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1D4ED8]">
               Perfil
@@ -558,33 +563,46 @@ export default function Profile() {
                 <div className="mt-6 border-t border-[#E3E8F0] pt-5">
                   <h3 className="mb-1 text-sm font-bold text-[#14211F]">Imagem da carteirinha</h3>
                   <p className="mb-4 text-xs leading-relaxed text-[#5B6878]">
-                    Aceita PDF, JPG ou PNG de até 10 MB. O envio usa leitura automática e requer consentimento de IA ativado em Privacidade.
+                    Aceita PDF, JPG ou PNG de até 10 MB. O envio realiza a digitalização assistida e requer autorização de processamento ativada em Privacidade.
                   </p>
                   {urlCarteirinha && (
                     <div className="mb-4 overflow-hidden rounded-xl border border-[#E3E8F0] bg-[#F4F7FC]">
                       {/\.pdf(?:[?#]|$)/i.test(urlCarteirinha) ? (
-                        <a
-                          href={urlCarteirinha}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex min-h-16 items-center gap-2 px-4 text-sm font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/30 transition-colors"
+                        <button
+                          type="button"
+                          onClick={() => setIsCarteirinhaModalOpen(true)}
+                          className="flex min-h-16 w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/30 transition-colors cursor-pointer"
                         >
-                          <FileText size={18} />
-                          Abrir arquivo da carteirinha
-                        </a>
+                          <div className="flex items-center gap-2">
+                            <FileText size={18} className="shrink-0" />
+                            <span>Abrir arquivo da carteirinha</span>
+                          </div>
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-[#CFE0FF] px-2.5 py-1 text-xs font-bold text-[#1D4ED8]">
+                            <ZoomIn size={13} />
+                            Ver no modal
+                          </span>
+                        </button>
                       ) : (
-                        <a
-                          href={urlCarteirinha}
-                          target="_blank"
-                          rel="noreferrer"
-                          aria-label="Abrir imagem da carteirinha"
+                        <button
+                          type="button"
+                          onClick={() => setIsCarteirinhaModalOpen(true)}
+                          aria-label="Abrir carteirinha de saúde no modal"
+                          className="group relative block w-full cursor-zoom-in text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1D4ED8]"
                         >
-                          <img
-                            src={urlCarteirinha}
-                            alt="Carteirinha de plano de saúde cadastrada"
-                            className="max-h-64 w-full object-contain"
-                          />
-                        </a>
+                          <div className="relative flex items-center justify-center overflow-hidden bg-white p-2">
+                            <img
+                              src={urlCarteirinha}
+                              alt="Carteirinha de plano de saúde cadastrada"
+                              className="max-h-64 w-full object-contain transition-transform duration-200 group-hover:scale-[1.01]"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100 rounded-lg">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[#1D4ED8] shadow-md">
+                                <ZoomIn size={14} />
+                                Clique para abrir a carteirinha
+                              </span>
+                            </div>
+                          </div>
+                        </button>
                       )}
                     </div>
                   )}
@@ -605,9 +623,19 @@ export default function Profile() {
                     {urlCarteirinha && (
                       <button
                         type="button"
+                        onClick={() => setIsCarteirinhaModalOpen(true)}
+                        className="min-h-[44px] rounded-xl border border-[#1D4ED8]/30 bg-[#CFE0FF]/40 px-4 text-sm font-semibold text-[#1D4ED8] inline-flex items-center gap-2 hover:bg-[#CFE0FF] transition-all shadow-xs cursor-pointer"
+                      >
+                        <ZoomIn size={16} />
+                        Ver carteirinha
+                      </button>
+                    )}
+                    {urlCarteirinha && (
+                      <button
+                        type="button"
                         onClick={handleDeleteHealthCard}
                         disabled={isDeletingCard}
-                        className="min-h-[44px] rounded-xl border border-[#E8664A]/30 bg-white px-4 text-sm font-semibold text-[#E8664A] inline-flex items-center gap-2 hover:bg-[#FDE1DA] transition-all shadow-xs disabled:opacity-50"
+                        className="min-h-[44px] rounded-xl border border-[#E8664A]/30 bg-white px-4 text-sm font-semibold text-[#E8664A] inline-flex items-center gap-2 hover:bg-[#FDE1DA] transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                       >
                         {isDeletingCard
                           ? <LoaderCircle size={16} className="animate-spin" />
@@ -695,10 +723,10 @@ export default function Profile() {
                   <div className="flex gap-4 items-center py-4">
                     <div className="flex-1">
                       <b className="text-[15px] text-[#14211F] block">
-                        Assistente de chat (Mémora)
+                        Assistente Clínico Pessoal (Memora)
                       </b>
                       <div className="text-[13px] text-[#5B6878] mt-0.5 leading-relaxed">
-                        Permite consultar seu histórico em linguagem natural.
+                        Permite consultar seu histórico de laudos, prescrições e exames em linguagem natural com segurança e privacidade estrita.
                       </div>
                     </div>
                     <button
@@ -825,6 +853,25 @@ export default function Profile() {
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
+
+      {/* Modal da Carteirinha de Saúde */}
+      <CarteirinhaModal
+        open={isCarteirinhaModalOpen}
+        onOpenChange={setIsCarteirinhaModalOpen}
+        initialTab="documento"
+        user={{
+          id: (profileRaw as any)?.id,
+          nome,
+          dataNascimento: nascimento,
+          sexo,
+          planoSaude,
+          numeroCarteirinha,
+          urlCarteirinha,
+          cpf: (profileRaw as any)?.cpf,
+          contatoEmergencia,
+        }}
+        ficha={fichaRaw as any}
+      />
     </div>
   );
 }

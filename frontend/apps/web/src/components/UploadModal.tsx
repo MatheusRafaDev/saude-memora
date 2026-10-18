@@ -22,9 +22,14 @@ import {
   Send,
   FileBarChart,
   Layers,
-  FileCheck,
+  Camera,
+  Clipboard,
+  ShieldCheck,
+  Check,
+  ArrowRight,
+  Info,
 } from 'lucide-react';
-import { customFetch, getGetApiDocumentsQueryKey } from '@workspace/api-client-react';
+import { customFetch } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
 
 interface UploadModalProps {
@@ -41,7 +46,7 @@ interface FilePreviewItem {
 }
 
 const TYPE_OPTIONS = [
-  { id: 'outro', label: 'Automático', icon: Sparkles },
+  { id: 'outro', label: 'Triagem Automática', icon: Sparkles, badge: 'IA' },
   { id: 'receita', label: 'Receita', icon: Pill },
   { id: 'exame', label: 'Exame', icon: Activity },
   { id: 'laudo', label: 'Laudo', icon: FileSearch },
@@ -50,6 +55,14 @@ const TYPE_OPTIONS = [
   { id: 'encaminhamento', label: 'Encaminhamento', icon: Send },
   { id: 'relatorio', label: 'Relatório', icon: FileBarChart },
 ];
+
+const PIPELINE_STEPS = [
+  { id: 1, title: 'Upload & Criptografia segura', desc: 'Protegendo seus dados de saúde com TLS/AES-256', threshold: 0 },
+  { id: 2, title: 'OCR & Leitura de alta resolução', desc: 'Digitalização avançada de texto manuscrito e impresso', threshold: 30 },
+  { id: 3, title: 'Estruturação de dados clínicos', desc: 'Identificação de dosagens, biomarcadores e CRM', threshold: 65 },
+  { id: 4, title: 'Catalogação no prontuário', desc: 'Organização automática na sua linha do tempo médica', threshold: 90 },
+];
+
 const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 
 function formatFileSize(bytes: number): string {
@@ -78,14 +91,17 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   const [processedDocsCount, setProcessedDocsCount] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const isAppendingRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
-    const handler = () => {
+    const handler = (e: any) => {
+      const mode = e?.detail?.mode;
       setInternalOpen(true);
       setStatus('idle');
       setFiles([]);
+      setIsBatchMode(mode === 'batch');
       setProgress(0);
       setBatchCurrentIndex(0);
       setBatchTotalCount(0);
@@ -137,6 +153,33 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, zoomedImage]);
 
+  // Handle clipboard paste (Ctrl+V)
+  useEffect(() => {
+    if (!isOpen || status !== 'idle') return;
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const pastedFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const extension = file.type.split('/')[1] || 'png';
+            const renamedFile = new File([file], `colado-${Date.now()}.${extension}`, { type: file.type });
+            pastedFiles.push(renamedFile);
+          }
+        }
+      }
+      if (pastedFiles.length > 0) {
+        if (!validateFiles(pastedFiles)) return;
+        setErrorMessage('');
+        setFiles((prev) => [...prev, ...pastedFiles]);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen, status]);
+
   const validateFiles = (picked: File[]) => {
     if (picked.some((file) => file.size > 10 * 1024 * 1024)) {
       setErrorMessage('O tamanho máximo permitido por arquivo é 10 MB.');
@@ -153,6 +196,18 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     setInternalOpen(false);
     setZoomedImage(null);
     if (externalOnClose) externalOnClose();
+  };
+
+  const handleResetToUploadAnother = () => {
+    setStatus('idle');
+    setFiles([]);
+    setFilePreviews([]);
+    setProgress(0);
+    setBatchCurrentIndex(0);
+    setBatchTotalCount(0);
+    setProcessedDocsCount(0);
+    setErrorMessage('');
+    setResultId(null);
   };
 
   const handleFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -252,7 +307,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
     // Envio tradicional de 1 documento (podendo conter 1 ou várias páginas)
     setStatus('uploading');
-    setProgress(20);
+    setProgress(15);
 
     try {
       const formData = new FormData();
@@ -304,32 +359,71 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0f1e3c]/60 backdrop-blur-xs p-4 animate-in fade-in"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0f1e3c]/60 backdrop-blur-xs p-2.5 sm:p-4 animate-in fade-in"
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-[640px] max-h-[92vh] overflow-y-auto bg-white rounded-[28px] p-6 sm:p-8 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] border border-[#dde3ec]"
+        className="relative w-full max-w-[660px] max-h-[94vh] sm:max-h-[92vh] overflow-y-auto bg-white rounded-[24px] sm:rounded-[28px] p-4 sm:p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] border border-[#dde3ec]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 w-10 h-10 rounded-xl bg-[#F4F7FC] hover:bg-[#E3E8F0] transition-colors flex items-center justify-center text-[#5B6878] cursor-pointer"
+          className="absolute right-3.5 top-3.5 sm:right-5 sm:top-5 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#F4F7FC] hover:bg-[#E3E8F0] transition-colors flex items-center justify-center text-[#5B6878] hover:text-[#14211F] cursor-pointer"
           aria-label="Fechar"
         >
-          <X size={20} />
+          <X size={19} />
         </button>
 
-        <h2 className="m-0 mb-1 text-2xl font-bold tracking-tight text-[#14211F]">
-          Adicionar documento
-        </h2>
-        <p className="m-0 mb-4.5 text-sm text-[#5B6878]">
-          Envie uma foto ou arquivo PDF do seu exame ou receita.
-        </p>
+        {/* Modal Header */}
+        <div className="mb-3.5 pr-10">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-2.5 py-0.5 text-xs font-semibold text-[#1D4ED8] mb-1.5">
+            {isBatchMode ? <Layers size={13} /> : <ShieldCheck size={13} />}
+            <span>{isBatchMode ? 'Importação em Lote' : 'Prontuário Seguro'}</span>
+          </div>
+          <h2 className="m-0 text-xl sm:text-2xl font-bold tracking-tight text-[#14211F]">
+            {isBatchMode ? 'Enviar em lote de documentos' : 'Adicionar documento'}
+          </h2>
+          <p className="m-0 mt-1 text-xs sm:text-sm text-[#5B6878]">
+            {isBatchMode
+              ? 'Envie vários arquivos ou fotos de uma vez. A triagem com IA processa e cataloga cada documento individualmente no seu acervo.'
+              : 'Envie receitas, laudos, exames ou carteirinhas. O sistema extrai e cataloga os dados clínicos automaticamente.'}
+          </p>
+        </div>
+
+        {/* Mode Selector Tabs (Documento Único vs Envio em Lote) */}
+        {status === 'idle' && (
+          <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1">
+            <button
+              type="button"
+              onClick={() => setIsBatchMode(false)}
+              className={`flex items-center justify-center gap-2 rounded-lg py-2 px-3 text-xs font-semibold transition-all cursor-pointer ${
+                !isBatchMode
+                  ? 'bg-white text-[#1D4ED8] shadow-xs'
+                  : 'text-[#5B6878] hover:text-[#14211F]'
+              }`}
+            >
+              <FileText size={15} />
+              <span>Documento único</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsBatchMode(true)}
+              className={`flex items-center justify-center gap-2 rounded-lg py-2 px-3 text-xs font-semibold transition-all cursor-pointer ${
+                isBatchMode
+                  ? 'bg-white text-[#1D4ED8] shadow-xs ring-1 ring-[#1D4ED8]/20'
+                  : 'text-[#5B6878] hover:text-[#14211F]'
+              }`}
+            >
+              <Layers size={15} />
+              <span>Enviar em lote</span>
+            </button>
+          </div>
+        )}
 
         {status === 'idle' && (
           <>
-            {/* Hidden Input for picking files */}
+            {/* Hidden Inputs for picking files or camera capture */}
             <input
               ref={fileInputRef}
               type="file"
@@ -338,10 +432,17 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               className="hidden"
               onChange={handleFilePicked}
             />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleFilePicked}
+            />
 
-            {/* Upload Area / Preview */}
+            {/* Empty Dropzone */}
             {files.length === 0 ? (
-              /* Empty Dropzone (ice background #F4F7FC, dashed border #E3E8F0, blue #1D4ED8 on hover) */
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -349,23 +450,67 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                onClick={() => {
-                  isAppendingRef.current = false;
-                  fileInputRef.current?.click();
-                }}
-                className={`border-2 border-dashed rounded-[22px] bg-[#F4F7FC] p-8 text-center cursor-pointer transition-colors ${
-                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#E3E8F0] hover:border-[#1D4ED8]'
+                className={`border-2 border-dashed rounded-[22px] bg-[#F4F7FC] p-6 sm:p-8 text-center transition-all ${
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30 scale-[1.01]' : 'border-[#E3E8F0] hover:border-[#1D4ED8]'
                 }`}
               >
-                <div className="w-14 h-14 rounded-[18px] bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] mx-auto mb-3 flex items-center justify-center shadow-xs">
-                  <UploadCloud size={26} className="text-white" strokeWidth={2} />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] mx-auto mb-3 flex items-center justify-center shadow-sm">
+                  {isBatchMode ? (
+                    <Layers size={28} className="text-white" strokeWidth={2} />
+                  ) : (
+                    <UploadCloud size={28} className="text-white" strokeWidth={2} />
+                  )}
                 </div>
 
-                <b className="text-[17px] font-bold text-[#14211F] block">
-                  Arraste ou escolha um arquivo
+                {isBatchMode && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CFE0FF]/50 border border-[#CFE0FF] text-xs font-bold text-[#1D4ED8] mb-2.5">
+                    <Layers size={13} />
+                    Modo Envio em Lote
+                  </span>
+                )}
+
+                <b className="text-base sm:text-lg font-bold text-[#14211F] block">
+                  {isBatchMode
+                    ? 'Arraste múltiplos arquivos ou fotos aqui'
+                    : 'Arraste ou escolha seus documentos'}
                 </b>
-                <div className="text-[13px] text-[#5B6878] mt-1.5">
-                  PDF, JPG ou PNG (até 10 MB)
+                <p className="text-xs sm:text-sm text-[#5B6878] mt-1 mb-4">
+                  {isBatchMode
+                    ? 'Selecione de 2 a 10 arquivos (PDFs, fotos). Cada arquivo será salvo separadamente no seu acervo.'
+                    : 'Fotos (JPG, PNG) ou arquivos PDF de até 10 MB'}
+                </p>
+
+                {/* Primary Dual Actions: Tirar Foto + Selecionar Arquivos */}
+                <div className="flex flex-wrap items-center justify-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      isAppendingRef.current = false;
+                      cameraInputRef.current?.click();
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-[#E3E8F0] text-[#14211F] hover:border-[#1D4ED8] hover:bg-[#F4F7FC] transition-all cursor-pointer shadow-xs active:scale-98"
+                  >
+                    <Camera size={16} className="text-[#1D4ED8]" />
+                    <span>Tirar foto</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      isAppendingRef.current = false;
+                      fileInputRef.current?.click();
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#1D4ED8] text-white hover:bg-[#1E40AF] transition-all cursor-pointer shadow-xs active:scale-98"
+                  >
+                    {isBatchMode ? <Layers size={16} /> : <UploadCloud size={16} />}
+                    <span>{isBatchMode ? 'Selecionar arquivos em lote' : 'Selecionar arquivos'}</span>
+                  </button>
+                </div>
+
+                {/* Quick Paste hint */}
+                <div className="mt-3.5 text-[11px] text-[#5B6878] flex items-center justify-center gap-1.5">
+                  <Clipboard size={12} className="text-[#1D4ED8]" />
+                  <span>Dica: Você também pode colar capturas diretamente com <strong>Ctrl+V</strong></span>
                 </div>
               </div>
             ) : files.length === 1 && filePreviews[0]?.isImage && filePreviews[0]?.url ? (
@@ -377,21 +522,21 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-[22px] bg-[#f8fafc] p-3.5 transition-colors ${
-                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#b6c7dc]'
+                className={`border-2 border-dashed rounded-[22px] bg-[#F8FAFC] p-3.5 sm:p-4 transition-colors ${
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#CFE0FF]'
                 }`}
               >
                 {/* Header info */}
                 <div className="flex items-center justify-between gap-2 mb-2.5 px-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#CFE0FF]/40 border border-[#CFE0FF] text-[#1D4ED8] shrink-0">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#CFE0FF]/50 border border-[#CFE0FF] text-[#1D4ED8] shrink-0">
                       <ImageIcon size={13} />
-                      Foto pronta
+                      Imagem pronta
                     </span>
-                    <span className="text-xs text-[#1d2a3d] font-semibold truncate" title={filePreviews[0].file.name}>
+                    <span className="text-xs text-[#14211F] font-semibold truncate" title={filePreviews[0].file.name}>
                       {filePreviews[0].file.name}
                     </span>
-                    <span className="text-[11px] text-[#5a6a80] shrink-0">
+                    <span className="text-[11px] text-[#5B6878] shrink-0">
                       ({formatFileSize(filePreviews[0].file.size)})
                     </span>
                   </div>
@@ -400,7 +545,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     <button
                       type="button"
                       onClick={() => setZoomedImage({ url: filePreviews[0].url!, name: filePreviews[0].file.name })}
-                      className="w-8 h-8 rounded-lg text-[#5a6a80] hover:text-[#1D4ED8] hover:bg-white transition-colors flex items-center justify-center cursor-pointer shadow-xs bg-white/80 border border-[#dde3ec]"
+                      className="w-8 h-8 rounded-lg text-[#5B6878] hover:text-[#1D4ED8] hover:bg-white transition-colors flex items-center justify-center cursor-pointer shadow-xs bg-white/80 border border-[#E3E8F0]"
                       title="Ampliar foto"
                       aria-label="Ampliar foto"
                     >
@@ -409,7 +554,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     <button
                       type="button"
                       onClick={handleClearFiles}
-                      className="w-8 h-8 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors flex items-center justify-center cursor-pointer shadow-xs bg-white/80 border border-[#dde3ec]"
+                      className="w-8 h-8 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors flex items-center justify-center cursor-pointer shadow-xs bg-white/80 border border-[#E3E8F0]"
                       title="Remover foto"
                       aria-label="Remover foto"
                     >
@@ -421,7 +566,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 {/* Image Frame */}
                 <div
                   onClick={() => setZoomedImage({ url: filePreviews[0].url!, name: filePreviews[0].file.name })}
-                  className="group relative mx-auto flex items-center justify-center max-h-[250px] min-h-[170px] overflow-hidden rounded-xl bg-white border border-[#dde3ec] p-2 shadow-inner cursor-zoom-in"
+                  className="group relative mx-auto flex items-center justify-center max-h-[250px] min-h-[170px] overflow-hidden rounded-xl bg-white border border-[#E3E8F0] p-2 shadow-inner cursor-zoom-in"
                 >
                   <img
                     src={filePreviews[0].url}
@@ -437,7 +582,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 </div>
 
                 {/* Change or append actions */}
-                <div className="mt-2.5 flex items-center justify-center gap-4 text-xs">
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs">
                   <button
                     type="button"
                     onClick={() => {
@@ -447,7 +592,19 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     className="font-bold text-[#1D4ED8] hover:text-[#1E40AF] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
                   >
                     <RefreshCw size={12} />
-                    Trocar imagem
+                    Trocar arquivo
+                  </button>
+                  <span className="text-slate-300">•</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      isAppendingRef.current = true;
+                      cameraInputRef.current?.click();
+                    }}
+                    className="font-bold text-[#5B6878] hover:text-[#1D4ED8] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
+                  >
+                    <Camera size={13} />
+                    Tirar outra foto
                   </button>
                   <span className="text-slate-300">•</span>
                   <button
@@ -456,10 +613,10 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       isAppendingRef.current = true;
                       fileInputRef.current?.click();
                     }}
-                    className="font-bold text-[#5a6a80] hover:text-[#1D4ED8] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
+                    className="font-bold text-[#5B6878] hover:text-[#1D4ED8] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
                   >
                     <Plus size={13} />
-                    Adicionar outra foto/página
+                    Adicionar mais páginas
                   </button>
                 </div>
               </div>
@@ -472,8 +629,8 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-[22px] bg-[#f8fafc] p-6 text-center transition-colors ${
-                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#b6c7dc]'
+                className={`border-2 border-dashed rounded-[22px] bg-[#F8FAFC] p-6 text-center transition-colors ${
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#CFE0FF]'
                 }`}
               >
                 <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 mx-auto mb-3 flex items-center justify-center shadow-xs border border-rose-100">
@@ -482,10 +639,10 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 mb-1.5">
                   PDF
                 </span>
-                <b className="text-[16px] text-[#1d2a3d] block truncate max-w-[380px] mx-auto">
+                <b className="text-[16px] text-[#14211F] block truncate max-w-[380px] mx-auto">
                   {filePreviews[0].file.name}
                 </b>
-                <p className="text-xs text-[#5a6a80] mt-1 mb-4">
+                <p className="text-xs text-[#5B6878] mt-1 mb-4">
                   {formatFileSize(filePreviews[0].file.size)} · Documento pronto para envio
                 </p>
                 <div className="flex items-center justify-center gap-2">
@@ -498,6 +655,17 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#E3E8F0] text-[#14211F] hover:bg-[#F4F7FC] transition-colors cursor-pointer"
                   >
                     Trocar arquivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      isAppendingRef.current = true;
+                      fileInputRef.current?.click();
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#CFE0FF]/40 border border-[#CFE0FF] text-[#1D4ED8] hover:bg-[#CFE0FF]/70 transition-colors cursor-pointer inline-flex items-center gap-1"
+                  >
+                    <Plus size={13} />
+                    Adicionar outro PDF
                   </button>
                   <button
                     type="button"
@@ -517,14 +685,19 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-[22px] bg-[#f8fafc] p-4 transition-colors ${
-                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#b6c7dc]'
+                className={`border-2 border-dashed rounded-[22px] bg-[#F8FAFC] p-4 transition-colors ${
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#CFE0FF]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-3 px-1">
-                  <b className="text-sm font-bold text-[#1d2a3d]">
-                    {files.length} arquivos selecionados
-                  </b>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#CFE0FF] text-[#1D4ED8] text-xs font-bold">
+                      {files.length}
+                    </span>
+                    <b className="text-sm font-bold text-[#14211F]">
+                      arquivos selecionados
+                    </b>
+                  </div>
                   <button
                     type="button"
                     onClick={handleClearFiles}
@@ -538,7 +711,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   {filePreviews.map((item, idx) => (
                     <div
                       key={`${item.file.name}-${idx}`}
-                      className="relative group rounded-xl border border-[#dde3ec] bg-white p-2 shadow-xs flex flex-col items-center"
+                      className="relative group rounded-xl border border-[#E3E8F0] bg-white p-2 shadow-xs flex flex-col items-center"
                     >
                       <button
                         type="button"
@@ -546,7 +719,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                           e.stopPropagation();
                           handleRemoveFile(idx);
                         }}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 text-rose-500 shadow-sm border border-slate-200 flex items-center justify-center opacity-80 group-hover:opacity-100 hover:bg-rose-500 hover:text-white transition-all cursor-pointer z-10"
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/95 text-rose-500 shadow-sm border border-slate-200 flex items-center justify-center opacity-80 group-hover:opacity-100 hover:bg-rose-500 hover:text-white transition-all cursor-pointer z-10"
                         title="Remover arquivo"
                         aria-label="Remover arquivo"
                       >
@@ -575,10 +748,10 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       )}
 
                       <div className="w-full mt-2 text-left">
-                        <p className="text-xs font-semibold text-[#1d2a3d] truncate" title={item.file.name}>
+                        <p className="text-xs font-semibold text-[#14211F] truncate" title={item.file.name}>
                           {item.file.name}
                         </p>
-                        <p className="text-[11px] text-[#5a6a80]">
+                        <p className="text-[11px] text-[#5B6878]">
                           {formatFileSize(item.file.size)}
                         </p>
                       </div>
@@ -591,7 +764,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       isAppendingRef.current = true;
                       fileInputRef.current?.click();
                     }}
-                    className="min-h-[140px] rounded-xl border-2 border-dashed border-[#b6c7dc] hover:border-[#1D4ED8] bg-white/60 hover:bg-[#CFE0FF]/30 flex flex-col items-center justify-center gap-1 text-[#1D4ED8] transition-colors cursor-pointer"
+                    className="min-h-[140px] rounded-xl border-2 border-dashed border-[#CFE0FF] hover:border-[#1D4ED8] bg-white/70 hover:bg-[#CFE0FF]/30 flex flex-col items-center justify-center gap-1 text-[#1D4ED8] transition-colors cursor-pointer"
                   >
                     <Plus size={22} />
                     <span className="text-xs font-bold">Adicionar mais</span>
@@ -600,60 +773,72 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               </div>
             )}
 
-            {/* Opção de Envio em Lote (exibida quando há 2 ou mais arquivos) */}
+            {/* Segmented Control for Multi-file mode */}
             {files.length > 1 && (
-              <div className="mt-4 rounded-2xl border border-[#CFE0FF] bg-[#CFE0FF]/30 p-3.5 sm:p-4 text-[#14211F] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shrink-0 text-[#1D4ED8] shadow-xs">
-                    <Layers size={18} />
-                  </div>
-                  <div>
-                    <span className="block text-sm font-bold text-[#1d2a3d]">
-                      Enviar em lote ({files.length} documentos)
-                    </span>
-                    <span className="block text-xs text-[#5a6a80]">
-                      {isBatchMode
-                        ? 'Cada arquivo será processado como um documento individual no seu acervo.'
-                        : 'Todos os arquivos serão agrupados como páginas de 1 único documento.'}
-                    </span>
-                  </div>
+              <div className="mt-3.5 rounded-2xl border border-[#CFE0FF] bg-[#F4F7FC] p-3.5 sm:p-4">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#14211F] mb-2 flex items-center gap-2">
+                  <Layers size={14} className="text-[#1D4ED8]" />
+                  <span>Como salvar estes {files.length} arquivos?</span>
                 </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
-                    onClick={() => setIsBatchMode(!isBatchMode)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                      isBatchMode ? 'bg-[#1D4ED8]' : 'bg-[#c6cfdb]'
+                    onClick={() => setIsBatchMode(true)}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      isBatchMode
+                        ? 'bg-white border-[#1D4ED8] shadow-xs ring-1 ring-[#1D4ED8]'
+                        : 'bg-white/60 border-[#E3E8F0] hover:bg-white hover:border-[#CFE0FF]'
                     }`}
-                    role="switch"
-                    aria-checked={isBatchMode}
                   >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        isBatchMode ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
+                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-[#14211F]">
+                      <Layers size={16} className={isBatchMode ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
+                      <span>Documentos separados (Lote)</span>
+                    </div>
+                    <p className="text-[11px] text-[#5B6878] mt-1 m-0">
+                      Cada arquivo é registrado e classificado como um documento individual no seu prontuário.
+                    </p>
                   </button>
-                  <span className="text-xs font-bold text-[#1D4ED8]">
-                    {isBatchMode ? 'Ativado' : 'Desativado'}
-                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsBatchMode(false)}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      !isBatchMode
+                        ? 'bg-white border-[#1D4ED8] shadow-xs ring-1 ring-[#1D4ED8]'
+                        : 'bg-white/60 border-[#E3E8F0] hover:bg-white hover:border-[#CFE0FF]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-[#14211F]">
+                      <FileText size={16} className={!isBatchMode ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
+                      <span>Páginas de 1 único documento</span>
+                    </div>
+                    <p className="text-[11px] text-[#5B6878] mt-1 m-0">
+                      Todos os arquivos são agrupados sequencialmente (ex: laudo de várias páginas).
+                    </p>
+                  </button>
                 </div>
               </div>
             )}
 
             {/* Error Message if any */}
             {errorMessage && (
-              <p className="text-center text-xs font-bold text-red-600 mt-3 mb-0">
-                {errorMessage}
-              </p>
+              <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 flex items-center gap-2">
+                <AlertTriangle size={16} className="shrink-0 text-rose-600" />
+                <span>{errorMessage}</span>
+              </div>
             )}
 
             {/* Document Type Pills with Icons */}
-            <div className="my-4.5 mb-5.5">
-              <span className="block text-xs font-bold uppercase tracking-wider text-[#5a6a80] mb-2.5">
-                Tipo do documento
-              </span>
+            <div className="my-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5B6878]">
+                  Classificação do documento
+                </span>
+                <span className="text-[11px] text-[#1D4ED8] font-semibold">
+                  A IA pode identificar automaticamente
+                </span>
+              </div>
+
               <div className="flex gap-2 flex-wrap">
                 {TYPE_OPTIONS.map((t) => {
                   const Icon = t.icon;
@@ -663,7 +848,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       key={t.id}
                       type="button"
                       onClick={() => setSelectedType(t.id)}
-                      className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-semibold transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8] shadow-xs scale-[1.02]'
                           : 'bg-white text-[#14211F] border border-[#E3E8F0] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
@@ -671,78 +856,151 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     >
                       <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
                       <span>{t.label}</span>
+                      {t.badge && (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-[#CFE0FF] text-[#1D4ED8]'}`}>
+                          {t.badge}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
             </div>
 
+            {/* Clinical Scanning Tip */}
+            <div className="mb-4 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC]/70 p-3 text-xs text-[#5B6878] flex items-center gap-2.5">
+              <Info size={15} className="text-[#1D4ED8] shrink-0" />
+              <span>
+                <strong>Dica médica:</strong> Para exames e receitas manuscritas, uma foto nítida e bem iluminada garante 100% de precisão na leitura das dosagens.
+              </span>
+            </div>
+
             {/* Action buttons */}
-            <div className="flex gap-2.5 justify-end">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-2.5 justify-end pt-1 border-t border-[#E3E8F0]">
               <button
                 type="button"
                 onClick={handleClose}
-                className="min-h-11 px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-white text-[#14211F] border border-[#E3E8F0] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all cursor-pointer shadow-xs"
+                className="min-h-11 w-full sm:w-auto px-5 rounded-xl inline-flex items-center justify-center gap-2 font-semibold text-sm bg-white text-[#14211F] border border-[#E3E8F0] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all cursor-pointer shadow-xs"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleUpload}
-                className="min-h-11 px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-[#1D4ED8] text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer shadow-xs"
+                className="min-h-11 w-full sm:w-auto px-6 rounded-xl inline-flex items-center justify-center gap-2 font-semibold text-sm bg-[#1D4ED8] text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer shadow-xs"
               >
-                {files.length > 1 && isBatchMode
-                  ? `Enviar ${files.length} documentos em lote`
-                  : files.length > 0
-                  ? 'Enviar documento'
-                  : 'Escolher arquivo'}
+                {files.length > 1 && isBatchMode ? (
+                  <>
+                    <Layers size={16} />
+                    <span>Enviar {files.length} documentos em lote</span>
+                  </>
+                ) : files.length > 0 ? (
+                  <>
+                    <UploadCloud size={16} />
+                    <span>Enviar documento</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} />
+                    <span>Escolher arquivo</span>
+                  </>
+                )}
               </button>
             </div>
           </>
         )}
 
+        {/* Processing State with Step Pipeline */}
         {(status === 'uploading' || status === 'processing') && (
-          <div className="py-8 text-center space-y-4">
-            <LoaderCircle size={36} className="mx-auto text-[#1D4ED8] animate-spin" />
-            <div>
-              <b className="text-lg text-[#14211F] block">
+          <div className="py-6 sm:py-8 space-y-6">
+            <div className="text-center">
+              <div className="relative mx-auto w-14 h-14 mb-3 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-2xl bg-[#CFE0FF]/40 animate-ping opacity-50" />
+                <div className="relative w-14 h-14 rounded-2xl bg-[#1D4ED8] flex items-center justify-center text-white shadow-md">
+                  <LoaderCircle size={28} className="animate-spin" />
+                </div>
+              </div>
+              <b className="text-lg sm:text-xl text-[#14211F] block">
                 {batchTotalCount > 1
-                  ? `Enviando em lote: ${batchCurrentIndex} de ${batchTotalCount} arquivos...`
+                  ? `Processando lote (${batchCurrentIndex} de ${batchTotalCount})`
                   : status === 'uploading'
                   ? 'Enviando documento...'
-                  : 'Extraindo informações com IA...'}
+                  : 'Digitalizando e estruturando dados clínicos...'}
               </b>
-              <p className="text-sm text-[#5a6a80] mt-1">
+              <p className="text-xs sm:text-sm text-[#5B6878] mt-1">
                 {batchTotalCount > 1
-                  ? 'Cada arquivo está sendo catalogado no seu acervo.'
-                  : 'Aguarde um instante enquanto organizamos os dados.'}
+                  ? 'Cada arquivo está sendo catalogado individualmente no seu acervo médico.'
+                  : 'Nossa IA está identificando exames, medicamentos, diagnósticos e dosagens.'}
               </p>
             </div>
-            <div className="h-2 rounded-full bg-[#F4F7FC] max-w-sm mx-auto overflow-hidden">
-              <div
-                className="h-full bg-[#1D4ED8] rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
+
+            {/* Overall Progress Bar */}
+            <div className="max-w-md mx-auto">
+              <div className="flex items-center justify-between text-xs font-semibold text-[#5B6878] mb-1.5">
+                <span>Progresso do processamento</span>
+                <span className="text-[#1D4ED8]">{progress}%</span>
+              </div>
+              <div className="h-2.5 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#1D4ED8] to-[#3B82F6] rounded-full transition-all duration-300"
+                  style={{ width: `${Math.max(progress, 8)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Medical Processing Pipeline Steps */}
+            <div className="max-w-md mx-auto rounded-2xl border border-[#E3E8F0] bg-[#F4F7FC]/70 p-4 space-y-3">
+              {PIPELINE_STEPS.map((step) => {
+                const isFinished = progress > step.threshold + 25 || progress === 100;
+                const isCurrent = progress >= step.threshold && !isFinished;
+                return (
+                  <div key={step.id} className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
+                      {isFinished ? (
+                        <CheckCircle2 size={18} className="text-emerald-600" />
+                      ) : isCurrent ? (
+                        <LoaderCircle size={16} className="text-[#1D4ED8] animate-spin" />
+                      ) : (
+                        <span className="h-2 w-2 rounded-full bg-[#CBD5E1]" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-xs font-semibold ${isFinished ? 'text-emerald-800' : isCurrent ? 'text-[#1D4ED8] font-bold' : 'text-[#5B6878]'}`}>
+                        {step.title}
+                      </p>
+                      <p className="text-[11px] text-[#5B6878] leading-tight">
+                        {step.desc}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
+        {/* Done State */}
         {status === 'done' && (
-          <div className="py-6 text-center space-y-4">
-            <CheckCircle2 size={42} className="mx-auto text-emerald-600" />
+          <div className="py-6 sm:py-8 text-center space-y-5 animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center shadow-xs border border-emerald-100">
+              <CheckCircle2 size={36} />
+            </div>
+
             <div>
-              <b className="text-lg text-[#14211F] block">
+              <b className="text-xl sm:text-2xl text-[#14211F] block tracking-tight">
                 {processedDocsCount > 1
-                  ? `${processedDocsCount} documentos enviados com sucesso!`
+                  ? `${processedDocsCount} documentos salvos com sucesso!`
                   : 'Documento processado com sucesso!'}
               </b>
-              <p className="text-sm text-[#5a6a80] mt-1">
+              <p className="text-xs sm:text-sm text-[#5B6878] mt-1.5 max-w-md mx-auto">
                 {processedDocsCount > 1
-                  ? 'Todos os arquivos foram catalogados individualmente no seu histórico.'
-                  : 'As informações foram catalogadas e já estão prontas para visualização.'}
+                  ? 'Todos os arquivos foram catalogados e organizados no seu histórico médico.'
+                  : 'Os biomarcadores, prescrições e detalhes clínicos foram extraídos e adicionados ao seu prontuário.'}
               </p>
             </div>
-            <div className="flex gap-2.5 justify-center pt-2">
+
+            {/* Quick Actions */}
+            <div className="flex flex-col sm:flex-row gap-2.5 justify-center max-w-md mx-auto pt-2">
               <button
                 type="button"
                 onClick={() => {
@@ -750,20 +1008,33 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   if (resultId && processedDocsCount <= 1) setLocation(`/documentos/${resultId}`);
                   else setLocation('/documentos');
                 }}
-                className="min-h-11 px-6 rounded-xl bg-[#1D4ED8] text-white font-semibold text-sm hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer shadow-xs"
+                className="min-h-11 px-6 rounded-xl bg-[#1D4ED8] text-white font-semibold text-sm hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer shadow-xs inline-flex items-center justify-center gap-2"
               >
-                {processedDocsCount > 1 ? 'Ir para o acervo de documentos' : 'Ver documento'}
+                <span>{processedDocsCount > 1 ? 'Ver no acervo' : 'Ver documento'}</span>
+                <ArrowRight size={15} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetToUploadAnother}
+                className="min-h-11 px-5 rounded-xl bg-white text-[#14211F] font-semibold text-sm border border-[#E3E8F0] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all cursor-pointer shadow-xs inline-flex items-center justify-center gap-2"
+              >
+                <Plus size={15} className="text-[#1D4ED8]" />
+                <span>Adicionar outro</span>
               </button>
             </div>
           </div>
         )}
 
+        {/* Error State */}
         {status === 'error' && (
-          <div className="py-6 text-center space-y-4">
-            <AlertTriangle size={42} className="mx-auto text-[#E8664A]" />
+          <div className="py-6 sm:py-8 text-center space-y-4 animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 mx-auto flex items-center justify-center shadow-xs border border-rose-100">
+              <AlertTriangle size={36} />
+            </div>
             <div>
-              <b className="text-lg text-[#14211F] block">Falha no processamento</b>
-              <p className="text-sm text-[#E8664A] mt-1">{errorMessage}</p>
+              <b className="text-lg sm:text-xl text-[#14211F] block">Falha no processamento</b>
+              <p className="text-xs sm:text-sm text-rose-600 mt-1 max-w-md mx-auto">{errorMessage}</p>
             </div>
             <div className="flex gap-2.5 justify-center pt-2">
               <button
@@ -777,24 +1048,30 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
           </div>
         )}
 
+        {/* Timeout State */}
         {status === 'timeout' && (
-          <div className="py-6 text-center space-y-4">
-            <LoaderCircle size={42} className="mx-auto animate-spin text-[#1D4ED8]" />
-            <div>
-              <b className="block text-lg text-[#14211F]">Ainda estamos processando</b>
-              <p className="mt-1 text-sm text-[#5a6a80]">{errorMessage}</p>
+          <div className="py-6 sm:py-8 text-center space-y-4 animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-[#CFE0FF]/40 text-[#1D4ED8] mx-auto flex items-center justify-center shadow-xs">
+              <LoaderCircle size={36} className="animate-spin" />
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                handleClose();
-                if (resultId) setLocation(`/documentos/${resultId}`);
-                else setLocation('/documentos');
-              }}
-              className="min-h-11 rounded-xl bg-[#1D4ED8] px-6 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] shadow-xs transition-all"
-            >
-              Acompanhar documento
-            </button>
+            <div>
+              <b className="block text-lg sm:text-xl text-[#14211F]">Processamento em andamento</b>
+              <p className="mt-1 text-xs sm:text-sm text-[#5B6878] max-w-md mx-auto">{errorMessage}</p>
+            </div>
+            <div className="flex gap-2.5 justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleClose();
+                  if (resultId) setLocation(`/documentos/${resultId}`);
+                  else setLocation('/documentos');
+                }}
+                className="min-h-11 rounded-xl bg-[#1D4ED8] px-6 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] shadow-xs transition-all inline-flex items-center gap-2"
+              >
+                <span>Acompanhar no acervo</span>
+                <ArrowRight size={15} />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -833,6 +1110,6 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   );
 }
 
-export function triggerUploadModal() {
-  window.dispatchEvent(new CustomEvent('open-upload-modal'));
+export function triggerUploadModal(options?: { mode?: 'single' | 'batch' }) {
+  window.dispatchEvent(new CustomEvent('open-upload-modal', { detail: options }));
 }
