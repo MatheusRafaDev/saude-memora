@@ -104,11 +104,16 @@ builder.Services.AddHostedService<AccountCleanupWorker>();
 builder.Services.AddHostedService<KeepAliveWorker>();
 
 // CORS
-var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173,https://localhost:5173,http://127.0.0.1:5173,https://127.0.0.1:5173";
+var defaultOriginsStr = "https://saude-memora.vercel.app,http://localhost:5173,https://localhost:5173,http://127.0.0.1:5173,https://127.0.0.1:5173";
+var corsOriginsStr = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS") ?? Environment.GetEnvironmentVariable("FRONTEND_URL") ?? defaultOriginsStr;
 var allowedOrigins = CorsSettings.ParseAllowedOrigins(corsOriginsStr);
 if (allowedOrigins.Length == 0)
 {
-    allowedOrigins = new[] { "http://localhost:5173", "https://localhost:5173" };
+    allowedOrigins = new[] { "https://saude-memora.vercel.app", "http://localhost:5173", "https://localhost:5173" };
+}
+else if (!allowedOrigins.Contains("https://saude-memora.vercel.app", StringComparer.OrdinalIgnoreCase))
+{
+    allowedOrigins = allowedOrigins.Concat(new[] { "https://saude-memora.vercel.app" }).ToArray();
 }
 
 // Allowlist explícita por padrão. Hosts dinâmicos (ex.: previews) entram por

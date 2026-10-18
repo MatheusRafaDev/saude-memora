@@ -85,6 +85,12 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
               purpose: 'any'
             },
             {
+              src: '/favicon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
+              purpose: 'any'
+            },
+            {
               src: '/logo.svg',
               sizes: 'any',
               type: 'image/svg+xml',

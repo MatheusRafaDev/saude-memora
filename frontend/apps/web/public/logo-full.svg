@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 337" width="1024" height="337" role="img" aria-label="Saúde Memora">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;800&amp;display=swap');
+      .brand-title {
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 500;
+        fill: #0F1B4D;
+        font-size: 112px;
+        letter-spacing: -2px;
+      }
+      .brand-main {
+        font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-weight: 800;
+        fill: #1D4ED8;
+        font-size: 136px;
+        letter-spacing: -3px;
+      }
+      .brand-dot {
+        fill: #EB6A4A;
+      }
+    </style>
+  </defs>
+
+  <!-- Símbolo -->
+  <g id="symbol">
+    <rect x="32" y="32" width="273" height="273" rx="60" fill="#1D4ED8" />
+    <path
+      d="M70 193 L108 193 L141 115 L168.5 220 L196 115 L228 193 L250 193"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="19"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle cx="261.5" cy="193" r="13" fill="#EB6A4A" />
+  </g>
+
+  <!-- Wordmark -->
+  <text x="365" y="148" class="brand-title">saúde</text>
+  <text x="365" y="278" class="brand-main">memora<tspan class="brand-dot">.</tspan></text>
+</svg>

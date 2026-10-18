@@ -15,16 +15,16 @@ export function BrandLogoIcon({ className = 'h-9 w-9', inverse = false }: BrandL
         aria-label="Símbolo Saúde Memora"
         className={`${className} flex-none`}
       >
-        <rect width="64" height="64" rx="18" fill="#CFE0FF" />
+        <rect width="64" height="64" rx="15" fill="#CFE0FF" />
         <path
-          d="M11 38 L20 38 L26 20 L32 44 L38 20 L44 38 L50 38"
+          d="M9 38 L18 38 L25.5 19.5 L32 44 L38.5 19.5 L46 38 L51 38"
           fill="none"
           stroke="#1D4ED8"
           strokeWidth="4.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="54" cy="38" r="3.2" fill="#E8664A" />
+        <circle cx="54" cy="38" r="3.2" fill="#EB6A4A" />
       </svg>
     );
   }
@@ -36,16 +36,16 @@ export function BrandLogoIcon({ className = 'h-9 w-9', inverse = false }: BrandL
       aria-label="Símbolo Saúde Memora"
       className={`${className} flex-none`}
     >
-      <rect width="64" height="64" rx="18" fill="#1D4ED8" />
+      <rect width="64" height="64" rx="15" fill="#1D4ED8" />
       <path
-        d="M11 38 L20 38 L26 20 L32 44 L38 20 L44 38 L50 38"
+        d="M9 38 L18 38 L25.5 19.5 L32 44 L38.5 19.5 L46 38 L51 38"
         fill="none"
         stroke="#FFFFFF"
         strokeWidth="4.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="54" cy="38" r="3.2" fill="#E8664A" />
+      <circle cx="54" cy="38" r="3.2" fill="#EB6A4A" />
     </svg>
   );
 }
@@ -58,25 +58,34 @@ type BrandLogoProps = {
   withLink?: boolean;
   href?: string;
   showWordmark?: boolean;
+  withDot?: boolean;
+  layout?: 'stacked' | 'inline';
   subtitle?: string;
 };
 
 export function BrandLogo({
   className = '',
-  iconClassName = 'h-9 w-9',
+  iconClassName = 'h-10 w-10',
   wordmarkClassName = '',
   inverse = false,
   withLink = true,
   href = '/',
   showWordmark = true,
+  withDot = true,
+  layout = 'stacked',
   subtitle,
 }: BrandLogoProps) {
   const content = (
-    <div className={`inline-flex items-center gap-3 ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 ${className}`}>
       <BrandLogoIcon className={iconClassName} inverse={inverse} />
       {showWordmark && (
         <div className="flex flex-col leading-none">
-          <BrandWordmark className={wordmarkClassName} inverse={inverse} />
+          <BrandWordmark
+            className={wordmarkClassName}
+            inverse={inverse}
+            withDot={withDot}
+            layout={layout}
+          />
           {subtitle && (
             <span
               className={`text-[12px] font-medium tracking-normal mt-1 ${
