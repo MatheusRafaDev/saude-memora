@@ -242,43 +242,53 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] font-sans text-[#1d2a3d]">
+    <div className="min-h-screen bg-[#F4F7FC] font-sans text-[#14211F]">
       <main className="mx-auto max-w-[1240px] px-3 pb-8 pt-5 sm:px-6 sm:pt-8 lg:px-10 lg:pb-16">
-        <div className="mb-4 flex items-end justify-between gap-3 sm:mb-6">
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:mb-6">
           <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0] sm:text-xs">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
               Converse com seu histórico
             </div>
-            <h1 className="mb-0 mt-1.5 text-2xl font-extrabold tracking-[-0.035em] text-[#1b3a60] sm:mt-2 sm:text-4xl">
+            <h1 className="mb-0 mt-1 text-3xl sm:text-4xl font-bold tracking-tight text-[#14211F]">
               Chat IA
             </h1>
             <p className="mb-0 mt-1 max-w-2xl text-xs leading-relaxed text-[#5a6a80] sm:mt-1.5 sm:text-base">
               Sua conversa do dia fica salva automaticamente. Use “Nova conversa” para começar um assunto novo.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={startNewChat}
+            disabled={isLoading}
+            className="btn-secondary min-h-11 shrink-0 self-start sm:self-end"
+          >
+            <Plus size={16} className="text-[#1D4ED8]" />
+            <span>Nova conversa</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-12 lg:gap-5">
-          <section className="flex h-[min(68dvh,760px)] min-h-[460px] flex-col rounded-2xl border border-[#dde3ec] bg-white p-3 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-5 lg:col-span-8 lg:h-auto lg:min-h-[640px] lg:rounded-[20px] lg:p-7">
-            <div className="flex items-center gap-2.5 border-b border-[#dde3ec] pb-3 sm:gap-3 sm:pb-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#1b3a60] shadow-sm sm:h-11 sm:w-11">
+          <section className="flex h-[min(68dvh,760px)] min-h-[460px] flex-col rounded-2xl border border-[#E3E8F0] bg-white p-3 shadow-xs sm:p-5 lg:col-span-8 lg:h-auto lg:min-h-[640px] lg:rounded-[20px] lg:p-7">
+            <div className="flex items-center gap-2.5 border-b border-[#E3E8F0] pb-3 sm:gap-3 sm:pb-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#1D4ED8] shadow-xs sm:h-11 sm:w-11">
                 <MessageSquare size={19} className="text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <b className="block text-sm leading-tight text-[#1d2a3d] sm:text-[17px]">Mémora</b>
+                <b className="block text-sm leading-tight text-[#14211F] sm:text-[17px]">Mémora</b>
                 <div className="truncate text-[11px] text-[#5a6a80] sm:text-[13px]">
                   Conversa de hoje · {formatDateLabel(chatDate)}
                 </div>
               </div>
             </div>
 
-            <div className="my-3 flex items-start gap-2 rounded-xl border border-[#e3b95a]/30 bg-[#fdf3d8] p-2.5 text-[11px] leading-relaxed text-[#6b4208] sm:my-4 sm:gap-2.5 sm:p-3.5 sm:text-[13px]">
-              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[#6b4208] sm:h-4 sm:w-4" />
+            <div className="my-3 flex items-start gap-2 rounded-xl border border-amber-300/40 bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-900 sm:my-4 sm:gap-2.5 sm:p-3.5 sm:text-[13px]">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-800 sm:h-4 sm:w-4" />
               <span>A IA organiza e consulta seus documentos. Ela não faz diagnósticos nem substitui um profissional de saúde.</span>
             </div>
 
             {avisoNovoDia && (
-              <div role="status" className="mb-2 flex items-start justify-between gap-2 rounded-lg bg-[#eaf2fc] px-3 py-2 text-xs text-[#1b3a60]">
+              <div role="status" className="mb-2 flex items-start justify-between gap-2 rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/40 px-3 py-2 text-xs text-[#1D4ED8]">
                 <span>Começou um novo dia, então esta é uma conversa nova.</span>
                 <button type="button" onClick={() => setAvisoNovoDia(false)} aria-label="Fechar aviso" className="shrink-0 font-bold">×</button>
               </div>
@@ -287,25 +297,25 @@ export default function Chat() {
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain py-2 sm:space-y-5 sm:py-3">
               {isLoadingHistory && (
                 <div className="flex justify-center py-8 text-sm text-[#5a6a80]">
-                  <LoaderCircle size={18} className="mr-2 animate-spin" /> Carregando conversa…
+                  <LoaderCircle size={18} className="mr-2 animate-spin text-[#1D4ED8]" /> Carregando conversa…
                 </div>
               )}
               {historyError && (
-                <div role="alert" className="rounded-xl bg-[#fff5f4] p-3 text-sm text-[#a13a30]">
+                <div role="alert" className="rounded-xl border border-[#E8664A]/30 bg-[#FFF5F3] p-3 text-sm text-[#E8664A]">
                   Não foi possível carregar sua conversa. Tente novamente.
                 </div>
               )}
               {sendError && (
-                <div role="alert" className="rounded-xl bg-[#fff5f4] p-3 text-sm text-[#a13a30]">
+                <div role="alert" className="rounded-xl border border-[#E8664A]/30 bg-[#FFF5F3] p-3 text-sm text-[#E8664A]">
                   Não foi possível enviar sua pergunta. Tente novamente.
                 </div>
               )}
               {!isLoadingHistory && !historyError && messages.length === 0 && (
                 <div className="mx-auto max-w-md py-8 text-center sm:py-12">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf2fc] text-[#1b3a60]">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
                     <MessageSquare size={22} />
                   </div>
-                  <p className="mb-1 text-sm font-bold text-[#1d2a3d]">Sua conversa começa aqui</p>
+                  <p className="mb-1 text-sm font-bold text-[#14211F]">Sua conversa começa aqui</p>
                   <p className="m-0 text-xs leading-relaxed text-[#5a6a80] sm:text-sm">
                     Faça uma pergunta sobre seus registros. A conversa fica salva e volta quando você abrir o chat hoje.
                   </p>
@@ -315,22 +325,22 @@ export default function Chat() {
                 <div key={message.id}>
                   {message.role === 'user' ? (
                     <div className="mb-3 flex justify-end sm:mb-4">
-                      <div className="max-w-[88%] rounded-[18px] rounded-tr-[6px] bg-[#1b3a60] px-3.5 py-3 text-sm leading-relaxed text-white shadow-sm sm:max-w-[480px] sm:px-4.5 sm:py-3.5 sm:text-[15px]">
+                      <div className="max-w-[88%] rounded-[18px] rounded-tr-[6px] bg-[#1D4ED8] px-3.5 py-3 text-sm leading-relaxed text-white shadow-xs sm:max-w-[480px] sm:px-4.5 sm:py-3.5 sm:text-[15px]">
                         {message.content}
                         {message.sendFailed && <div className="mt-2 border-t border-white/20 pt-2 text-xs text-white/80">Não enviada ao servidor.</div>}
                       </div>
                     </div>
                   ) : (
                     <div className="mb-3 flex items-start gap-2 sm:mb-4 sm:gap-3">
-                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1b3a60] text-white shadow-sm sm:h-9 sm:w-9">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8] text-white shadow-xs sm:h-9 sm:w-9">
                         <MessageSquare size={16} />
                       </div>
-                      <div className="min-w-0 max-w-[calc(100%-2.5rem)] rounded-[18px] rounded-tl-[6px] bg-[#f1f4f8] p-3 text-sm leading-relaxed text-[#1d2a3d] sm:max-w-[580px] sm:p-4 sm:text-[15px]">
-                        <div className="prose prose-sm max-w-none break-words text-[#1d2a3d]"><ReactMarkdown>{message.content}</ReactMarkdown></div>
+                      <div className="min-w-0 max-w-[calc(100%-2.5rem)] rounded-[18px] rounded-tl-[6px] bg-[#F4F7FC] border border-[#E3E8F0] p-3 text-sm leading-relaxed text-[#14211F] sm:max-w-[580px] sm:p-4 sm:text-[15px]">
+                        <div className="prose prose-sm max-w-none break-words text-[#14211F]"><ReactMarkdown>{message.content}</ReactMarkdown></div>
                         {message.citations && message.citations.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#dde3ec] pt-2">
+                          <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#E3E8F0] pt-2">
                             {message.citations.map((citation, index) => (
-                              <span key={citation.id || index} className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#e5eefb] px-2.5 py-1.5 text-[10px] font-bold text-[#1f7fe0] sm:px-3 sm:text-xs">
+                              <span key={citation.id || index} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#CFE0FF] bg-[#CFE0FF]/40 px-2.5 py-1.5 text-[10px] font-bold text-[#1D4ED8] sm:px-3 sm:text-xs">
                                 <FileText size={13} className="shrink-0" />
                                 <span className="truncate">{citation.titulo} {citation.data ? `· ${citation.data}` : ''}</span>
                               </span>
@@ -345,7 +355,7 @@ export default function Chat() {
               ))}
               {isLoading && (
                 <div className="flex items-center gap-3 py-2 text-xs text-[#5a6a80] sm:text-sm">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1b3a60] sm:h-9 sm:w-9">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8] sm:h-9 sm:w-9">
                     <LoaderCircle size={18} className="animate-spin text-white" />
                   </div>
                   <span>Mémora está consultando seus documentos…</span>
@@ -356,35 +366,35 @@ export default function Chat() {
 
             <div className="my-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
               {SUGGESTIONS.map((suggestion) => (
-                <button key={suggestion} type="button" onClick={() => void handleSend(suggestion)} disabled={isLoading} className="min-h-9 shrink-0 rounded-full border border-[#b8cdee] bg-white px-3 text-[11px] font-semibold text-[#1b3a60] transition-colors hover:bg-blue-50/50 disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-[13px]">
+                <button key={suggestion} type="button" onClick={() => void handleSend(suggestion)} disabled={isLoading} className="min-h-9 shrink-0 rounded-full border border-[#E3E8F0] bg-white px-3 text-[11px] font-semibold text-[#14211F] transition-colors hover:border-[#CFE0FF] hover:bg-[#F4F7FC] disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-[13px]">
                   {suggestion}
                 </button>
               ))}
             </div>
-            <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="flex items-center gap-2 rounded-2xl border border-[#c6cfdb] p-1.5 pl-3 text-sm transition-colors focus-within:border-[#1b3a60] sm:gap-2.5 sm:p-2 sm:pl-4 sm:text-[15px]">
+            <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="flex items-center gap-2 rounded-2xl border border-[#E3E8F0] bg-white p-1.5 pl-3 text-sm transition-all focus-within:border-[#1D4ED8] focus-within:ring-2 focus-within:ring-[#1D4ED8]/15 sm:gap-2.5 sm:p-2 sm:pl-4 sm:text-[15px]">
               <input
                 type="text"
                 placeholder="Pergunte sobre seus documentos…"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 disabled={isLoading}
-                className="min-w-0 flex-1 border-none bg-transparent text-[#1d2a3d] outline-none placeholder:text-[#738198]"
+                className="min-w-0 flex-1 border-none bg-transparent text-[#14211F] outline-none placeholder:text-[#738198]"
               />
-              <button type="submit" aria-label="Enviar pergunta" disabled={isLoading || !input.trim()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1b3a60] text-white shadow-sm transition-colors hover:bg-[#24507f] disabled:opacity-50 sm:h-11 sm:w-11">
+              <button type="submit" aria-label="Enviar pergunta" disabled={isLoading || !input.trim()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8] text-white shadow-xs transition-colors hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-50 sm:h-11 sm:w-11">
                 {isLoading ? <LoaderCircle size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </form>
           </section>
 
           <aside className="flex flex-col gap-4 lg:col-span-4 lg:gap-5">
-            <section className="rounded-2xl border border-[#dde3ec] bg-white p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:rounded-[20px] sm:p-6">
+            <section className="rounded-2xl border border-[#E3E8F0] bg-white p-4 shadow-xs sm:rounded-[20px] sm:p-6">
               <div className="mb-2.5 flex items-center gap-2.5 sm:mb-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8]"><MessageSquare size={18} className="text-[#1b3a60]" /></div>
-                <b className="flex-1 text-sm text-[#1d2a3d] sm:text-base">Experimente perguntar</b>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]"><MessageSquare size={18} /></div>
+                <b className="flex-1 text-sm text-[#14211F] sm:text-base">Experimente perguntar</b>
               </div>
-              <div className="divide-y divide-[#dde3ec]">
+              <div className="divide-y divide-[#E3E8F0]">
                 {SIDEBAR_PROMPTS.map((prompt) => (
-                  <button key={prompt} type="button" onClick={() => void handleSend(prompt)} disabled={isLoading} className="block min-h-11 w-full py-2.5 text-left text-xs text-[#1d2a3d] transition-colors hover:font-semibold hover:text-[#1b3a60] disabled:opacity-50 sm:py-3 sm:text-sm">
+                  <button key={prompt} type="button" onClick={() => void handleSend(prompt)} disabled={isLoading} className="block min-h-11 w-full py-2.5 text-left text-xs text-[#14211F] transition-colors hover:font-semibold hover:text-[#1D4ED8] disabled:opacity-50 sm:py-3 sm:text-sm">
                     {prompt}
                   </button>
                 ))}

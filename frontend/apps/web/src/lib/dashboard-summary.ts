@@ -144,8 +144,8 @@ export const ROTULO_TIPO_DOCUMENTO: Record<string, string> = {
 
 /** Rótulos e cores para severidade de alertas. */
 export const SEVERIDADE_ALERTA: Record<string, { rotulo: string; cor: string; fundo: string }> = {
-  alta: { rotulo: 'Alta', cor: 'text-[#a13a30]', fundo: 'bg-[#fde8e6]' },
+  alta: { rotulo: 'Alta', cor: 'text-[#E8664A]', fundo: 'bg-[#E8664A]/10' },
   moderada: { rotulo: 'Moderada', cor: 'text-[#8a5a00]', fundo: 'bg-[#fdf3e0]' },
   media: { rotulo: 'Moderada', cor: 'text-[#8a5a00]', fundo: 'bg-[#fdf3e0]' },
-  baixa: { rotulo: 'Baixa', cor: 'text-[#1b3a60]', fundo: 'bg-[#e5eefb]' },
+  baixa: { rotulo: 'Baixa', cor: 'text-[#1D4ED8]', fundo: 'bg-[#CFE0FF]/40' },
 };

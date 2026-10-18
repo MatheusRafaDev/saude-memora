@@ -202,7 +202,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden lg:flex flex-[0_0_44%] flex-col justify-center items-center bg-[#1b3a60] p-8 xl:p-12 text-white relative overflow-hidden"
+          className="hidden lg:flex flex-[0_0_44%] flex-col justify-center items-center bg-[#1C2438] p-8 xl:p-12 text-white relative overflow-hidden"
         >
           {/* Centered Editorial Block */}
           <div className="my-auto w-full max-w-[420px] flex flex-col items-center text-center">
@@ -220,12 +220,12 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               />
             </motion.div>
 
-            <h1 className="mt-7 text-[32px] xl:text-[36px] font-extrabold leading-[1.1] tracking-[-0.035em]">
-              Tudo o que importa, <span className="text-[#7cc4e6]">em um só lugar.</span>
+            <h1 className="mt-7 text-[32px] xl:text-[36px] font-semibold leading-[1.1] tracking-[-0.035em] font-serif">
+              Tudo o que importa, <span className="text-[#CFE0FF] font-serif italic">em um só lugar.</span>
             </h1>
 
-            <p className="mt-3 max-w-[380px] text-[15px] leading-relaxed text-[#c9d6e8]">
-              Organize seus documentos de saúde com clareza, contexto e o cuidado que a sua história merece.
+            <p className="mt-3 max-w-[380px] text-[15px] leading-relaxed text-[#A9B6CE]">
+              Seu histórico de saúde, sempre à mão. Organize exames, receitas e laudos com clareza e segurança.
             </p>
 
             <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -276,13 +276,13 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           >
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#dde3ec] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#5a6a80] shadow-xs transition-all hover:border-[#c6cfdb] hover:text-[#1b3a60]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#dde3ec] bg-white px-3.5 py-1.5 text-[13px] font-semibold text-[#5a6a80] shadow-xs transition-all hover:border-[#CFE0FF] hover:text-[#1D4ED8]"
             >
               <ArrowLeft size={14} />
               <span>Início</span>
             </Link>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f1f4f8] px-3 py-1 text-[11px] font-medium text-[#5a6a80]">
-              <ShieldCheck size={13} className="text-[#1f7fe0]" />
+              <ShieldCheck size={13} className="text-[#1D4ED8]" />
               <span>Ambiente seguro</span>
             </span>
           </motion.div>
@@ -294,7 +294,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="hidden lg:flex items-center justify-between gap-4"
           >
-            <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1b3a60]">
+            <Link href="/" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#5a6a80] hover:text-[#1D4ED8] transition-colors">
               ← Voltar ao início
             </Link>
           </motion.div>
@@ -318,7 +318,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                 <BrandLogo
                   className="mx-auto"
                   iconClassName="h-11 w-11 drop-shadow-sm transition-transform hover:scale-105"
-                  wordmarkClassName="text-[23px] sm:text-[24px] text-[#1d2a3d]"
+                  wordmarkClassName="text-[23px] sm:text-[24px] text-[#14211F]"
                 />
               </div>
 
@@ -331,10 +331,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   transition={{ duration: 0.18, ease: 'easeOut' }}
                   className="flex flex-col items-center"
                 >
-                  <h2 className="text-[22px] sm:text-[26px] font-extrabold tracking-[-0.03em] text-[#1d2a3d]">
+                  <h2 className="text-[22px] sm:text-[26px] font-bold tracking-[-0.03em] text-[#14211F]">
                     {mode === 'login' ? 'Que bom ter você aqui.' : 'Crie sua conta.'}
                   </h2>
-                  <p className="mt-1 text-[13px] sm:text-[14px] text-[#5a6a80]">
+                  <p className="mt-1 text-[13px] sm:text-[14px] text-[#5B6878]">
                     {mode === 'login' ? 'Acesse seu espaço pessoal de saúde.' : 'Comece a organizar seu histórico em poucos minutos.'}
                   </p>
                 </motion.div>
@@ -342,19 +342,19 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             </div>
 
             {/* Segmented Pill Tabs with Animated Indicator */}
-            <div className="relative mb-5 flex rounded-xl border border-[#dde3ec] bg-[#f1f4f8] p-1">
+            <div className="relative mb-5 flex rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1">
               <button
                 type="button"
                 onClick={() => handleModeChange('login')}
                 className={`relative z-10 flex-1 rounded-lg py-2 text-center text-[13.5px] font-bold transition-colors duration-150 ${
-                  mode === 'login' ? 'text-white' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
+                  mode === 'login' ? 'text-white' : 'text-[#5B6878] hover:text-[#14211F]'
                 }`}
               >
                 Entrar
                 {mode === 'login' && (
                   <motion.div
                     layoutId="auth-tab-pill"
-                    className="absolute inset-0 -z-10 rounded-lg bg-[#1b3a60] shadow-sm"
+                    className="absolute inset-0 -z-10 rounded-lg bg-[#1D4ED8] shadow-sm"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
@@ -363,14 +363,14 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                 type="button"
                 onClick={() => handleModeChange('register')}
                 className={`relative z-10 flex-1 rounded-lg py-2 text-center text-[13.5px] font-bold transition-colors duration-150 ${
-                  mode === 'register' ? 'text-white' : 'text-[#5a6a80] hover:text-[#1d2a3d]'
+                  mode === 'register' ? 'text-white' : 'text-[#5B6878] hover:text-[#14211F]'
                 }`}
               >
                 Criar conta
                 {mode === 'register' && (
                   <motion.div
                     layoutId="auth-tab-pill"
-                    className="absolute inset-0 -z-10 rounded-lg bg-[#1b3a60] shadow-sm"
+                    className="absolute inset-0 -z-10 rounded-lg bg-[#1D4ED8] shadow-sm"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
@@ -385,7 +385,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                   role="alert"
-                  className="overflow-hidden rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3 text-[13.5px] text-[#a13a30]"
+                  className="overflow-hidden rounded-xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-3 text-[13.5px] text-[#E8664A]"
                 >
                   {error}
                 </motion.div>
@@ -395,7 +395,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                   animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  className="overflow-hidden rounded-xl border border-[#bfd8f7] bg-[#e5eefb] p-3 text-[13.5px] text-[#1f7fe0]"
+                  className="overflow-hidden rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/40 p-3 text-[13.5px] text-[#1D4ED8]"
                 >
                   {message}
                 </motion.div>
@@ -426,7 +426,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                           placeholder="Seu nome completo"
                           value={form.name}
                           onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                          className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 placeholder:text-[#94a3b8]"
+                          className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
                         />
                       </label>
                       <div className="grid grid-cols-2 gap-2.5">
@@ -439,7 +439,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                             max={new Date().toISOString().slice(0, 10)}
                             value={form.birthDate}
                             onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
-                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10"
+                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15"
                           />
                         </label>
                         <label className="block">
@@ -448,7 +448,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                             required
                             value={form.sex}
                             onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
-                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 text-[#1d2a3d]"
+                            className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-[13px] sm:text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 text-[#1d2a3d]"
                           >
                             <option value="">Selecione</option>
                             <option value="Feminino">Feminino</option>
@@ -473,7 +473,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                   onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
-                  className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 placeholder:text-[#94a3b8]"
+                  className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
                 />
               </label>
 
@@ -489,7 +489,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                     placeholder={mode === 'register' ? 'No mínimo 8 caracteres' : 'Sua senha'}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 pr-10 text-[14px] outline-none transition-colors focus:border-[#1b3a60] focus:ring-2 focus:ring-[#1b3a60]/10 placeholder:text-[#94a3b8]"
+                    className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 pr-10 text-[14px] outline-none transition-colors focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
                   />
                   <button
                     type="button"
@@ -516,7 +516,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                       <button
                         type="button"
                         onClick={() => setShowForgotModal(true)}
-                        className="text-[13px] font-semibold text-[#1b3a60] hover:underline"
+                        className="text-[13px] font-semibold text-[#1D4ED8] hover:underline"
                       >
                         Esqueci minha senha
                       </button>
@@ -534,15 +534,15 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                           type="checkbox"
                           checked={form.termsAccepted}
                           onChange={(e) => setForm((prev) => ({ ...prev, termsAccepted: e.target.checked }))}
-                          className="mt-0.5 h-3.5 w-3.5 rounded border-[#c6cfdb] text-[#1b3a60] focus:ring-[#1b3a60]"
+                          className="mt-0.5 h-3.5 w-3.5 rounded border-[#c6cfdb] text-[#1D4ED8] focus:ring-[#1D4ED8]"
                         />
                         <span>
                           Li e concordo com os{' '}
-                          <Link href="/termos" className="font-semibold text-[#1b3a60] hover:underline">
+                          <Link href="/termos" className="font-semibold text-[#1D4ED8] hover:underline">
                             Termos de Uso
                           </Link>{' '}
                           e a{' '}
-                          <Link href="/privacidade" className="font-semibold text-[#1b3a60] hover:underline">
+                          <Link href="/privacidade" className="font-semibold text-[#1D4ED8] hover:underline">
                             Política de Privacidade
                           </Link>
                           .
@@ -557,7 +557,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-3 flex h-10 sm:h-[42px] w-full items-center justify-center gap-2 rounded-xl bg-[#1b3a60] text-[14px] font-bold text-white shadow-xs transition-all hover:bg-[#244d7e] disabled:opacity-50"
+                className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] text-[14px] font-bold text-white shadow-xs transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-50"
               >
                 {isPending ? (
                   <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -581,8 +581,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               </button>
             </form>
 
-            <div className="mt-4 flex items-center justify-center gap-1.5 text-center text-[11.5px] sm:text-[12px] text-[#7a8ba0]">
-              <Lock size={12} className="text-[#1f7fe0] shrink-0" />
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-center text-[11.5px] sm:text-[12px] text-[#5B6878]">
+              <Lock size={12} className="text-[#1D4ED8] shrink-0" />
               <span>Espaço seguro e pessoal: controle total dos seus dados</span>
             </div>
           </motion.div>
@@ -606,8 +606,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <X size={20} />
             </button>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e5eefb]">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1f7fe0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 11h12v9H6zM8 11V8a4 4 0 018 0v3" />
               </svg>
             </div>
@@ -618,13 +618,13 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             </p>
 
             {forgotMessage ? (
-              <div className="rounded-xl border border-[#bfd8f7] bg-[#e5eefb] p-4 text-[14px] text-[#1f7fe0]">
+              <div className="rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/40 p-4 text-[14px] text-[#1D4ED8]">
                 {forgotMessage}
               </div>
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 {forgotError && (
-                  <div role="alert" className="rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3.5 text-[14px] text-[#a13a30]">
+                  <div role="alert" className="rounded-xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-3.5 text-[14px] text-[#E8664A]">
                     {forgotError}
                   </div>
                 )}
@@ -638,12 +638,12 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                     setForgotEmail(e.target.value);
                     setForgotError('');
                   }}
-                  className="h-10 sm:h-[42px] w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none focus:border-[#1b3a60] placeholder:text-[#94a3b8]"
+                  className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3.5 text-[14px] outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 placeholder:text-[#94a3b8]"
                 />
                 <button
                   type="submit"
                   disabled={isForgotLoading}
-                  className="flex h-10 sm:h-[42px] w-full items-center justify-center rounded-xl bg-[#1b3a60] text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
+                  className="flex min-h-11 w-full items-center justify-center rounded-xl bg-[#1D4ED8] text-[14px] font-bold text-white shadow-xs transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A]"
                 >
                   {isForgotLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : 'Enviar link de recuperação'}
                 </button>

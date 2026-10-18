@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace SaudeMemora.Domain.Entities;
 
+[BsonIgnoreExtraElements]
 public class ChatHistorico
 {
     [BsonId]
@@ -31,6 +32,7 @@ public class ChatHistorico
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 }
 
+[BsonIgnoreExtraElements]
 public class ChatHistoricoCitacao
 {
     [BsonElement("id")]

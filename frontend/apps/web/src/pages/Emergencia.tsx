@@ -215,13 +215,13 @@ export default function Emergencia({ token }: { token?: string } = {}) {
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1D4ED8]">
               {isPublicMode ? 'Atendimento Médico' : 'Ficha rápida'}
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#14211F] font-serif">
               Emergência
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+            <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
               {isPublicMode
                 ? 'Ficha médica rápida para socorristas e equipe hospitalar.'
                 : 'Informações essenciais, em letras grandes e fáceis de ler.'}
@@ -229,8 +229,8 @@ export default function Emergencia({ token }: { token?: string } = {}) {
           </div>
 
           {isPublicMode && (
-            <div className="inline-flex items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 py-2.5 text-xs font-semibold text-[#1f7fe0] shadow-xs">
-              <span className="h-2 w-2 rounded-full bg-[#1f7fe0] animate-pulse" />
+            <div className="inline-flex items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-4 py-2.5 text-xs font-semibold text-[#1D4ED8] shadow-xs">
+              <span className="h-2 w-2 rounded-full bg-[#1D4ED8] animate-pulse" />
               Acesso autorizado via QR Code
             </div>
           )}
@@ -243,31 +243,31 @@ export default function Emergencia({ token }: { token?: string } = {}) {
               Carregando ficha de emergência…
             </div>
           ) : (publicLoadError || (!isPublicMode && (profileError || fichaError))) ? (
-            <div role="alert" className="w-full rounded-2xl border border-[#f0b8b2] bg-white p-5 sm:p-8 text-center text-[#a13a30]">
+            <div role="alert" className="w-full rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-5 sm:p-8 text-center text-[#E8664A]">
               Não foi possível carregar os dados da ficha de emergência.
             </div>
           ) : (
           <>
           {/* Main Card (flex: 2) */}
           <div className="min-w-0 flex-[2]">
-            <div className="bg-white border-2 border-[#c0463a] rounded-[28px] p-7 sm:p-9 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+            <div className="bg-white border-2 border-[#E8664A] rounded-[28px] p-7 sm:p-9 shadow-md">
               {/* Header inside card with Blood Badge */}
               <div className="flex justify-between items-center gap-4 flex-wrap">
                 <div>
-                  <div className="text-[13px] font-extrabold tracking-[0.16em] text-[#c0463a] uppercase">
+                  <div className="text-[13px] font-extrabold tracking-[0.16em] text-[#E8664A] uppercase">
                     Ficha de emergência
                   </div>
-                  <div className="text-3xl sm:text-[42px] font-extrabold tracking-[-0.03em] mt-1.5 text-[#1d2a3d]">
+                  <div className="text-3xl sm:text-[42px] font-extrabold tracking-[-0.03em] mt-1.5 text-[#14211F] font-serif">
                     {name}
                   </div>
-                  <div className="text-base sm:text-lg text-[#5a6a80] mt-0.5">
+                  <div className="text-base sm:text-lg text-[#5B6878] mt-0.5">
                     {displayedAge !== null ? `${displayedAge} anos` : 'Idade não informada'}
                     {hasValidBirthDate ? ` · Nascimento ${birthDateFormatted}` : ''}
                     {sex ? ` · ${sex}` : ''}
                   </div>
                 </div>
 
-                <div className="w-[120px] h-[120px] rounded-[28px] bg-[#c0463a] text-white flex flex-col items-center justify-center shrink-0 shadow-md">
+                <div className="w-[120px] h-[120px] rounded-[28px] bg-[#E8664A] text-white flex flex-col items-center justify-center shrink-0 shadow-md">
                   <div className="text-xs font-bold tracking-[0.1em]">SANGUE</div>
                   <div className="text-4xl sm:text-[48px] font-extrabold leading-tight">
                     {bloodType || 'Não informado'}
@@ -277,18 +277,18 @@ export default function Emergencia({ token }: { token?: string } = {}) {
 
               {/* Alergias */}
               <div className="mt-7">
-                <div className="text-sm font-bold text-[#5a6a80] mb-2.5 uppercase tracking-[0.08em]">
+                <div className="text-sm font-bold text-[#5B6878] mb-2.5 uppercase tracking-[0.08em]">
                   Alergias
                 </div>
                 <div className="flex gap-2.5 flex-wrap">
                   {allergies.length > 0 ? allergies.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-[#fde8e6] text-[#a13a30] text-[15px] font-bold whitespace-nowrap"
+                      className="inline-block px-4 py-2 rounded-full bg-[#E8664A]/10 text-[#E8664A] text-[15px] font-bold whitespace-nowrap"
                     >
                       {item}
                     </span>
-                  )) : <span className="text-sm text-[#5a6a80]">Não informado</span>}
+                  )) : <span className="text-sm text-[#5B6878]">Não informado</span>}
                 </div>
               </div>
 
@@ -318,7 +318,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                   {medications.length > 0 ? medications.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-[#e5eefb] text-[#1b3a60] text-[15px] font-bold whitespace-nowrap"
+                      className="inline-block px-4 py-2 rounded-full bg-[#CFE0FF]/40 border border-[#CFE0FF] text-[#1D4ED8] text-[15px] font-bold whitespace-nowrap"
                     >
                       {item}
                     </span>
@@ -329,7 +329,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
               {/* Doador de órgãos */}
               <div className="mt-7 text-base text-[#1d2a3d]">
                 Doador de órgãos:{' '}
-                <b className={isDonor === undefined || isDonor === null ? 'text-[#5a6a80]' : isDonor ? 'text-[#1f7fe0]' : 'text-[#a13a30]'}>
+                <b className={isDonor === undefined || isDonor === null ? 'text-[#5a6a80]' : isDonor ? 'text-[#1D4ED8]' : 'text-[#E8664A]'}>
                   {isDonor === undefined || isDonor === null ? 'não informado' : isDonor ? 'sim' : 'não'}
                 </b>
               </div>
@@ -383,8 +383,8 @@ export default function Emergencia({ token }: { token?: string } = {}) {
           {/* Right Column (flex: 1) */}
           <div className="w-full min-w-0 flex-1 flex flex-col gap-6">
             {/* SAMU 192 Card */}
-            <div className="bg-[#1b3a60] text-white rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="text-xs font-bold tracking-[0.14em] uppercase text-[#7cc4e6] mb-1">
+            <div className="bg-[#1C2438] text-white rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(28,36,56,0.3)]">
+              <div className="text-xs font-bold tracking-[0.14em] uppercase text-[#CFE0FF] mb-1">
                 EMERGÊNCIA NO BRASIL
               </div>
               <div className="text-5xl font-extrabold leading-none my-1 tracking-tight text-white">
@@ -395,7 +395,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
               </p>
               <a
                 href="tel:192"
-                className="w-full min-h-[48px] rounded-xl bg-[#c0463a] hover:bg-[#a13a30] text-white font-bold text-base inline-flex items-center justify-center gap-2 transition-colors shadow-sm"
+                className="w-full min-h-11 rounded-xl bg-[#E8664A] hover:bg-[#D45338] active:bg-[#B9381E] text-white font-bold text-base inline-flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
                 <Phone size={18} />
                 Ligar para 192
@@ -404,14 +404,14 @@ export default function Emergencia({ token }: { token?: string } = {}) {
 
             {/* Contatos de emergência Card */}
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="text-xs font-bold tracking-[0.14em] uppercase text-[#1f7fe0] mb-1">
+              <div className="text-xs font-bold tracking-[0.14em] uppercase text-[#1D4ED8] mb-1">
                 Contatos de emergência
               </div>
 
               <div className="divide-y divide-[#dde3ec]">
                 {/* Contact on file */}
                 <div className="flex gap-3.5 items-center py-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#f1f4f8] flex items-center justify-center shrink-0 text-[#1b3a60]">
+                  <div className="w-12 h-12 rounded-2xl bg-[#CFE0FF]/40 flex items-center justify-center shrink-0 text-[#1D4ED8]">
                     <Phone size={22} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -425,7 +425,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                   {hasEmergencyContact && emergencyPhone.length >= 8 && (
                     <a
                       href={`tel:${emergencyPhone}`}
-                      className="min-h-[44px] px-4.5 rounded-xl bg-[#1f7fe0] text-white font-bold text-sm inline-flex items-center hover:bg-[#1765b8] transition-colors shrink-0"
+                      className="min-h-[44px] px-4.5 rounded-xl bg-[#1D4ED8] text-white font-semibold text-sm inline-flex items-center hover:bg-[#1E40AF] transition-all shrink-0 shadow-xs"
                     >
                       Ligar
                     </a>
@@ -435,26 +435,26 @@ export default function Emergencia({ token }: { token?: string } = {}) {
             </div>
 
             {/* Compartilhar com socorrista Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] text-center">
+            <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-6 shadow-xs text-center">
               <div className="flex items-center gap-2.5 mb-4 text-left">
-                <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                  <QrCode size={18} className="text-[#1b3a60]" />
+                <div className="w-9 h-9 rounded-xl bg-[#CFE0FF] text-[#1D4ED8] flex items-center justify-center shrink-0">
+                  <QrCode size={18} />
                 </div>
-                <b className="text-base text-[#1d2a3d] flex-1">Acesso à ficha de emergência</b>
+                <b className="text-base text-[#14211F] flex-1">Acesso à ficha de emergência</b>
               </div>
 
-              <div className="w-[170px] h-[170px] border border-[#dde3ec] rounded-2xl mx-auto mb-3.5 flex flex-col items-center justify-center bg-[#f7f9fc] p-2 overflow-hidden shadow-xs">
+              <div className="w-[170px] h-[170px] border border-[#E3E8F0] rounded-2xl mx-auto mb-3.5 flex flex-col items-center justify-center bg-[#F4F7FC] p-2 overflow-hidden shadow-xs">
                 {shareUrl ? (
                   <QRCodeSVG
                     value={shareUrl}
                     size={148}
-                    bgColor="#f7f9fc"
-                    fgColor="#1b3a60"
+                    bgColor="#F4F7FC"
+                    fgColor="#1C2438"
                     level="M"
                     title="QR Code de emergência"
                   />
                 ) : (
-                  <span className="px-4 text-sm text-[#5a6a80]">
+                  <span className="px-4 text-sm text-[#5B6878]">
                     {needsTokenRotation
                       ? 'Já existe um link ativo, mas ele não está salvo neste navegador.'
                       : tokenError ? 'Não foi possível carregar o link de emergência.' : 'Verificando link de emergência…'}
@@ -462,7 +462,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                 )}
               </div>
 
-              <p className="m-0 text-[13px] leading-relaxed text-[#5a6a80] mb-4">
+              <p className="m-0 text-[13px] leading-relaxed text-[#5B6878] mb-4">
                 Mostre este QR Code para quem for prestar socorro acessar esta ficha.
               </p>
 
@@ -471,7 +471,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                   type="button"
                   onClick={handleRotateToken}
                   disabled={isRotatingToken}
-                  className="mb-4 min-h-[44px] w-full rounded-xl bg-[#c0463a] px-3 text-sm font-bold text-white hover:bg-[#a13a30] disabled:opacity-60"
+                  className="mb-4 min-h-[44px] w-full rounded-xl bg-[#E8664A] px-3 text-sm font-semibold text-white hover:bg-[#D45338] transition-all shadow-xs disabled:opacity-60"
                 >
                   {isRotatingToken ? 'Gerando novo link…' : 'Gerar novo link (invalidará o anterior)'}
                 </button>
@@ -482,7 +482,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                   type="button"
                   onClick={handleRevokeToken}
                   disabled={isRevokingToken}
-                  className="mb-4 min-h-[44px] w-full rounded-xl border border-[#c0463a] bg-white px-3 text-sm font-bold text-[#c0463a] hover:bg-[#fdf2f1] disabled:opacity-60"
+                  className="mb-4 min-h-[44px] w-full rounded-xl border border-[#E8664A]/40 bg-white px-3 text-sm font-semibold text-[#E8664A] hover:bg-[#FDE1DA] transition-all shadow-xs disabled:opacity-60"
                 >
                   {isRevokingToken ? 'Revogando…' : 'Revogar link de emergência'}
                 </button>
@@ -491,20 +491,19 @@ export default function Emergencia({ token }: { token?: string } = {}) {
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-full min-h-[44px] rounded-xl border border-[#dde3ec] bg-white hover:bg-[#f7f9fc] text-[#1b3a60] font-bold text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+                className="w-full min-h-[44px] rounded-xl border border-[#E3E8F0] bg-white hover:bg-[#F4F7FC] hover:border-[#CFE0FF] text-[#14211F] font-semibold text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
                 disabled={!shareUrl}
               >
-                {isCopied ? <Check size={16} className="text-[#1f7fe0]" /> : <Copy size={16} />}
+                {isCopied ? <Check size={16} className="text-[#1D4ED8]" /> : <Copy size={16} />}
                 {isCopied ? 'Link copiado!' : 'Copiar link de socorro'}
               </button>
               <div className="mt-2 grid grid-cols-1 gap-2">
-                
                 <a
                   href={shareUrl || undefined}
                   target="_blank"
                   rel="noreferrer"
                   aria-disabled={!shareUrl}
-                  className={`min-h-[44px] rounded-xl border border-[#dde3ec] bg-white px-2 text-[#1b3a60] text-xs font-bold inline-flex items-center justify-center gap-1.5 hover:bg-[#f7f9fc] ${
+                  className={`min-h-[44px] rounded-xl border border-[#E3E8F0] bg-white px-2 text-[#14211F] text-xs font-semibold inline-flex items-center justify-center gap-1.5 hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all shadow-xs ${
                     shareUrl ? '' : 'pointer-events-none opacity-50'
                   }`}
                 >

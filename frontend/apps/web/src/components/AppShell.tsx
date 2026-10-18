@@ -103,37 +103,37 @@ export function AppShell({ children }: { children: ReactNode }) {
     : '—';
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[#f7f9fc] flex flex-col font-sans text-[#1d2a3d]">
+    <div className="min-h-screen min-h-[100dvh] bg-white flex flex-col font-sans text-[#14211F]">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-[60] focus:rounded-lg focus:bg-[#1b3a60] focus:px-4 focus:py-3 focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-[60] focus:rounded-lg focus:bg-[#1D4ED8] focus:px-4 focus:py-3 focus:text-white"
       >
         Pular para o conteúdo
       </a>
 
       {/* ── Desktop Header ─────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 hidden h-[72px] items-center gap-7 border-b border-[#dde3ec] bg-white px-6 sm:px-10 lg:flex">
+      <header className="sticky top-0 z-40 hidden h-[72px] items-center gap-7 border-b border-[#E3E8F0]/80 bg-white/85 backdrop-blur-md px-6 sm:px-10 lg:flex shadow-[0_1px_3px_rgba(20,33,31,0.03)]">
         <BrandLogo
           href="/visao-geral"
           iconClassName="h-9 w-9 transition-transform group-hover:scale-105"
-          wordmarkClassName="text-[18px] text-[#1b3a60] tracking-[-0.03em]"
+          wordmarkClassName="text-[19px] text-[#14211F] tracking-[-0.03em]"
         />
 
         {/* Navigation center */}
-        <nav aria-label="Navegação principal" className="hidden lg:flex flex-1 items-center justify-center gap-1">
+        <nav aria-label="Navegação principal" className="hidden lg:flex flex-1 items-center justify-center gap-1.5">
           {desktopNavItems.map(({ href, label, icon }) => {
               const isActive = activeHref === href;
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] transition-colors ${
+                  className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-[14px] transition-all duration-150 ${
                     isActive
-                      ? 'bg-[#f1f4f8] font-bold text-[#1b3a60]'
-                      : 'font-medium text-[#5a6a80] hover:bg-[#f1f4f8] hover:text-[#1b3a60]'
+                      ? 'bg-[#1D4ED8]/10 font-bold text-[#1D4ED8] shadow-[inset_0_0_0_1px_rgba(29,78,216,0.18)]'
+                      : 'font-medium text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#1D4ED8]'
                   }`}
                 >
-                  <span className={isActive ? 'text-[#1b3a60]' : 'text-[#5a6a80]'}>{icon}</span>
+                  <span className={`transition-colors ${isActive ? 'text-[#1D4ED8]' : 'text-[#5B6878]'}`}>{icon}</span>
                   <span>{label}</span>
                 </Link>
               );
@@ -141,15 +141,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Right side actions */}
-        <div className="ml-auto flex items-center gap-3 shrink-0">
-
-
+        <div className="ml-auto flex items-center gap-3.5 shrink-0">
           <button
               type="button"
               onClick={triggerUploadModal}
-              className="hidden lg:inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-[14px] font-bold text-white transition-all hover:bg-[#244d7e]"
+              className="hidden lg:inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-gradient-to-r from-[#1D4ED8] to-[#2563EB] px-4.5 py-2 text-[14px] font-bold text-white transition-all duration-150 hover:from-[#1E40AF] hover:to-[#1D4ED8] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 shadow-xs"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
               <span>Adicionar</span>
@@ -161,28 +159,30 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
               aria-label="Menu do usuário"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1b3a60] text-[14px] font-bold text-white transition-transform hover:scale-105"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] text-[13px] font-bold text-white transition-all duration-150 hover:scale-105 hover:shadow-md ring-2 ring-white ring-offset-2 ring-offset-[#1D4ED8]/20 focus-visible:outline-none"
             >
               {initials}
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-[#dde3ec] bg-white p-2 shadow-2xl animate-in fade-in zoom-in-95">
-                <div className="border-b border-[#dde3ec] px-3 py-2.5">
-                  <div className="text-[14px] font-bold text-[#1d2a3d] truncate">{profile.nome || 'Nome não informado'}</div>
-                  <div className="text-[12px] text-[#5a6a80] truncate">{profile.email}</div>
+              <div className="absolute right-0 top-12 z-50 w-60 rounded-2xl border border-[#E3E8F0] bg-white p-2 shadow-[0_20px_48px_-12px_rgba(20,33,31,0.15)] animate-in fade-in zoom-in-95 duration-150">
+                <div className="border-b border-[#E3E8F0] px-3.5 py-3">
+                  <div className="text-[14px] font-bold text-[#14211F] truncate">{profile.nome || 'Nome não informado'}</div>
+                  <div className="text-[12px] text-[#5B6878] truncate mt-0.5">{profile.email}</div>
                 </div>
 
-                <div className="py-1">
+                <div className="py-1.5 space-y-0.5">
                   <Link
                     href="/perfil"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#14211F] hover:bg-[#F4F7FC] transition-colors"
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
-                    </svg>
-                    Meu perfil
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F4F7FC] text-[#5B6878]">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
+                      </svg>
+                    </span>
+                    <span>Meu perfil</span>
                   </Link>
 
                   <button
@@ -191,14 +191,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                       setUserMenuOpen(false);
                       setEmergencyModalOpen(true);
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#1d2a3d] hover:bg-[#f1f4f8]"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[#E8664A] hover:bg-[#E8664A]/10 transition-colors"
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 000-7.8z" />
-                      <path d="M3.5 12h5l2-3 3 6 2-3h5" />
-                    </svg>
-                    Emergência
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8664A]/15 text-[#E8664A]">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 000-7.8z" />
+                        <path d="M3.5 12h5l2-3 3 6 2-3h5" />
+                      </svg>
+                    </span>
+                    <span>Emergência</span>
                   </button>
+
+                  <div className="my-1 border-t border-[#E3E8F0]" />
 
                   <button
                     type="button"
@@ -206,12 +210,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                       setUserMenuOpen(false);
                       void signOut();
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium text-[#a13a30] hover:bg-[#fff5f4]"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#E8664A] hover:bg-[#E8664A]/10 transition-colors"
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-                    </svg>
-                    Sair da conta
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8664A]/15 text-[#E8664A]">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                      </svg>
+                    </span>
+                    <span>Sair da conta</span>
                   </button>
                 </div>
               </div>
@@ -224,7 +230,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div
         id="main-content"
         key={location}
-        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 page-transition-enter"
+        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 page-transition-enter bg-white"
       >
         {children}
       </div>
@@ -232,7 +238,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ── Mobile Bottom Navigation Bar (app-like fixed tab bar) ── */}
       <nav
         aria-label="Navegação móvel inferior"
-        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom,0px))] items-center justify-around border-t border-[#dde3ec] bg-white/95 backdrop-blur-md px-1 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-4px_24px_rgba(27,58,96,0.08)] lg:hidden select-none"
+        className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(4.25rem+env(safe-area-inset-bottom,0px))] items-center justify-around border-t border-[#E3E8F0]/80 bg-white/90 backdrop-blur-lg px-2 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-4px_24px_rgba(20,33,31,0.06)] lg:hidden select-none"
       >
         {mobileNavItems.map(({ href, label, icon }) => {
           const isActive = activeHref === href || (href === '/perfil' && location.startsWith('/perfil'));
@@ -241,13 +247,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={href}
               href={href}
               aria-current={isActive ? 'page' : undefined}
-              className={`flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] leading-tight transition-all active:scale-95 touch-manipulation focus-visible:outline-offset-[-2px] ${
-                isActive ? 'font-bold text-[#1b3a60]' : 'font-medium text-[#5a6a80]'
+              className={`flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] leading-tight transition-all active:scale-95 touch-manipulation focus-visible:outline-offset-[-2px] ${
+                isActive ? 'font-bold text-[#1D4ED8]' : 'font-medium text-[#5B6878]'
               }`}
             >
               <div
-                className={`flex h-7 w-10 items-center justify-center rounded-xl transition-colors ${
-                  isActive ? 'bg-[#e5eefb] text-[#1b3a60]' : 'text-[#5a6a80]'
+                className={`flex h-8 w-11 items-center justify-center rounded-xl transition-all ${
+                  isActive ? 'bg-[#1D4ED8]/10 text-[#1D4ED8] shadow-[inset_0_0_0_1px_rgba(29,78,216,0.15)]' : 'text-[#5B6878]'
                 }`}
               >
                 <span className="[&>svg]:h-5 [&>svg]:w-5">{icon}</span>

@@ -161,125 +161,125 @@ export default function Insights({ embedded = false }: { embedded?: boolean }) {
     <div className={embedded ? 'w-full' : 'mx-auto w-full max-w-[1240px] px-5 pb-16 pt-9 sm:px-10'}>
       {!embedded && <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">Seu histórico de saúde</div>
-          <h1 className="mb-0 mt-2 text-3xl font-extrabold text-[#1b3a60] sm:text-4xl">Análises</h1>
-          <p className="mb-0 mt-1.5 text-sm text-[#5a6a80]">Relatórios, tendências de exames e referências clínicas.</p>
+          <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">Seu histórico de saúde</div>
+          <h1 className="mb-0 mt-2 text-3xl font-extrabold text-[#14211F] sm:text-4xl">Análises</h1>
+          <p className="mb-0 mt-1.5 text-sm text-[#5B6878]">Relatórios, tendências de exames e referências clínicas.</p>
         </div>
-        <Link href="/documentos" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] hover:bg-[#f7f9fc]">
+        <Link href="/documentos" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-4 text-sm font-semibold text-[#14211F] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all shadow-xs">
           <FileBarChart size={16} /> Ver documentos
         </Link>
       </header>}
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InsightTab)}>
-        <TabsList className="mb-5 flex h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-[#dde3ec] bg-white p-1">
-          <TabsTrigger value="relatorio" className="min-h-10 flex-1 gap-2 text-[#1d2a3d] data-[state=active]:bg-[#1b3a60] data-[state=active]:text-white"><FileBarChart size={16} /> Relatório</TabsTrigger>
-          <TabsTrigger value="exames" className="min-h-10 flex-1 gap-2 text-[#1d2a3d] data-[state=active]:bg-[#1b3a60] data-[state=active]:text-white"><Activity size={16} /> Exames</TabsTrigger>
-          <TabsTrigger value="catalogos" className="min-h-10 flex-1 gap-2 text-[#1d2a3d] data-[state=active]:bg-[#1b3a60] data-[state=active]:text-white"><Search size={16} /> Catálogos</TabsTrigger>
+        <TabsList className="mb-5 flex h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-[#E3E8F0] bg-white p-1">
+          <TabsTrigger value="relatorio" className="min-h-10 flex-1 gap-2 text-[#14211F] data-[state=active]:bg-[#1D4ED8] data-[state=active]:text-white font-semibold"><FileBarChart size={16} /> Relatório</TabsTrigger>
+          <TabsTrigger value="exames" className="min-h-10 flex-1 gap-2 text-[#14211F] data-[state=active]:bg-[#1D4ED8] data-[state=active]:text-white font-semibold"><Activity size={16} /> Exames</TabsTrigger>
+          <TabsTrigger value="catalogos" className="min-h-10 flex-1 gap-2 text-[#14211F] data-[state=active]:bg-[#1D4ED8] data-[state=active]:text-white font-semibold"><Search size={16} /> Catálogos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="relatorio" className="mt-0">
-          <section className="rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-7">
+          <section className="rounded-2xl border border-[#E3E8F0] bg-white p-5 sm:p-7 shadow-xs">
             <div className="mb-5 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb] text-[#1b3a60]"><FileBarChart size={19} /></div>
-              <div><h2 className="m-0 text-lg font-bold text-[#1d2a3d]">Relatório de saúde</h2><p className="mb-0 mt-1 text-sm text-[#5a6a80]">Gera um resumo com os registros disponíveis no período.</p></div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]"><FileBarChart size={19} /></div>
+              <div><h2 className="m-0 text-lg font-bold text-[#14211F]">Relatório de saúde</h2><p className="mb-0 mt-1 text-sm text-[#5B6878]">Gera um resumo com os registros disponíveis no período.</p></div>
             </div>
             <form onSubmit={generateReport} className="flex flex-wrap items-end gap-3">
-              <label className="grid gap-1.5 text-xs font-bold text-[#5a6a80]">
+              <label className="grid gap-1.5 text-xs font-semibold text-[#5B6878]">
                 Período
-                <select value={months} onChange={(event) => setMonths(Number(event.target.value))} className="h-11 min-w-40 rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d]">
+                <select value={months} onChange={(event) => setMonths(Number(event.target.value))} className="h-11 min-w-40 rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] focus:border-[#1D4ED8] outline-none">
                   {[3, 6, 12, 24].map((value) => <option key={value} value={value}>{value} meses</option>)}
                 </select>
               </label>
-              <button type="submit" disabled={isGeneratingReport} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white hover:bg-[#24507f] disabled:opacity-60">
+              <button type="submit" disabled={isGeneratingReport} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#1D4ED8] px-5 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all shadow-xs disabled:opacity-50">
                 {isGeneratingReport ? <LoaderCircle size={16} className="animate-spin" /> : <FileBarChart size={16} />}
                 Gerar relatório
               </button>
             </form>
-            {reportError && <p role="alert" className="mt-4 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3 text-sm text-[#a13a30]">{reportError}</p>}
-            {report && <article className="prose prose-sm mt-6 max-w-none rounded-xl border border-[#dde3ec] bg-[#f7f9fc] p-5 text-[#1d2a3d]"><ReactMarkdown>{report}</ReactMarkdown></article>}
+            {reportError && <p role="alert" className="mt-4 rounded-xl border border-[#E8664A]/30 bg-[#FDE1DA] p-3 text-sm text-[#9B2C16]">{reportError}</p>}
+            {report && <article className="prose prose-sm mt-6 max-w-none rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-5 text-[#14211F]"><ReactMarkdown>{report}</ReactMarkdown></article>}
           </section>
         </TabsContent>
 
         <TabsContent value="exames" className="mt-0">
-          <section className="rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-7">
+          <section className="rounded-2xl border border-[#E3E8F0] bg-white p-5 sm:p-7 shadow-xs">
             <div className="mb-5 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb] text-[#1b3a60]"><Activity size={19} /></div>
-              <div><h2 className="m-0 text-lg font-bold text-[#1d2a3d]">Tendências dos exames</h2><p className="mb-0 mt-1 text-sm text-[#5a6a80]">Compare resultados registrados para o mesmo analito.</p></div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]"><Activity size={19} /></div>
+              <div><h2 className="m-0 text-lg font-bold text-[#14211F]">Tendências dos exames</h2><p className="mb-0 mt-1 text-sm text-[#5B6878]">Compare resultados registrados para o mesmo analito.</p></div>
             </div>
             <div className="mb-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
-              <label className="grid gap-1.5 text-xs font-bold text-[#5a6a80]">
+              <label className="grid gap-1.5 text-xs font-semibold text-[#5B6878]">
                 Analito
-                <select value={selectedAnalyte} onChange={(event) => setSelectedAnalyte(event.target.value)} disabled={isLoadingAnalytes || !analytes.length} className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d]">
+                <select value={selectedAnalyte} onChange={(event) => setSelectedAnalyte(event.target.value)} disabled={isLoadingAnalytes || !analytes.length} className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] focus:border-[#1D4ED8] outline-none">
                   {isLoadingAnalytes && <option value="">Carregando…</option>}
                   {!isLoadingAnalytes && !analytes.length && <option value="">Nenhum analito encontrado</option>}
                   {analytes.map((item) => <option key={item.nomeNormalizado} value={item.nomeNormalizado}>{item.nome} ({item.count})</option>)}
                 </select>
               </label>
-              <label className="grid gap-1.5 text-xs font-bold text-[#5a6a80]">
+              <label className="grid gap-1.5 text-xs font-semibold text-[#5B6878]">
                 Período
-                <select value={seriesMonths} onChange={(event) => setSeriesMonths(Number(event.target.value))} className="h-11 rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d]">
+                <select value={seriesMonths} onChange={(event) => setSeriesMonths(Number(event.target.value))} className="h-11 rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] focus:border-[#1D4ED8] outline-none">
                   {[6, 12, 24, 60].map((value) => <option key={value} value={value}>{value} meses</option>)}
                 </select>
               </label>
             </div>
-            {seriesError && <p role="alert" className="rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3 text-sm text-[#a13a30]">{seriesError}</p>}
+            {seriesError && <p role="alert" className="rounded-xl border border-[#E8664A]/30 bg-[#FDE1DA] p-3 text-sm text-[#9B2C16]">{seriesError}</p>}
             {isLoadingSeries ? (
-              <div role="status" className="flex min-h-72 items-center justify-center gap-2 text-sm text-[#5a6a80]"><LoaderCircle size={18} className="animate-spin" /> Carregando série…</div>
+              <div role="status" className="flex min-h-72 items-center justify-center gap-2 text-sm text-[#5B6878]"><LoaderCircle size={18} className="animate-spin" /> Carregando série…</div>
             ) : series.length ? (
               <>
                 <div className="h-[320px] w-full" role="img" aria-label={`Gráfico de ${analytes.find((item) => item.nomeNormalizado === selectedAnalyte)?.nome || selectedAnalyte}`}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={series} margin={{ top: 12, right: 18, left: 0, bottom: 14 }}>
-                      <CartesianGrid stroke="#e3e8ef" strokeDasharray="4 4" />
-                      <XAxis dataKey="data" stroke="#68788f" tick={{ fontSize: 11 }} />
-                      <YAxis stroke="#68788f" tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
+                      <CartesianGrid stroke="#E3E8F0" strokeDasharray="4 4" />
+                      <XAxis dataKey="data" stroke="#5B6878" tick={{ fontSize: 11 }} />
+                      <YAxis stroke="#5B6878" tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
                       <Tooltip />
-                      <Line type="monotone" dataKey="valor" name={series[0].unidade || 'Resultado'} stroke="#1f7fe0" strokeWidth={2.5} dot={{ r: 4, fill: '#c0463a', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" dataKey="valor" name={series[0].unidade || 'Resultado'} stroke="#1D4ED8" strokeWidth={2.5} dot={{ r: 4, fill: '#E8664A', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-3 space-y-2 border-t border-[#dde3ec] pt-4">
+                <div className="mt-3 space-y-2 border-t border-[#E3E8F0] pt-4">
                   {series.map((point, index) => (
                     <div key={`${point.documentoId}-${index}`} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                      <span className="text-[#5a6a80]">{point.data}{point.isOutlier ? ` · ${point.outlierMotivo || 'Valor atípico'}` : ''}</span>
-                      <span className="font-bold text-[#1d2a3d]">{point.valor} {point.unidade} <span className="font-normal text-[#5a6a80]">({point.status})</span> · <Link href={`/documentos/${point.documentoId}`} className="text-[#1f7fe0] hover:underline">Documento</Link></span>
+                      <span className="text-[#5B6878]">{point.data}{point.isOutlier ? ` · ${point.outlierMotivo || 'Valor atípico'}` : ''}</span>
+                      <span className="font-semibold text-[#14211F]">{point.valor} {point.unidade} <span className="font-normal text-[#5B6878]">({point.status})</span> · <Link href={`/documentos/${point.documentoId}`} className="text-[#1D4ED8] hover:underline font-semibold">Documento</Link></span>
                     </div>
                   ))}
                 </div>
               </>
             ) : !seriesError && !isLoadingAnalytes ? (
-              <p className="rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">Não há resultados suficientes para este analito no período.</p>
+              <p className="rounded-xl bg-[#F4F7FC] p-4 text-sm text-[#5B6878]">Não há resultados suficientes para este analito no período.</p>
             ) : null}
           </section>
         </TabsContent>
 
         <TabsContent value="catalogos" className="mt-0">
-          <section className="rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-7">
+          <section className="rounded-2xl border border-[#E3E8F0] bg-white p-5 sm:p-7 shadow-xs">
             <div className="mb-5 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5eefb] text-[#1b3a60]"><Search size={19} /></div>
-              <div><h2 className="m-0 text-lg font-bold text-[#1d2a3d]">Catálogos clínicos</h2><p className="mb-0 mt-1 text-sm text-[#5a6a80]">Pesquise medicamentos, códigos CID-10 e estabelecimentos CNES.</p></div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]"><Search size={19} /></div>
+              <div><h2 className="m-0 text-lg font-bold text-[#14211F]">Catálogos clínicos</h2><p className="mb-0 mt-1 text-sm text-[#5B6878]">Pesquise medicamentos, códigos CID-10 e estabelecimentos CNES.</p></div>
             </div>
-            <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl border border-[#dde3ec] bg-[#f7f9fc] p-1">
+            <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1">
               {([
                 ['cid10', 'CID-10'],
                 ['cnes', 'CNES'],
                 ['medicamentos', 'Medicamentos'],
               ] as const).map(([kind, label]) => (
-                <button key={kind} type="button" onClick={() => { setCatalogKind(kind); setCatalogEntries([]); setCatalogError(''); setHasSearchedCatalog(false); }} aria-pressed={catalogKind === kind} className={`min-h-10 rounded-lg px-2 text-xs font-bold sm:text-sm ${catalogKind === kind ? 'bg-[#1b3a60] text-white' : 'text-[#5a6a80] hover:bg-white'}`}>
+                <button key={kind} type="button" onClick={() => { setCatalogKind(kind); setCatalogEntries([]); setCatalogError(''); setHasSearchedCatalog(false); }} aria-pressed={catalogKind === kind} className={`min-h-10 rounded-lg px-2 text-xs font-semibold sm:text-sm transition-all ${catalogKind === kind ? 'bg-[#1D4ED8] text-white shadow-xs' : 'text-[#5B6878] hover:text-[#14211F] hover:bg-white'}`}>
                   {label}
                 </button>
               ))}
             </div>
             <form onSubmit={searchCatalog} className="flex flex-col gap-2 sm:flex-row">
               <label className="sr-only" htmlFor="catalog-query">Pesquisar no catálogo</label>
-              <input id="catalog-query" value={catalogQuery} onChange={(event) => setCatalogQuery(event.target.value)} minLength={3} placeholder={catalogKind === 'cid10' ? 'Código ou descrição CID-10' : catalogKind === 'cnes' ? 'Código ou nome do estabelecimento' : 'Medicamento ou princípio ativo'} className="h-11 min-w-0 flex-1 rounded-xl border border-[#c6cfdb] px-3 text-sm text-[#1d2a3d] outline-none focus:border-[#1f7fe0]" />
-              <button type="submit" disabled={catalogQuery.trim().length < 3 || isSearchingCatalog} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white hover:bg-[#24507f] disabled:opacity-50">
+              <input id="catalog-query" value={catalogQuery} onChange={(event) => setCatalogQuery(event.target.value)} minLength={3} placeholder={catalogKind === 'cid10' ? 'Código ou descrição CID-10' : catalogKind === 'cnes' ? 'Código ou nome do estabelecimento' : 'Medicamento ou princípio ativo'} className="h-11 min-w-0 flex-1 rounded-xl border border-[#E3E8F0] px-3 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8]" />
+              <button type="submit" disabled={catalogQuery.trim().length < 3 || isSearchingCatalog} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-5 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all shadow-xs disabled:opacity-50">
                 {isSearchingCatalog ? <LoaderCircle size={16} className="animate-spin" /> : <Search size={16} />} Pesquisar
               </button>
             </form>
-            {catalogError && <p role="alert" className="mt-4 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3 text-sm text-[#a13a30]">{catalogError}</p>}
+            {catalogError && <p role="alert" className="mt-4 rounded-xl border border-[#E8664A]/30 bg-[#FDE1DA] p-3 text-sm text-[#9B2C16]">{catalogError}</p>}
             {catalogEntries.length > 0 && (
-              <div className="mt-5 divide-y divide-[#dde3ec] border-y border-[#dde3ec]">
+              <div className="mt-5 divide-y divide-[#E3E8F0] border-y border-[#E3E8F0]">
                 {catalogEntries.map((entry, index) => (
                   <article key={`${entry.title}-${index}`} className="py-4">
                     <h3 className="m-0 text-sm font-bold text-[#1d2a3d]">{entry.title}</h3>

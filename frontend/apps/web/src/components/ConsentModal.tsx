@@ -52,40 +52,40 @@ export function ConsentModal() {
             type="button"
             onClick={handleDismiss}
             disabled={saveConsent.isPending}
-            className="absolute right-4 top-4 w-10 h-10 rounded-[13px] bg-[#f1f4f8] hover:bg-slate-200 transition-colors flex items-center justify-center text-[#5a6a80] cursor-pointer"
+            className="absolute right-4 top-4 w-10 h-10 rounded-xl bg-[#F4F7FC] hover:bg-[#E3E8F0] transition-colors flex items-center justify-center text-[#5B6878] cursor-pointer"
             aria-label="Agora não"
           >
             <X size={20} />
           </button>
 
           {/* Shield Icon */}
-          <div className="w-14 h-14 rounded-[18px] bg-[#e5eefb] flex items-center justify-center shrink-0">
-            <Shield size={28} className="text-[#1f7fe0]" strokeWidth={2} />
+          <div className="w-14 h-14 rounded-[18px] bg-[#CFE0FF]/40 flex items-center justify-center shrink-0">
+            <Shield size={28} className="text-[#1D4ED8]" strokeWidth={2} />
           </div>
 
-          <h2 className="mt-4.5 mb-1.5 text-2xl sm:text-[26px] font-extrabold tracking-[-0.03em] text-[#1b3a60]">
+          <h2 className="mt-4.5 mb-1.5 text-2xl sm:text-[26px] font-extrabold tracking-[-0.03em] text-[#14211F]">
             Antes de começar
           </h2>
-          <p className="m-0 mb-5 text-[#5a6a80] text-sm sm:text-base leading-relaxed">
+          <p className="m-0 mb-5 text-[#5B6878] text-sm sm:text-base leading-relaxed">
             Para organizar seus documentos, precisamos do seu consentimento.
           </p>
 
           {/* Bullets */}
           <ul className="list-none m-0 mb-5 p-0 space-y-3">
-            <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#1d2a3d]">
-              <span className="w-6 h-6 rounded-full bg-[#1f7fe0] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#14211F]">
+              <span className="w-6 h-6 rounded-full bg-[#1D4ED8] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Check size={14} strokeWidth={2.5} />
               </span>
               <span>Você decide o que adicionar</span>
             </li>
-            <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#1d2a3d]">
-              <span className="w-6 h-6 rounded-full bg-[#1f7fe0] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#14211F]">
+              <span className="w-6 h-6 rounded-full bg-[#1D4ED8] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Check size={14} strokeWidth={2.5} />
               </span>
               <span>Os dados lidos podem conter erros: confira sempre</span>
             </li>
-            <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#1d2a3d]">
-              <span className="w-6 h-6 rounded-full bg-[#1f7fe0] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <li className="flex gap-3 items-center text-sm sm:text-[15px] text-[#14211F]">
+              <span className="w-6 h-6 rounded-full bg-[#1D4ED8] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Check size={14} strokeWidth={2.5} />
               </span>
               <span>Você pode apagar documentos e a conta quando quiser</span>
@@ -95,11 +95,11 @@ export function ConsentModal() {
           {/* Accept checkbox pill */}
           <div
             onClick={() => setAcceptedTerms(!acceptedTerms)}
-            className="flex gap-2.5 items-center p-3.5 rounded-2xl bg-[#f1f4f8] text-sm text-[#1d2a3d] mb-5.5 cursor-pointer select-none hover:bg-slate-200/70 transition-colors"
+            className="flex gap-2.5 items-center p-3.5 rounded-2xl bg-[#F4F7FC] text-sm text-[#14211F] mb-5.5 cursor-pointer select-none hover:bg-[#E3E8F0] transition-colors"
           >
             <span
               className={`w-5.5 h-5.5 rounded-md flex items-center justify-center transition-colors ${
-                acceptedTerms ? 'bg-[#1b3a60] text-white' : 'border border-[#c6cfdb] bg-white'
+                acceptedTerms ? 'bg-[#1D4ED8] text-white shadow-xs' : 'border border-[#c6cfdb] bg-white'
               }`}
             >
               {acceptedTerms && <Check size={14} strokeWidth={2.5} />}
@@ -113,7 +113,7 @@ export function ConsentModal() {
               type="button"
               onClick={handleDismiss}
               disabled={saveConsent.isPending}
-              className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors cursor-pointer"
+              className="min-h-11 px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-white text-[#14211F] border border-[#E3E8F0] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all cursor-pointer shadow-xs"
             >
               Agora não
             </button>
@@ -121,7 +121,7 @@ export function ConsentModal() {
               type="button"
               disabled={!acceptedTerms || saveConsent.isPending}
               onClick={handleConsent}
-              className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors cursor-pointer disabled:opacity-50"
+              className="min-h-11 px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-[#1D4ED8] text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
             >
               Aceitar e continuar
             </button>

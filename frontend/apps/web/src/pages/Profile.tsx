@@ -285,14 +285,14 @@ export default function Profile() {
 
   if (profileError || !profileRaw) {
     return (
-      <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-8 text-center">
-        <p className="text-[#a13a30]" role="alert">
+      <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-8 text-center">
+        <p className="text-[#E8664A] font-medium" role="alert">
           Não foi possível carregar seu perfil. Suas informações não foram alteradas.
         </p>
         <button
           type="button"
           onClick={() => void refetch()}
-          className="mt-4 min-h-[44px] rounded-xl bg-[#1b3a60] px-5 font-bold text-white hover:bg-[#24507f]"
+          className="mt-4 min-h-[44px] rounded-xl bg-[#1D4ED8] px-5 font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all shadow-xs"
         >
           Tentar novamente
         </button>
@@ -301,18 +301,18 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+    <div className="min-h-screen bg-[#F4F7FC] text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
         {/* Header Title */}
         <div className={`flex justify-between items-end gap-5 mb-7 flex-wrap ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1D4ED8]">
               Perfil
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#14211F]">
               Meu perfil
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+            <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
               Gerencie seus dados, segurança e privacidade.
             </p>
           </div>
@@ -324,49 +324,49 @@ export default function Profile() {
           <div className={`w-full sm:w-[240px] flex flex-col gap-1 shrink-0 ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
             <button
               onClick={() => { setActiveTab('dados'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'dados'
-                  ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
-                  : 'text-[#5a6a80] hover:bg-slate-50'
+                  ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
+                  : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
-              <User size={18} className={activeTab === 'dados' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
+              <User size={18} className={activeTab === 'dados' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
               <span className="flex-1">Dados pessoais</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
             </button>
 
             <button
               onClick={() => { setActiveTab('carteirinha'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'carteirinha'
-                  ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
-                  : 'text-[#5a6a80] hover:bg-slate-50'
+                  ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
+                  : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
-              <CreditCard size={18} className={activeTab === 'carteirinha' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
+              <CreditCard size={18} className={activeTab === 'carteirinha' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
               <span className="flex-1">Carteirinha</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
             </button>
 
             <button
               onClick={() => { setActiveTab('seguranca'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'seguranca'
-                  ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
-                  : 'text-[#5a6a80] hover:bg-slate-50'
+                  ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
+                  : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
-              <Lock size={18} className={activeTab === 'seguranca' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
+              <Lock size={18} className={activeTab === 'seguranca' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
               Segurança
             </button>
 
             <button
               onClick={() => { setActiveTab('privacidade'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#dde3ec] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
                 activeTab === 'privacidade'
-                  ? 'bg-[#f1f4f8] text-[#1b3a60] font-bold shadow-xs'
-                  : 'text-[#5a6a80] hover:bg-slate-50'
+                  ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
+                  : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
-              <Shield size={18} className={activeTab === 'privacidade' ? 'text-[#1b3a60]' : 'text-[#5a6a80]'} />
+              <Shield size={18} className={activeTab === 'privacidade' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
               <span className="flex-1">Privacidade</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
             </button>
           </div>
@@ -375,25 +375,25 @@ export default function Profile() {
           <div className={`w-full min-w-0 flex-1 flex-col gap-5 ${mobileSectionOpen ? 'flex' : 'hidden'} sm:flex`}>
             {/* Top header bar stays static without animation */}
             <div className="mb-1 flex items-center gap-3 sm:hidden">
-              <button type="button" onClick={() => setMobileSectionOpen(false)} aria-label="Voltar às opções do perfil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dde3ec] bg-white text-[#1b3a60] shadow-sm transition-colors hover:bg-[#f1f4f8]">
+              <button type="button" onClick={() => setMobileSectionOpen(false)} aria-label="Voltar às opções do perfil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E3E8F0] bg-white text-[#14211F] shadow-xs transition-colors hover:bg-[#F4F7FC]">
                 <ArrowLeft size={19} />
               </button>
-              <h2 className="m-0 text-xl font-bold text-[#1b3a60]">{sectionTitles[activeTab]}</h2>
+              <h2 className="m-0 text-xl font-bold text-[#14211F]">{sectionTitles[activeTab]}</h2>
             </div>
 
             {/* Content items with smooth entrance animation */}
             <div key={activeTab} className="w-full flex flex-col gap-5 animate-in fade-in slide-in-from-right-2 duration-200">
               {/* Card 1: Dados pessoais */}
             {activeTab === 'dados' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-4 sm:p-7 shadow-xs">
                 {/* Avatar & User summary */}
                 <div className="flex gap-5 items-center mb-6">
-                  <div className="w-[88px] h-[88px] rounded-[28px] bg-[#1b3a60] text-white text-3xl font-extrabold flex items-center justify-center shrink-0 shadow-xs">
+                  <div className="w-[88px] h-[88px] rounded-[28px] bg-[#1D4ED8] text-white text-3xl font-extrabold flex items-center justify-center shrink-0 shadow-md">
                     {initials}
                   </div>
                   <div>
-                    <b className="text-xl text-[#1d2a3d] block">{nome || 'Nome não informado'}</b>
-                    <div className="text-[#5a6a80] text-sm mt-0.5">{email}</div>
+                    <b className="text-xl text-[#14211F] block">{nome || 'Nome não informado'}</b>
+                    <div className="text-[#5B6878] text-sm mt-0.5">{email}</div>
                   </div>
                 </div>
 
@@ -410,31 +410,31 @@ export default function Profile() {
                         autoComplete="name"
                         value={nome}
                         onChange={(e) => setNome(e.target.value)}
-                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                        className="w-full h-[46px] px-3.5 border border-[#E3E8F0] rounded-xl outline-none text-sm text-[#14211F] focus:border-[#1D4ED8]"
                       />
                     </div>
                     <div>
-                      <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
+                      <label className="block text-[13px] font-semibold text-[#14211F] mb-1.5">
                         Nascimento
                       </label>
                       <input
                         type="date"
                         value={nascimento}
                         onChange={(e) => setNascimento(e.target.value)}
-                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                        className="w-full h-[46px] px-3.5 border border-[#E3E8F0] rounded-xl outline-none text-sm text-[#14211F] focus:border-[#1D4ED8]"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
+                      <label className="block text-[13px] font-semibold text-[#14211F] mb-1.5">
                         Sexo biológico
                       </label>
                       <select
                         value={sexo}
                         onChange={(e) => setSexo(e.target.value)}
-                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60] bg-white cursor-pointer"
+                        className="w-full h-[46px] px-3.5 border border-[#E3E8F0] rounded-xl outline-none text-sm text-[#14211F] focus:border-[#1D4ED8] bg-white cursor-pointer"
                       >
                         <option value="">Não informado</option>
                         <option value="Feminino">Feminino</option>
@@ -443,7 +443,7 @@ export default function Profile() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
+                      <label className="block text-[13px] font-semibold text-[#14211F] mb-1.5">
                         E-mail
                       </label>
                       <input
@@ -453,14 +453,14 @@ export default function Profile() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         onBlur={() => setEmail((value) => value.trim())}
-                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                        className="w-full h-[46px] px-3.5 border border-[#E3E8F0] rounded-xl outline-none text-sm text-[#14211F] focus:border-[#1D4ED8]"
                       />
                     </div>
                   </div>
 
                   {emailChanged && (
                     <div>
-                      <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
+                      <label className="block text-[13px] font-semibold text-[#14211F] mb-1.5">
                         Senha atual para confirmar o novo e-mail
                       </label>
                       <input
@@ -469,13 +469,13 @@ export default function Profile() {
                         autoComplete="current-password"
                         value={senhaAtualPerfil}
                         onChange={(e) => setSenhaAtualPerfil(e.target.value)}
-                        className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                        className="w-full h-[46px] px-3.5 border border-[#E3E8F0] rounded-xl outline-none text-sm text-[#14211F] focus:border-[#1D4ED8]"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#1d2a3d] mb-1.5">
+                    <label className="block text-[13px] font-semibold text-[#14211F] mb-1.5">
                       Contato de emergência
                     </label>
                     <input
@@ -483,7 +483,7 @@ export default function Profile() {
                       value={contatoEmergencia}
                       onChange={(e) => setContatoEmergencia(e.target.value)}
                       placeholder="Nome e telefone do contato"
-                      className="w-full h-[46px] px-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                      className="w-full h-[46px] px-3.5 border border-[#E3E8F0] rounded-xl outline-none text-sm text-[#14211F] focus:border-[#1D4ED8]"
                     />
                   </div>
 
@@ -491,7 +491,7 @@ export default function Profile() {
                     <button
                       type="submit"
                       disabled={isSavingProfile}
-                      className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors cursor-pointer disabled:opacity-50"
+                      className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-[#1D4ED8] text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
                     >
                       {isSavingProfile && <LoaderCircle size={16} className="animate-spin" />}
                       Salvar alterações
@@ -502,21 +502,21 @@ export default function Profile() {
             )}
 
             {activeTab === 'carteirinha' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-4 sm:p-7 shadow-xs">
                 <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                    <CreditCard size={18} className="text-[#1b3a60]" />
+                  <div className="w-9 h-9 rounded-xl bg-[#CFE0FF] flex items-center justify-center shrink-0">
+                    <CreditCard size={18} className="text-[#1D4ED8]" />
                   </div>
-                  <b className="text-base text-[#1d2a3d] flex-1">Carteirinha do plano de saúde</b>
+                  <b className="text-base text-[#14211F] flex-1">Carteirinha do plano de saúde</b>
                 </div>
-                <p className="mb-5 ml-11 text-sm leading-relaxed text-[#5a6a80]">
+                <p className="mb-5 ml-11 text-sm leading-relaxed text-[#5B6878]">
                   Cadastre os dados manualmente ou envie uma imagem para preencher os campos com ajuda da leitura automática. Confira as informações extraídas.
                 </p>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="plano-saude" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">
+                      <label htmlFor="plano-saude" className="mb-1.5 block text-[13px] font-semibold text-[#14211F]">
                         Nome do plano ou operadora
                       </label>
                       <input
@@ -526,11 +526,11 @@ export default function Profile() {
                         value={planoSaude}
                         onChange={(event) => setPlanoSaude(event.target.value)}
                         placeholder="Ex.: nome da operadora"
-                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+                        className="h-[46px] w-full rounded-xl border border-[#E3E8F0] px-3.5 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8]"
                       />
                     </div>
                     <div>
-                      <label htmlFor="numero-carteirinha" className="mb-1.5 block text-[13px] font-semibold text-[#1d2a3d]">
+                      <label htmlFor="numero-carteirinha" className="mb-1.5 block text-[13px] font-semibold text-[#14211F]">
                         Número da carteirinha
                       </label>
                       <input
@@ -540,7 +540,7 @@ export default function Profile() {
                         value={numeroCarteirinha}
                         onChange={(event) => setNumeroCarteirinha(event.target.value)}
                         placeholder="Número impresso no cartão"
-                        className="h-[46px] w-full rounded-xl border border-[#c6cfdb] px-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+                        className="h-[46px] w-full rounded-xl border border-[#E3E8F0] px-3.5 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8]"
                       />
                     </div>
                   </div>
@@ -548,26 +548,26 @@ export default function Profile() {
                     type="button"
                     onClick={() => void handleSaveHealthCard()}
                     disabled={isSavingCard}
-                    className="min-h-[44px] rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white hover:bg-[#24507f] disabled:opacity-50"
+                    className="min-h-[44px] rounded-xl bg-[#1D4ED8] px-5 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all disabled:opacity-50 shadow-xs"
                   >
                     {isSavingCard && <LoaderCircle size={16} className="mr-2 inline animate-spin" />}
                     Salvar dados do plano
                   </button>
                 </div>
 
-                <div className="mt-6 border-t border-[#dde3ec] pt-5">
-                  <h3 className="mb-1 text-sm font-bold text-[#1d2a3d]">Imagem da carteirinha</h3>
-                  <p className="mb-4 text-xs leading-relaxed text-[#5a6a80]">
+                <div className="mt-6 border-t border-[#E3E8F0] pt-5">
+                  <h3 className="mb-1 text-sm font-bold text-[#14211F]">Imagem da carteirinha</h3>
+                  <p className="mb-4 text-xs leading-relaxed text-[#5B6878]">
                     Aceita PDF, JPG ou PNG de até 10 MB. O envio usa leitura automática e requer consentimento de IA ativado em Privacidade.
                   </p>
                   {urlCarteirinha && (
-                    <div className="mb-4 overflow-hidden rounded-xl border border-[#dde3ec] bg-[#f7f9fc]">
+                    <div className="mb-4 overflow-hidden rounded-xl border border-[#E3E8F0] bg-[#F4F7FC]">
                       {/\.pdf(?:[?#]|$)/i.test(urlCarteirinha) ? (
                         <a
                           href={urlCarteirinha}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex min-h-16 items-center gap-2 px-4 text-sm font-semibold text-[#1b3a60] hover:bg-[#f1f4f8]"
+                          className="flex min-h-16 items-center gap-2 px-4 text-sm font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/30 transition-colors"
                         >
                           <FileText size={18} />
                           Abrir arquivo da carteirinha
@@ -589,7 +589,7 @@ export default function Profile() {
                     </div>
                   )}
                   <div className="flex flex-wrap gap-2">
-                    <label className={`min-h-[44px] cursor-pointer rounded-xl border border-[#c6cfdb] bg-white px-4 text-sm font-bold text-[#1b3a60] inline-flex items-center gap-2 hover:bg-[#f7f9fc] ${isUploadingCard ? 'pointer-events-none opacity-50' : ''}`}>
+                    <label className={`min-h-[44px] cursor-pointer rounded-xl border border-[#E3E8F0] bg-white px-4 text-sm font-semibold text-[#14211F] inline-flex items-center gap-2 hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all shadow-xs ${isUploadingCard ? 'pointer-events-none opacity-50' : ''}`}>
                       {isUploadingCard
                         ? <LoaderCircle size={16} className="animate-spin" />
                         : <Upload size={16} />}
@@ -607,7 +607,7 @@ export default function Profile() {
                         type="button"
                         onClick={handleDeleteHealthCard}
                         disabled={isDeletingCard}
-                        className="min-h-[44px] rounded-xl border border-[#f0b8b2] bg-white px-4 text-sm font-bold text-[#a13a30] inline-flex items-center gap-2 hover:bg-[#fff5f4] disabled:opacity-50"
+                        className="min-h-[44px] rounded-xl border border-[#E8664A]/30 bg-white px-4 text-sm font-semibold text-[#E8664A] inline-flex items-center gap-2 hover:bg-[#FDE1DA] transition-all shadow-xs disabled:opacity-50"
                       >
                         {isDeletingCard
                           ? <LoaderCircle size={16} className="animate-spin" />
@@ -622,19 +622,19 @@ export default function Profile() {
 
             {/* Card 2: Segurança */}
             {activeTab === 'seguranca' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-4 sm:p-7 shadow-xs">
                 <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                    <Mail size={18} className="text-[#1b3a60]" />
+                  <div className="w-9 h-9 rounded-xl bg-[#CFE0FF] flex items-center justify-center shrink-0">
+                    <Mail size={18} className="text-[#1D4ED8]" />
                   </div>
-                  <b className="text-base text-[#1d2a3d] flex-1">Segurança</b>
+                  <b className="text-base text-[#14211F] flex-1">Segurança</b>
                 </div>
 
-                <p className="mb-4 text-sm leading-relaxed text-[#5a6a80]">
-                  Enviaremos para <strong className="text-[#1d2a3d]">{email}</strong> um link seguro para redefinir sua senha.
+                <p className="mb-4 text-sm leading-relaxed text-[#5B6878]">
+                  Enviaremos para <strong className="text-[#14211F]">{email}</strong> um link seguro para redefinir sua senha.
                 </p>
                 {passwordResetRequested && (
-                  <p role="status" className="mb-4 rounded-xl bg-[#f1f7ff] p-3 text-sm text-[#1b3a60]">
+                  <p role="status" className="mb-4 rounded-xl bg-[#CFE0FF]/40 border border-[#CFE0FF] p-3 text-sm text-[#1D4ED8] font-medium">
                     Se este e-mail estiver cadastrado, você receberá as instruções para redefinir sua senha.
                   </p>
                 )}
@@ -642,7 +642,7 @@ export default function Profile() {
                   type="button"
                   onClick={() => void handleRequestPasswordReset()}
                   disabled={isRequestingPasswordReset || passwordResetRequested}
-                  className="min-h-[44px] rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-slate-50 disabled:opacity-50"
+                  className="min-h-[44px] rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] shadow-xs disabled:opacity-50"
                 >
                   {isRequestingPasswordReset && <LoaderCircle size={16} className="mr-2 inline animate-spin" />}
                   {passwordResetRequested ? 'E-mail solicitado' : 'Enviar link para redefinir senha'}
@@ -652,12 +652,12 @@ export default function Profile() {
 
             {/* Card 3: Privacidade e consentimento */}
             {activeTab === 'privacidade' && (
-              <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4 sm:p-7 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+              <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-4 sm:p-7 shadow-xs">
                 <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                    <Shield size={18} className="text-[#1b3a60]" />
+                  <div className="w-9 h-9 rounded-xl bg-[#CFE0FF] flex items-center justify-center shrink-0">
+                    <Shield size={18} className="text-[#1D4ED8]" />
                   </div>
-                  <b className="text-base text-[#1d2a3d] flex-1">
+                  <b className="text-base text-[#14211F] flex-1">
                     Privacidade e consentimento
                   </b>
                 </div>
@@ -680,7 +680,7 @@ export default function Profile() {
                       disabled={saveConsentimento.isPending}
                       onClick={() => void handleToggleConsent('ocr', !consentOcr)}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-                        consentOcr ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
+                        consentOcr ? 'bg-[#1D4ED8]' : 'bg-[#E3E8F0]'
                       }`}
                     >
                       <span
@@ -694,10 +694,10 @@ export default function Profile() {
                   {/* Toggle 2 */}
                   <div className="flex gap-4 items-center py-4">
                     <div className="flex-1">
-                      <b className="text-[15px] text-[#1d2a3d] block">
+                      <b className="text-[15px] text-[#14211F] block">
                         Assistente de chat (Mémora)
                       </b>
-                      <div className="text-[13px] text-[#5a6a80] mt-0.5 leading-relaxed">
+                      <div className="text-[13px] text-[#5B6878] mt-0.5 leading-relaxed">
                         Permite consultar seu histórico em linguagem natural.
                       </div>
                     </div>
@@ -708,7 +708,7 @@ export default function Profile() {
                       disabled={saveConsentimento.isPending}
                       onClick={() => void handleToggleConsent('chat', !consentChat)}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-                        consentChat ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
+                        consentChat ? 'bg-[#1D4ED8]' : 'bg-[#E3E8F0]'
                       }`}
                     >
                       <span
@@ -722,42 +722,41 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Encerramento de sessão e exclusão de conta ficam apenas em Privacidade:
-                são ações sobre a conta e os dados, não sobre os dados pessoais exibidos. */}
+            {/* Encerramento de sessão e exclusão de conta ficam apenas em Privacidade */}
             {activeTab === 'privacidade' && (
               <>
-                <section className="mt-6 rounded-[20px] border border-[#dde3ec] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-5">
+                <section className="mt-6 rounded-[20px] border border-[#E3E8F0] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-5 shadow-xs">
                   <div>
-                    <h2 className="text-sm font-bold text-[#203047]">Sair da conta</h2>
-                    <p className="mt-1 text-sm text-[#5a6a80]">Encerre sua sessão neste dispositivo.</p>
+                    <h2 className="text-sm font-bold text-[#14211F]">Sair da conta</h2>
+                    <p className="mt-1 text-sm text-[#5B6878]">Encerre sua sessão neste dispositivo.</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => void signOut()}
                     disabled={isSigningOut}
-                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#ead5d2] px-4 text-sm font-semibold text-[#a13a30] transition-colors hover:bg-[#fff6f5] disabled:cursor-not-allowed disabled:opacity-60 sm:mt-0 sm:w-auto"
+                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#E8664A]/40 bg-white px-4 text-sm font-semibold text-[#E8664A] transition-all hover:bg-[#FDE1DA] hover:border-[#E8664A] shadow-xs disabled:cursor-not-allowed disabled:opacity-60 sm:mt-0 sm:w-auto"
                   >
                     {isSigningOut ? <LoaderCircle size={17} className="animate-spin" /> : <LogOut size={17} />}
                     {isSigningOut ? 'Saindo...' : 'Sair da conta'}
                   </button>
                 </section>
 
-                <div className="mt-4 flex flex-wrap items-center gap-4.5 rounded-[20px] border border-[#f0b8b2] bg-[#fff5f4] p-4 sm:p-7">
-                  <div className="w-12 h-12 rounded-2xl bg-[#fde8e6] flex items-center justify-center shrink-0">
-                    <Trash2 size={24} className="text-[#a13a30]" strokeWidth={2} />
+                <div className="mt-4 flex flex-wrap items-center gap-4.5 rounded-[20px] border border-[#E8664A]/30 bg-[#FDE1DA] p-4 sm:p-7">
+                  <div className="w-12 h-12 rounded-2xl bg-[#E8664A]/20 flex items-center justify-center shrink-0">
+                    <Trash2 size={24} className="text-[#9B2C16]" strokeWidth={2} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <b className="text-[17px] text-[#7a2a22] block leading-tight">
+                    <b className="text-[17px] text-[#9B2C16] block leading-tight">
                       Excluir conta
                     </b>
-                    <div className="text-sm text-[#7a2a22] mt-1 leading-relaxed">
+                    <div className="text-sm text-[#9B2C16] mt-1 leading-relaxed">
                       Apaga sua conta e seus documentos. Essa ação não pode ser desfeita.
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowDeleteModal(true)}
-                    className="min-h-[44px] px-5 rounded-xl bg-[#c0463a] hover:bg-[#a13a30] text-white font-bold text-sm inline-flex items-center transition-colors shadow-xs cursor-pointer"
+                    className="min-h-[44px] px-5 rounded-xl bg-[#E8664A] hover:bg-[#D45338] text-white font-semibold text-sm inline-flex items-center transition-all shadow-xs cursor-pointer active:bg-[#B9381E]"
                   >
                     Excluir conta
                   </button>
@@ -768,7 +767,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-[#5a6a80]">
+        <p className="mt-8 text-center text-xs text-[#5B6878]">
           Os dados e preferências exibidos pertencem à sua conta.
         </p>
       </main>
@@ -777,19 +776,19 @@ export default function Profile() {
       <DialogPrimitive.Root open={showDeleteModal} onOpenChange={setShowDeleteModal}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-[#dde3ec] outline-none">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-[#E3E8F0] outline-none">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-[#a13a30]">Confirmar exclusão de conta</h3>
-              <DialogPrimitive.Close className="p-1 rounded-lg text-[#5a6a80] hover:bg-slate-100">
+              <h3 className="text-lg font-bold text-[#9B2C16]">Confirmar exclusão de conta</h3>
+              <DialogPrimitive.Close className="p-1 rounded-lg text-[#5B6878] hover:bg-[#F4F7FC]">
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>
 
-            <p className="text-sm text-[#5a6a80] leading-relaxed mb-6">
+            <p className="text-sm text-[#5B6878] leading-relaxed mb-6">
               Todos os seus exames, receitas, prontuários e acessos serão permanentemente apagados dos nossos servidores. Tem certeza?
             </p>
 
-            <label htmlFor="delete-account-password" className="mb-1.5 block text-sm font-bold text-[#1d2a3d]">
+            <label htmlFor="delete-account-password" className="mb-1.5 block text-sm font-semibold text-[#14211F]">
               Confirme sua senha
             </label>
             <input
@@ -798,7 +797,7 @@ export default function Profile() {
               autoComplete="current-password"
               value={deletePassword}
               onChange={(event) => setDeletePassword(event.target.value)}
-              className="mb-5 min-h-11 w-full rounded-xl border border-[#dde3ec] px-3 text-sm outline-none focus:border-[#1f7fe0]"
+              className="mb-5 min-h-11 w-full rounded-xl border border-[#E3E8F0] px-3 text-sm outline-none focus:border-[#1D4ED8]"
               required
             />
 
@@ -809,7 +808,7 @@ export default function Profile() {
                   setShowDeleteModal(false);
                   setDeletePassword('');
                 }}
-                className="px-4 py-2.5 rounded-xl border border-[#dde3ec] text-[#5a6a80] font-bold text-sm hover:bg-slate-50 cursor-pointer"
+                className="min-h-11 px-5 rounded-xl border border-[#E3E8F0] bg-white text-[#14211F] font-semibold text-sm hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all shadow-xs cursor-pointer"
               >
                 Cancelar
               </button>
@@ -817,7 +816,7 @@ export default function Profile() {
                 type="button"
                 onClick={handleDeleteAccount}
                 disabled={isDeleting || !deletePassword}
-                className="px-5 py-2.5 rounded-xl bg-[#c0463a] text-white font-bold text-sm hover:bg-[#a13a30] cursor-pointer disabled:opacity-60 flex items-center gap-2"
+                className="min-h-11 px-5 rounded-xl bg-[#E8664A] text-white font-semibold text-sm hover:bg-[#D45338] active:bg-[#B9381E] transition-all cursor-pointer disabled:opacity-60 flex items-center gap-2 shadow-xs"
               >
                 {isDeleting && <LoaderCircle size={16} className="animate-spin" />}
                 Sim, apagar tudo

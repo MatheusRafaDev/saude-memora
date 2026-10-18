@@ -73,9 +73,9 @@ function SuggestionButtons({
             key={suggestion.label}
             type="button"
             onClick={() => onSelect(suggestion)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-left text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#E3E8F0] bg-white px-3 py-1.5 text-left text-xs font-semibold text-[#14211F] hover:border-[#CFE0FF] hover:bg-[#F4F7FC] hover:text-[#1D4ED8] transition-all cursor-pointer shadow-xs"
           >
-            <Plus size={13} className="text-[#1f7fe0]" />
+            <Plus size={13} className="text-[#1D4ED8]" />
             <span>{suggestion.label}</span>
           </button>
         ))}
@@ -119,8 +119,8 @@ function SuggestedTextarea({
       {dictionary && dictionary.length > 0 && (
         <div className="space-y-2">
           {/* Quick search / add input */}
-          <div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 focus-within:border-[#1b3a60]">
-            <Search size={16} className="shrink-0 text-[#5a6a80]" />
+          <div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-3 focus-within:border-[#1D4ED8]">
+            <Search size={16} className="shrink-0 text-[#5B6878]" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -132,14 +132,14 @@ function SuggestedTextarea({
               }}
               placeholder={`Buscar ou adicionar opção para ${label}...`}
               autoComplete="off"
-              className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#1d2a3d] outline-none placeholder:text-[#78879a]"
+              className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#14211F] outline-none placeholder:text-[#5B6878]"
             />
             <button
               type="button"
               onClick={() => handleAddCustom(searchQuery)}
               disabled={!searchQuery.trim()}
               aria-label={`Adicionar a ${label}`}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-[#1b3a60] px-3 text-xs font-bold text-white transition-colors hover:bg-[#244d7e] disabled:opacity-40 cursor-pointer"
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-[#1D4ED8] px-3 text-xs font-semibold text-white transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-40 cursor-pointer shadow-xs"
             >
               <Plus size={14} />
               <span>Adicionar</span>
@@ -149,7 +149,7 @@ function SuggestedTextarea({
           {/* Quick fill chips / pills */}
           {displaySuggestions.length > 0 && (
             <div>
-              <div className="mb-1.5 flex items-center justify-between text-xs text-[#5a6a80]">
+              <div className="mb-1.5 flex items-center justify-between text-xs text-[#5B6878]">
                 <span>
                   {searchQuery.trim().length >= 2
                     ? 'Opções encontradas — clique para selecionar:'
@@ -171,14 +171,14 @@ function SuggestedTextarea({
                       }
                       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                         isSelected
-                          ? 'border border-[#1b3a60] bg-[#1b3a60] text-white shadow-xs'
-                          : 'border border-[#c6cfdb] bg-white text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]'
+                          ? 'border border-[#1D4ED8] bg-[#1D4ED8] text-white shadow-xs'
+                          : 'border border-[#E3E8F0] bg-white text-[#14211F] hover:border-[#CFE0FF] hover:bg-[#F4F7FC] hover:text-[#1D4ED8]'
                       }`}
                     >
                       {isSelected ? (
                         <Check size={13} strokeWidth={2.5} className="shrink-0" />
                       ) : (
-                        <Plus size={13} strokeWidth={2.5} className="shrink-0 text-[#1f7fe0]" />
+                        <Plus size={13} strokeWidth={2.5} className="shrink-0 text-[#1D4ED8]" />
                       )}
                       <span>{suggestion.label}</span>
                     </button>
@@ -196,7 +196,7 @@ function SuggestedTextarea({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-[#c6cfdb] bg-white p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+        className="w-full rounded-xl border border-[#E3E8F0] bg-white p-3.5 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8]"
       />
       <p className="mt-1 text-xs text-[#78879a]">
         Você pode marcar as opções sugeridas acima ou escrever/editar livremente no campo de texto.
@@ -384,7 +384,6 @@ export default function Record() {
     }
   };
 
-  const progressPercent = Math.round((currentStep / 5) * 100);
 
   if (isLoading) {
     return <div className="p-12 text-center text-[#5a6a80]">Carregando sua anamnese…</div>;
@@ -392,32 +391,32 @@ export default function Record() {
 
   if (isError) {
     return (
-      <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-5 sm:p-8 text-center text-[#a13a30]">
+      <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-5 sm:p-8 text-center text-[#E8664A]">
         Não foi possível carregar sua anamnese. Tente novamente mais tarde.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+    <div className="min-h-screen bg-[#F4F7FC] text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
+            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1D4ED8]">
               Ficha de saúde
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#14211F]">
               Anamnese
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+            <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
               Responda no seu ritmo: o progresso é salvo a cada passo.
             </p>
           </div>
         </div>
 
         {/* Stepper Header Bar */}
-        <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] mb-5 overflow-x-auto">
+        <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-5.5 shadow-xs mb-5 overflow-x-auto">
           <div className="flex gap-4 items-center min-w-[600px]">
             {STEPS.map((s, idx) => {
               const isPassed = s.id < currentStep;
@@ -429,10 +428,10 @@ export default function Record() {
                     onClick={() => setCurrentStep(s.id)}
                     className={`w-[34px] h-[34px] rounded-full font-bold flex items-center justify-center text-sm shrink-0 cursor-pointer transition-colors ${
                       isPassed
-                        ? 'bg-[#1f7fe0] text-white border border-[#1f7fe0]'
+                        ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8]'
                         : isCurrent
-                        ? 'bg-[#1b3a60] text-white border border-[#1b3a60]'
-                        : 'bg-white text-[#5a6a80] border border-[#dde3ec]'
+                        ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8] ring-2 ring-[#CFE0FF]'
+                        : 'bg-white text-[#5B6878] border border-[#E3E8F0]'
                     }`}
                   >
                     {isPassed ? <Check size={16} strokeWidth={2.5} /> : s.id}
@@ -440,10 +439,10 @@ export default function Record() {
                   <span
                     className={`text-sm whitespace-nowrap ${
                       isCurrent
-                        ? 'font-bold text-[#1d2a3d]'
+                        ? 'font-bold text-[#14211F]'
                         : isPassed
-                        ? 'font-medium text-[#1d2a3d]'
-                        : 'font-medium text-[#5a6a80]'
+                        ? 'font-semibold text-[#14211F]'
+                        : 'font-medium text-[#5B6878]'
                     }`}
                   >
                     {s.name}
@@ -451,7 +450,7 @@ export default function Record() {
                   {idx < STEPS.length - 1 && (
                     <div
                       className={`flex-1 h-[2px] transition-colors ${
-                        isPassed ? 'bg-[#1f7fe0]' : 'bg-[#dde3ec]'
+                        isPassed ? 'bg-[#1D4ED8]' : 'bg-[#E3E8F0]'
                       }`}
                     />
                   )}
@@ -468,19 +467,44 @@ export default function Record() {
             {/* Step 1: Dados gerais */}
             {currentStep === 1 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8] uppercase">
                   Passo 1 de 5
                 </div>
-                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#14211F]">
                   Dados gerais de saúde
                 </h2>
                 <p className="m-0 mb-6 text-[#5a6a80] text-sm">
                   Registre cirurgias anteriores e observações relevantes para sua ficha.
                 </p>
 
-                <div className="space-y-4 mb-6">
+                <div className="space-y-5 mb-6">
                   <div>
-                    <label className="block text-sm font-bold text-[#1d2a3d] mb-1.5">
+                    <label className="block text-sm font-bold text-[#14211F] mb-1.5">
+                      Tipo sanguíneo
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {BLOOD_TYPES.map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => {
+                            setBloodType(type === bloodType ? '' : type);
+                            setLastSavedText('Alterações pendentes');
+                          }}
+                          className={`min-h-10 px-4 rounded-xl text-sm font-semibold border transition-all cursor-pointer ${
+                            bloodType === type
+                              ? 'bg-[#1D4ED8] text-white border-[#1D4ED8] shadow-xs'
+                              : 'bg-white text-[#14211F] border-[#E3E8F0] hover:bg-[#F4F7FC] hover:border-[#CFE0FF]'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-[#14211F] mb-1.5">
                       Cirurgias anteriores
                     </label>
                     <SuggestedTextarea
@@ -510,7 +534,7 @@ export default function Record() {
                         setLastSavedText('Alterações pendentes');
                       }}
                       placeholder="Outras informações de saúde que deseja registrar."
-                      className="w-full p-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1b3a60]"
+                      className="w-full p-3.5 border border-[#c6cfdb] rounded-xl outline-none text-sm text-[#1d2a3d] focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15"
                     />
                   </div>
                 </div>
@@ -520,10 +544,10 @@ export default function Record() {
             {/* Step 2: Condições */}
             {currentStep === 2 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8] uppercase">
                   Passo 2 de 5
                 </div>
-                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#14211F]">
                   Condições de saúde
                 </h2>
                 <p className="m-0 mb-6 text-[#5a6a80] text-sm">
@@ -534,7 +558,7 @@ export default function Record() {
                   {conditionsList.map((cond, idx) => (
                     <label
                       key={cond.nome}
-                      className="flex items-center gap-3 p-3.5 border border-[#dde3ec] rounded-xl hover:bg-slate-50 cursor-pointer transition-colors"
+                      className="flex items-center gap-3 p-3.5 border border-[#dde3ec] rounded-xl hover:bg-[#F4F7FC] cursor-pointer transition-colors"
                     >
                       <input
                         type="checkbox"
@@ -548,7 +572,7 @@ export default function Record() {
                           setConditionsList(updated);
                           setLastSavedText('Alterações pendentes');
                         }}
-                        className="w-4 h-4 rounded text-[#1f7fe0] focus:ring-[#1f7fe0]"
+                        className="w-4 h-4 rounded text-[#1D4ED8] focus:ring-[#1D4ED8]"
                       />
                       <span className="text-sm font-semibold text-[#1d2a3d]">
                         {cond.nome}
@@ -570,7 +594,7 @@ export default function Record() {
                     onChange={(event) => setConditionInput(event.target.value)}
                     placeholder="Ex.: enxaqueca, tireoide, pressão alta"
                     autoComplete="off"
-                    className="w-full rounded-xl border border-[#c6cfdb] p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+                    className="w-full rounded-xl border border-[#c6cfdb] p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15"
                   />
                   <SuggestionButtons
                     query={conditionInput}
@@ -588,7 +612,7 @@ export default function Record() {
                       <button
                         type="button"
                         onClick={() => addCondition(conditionInput)}
-                        className="mt-2 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
+                        className="mt-2 rounded-full border border-[#E3E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#14211F] hover:border-[#CFE0FF] hover:bg-[#F4F7FC] transition-colors"
                       >
                         Adicionar “{conditionInput.trim()}”
                       </button>
@@ -603,10 +627,10 @@ export default function Record() {
             {/* Step 3: Alergias e remédios */}
             {currentStep === 3 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8] uppercase">
                   Passo 3 de 5
                 </div>
-                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#14211F]">
                   Alergias e medicamentos
                 </h2>
                 <p className="m-0 mb-6 text-[#5a6a80] text-sm">
@@ -614,7 +638,7 @@ export default function Record() {
                 </p>
 
                 {/* Tipo Sanguíneo */}
-                <div className="text-sm font-bold mb-2.5">Tipo sanguíneo</div>
+                <div className="text-sm font-semibold text-[#14211F] mb-2.5">Tipo sanguíneo</div>
                 <div className="flex gap-2 flex-wrap mb-6.5">
                   {BLOOD_TYPES.map((type) => (
                     <button
@@ -624,10 +648,10 @@ export default function Record() {
                         setBloodType(type);
                         setLastSavedText('Alterações pendentes');
                       }}
-                      className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer transition-colors ${
+                      className={`px-4 py-2.5 rounded-xl font-semibold text-sm cursor-pointer transition-all ${
                         bloodType === type
-                          ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs'
-                          : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb]'
+                          ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8] shadow-xs'
+                          : 'bg-white text-[#14211F] border border-[#E3E8F0] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
                       }`}
                     >
                       {type}
@@ -636,16 +660,16 @@ export default function Record() {
                 </div>
 
                 {/* Alergias */}
-                <div className="text-sm font-bold mb-2.5">Alergias</div>
-                <div className="h-[46px] w-full border border-[#c6cfdb] rounded-xl bg-white flex items-center gap-2 px-3.5 text-sm text-[#5a6a80] focus-within:border-[#1b3a60]">
-                  <Plus size={16} className="text-[#5a6a80]" />
+                <div className="text-sm font-semibold text-[#14211F] mb-2.5">Alergias</div>
+                <div className="h-[46px] w-full border border-[#E3E8F0] rounded-xl bg-white flex items-center gap-2 px-3.5 text-sm text-[#5B6878] focus-within:border-[#1D4ED8]">
+                  <Plus size={16} className="text-[#5B6878]" />
                   <input
                     type="text"
                     value={allergyInput}
                     onChange={(e) => setAllergyInput(e.target.value)}
                     onKeyDown={handleAddAllergy}
                     placeholder="Digite e pressione Enter"
-                    className="w-full bg-transparent border-none outline-none text-[#1d2a3d] placeholder:text-[#5a6a80] text-sm"
+                    className="w-full bg-transparent border-none outline-none text-[#14211F] placeholder:text-[#5B6878] text-sm"
                   />
                 </div>
                 <SuggestionButtons
@@ -654,7 +678,7 @@ export default function Record() {
                   label="Sugestões de alergias"
                   onSelect={({ label }) => addAllergy(label)}
                 />
-                <p className="mt-1.5 text-xs text-[#5a6a80]">
+                <p className="mt-1.5 text-xs text-[#5B6878]">
                   Informe alergias conhecidas; as sugestões são apenas opções para preencher.
                 </p>
 
@@ -663,7 +687,7 @@ export default function Record() {
                   {allergies.map((item) => (
                     <span
                       key={item}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#fdf3d8] text-[#6b4208] text-sm font-semibold"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FDE1DA] border border-[#E8664A]/30 text-[#9B2C16] text-xs font-semibold"
                     >
                       {item}
                       <button
@@ -679,37 +703,37 @@ export default function Record() {
 
                 {/* Medicamentos contínuos */}
                 <div className="flex justify-between items-center mb-2.5">
-                  <div className="text-sm font-bold">Medicamentos de uso contínuo</div>
+                  <div className="text-sm font-semibold text-[#14211F]">Medicamentos de uso contínuo</div>
                   <button
                     type="button"
                     onClick={() => setIsAddingMed(true)}
-                    className="text-xs font-bold text-[#1b3a60] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-semibold text-[#1D4ED8] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus size={14} /> Adicionar
                   </button>
                 </div>
 
                 {isAddingMed && (
-                  <div className="p-4 bg-slate-50 border border-[#dde3ec] rounded-xl mb-4 space-y-3">
+                  <div className="p-4 bg-[#F4F7FC] border border-[#E3E8F0] rounded-xl mb-4 space-y-3">
                     <input
                       type="text"
                       placeholder="Nome do remédio (Ex: Losartana 50mg)"
                       value={newMedNome}
                       onChange={(e) => setNewMedNome(e.target.value)}
-                      className="w-full h-10 px-3 border border-[#c6cfdb] rounded-lg text-sm bg-white"
+                      className="w-full h-11 px-3.5 border border-[#E3E8F0] rounded-xl text-sm bg-white text-[#14211F] outline-none focus:border-[#1D4ED8]"
                     />
                     <div className="flex gap-2 justify-end">
                       <button
                         type="button"
                         onClick={() => setIsAddingMed(false)}
-                        className="px-3 py-1.5 text-xs font-semibold text-[#5a6a80] hover:bg-slate-200 rounded-lg"
+                        className="px-3.5 py-2 text-xs font-semibold text-[#5B6878] hover:bg-[#E3E8F0] rounded-xl transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
                         type="button"
                         onClick={handleAddMed}
-                        className="px-3 py-1.5 text-xs font-bold bg-[#1b3a60] text-white rounded-lg hover:bg-[#24507f]"
+                        className="px-4 py-2 text-xs font-semibold bg-[#1D4ED8] text-white rounded-xl hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all shadow-xs"
                       >
                         Salvar remédio
                       </button>
@@ -717,19 +741,19 @@ export default function Record() {
                   </div>
                 )}
 
-                <div className="divide-y divide-[#dde3ec] mb-4">
+                <div className="divide-y divide-[#E3E8F0] mb-4">
                   {medications.length === 0 && (
-                    <p className="py-3 text-sm text-[#5a6a80]">Nenhum medicamento contínuo informado.</p>
+                    <p className="py-3 text-sm text-[#5B6878]">Nenhum medicamento contínuo informado.</p>
                   )}
                   {medications.map((med, index) => (
                     <div key={index} className="flex items-center gap-3.5 py-3.5">
-                      <div className="w-11 h-11 rounded-[14px] bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                        <Pill size={22} className="text-[#1b3a60]" />
+                      <div className="w-11 h-11 rounded-[14px] bg-[#CFE0FF] text-[#1D4ED8] flex items-center justify-center shrink-0">
+                        <Pill size={22} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[15px] font-bold text-[#1d2a3d]">{med.nome}</div>
+                        <div className="text-[15px] font-semibold text-[#14211F]">{med.nome}</div>
                       </div>
-                      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1f7fe0] text-xs font-bold whitespace-nowrap">
+                      <span className="inline-block px-2.5 py-1 rounded-full bg-[#CFE0FF] text-[#1D4ED8] text-xs font-semibold whitespace-nowrap">
                         Contínuo
                       </span>
                     </div>
@@ -747,7 +771,7 @@ export default function Record() {
                         setLastSavedText('Alterações pendentes');
                       }}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
-                        isDonor ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
+                        isDonor ? 'bg-[#1D4ED8]' : 'bg-[#c6cfdb]'
                       }`}
                     >
                       <span
@@ -767,7 +791,7 @@ export default function Record() {
                         setLastSavedText('Alterações pendentes');
                       }}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
-                        isSmoker ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
+                        isSmoker ? 'bg-[#1D4ED8]' : 'bg-[#c6cfdb]'
                       }`}
                     >
                       <span
@@ -787,7 +811,7 @@ export default function Record() {
                         setLastSavedText('Alterações pendentes');
                       }}
                       className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
-                        isAlcohol ? 'bg-[#1f7fe0]' : 'bg-[#c6cfdb]'
+                        isAlcohol ? 'bg-[#1D4ED8]' : 'bg-[#c6cfdb]'
                       }`}
                     >
                       <span
@@ -804,10 +828,10 @@ export default function Record() {
             {/* Step 4: Hábitos */}
             {currentStep === 4 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8] uppercase">
                   Passo 4 de 5
                 </div>
-                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#14211F]">
                   Hábitos e rotina
                 </h2>
                 <p className="m-0 mb-6 text-[#5a6a80] text-sm">
@@ -855,10 +879,10 @@ export default function Record() {
             {/* Step 5: Revisão */}
             {currentStep === 5 && (
               <div>
-                <div className="text-xs font-bold tracking-[0.14em] text-[#1f7fe0] uppercase">
+                <div className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8] uppercase">
                   Passo 5 de 5
                 </div>
-                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#1b3a60]">
+                <h2 className="mt-1.5 mb-1 text-2xl font-bold tracking-[-0.03em] text-[#14211F]">
                   Revisão da Anamnese
                 </h2>
                 <p className="m-0 mb-6 text-[#5a6a80] text-sm">
@@ -868,7 +892,7 @@ export default function Record() {
                 <div className="space-y-3 bg-[#f7f9fc] p-5 rounded-2xl border border-[#dde3ec] mb-6 text-sm">
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-[#5a6a80]">Tipo Sanguíneo:</span>
-                    <strong className="text-[#1b3a60]">{bloodType || 'Não informado'}</strong>
+                    <strong className="text-[#14211F]">{bloodType || 'Não informado'}</strong>
                   </div>
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-[#5a6a80]">Alergias:</span>
@@ -891,12 +915,12 @@ export default function Record() {
             )}
 
             {/* Bottom Actions: Voltar / Continuar */}
-            <div className="flex justify-between items-center mt-6.5 pt-4 border-t border-[#dde3ec]">
+            <div className="flex justify-between items-center mt-6.5 pt-4 border-t border-[#E3E8F0]">
               <button
                 type="button"
                 onClick={handleBack}
                 disabled={currentStep === 1}
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-white text-[#14211F] border border-[#E3E8F0] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 ← Voltar
               </button>
@@ -905,7 +929,7 @@ export default function Record() {
                 type="button"
                 onClick={handleNext}
                 disabled={isSaving}
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors shadow-xs cursor-pointer disabled:opacity-60"
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-[#1D4ED8] text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all shadow-xs cursor-pointer disabled:opacity-60"
               >
                 {isSaving ? (
                   <LoaderCircle size={16} className="animate-spin" />
@@ -921,16 +945,9 @@ export default function Record() {
           {/* Right Column: Progress & Auto-save Card (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-5">
             {/* Progress Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="flex justify-between font-bold text-sm">
-                <span>Progresso</span>
-                <span className="text-[#1f7fe0]">{progressPercent}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-[#f1f4f8] my-2.5 mb-4 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#1f7fe0] transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
+            <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-6 shadow-xs">
+              <div className="font-bold text-sm text-[#14211F] mb-3">
+                Etapas
               </div>
 
               <div className="space-y-1">
@@ -944,19 +961,19 @@ export default function Record() {
                       onClick={() => setCurrentStep(s.id)}
                       className={`flex gap-2.5 items-center py-2 text-sm cursor-pointer rounded-lg px-1 transition-colors ${
                         isCurrent
-                          ? 'font-bold text-[#1d2a3d]'
+                          ? 'font-bold text-[#14211F]'
                           : isDone
-                          ? 'font-medium text-[#1d2a3d]'
-                          : 'font-medium text-[#5a6a80]'
+                          ? 'font-semibold text-[#14211F]'
+                          : 'font-medium text-[#5B6878]'
                       }`}
                     >
                       <div
                         className={`w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 ${
                           isDone
-                            ? 'bg-[#e5eefb] text-[#1f7fe0]'
+                            ? 'bg-[#CFE0FF] text-[#1D4ED8]'
                             : isCurrent
-                            ? 'bg-[#1b3a60] text-white'
-                            : 'bg-[#f1f4f8] text-[#5a6a80]'
+                            ? 'bg-[#1D4ED8] text-white'
+                            : 'bg-[#F4F7FC] text-[#5B6878]'
                         }`}
                       >
                         {isDone ? (
@@ -975,8 +992,8 @@ export default function Record() {
             {/* Auto-save Card */}
             <div className="bg-white border border-[#dde3ec] rounded-[20px] p-4.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
               <div className="flex gap-3 items-center">
-                <div className="w-11 h-11 rounded-[14px] bg-[#e5eefb] flex items-center justify-center shrink-0">
-                  <Shield size={22} className="text-[#1f7fe0]" strokeWidth={2} />
+                <div className="w-11 h-11 rounded-[14px] bg-[#CFE0FF]/40 flex items-center justify-center shrink-0">
+                  <Shield size={22} className="text-[#1D4ED8]" strokeWidth={2} />
                 </div>
                 <div>
                   <b className="text-[15px] text-[#1d2a3d] block leading-tight">

@@ -12,7 +12,7 @@ public static class CorsSettings
 
         var parsed = configuredValue
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(origin => origin.Trim())
+            .Select(origin => origin.Trim().TrimEnd('/'))
             .Where(origin => !string.IsNullOrWhiteSpace(origin) && !origin.Equals("*", StringComparison.Ordinal))
             .Where(origin =>
             {

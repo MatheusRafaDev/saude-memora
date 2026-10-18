@@ -1,7 +1,7 @@
 {
-  "name": "SaúdeMemora",
-  "short_name": "SaúdeMemora",
-  "description": "Seu histórico médico inteligente e unificado.",
+  "name": "Saúde Memora",
+  "short_name": "Saúde Memora",
+  "description": "Seu histórico de saúde, sempre à mão.",
   "start_url": "/visao-geral",
   "id": "/",
   "scope": "/",
@@ -9,7 +9,7 @@
   "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
   "background_color": "#ffffff",
-  "theme_color": "#1f7fe0",
+  "theme_color": "#1D4ED8",
   "icons": [
     {
       "src": "/logo.svg",

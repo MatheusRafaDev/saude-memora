@@ -28,6 +28,8 @@ next-env.d.ts
 
 # misc
 .DS_Store
+.tmp/
+*.tmp
 .env
 .env.local
 .env.development.local

@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://saude-memora-4eio.onrender.com/api/$1"
+      "destination": "https://saude-memora.vercel.app/api/$1"
     },
     {
       "source": "/(.*)",

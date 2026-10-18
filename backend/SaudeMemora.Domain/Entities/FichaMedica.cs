@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SaudeMemora.Domain.Entities;
 
+[BsonIgnoreExtraElements]
 public class FichaMedica
 {
     [BsonId]
@@ -57,6 +58,7 @@ public class FichaMedica
     public List<string> MedicamentosContinuos { get; set; } = new();
 }
 
+[BsonIgnoreExtraElements]
 public class CondicaoMedica
 {
     [BsonElement("nome")]

@@ -30,20 +30,20 @@ const sections = [
 
 export default function Privacidade() {
   return (
-    <div className="min-h-screen bg-white font-sans text-[#1d2a3d] flex flex-col">
+    <div className="min-h-screen bg-white font-sans text-[#14211F] flex flex-col">
       <PublicPageHeader />
 
       <main className="flex-1 page-transition-enter">
         {/* ── Hero Section ────────────────────────────────────────── */}
-        <section className="border-b border-[#dde3ec] bg-gradient-to-br from-[#eef3fa] via-white via-55% to-[#e5eefb] px-6 py-16 sm:px-12">
+        <section className="border-b border-[#E3E8F0] bg-gradient-to-b from-[#F4F7FC] to-white px-6 py-16 sm:px-12">
           <div className="mx-auto max-w-[1000px]">
-            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">
+            <div className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">
               DOCUMENTO LEGAL
             </div>
-            <h1 className="mt-2.5 mb-2 text-[38px] sm:text-[46px] font-extrabold tracking-[-0.04em] text-[#1d2a3d]">
+            <h1 className="mt-2.5 mb-2 font-serif text-[38px] sm:text-[46px] font-semibold tracking-tight text-[#14211F]">
               Política de Privacidade
             </h1>
-            <p className="text-[15px] text-[#5a6a80]">Última atualização: 12 de outubro de 2026</p>
+            <p className="text-[15px] text-[#5B6878]">Última atualização: 12 de outubro de 2026</p>
           </div>
         </section>
 
@@ -52,10 +52,10 @@ export default function Privacidade() {
           <div className="space-y-9">
             {sections.map((section) => (
               <section key={section.id} id={section.id} className="scroll-mt-28">
-                <h2 className="mb-2.5 text-[24px] font-bold tracking-[-0.02em] text-[#1d2a3d]">
+                <h2 className="mb-2.5 font-serif text-[24px] font-semibold tracking-tight text-[#14211F]">
                   {section.title}
                 </h2>
-                <p className="text-[16px] leading-[1.8] text-[#5a6a80]">
+                <p className="text-[16px] leading-[1.8] text-[#5B6878]">
                   {section.content}
                 </p>
               </section>

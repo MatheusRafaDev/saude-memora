@@ -37,27 +37,26 @@ function toError(value: unknown): Error {
 
 function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-6">
-      <div className="max-w-lg w-full text-center">
-        <h1 className="text-xl font-semibold text-gray-900">
-          Something went wrong
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F4F7FC] p-6">
+      <div className="max-w-lg w-full text-center rounded-2xl border border-[#E3E8F0] bg-white p-8 shadow-sm">
+        <h1 className="text-xl font-bold text-[#14211F]">
+          Algo deu errado
         </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          This part of the app hit an error. The rest of the app is still
-          running.
+        <p className="mt-2 text-sm text-[#5B6878]">
+          Ocorreu um erro inesperado ao carregar esta seção. Você pode tentar novamente.
         </p>
         {/* Dev only: messages can carry API responses and other internals. */}
         {import.meta.env.DEV ? (
-          <pre className="mt-4 overflow-x-auto rounded bg-gray-100 p-3 text-left text-xs text-gray-800">
+          <pre className="mt-4 overflow-x-auto rounded-xl bg-[#F4F7FC] p-3 text-left text-xs text-[#14211F] border border-[#E3E8F0]">
             {error.message || String(error)}
           </pre>
         ) : null}
         <button
           type="button"
           onClick={resetError}
-          className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700"
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#1D4ED8] px-6 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-colors shadow-xs"
         >
-          Try again
+          Tentar novamente
         </button>
       </div>
     </div>

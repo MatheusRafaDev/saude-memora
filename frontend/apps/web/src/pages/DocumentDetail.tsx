@@ -417,11 +417,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     return (
       <main className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#dde3ec] bg-white p-8 text-center">
         <FileText size={36} className="mx-auto mb-3 text-[#5a6a80]" />
-        <h1 className="text-xl font-bold text-[#1b3a60]">Documento não encontrado</h1>
+        <h1 className="text-xl font-bold text-[#14211F]">Documento não encontrado</h1>
         <p className="mt-2 text-sm text-[#5a6a80]">
           Não foi possível carregar este documento da sua conta.
         </p>
-        <Link href="/documentos" className="mt-5 inline-flex font-bold text-[#1b3a60] hover:underline">
+        <Link href="/documentos" className="mt-5 inline-flex font-bold text-[#1D4ED8] hover:underline">
           Voltar aos documentos
         </Link>
       </main>
@@ -429,41 +429,54 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] pb-16 font-sans text-[#1d2a3d]">
+    <div className="min-h-screen bg-white pb-16 font-sans text-[#14211F]">
       <main className="mx-auto max-w-[1240px] px-5 pb-16 pt-8 sm:px-10">
         <Link
           href="/documentos"
-          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] shadow-xs transition-colors hover:bg-slate-50"
+          className="mb-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] px-4 text-sm font-semibold text-[#14211F] shadow-xs transition-colors hover:bg-[#E3E8F0]"
         >
           <ArrowLeft size={17} />
           Voltar aos documentos
         </Link>
 
-        <div className="mb-3.5 flex items-center gap-2 text-sm text-[#5a6a80]">
-          <Link href="/documentos" className="transition-colors hover:text-[#1b3a60]">
+        <div className="mb-3.5 flex items-center gap-2 text-sm text-[#5B6878]">
+          <Link href="/documentos" className="transition-colors hover:text-[#1D4ED8]">
             Documentos
           </Link>
           <span>/</span>
-          <span className="font-medium text-[#1d2a3d]">{docTitle}</span>
+          <span className="font-medium text-[#14211F]">{docTitle}</span>
         </div>
 
         <div className="mb-5.5 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <h1 className="m-0 text-3xl font-extrabold tracking-[-0.035em] text-[#1b3a60] sm:text-4xl">
+            <h1 className="m-0 text-3xl font-bold tracking-tight text-[#14211F] sm:text-4xl">
               {docTitle}
             </h1>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
-              <span className="whitespace-nowrap rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1f7fe0]">
+              <span className="whitespace-nowrap rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F]">
                 {doc.tipo || 'Tipo não informado'}
               </span>
-              {['processing', 'pending'].includes(doc.status) && <span className="whitespace-nowrap rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1b3a60]">Processando</span>}
-              {doc.status === 'failed' && <span className="whitespace-nowrap rounded-full bg-[#fde8e6] px-2.5 py-1 text-xs font-bold text-[#a13a30]">Falhou</span>}
-              {isReviewPending && lowConfidenceFields.length === 0 && (
-                <span className="whitespace-nowrap rounded-full bg-[#fdf3d8] px-2.5 py-1 text-xs font-bold text-[#6b4208]">
-                  Revisar
+              {['processing', 'pending'].includes(doc.status) && (
+                <span className="whitespace-nowrap rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F]">
+                  Processando
                 </span>
               )}
-              <span className="px-1 py-1 text-[13px] text-[#5a6a80]">Adicionado em {docDate}</span>
+              {doc.status === 'failed' && (
+                <span className="whitespace-nowrap rounded-full border border-[#E8664A]/30 bg-[#FDE1DA] px-2.5 py-1 text-xs font-semibold text-[#9B2C16]">
+                  Falhou
+                </span>
+              )}
+              {isReviewPending && (
+                <span className="whitespace-nowrap rounded-full border border-[#E8664A]/30 bg-[#FDE1DA] px-2.5 py-1 text-xs font-semibold text-[#9B2C16]">
+                  Conferir dados
+                </span>
+              )}
+              {!isReviewPending && doc.status === 'pronto' && (
+                <span className="whitespace-nowrap rounded-full bg-[#CFE0FF] px-2.5 py-1 text-xs font-semibold text-[#1D4ED8]">
+                  Revisado
+                </span>
+              )}
+              <span className="px-1 py-1 text-[13px] text-[#5B6878]">Adicionado em {docDate}</span>
             </div>
           </div>
 
@@ -473,7 +486,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 type="button"
                 onClick={handleReprocess}
                 disabled={isReprocessing}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-4 text-sm font-bold text-[#1b3a60] shadow-xs transition-colors hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] px-4 text-sm font-bold text-[#14211F] shadow-xs transition-colors hover:bg-[#E3E8F0] disabled:opacity-50"
               >
                 {isReprocessing ? <LoaderCircle size={16} className="animate-spin" /> : <RotateCw size={16} />}
                 Tentar novamente
@@ -485,7 +498,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 target="_blank"
                 rel="noreferrer"
                 download
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#1d2a3d] shadow-xs transition-colors hover:bg-slate-50"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-bold text-[#14211F] shadow-xs transition-colors hover:bg-[#F4F7FC]"
               >
                 <Download size={16} strokeWidth={2} /> Baixar
               </a>
@@ -494,7 +507,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 type="button"
                 disabled
                 title="Arquivo original indisponível"
-                className="inline-flex min-h-[44px] cursor-not-allowed items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#5a6a80] opacity-60"
+                className="inline-flex min-h-[44px] cursor-not-allowed items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-bold text-[#5B6878] opacity-60"
               >
                 <Download size={16} strokeWidth={2} /> Original indisponível
               </button>
@@ -502,68 +515,76 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             <button
               type="button"
               onClick={handleDelete}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#a13a30] shadow-xs transition-colors hover:border-[#f0b8b2] hover:bg-red-50/50"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E8664A]/30 bg-white px-5 text-sm font-bold text-[#E8664A] shadow-xs transition-colors hover:bg-[#FDE1DA]/40"
             >
               <Trash2 size={16} strokeWidth={2} /> Excluir
             </button>
           </div>
         </div>
 
+        {/* AI Disclaimer Mandatory Notice */}
+        <div className="mb-5 flex items-center gap-3 rounded-2xl border border-[#CFE0FF] bg-[#F4F7FC] px-4 py-3 text-[13px] text-[#14211F]">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1D4ED8] text-white text-[11px] font-bold">i</span>
+          <span className="text-[#5B6878]">
+            <b className="font-semibold text-[#14211F]">Aviso importante:</b> Os dados extraídos por IA podem conter erros. Confira sempre com o documento original ao lado.
+          </span>
+        </div>
+
         {doc.errorMessage && (
-          <div role="status" className="mb-5 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] px-4 py-3 text-sm text-[#8a3028]">
+          <div role="status" className="mb-5 rounded-xl border border-[#E8664A]/30 bg-[#FDE1DA] px-4 py-3 text-sm text-[#9B2C16]">
             {doc.errorMessage}
           </div>
         )}
 
         {isReviewPending && (
-          <div className="mb-5 flex items-center gap-3.5 rounded-2xl border border-[#e3b95a] bg-[#fdf3d8] p-4 text-[#4a2c0a] sm:p-5">
-            <AlertTriangle size={22} className="shrink-0 text-[#6b4208]" strokeWidth={2} />
+          <div className="mb-5 flex items-center gap-3.5 rounded-2xl border border-[#E8664A]/30 bg-[#FDE1DA] p-4 text-[#9B2C16] sm:p-5">
+            <AlertTriangle size={22} className="shrink-0 text-[#E8664A]" strokeWidth={2} />
             <div className="min-w-0 flex-1">
-              <b className="block text-[15px] leading-tight">
+              <b className="block text-[15px] font-bold leading-tight">
                 {lowConfidenceFields.length > 0
                   ? `${lowConfidenceFields.length} campo(s) precisam de conferência`
                   : 'Este documento precisa de conferência'}
               </b>
-              <div className="mt-0.5 text-sm leading-relaxed">
-                Os campos em amarelo precisam ser conferidos. Altere o valor e confirme cada campo.
+              <div className="mt-0.5 text-sm leading-relaxed text-[#9B2C16]/90">
+                Os campos em destaque precisam ser conferidos. Compare com o original ao lado e confirme cada informação.
               </div>
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
-          <section className="rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] lg:col-span-6">
+          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 shadow-xs lg:col-span-6">
             <div className="mb-4 flex items-center gap-2.5">
-              <b className="flex-1 text-base text-[#1d2a3d]">Documento original</b>
+              <b className="flex-1 font-serif text-base font-semibold text-[#14211F]">Documento original</b>
               <button
                 type="button"
                 onClick={() => setIsZoomModalOpen(true)}
                 disabled={!fileUrl}
-                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8] transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-[#F4F7FC] transition-colors hover:bg-[#E3E8F0] disabled:cursor-not-allowed disabled:opacity-50"
                 title={fileUrl ? 'Ampliar documento' : 'Arquivo original indisponível'}
               >
-                <ZoomIn size={19} className="text-[#1b3a60]" />
+                <ZoomIn size={19} className="text-[#1D4ED8]" />
               </button>
-              <span className="text-[13px] font-semibold text-[#5a6a80]">
+              <span className="text-[13px] font-semibold text-[#5B6878]">
                 {imageUrls.length > 0 ? `${imageUrls.length} página(s)` : 'Original indisponível'}
               </span>
             </div>
             {fileUrl ? (
-              <div className="flex min-h-[500px] items-center justify-center overflow-hidden rounded-xl border border-[#dde3ec] bg-slate-100">
+              <div className="flex min-h-[500px] items-center justify-center overflow-hidden rounded-xl border border-[#E3E8F0] bg-slate-50">
                 <img src={fileUrl} alt={`Documento original: ${docTitle}`} className="max-h-[640px] w-auto object-contain" />
               </div>
             ) : (
-              <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-[#c6cfdb] bg-[#f7f9fc] p-8 text-center">
-                <FileText size={40} className="mb-3 text-[#5a6a80]" />
-                <p className="m-0 text-sm text-[#5a6a80]">
+              <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-[#E3E8F0] bg-[#F4F7FC] p-8 text-center">
+                <FileText size={40} className="mb-3 text-[#5B6878]" />
+                <p className="m-0 text-sm text-[#5B6878]">
                   O arquivo original não está disponível para este documento.
                 </p>
               </div>
             )}
           </section>
 
-          <section className="rounded-[20px] border border-[#dde3ec] bg-white p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] lg:col-span-6">
-            <div className="mb-5 flex border-b border-[#dde3ec]">
+          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 shadow-xs lg:col-span-6">
+            <div className="mb-5 flex border-b border-[#E3E8F0]">
               {([
                 ['dados', 'Dados lidos'],
                 ['medicamentos', 'Medicamentos'],
@@ -577,8 +598,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     onClick={() => setActiveTab(tab)}
                     className={`-mb-px cursor-pointer border-b-[3px] px-4 py-2.5 text-sm font-bold transition-colors ${
                       activeTab === tab
-                        ? 'border-[#1f7fe0] text-[#1b3a60]'
-                        : 'border-transparent text-[#5a6a80] hover:text-[#1b3a60]'
+                        ? 'border-[#1D4ED8] text-[#1D4ED8]'
+                        : 'border-transparent text-[#5B6878] hover:text-[#14211F]'
                     }`}
                   >
                     {label}
@@ -609,7 +630,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     {doc.medico || 'Não informado'}
                   </div>
                   {doc.crm && (
-                    <div className="text-xs text-[#1f7fe0] font-semibold mt-0.5">
+                    <div className="text-xs text-[#1D4ED8] font-semibold mt-0.5">
                       CRM: {doc.crm}
                     </div>
                   )}
@@ -637,7 +658,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               {doc.cid && (
                 <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
                   <div className="text-[11px] font-semibold text-[#5a6a80]">Código CID-10</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1b3a60] inline-block bg-[#e5eefb] px-2 py-0.5 rounded font-mono">
+                  <div className="mt-0.5 text-sm font-bold text-[#1D4ED8] inline-block bg-[#CFE0FF]/40 border border-[#CFE0FF] px-2 py-0.5 rounded font-mono">
                     {doc.cid}
                   </div>
                 </div>
@@ -699,8 +720,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 {/* Estrutura e dados detalhados identificados pela IA */}
                 {indentedContent.length > 0 && (
                   <div className="space-y-3 rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-xs">
-                    <div className="flex items-center gap-2 text-sm font-bold text-[#1b3a60] border-b border-[#dde3ec] pb-3">
-                      <FileText size={17} className="text-[#1f7fe0]" />
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3">
+                      <FileText size={17} className="text-[#1D4ED8]" />
                       <span>Dados e estrutura identificados pela IA</span>
                     </div>
 
@@ -734,7 +755,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                             return (
                               <div
                                 key={`h-${idx}`}
-                                className="mt-2 text-sm font-bold text-[#1b3a60] border-l-2 border-[#1f7fe0] pl-2.5 py-0.5"
+                                className="mt-2 text-sm font-bold text-[#14211F] border-l-2 border-[#1D4ED8] pl-2.5 py-0.5"
                               >
                                 {item.texto}
                               </div>
@@ -747,7 +768,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                                 key={`b-${idx}`}
                                 className="flex items-start gap-2.5 rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3 text-xs sm:text-sm text-[#1d2a3d]"
                               >
-                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#1f7fe0] shrink-0" />
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#1D4ED8] shrink-0" />
                                 <span className="leading-relaxed">{cleanText}</span>
                               </div>
                             );
@@ -768,7 +789,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                 {/* Seções de Texto Complementares (Resumo, Diagnóstico, Conclusões, etc.) */}
                 {textSections.map(([label, value]) => (
                   <div key={label as string} className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4">
-                    <h2 className="mb-1 text-xs font-bold uppercase tracking-wider text-[#1b3a60]">{label}</h2>
+                    <h2 className="mb-1 text-xs font-bold uppercase tracking-wider text-[#14211F]">{label}</h2>
                     <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-[#2d3a4d]">{value as string}</p>
                   </div>
                 ))}
@@ -778,11 +799,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     <button
                       type="button"
                       onClick={() => setShowExtractedText((open) => !open)}
-                      className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+                      className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-[#F4F7FC]"
                       aria-expanded={showExtractedText}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-[#f1f4f8] text-[#1b3a60] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#CFE0FF]/40 text-[#1D4ED8] flex items-center justify-center shrink-0">
                           <FileText size={16} />
                         </div>
                         <div>
@@ -809,7 +830,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           <button
                             type="button"
                             onClick={handleCopyExtractedText}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1b3a60] hover:text-[#24507f] hover:underline cursor-pointer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1D4ED8] hover:text-[#1E40AF] hover:underline cursor-pointer"
                           >
                             {hasCopiedExtractedText ? (
                               <>
@@ -851,9 +872,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   </p>
                 ) : medications.map((medication: any, index: number) => (
                   <div key={`${medication.nome || 'medicamento'}-${index}`} className="flex gap-3 rounded-2xl border border-[#dde3ec] bg-[#f8fafc] p-4">
-                    <Pill size={20} className="mt-0.5 shrink-0 text-[#1b3a60]" />
+                    <Pill size={20} className="mt-0.5 shrink-0 text-[#1D4ED8]" />
                     <div>
-                      <b className="block text-[15px] text-[#1b3a60]">{medication.nome || 'Medicamento'}</b>
+                      <b className="block text-[15px] text-[#14211F]">{medication.nome || 'Medicamento'}</b>
                       {(medication.dosagem || medication.horario) && (
                         <p className="mb-0 mt-1 text-xs text-[#5a6a80]">
                           {[medication.dosagem, medication.horario].filter(Boolean).join(' · ')}
@@ -873,18 +894,18 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     Não há alertas ativos neste documento.
                   </p>
                 ) : activeAlerts.map((alert: any, index: number) => (
-                  <div key={`${alert.tipo || 'alerta'}-${index}`} className="rounded-2xl border border-[#f0b8b2] bg-[#fff5f4] p-4 text-[#a13a30]">
+                  <div key={`${alert.tipo || 'alerta'}-${index}`} className="rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-4 text-[#14211F]">
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
-                        <b className="block text-sm">{alert.tipo || 'Alerta'}{alert.severidade ? ` · ${alert.severidade}` : ''}</b>
-                        {alert.mensagem && <p className="mb-0 mt-1 text-xs leading-relaxed text-[#1d2a3d]">{alert.mensagem}</p>}
+                        <b className="block text-sm text-[#E8664A]">{alert.tipo || 'Alerta'}{alert.severidade ? ` · ${alert.severidade}` : ''}</b>
+                        {alert.mensagem && <p className="mb-0 mt-1 text-xs leading-relaxed text-[#14211F]">{alert.mensagem}</p>}
                       </div>
                       {alert.id && (
                         <button
                           type="button"
                           onClick={() => void handleDismissAlert(alert.id)}
                           disabled={dismissingAlertId !== null}
-                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#f0b8b2] bg-white px-2.5 text-xs font-bold text-[#8a3028] hover:bg-[#fff5f4] disabled:opacity-50"
+                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#E8664A]/40 bg-white px-2.5 text-xs font-bold text-[#E8664A] hover:bg-[#E8664A]/10 disabled:opacity-50 transition-colors"
                         >
                           {dismissingAlertId === alert.id ? <LoaderCircle size={14} className="animate-spin" /> : <Check size={14} />}
                           Dispensar
@@ -896,11 +917,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-2.5 border-t border-[#dde3ec] pt-4">
+            <div className="mt-6 flex justify-end gap-2.5 border-t border-[#E3E8F0] pt-4">
               <button
                 type="button"
                 onClick={() => { setConfirmedFields(new Set()); setIsEditingModalOpen(true); }}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#dde3ec] bg-white px-5 text-sm font-bold text-[#1d2a3d] transition-colors hover:bg-slate-50"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] shadow-xs"
               >
                 <Edit2 size={16} /> Editar dados
               </button>
@@ -909,7 +930,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   type="button"
                   onClick={handleConfirmRevisao}
                   disabled={isConfirmingRevisao}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white transition-colors hover:bg-[#24507f] disabled:opacity-60"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1D4ED8] px-5 text-sm font-semibold text-white transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A] shadow-xs disabled:opacity-60"
                 >
                   {isConfirmingRevisao ? <LoaderCircle size={16} className="animate-spin" /> : <Check size={16} />}
                   Confirmar revisão
@@ -930,18 +951,18 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-[#dde3ec] bg-white shadow-2xl outline-none sm:w-[calc(100%-2rem)]">
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#e7ebf1] bg-white px-4 py-4 sm:px-6">
               <div>
-                <h3 className="text-lg font-bold text-[#1b3a60]">Editar documento</h3>
+                <h3 className="text-lg font-bold text-[#14211F]">Editar documento</h3>
                 <p className="mt-0.5 text-xs text-[#5a6a80]">Altere os dados necessários e salve ao terminar.</p>
               </div>
-              <DialogPrimitive.Close aria-label="Fechar edição" className="rounded-lg p-2 text-[#5a6a80] hover:bg-slate-100">
+              <DialogPrimitive.Close aria-label="Fechar edição" className="rounded-xl p-2 text-[#5B6878] hover:bg-[#F4F7FC] transition-colors">
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 text-sm sm:px-6">
               <div className="space-y-6">
               <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
-                <h4 className="mb-1 font-bold text-[#1b3a60]">Identificação</h4>
-                <p className="mb-4 text-xs text-[#5a6a80]">Título, tipo e data do documento.</p>
+                <h4 className="mb-1 font-bold text-[#14211F]">Identificação</h4>
+                <p className="mb-4 text-xs text-[#5B6878]">Título, tipo e data do documento.</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block font-semibold" htmlFor="document-tipo">Tipo de documento</label>
@@ -949,7 +970,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       id="document-tipo"
                       value={formData.tipo}
                       onChange={(event) => updateTextField('tipo', event.target.value)}
-                      className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1b3a60] ${confidencePath('tipo') ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
+                      className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath('tipo') ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                     >
                       {['exame', 'receita', 'laudo', 'atestado', 'vacina', 'encaminhamento', 'relatorio', 'outro'].map((type) => (
                         <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
@@ -966,7 +987,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           rows={3}
                           value={formData[key]}
                           onChange={(event) => updateTextField(key, event.target.value)}
-                          className={`w-full rounded-xl border p-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
+                          className={`w-full rounded-xl border p-3 outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                         />
                       ) : (
                         <input
@@ -977,7 +998,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           onChange={(event) => updateTextField(key, event.target.value)}
                           maxLength={key === 'data' ? 10 : key === 'cnes' ? 7 : key === 'crm' ? 20 : undefined}
                           placeholder={key === 'data' ? 'DD/MM/AAAA' : undefined}
-                          className={`h-11 w-full rounded-xl border px-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
+                          className={`h-11 w-full rounded-xl border px-3 outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                         />
                       )}
                       {confidencePath(key) && (
@@ -994,9 +1015,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                             <button key={record.codigo} type="button" onClick={() => {
                               updateTextField('cid', `${record.codigo} - ${record.descricao}`);
                               setCidSuggestions([]);
-                            }} className="block w-full px-3 py-2 text-left text-xs hover:bg-slate-50">
-                              <span className="font-bold text-[#1b3a60]">{record.codigo}</span>
-                              <span className="ml-2 text-[#5a6a80]">{record.descricao}</span>
+                            }} className="block w-full px-3 py-2 text-left text-xs hover:bg-[#F4F7FC]">
+                              <span className="font-bold text-[#1D4ED8]">{record.codigo}</span>
+                              <span className="ml-2 text-[#5B6878]">{record.descricao}</span>
                             </button>
                           ))}
                         </div>
@@ -1008,9 +1029,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                               setFormData((previous) => ({ ...previous, cnes: record.codigo, clinica: record.descricao }));
                               setCnesSuggestions([]);
                               setCnesSearchQuery('');
-                            }} className="block w-full px-3 py-2 text-left text-xs hover:bg-slate-50">
-                              <span className="font-bold text-[#1b3a60]">CNES {record.codigo}</span>
-                              <span className="ml-2 text-[#5a6a80]">{record.descricao}</span>
+                            }} className="block w-full px-3 py-2 text-left text-xs hover:bg-[#F4F7FC]">
+                              <span className="font-bold text-[#1D4ED8]">CNES {record.codigo}</span>
+                              <span className="ml-2 text-[#5B6878]">{record.descricao}</span>
                             </button>
                           ))}
                         </div>
@@ -1021,13 +1042,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </section>
 
               <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
-                <h4 className="mb-1 font-bold text-[#1b3a60]">Profissional e local</h4>
+                <h4 className="mb-1 font-bold text-[#14211F]">Profissional e local</h4>
                 <p className="mb-4 text-xs text-[#5a6a80]">Quem emitiu o documento e onde foi realizado.</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {documentTextFields.filter(({ key }) => ['medico', 'crm', 'clinica', 'cnes'].includes(key)).map(({ key, label }) => (
                     <div key={key}>
                       <label className="mb-1 block font-semibold" htmlFor={`document-${key}`}>{label}</label>
-                      <input id={`document-${key}`} type="text" value={formData[key]} inputMode={key === 'crm' || key === 'cnes' ? 'numeric' : undefined} onChange={(event) => updateTextField(key, event.target.value)} maxLength={key === 'cnes' ? 7 : key === 'crm' ? 20 : undefined} className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />
+                      <input id={`document-${key}`} type="text" value={formData[key]} inputMode={key === 'crm' || key === 'cnes' ? 'numeric' : undefined} onChange={(event) => updateTextField(key, event.target.value)} maxLength={key === 'cnes' ? 7 : key === 'crm' ? 20 : undefined} className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />
                       {confidencePath(key) && <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">Confira este campo. {confirmedFields.has(key) ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged(key)} onClick={() => confirmField(key)} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</div>}
                     </div>
                   ))}
@@ -1035,13 +1056,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               </section>
 
               <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
-                <h4 className="mb-1 font-bold text-[#1b3a60]">Informações clínicas</h4>
+                <h4 className="mb-1 font-bold text-[#14211F]">Informações clínicas</h4>
                 <p className="mb-4 text-xs text-[#5a6a80]">Revise os campos extraídos e corrija somente o que for necessário.</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {documentTextFields.filter(({ key }) => !['titulo', 'data', 'medico', 'crm', 'clinica', 'cnes'].includes(key)).map(({ key, label, multiline }) => (
                     <div key={key} className={multiline ? 'sm:col-span-2' : undefined}>
                       <label className="mb-1 block font-semibold" htmlFor={`document-${key}`}>{label}</label>
-                      {multiline ? <textarea id={`document-${key}`} rows={3} value={formData[key]} onChange={(event) => updateTextField(key, event.target.value)} className={`w-full rounded-xl border bg-white p-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} /> : <input id={`document-${key}`} type="text" value={formData[key]} onChange={(event) => updateTextField(key, event.target.value)} className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1b3a60] ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />}
+                      {multiline ? <textarea id={`document-${key}`} rows={3} value={formData[key]} onChange={(event) => updateTextField(key, event.target.value)} className={`w-full rounded-xl border bg-white p-3 outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} /> : <input id={`document-${key}`} type="text" value={formData[key]} onChange={(event) => updateTextField(key, event.target.value)} className={`h-11 w-full rounded-xl border bg-white px-3 outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(key) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`} />}
                       {confidencePath(key) && <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">Confira este campo. {confirmedFields.has(key) ? 'Valor confirmado.' : <button type="button" disabled={!fieldChanged(key)} onClick={() => confirmField(key)} className="font-bold underline disabled:opacity-50">Confirmar valor</button>}</div>}
                     </div>
                   ))}
@@ -1050,14 +1071,14 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
               <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h4 className="font-bold text-[#1b3a60]">Medicamentos</h4>
+                  <h4 className="font-bold text-[#14211F]">Medicamentos</h4>
                   <button
                     type="button"
                     onClick={() => setFormData((previous) => ({
                       ...previous,
                       medicamentos: [...previous.medicamentos, { nome: '', dosagem: '', horario: '' }],
                     }))}
-                    className="rounded-lg border border-[#dde3ec] px-3 py-2 text-xs font-bold text-[#1b3a60] hover:bg-slate-50"
+                    className="min-h-9 rounded-xl border border-[#E3E8F0] bg-white px-3 text-xs font-bold text-[#14211F] hover:bg-[#F4F7FC] transition-colors"
                   >
                     Adicionar medicamento
                   </button>
@@ -1081,7 +1102,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                               setFormData((previous) => ({ ...previous, medicamentos: previous.medicamentos.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: event.target.value } : item) }));
                               setConfirmedFields((previous) => { const next = new Set(previous); next.delete(`medicamentos[${index}].${field}`); return next; });
                             }}
-                            className={`mt-1 h-10 w-full rounded-lg border px-3 font-normal outline-none focus:border-[#1b3a60] ${confidencePath(`medicamentos[${index}].${field}`) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
+                            className={`mt-1 h-10 w-full rounded-lg border px-3 font-normal outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 ${confidencePath(`medicamentos[${index}].${field}`) ? 'border-amber-400 bg-amber-50' : 'border-[#c6cfdb]'}`}
                           />
                           {confidencePath(`medicamentos[${index}].${field}`) && (
                             <span className="mt-1 block rounded bg-amber-50 p-2 text-xs font-normal text-amber-900">
@@ -1095,7 +1116,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           type="button"
                           disabled={loadingBulaIndex === index || medication.nome.trim().length < 3}
                           onClick={() => handleSearchBula(index, medication.nome)}
-                          className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#b9cde4] px-3 text-xs font-bold text-[#1b3a60] hover:bg-[#f3f7fc] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-3 text-xs font-bold text-[#14211F] hover:bg-[#F4F7FC] disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                         >
                           {loadingBulaIndex === index ? <LoaderCircle size={14} className="animate-spin" /> : <FileText size={14} />}
                           Consultar bula na ANVISA
@@ -1103,9 +1124,9 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                         {bulaErrors[index] && <p className="mb-0 mt-2 text-xs text-red-700">{bulaErrors[index]}</p>}
                         {bulaResults[index] && (
                           <div className="mt-2 rounded-lg bg-[#f7f9fc] p-3 text-xs text-[#40516a]">
-                            <p className="mb-1 font-bold text-[#1b3a60]">{bulaResults[index].nome} · Fonte: {bulaResults[index].fonte}</p>
+                            <p className="mb-1 font-bold text-[#14211F]">{bulaResults[index].nome} · Fonte: {bulaResults[index].fonte}</p>
                             <p className="mb-2 whitespace-pre-wrap">{bulaResults[index].descricao}</p>
-                            <a href="https://consultas.anvisa.gov.br/#/bulario" target="_blank" rel="noreferrer" className="inline-block font-bold text-[#1f7fe0] underline">Abrir Bulario Eletronico oficial</a>
+                            <a href="https://consultas.anvisa.gov.br/#/bulario" target="_blank" rel="noreferrer" className="inline-block font-bold text-[#1D4ED8] underline">Abrir Bulario Eletronico oficial</a>
                             <p className="mb-0 text-[11px]">{[
                               bulaResults[index].principioAtivo && `Principio ativo: ${bulaResults[index].principioAtivo}`,
                               bulaResults[index].fabricante && `Fabricante: ${bulaResults[index].fabricante}`,
@@ -1122,7 +1143,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           medicamentos: previous.medicamentos.filter((_, itemIndex) => itemIndex !== index),
                         }))}
                         aria-label={`Remover medicamento ${index + 1}`}
-                        className="self-end rounded-lg px-3 py-2 font-bold text-[#a13a30] hover:bg-red-50"
+                        className="self-end rounded-lg px-3 py-2 font-bold text-[#E8664A] hover:bg-[#E8664A]/10 transition-colors"
                       >
                         Remover
                       </button>
@@ -1133,7 +1154,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
               {formData.resultadosExame.length > 0 && (
                 <section className="rounded-2xl border border-[#e7ebf1] bg-[#fbfcfe] p-4 sm:p-5">
-                  <h4 className="mb-3 font-bold text-[#1b3a60]">Resultados do exame</h4>
+                  <h4 className="mb-3 font-bold text-[#14211F]">Resultados do exame</h4>
                   <div className="space-y-3">
                     {formData.resultadosExame.map((result, index) => (
                       <div key={index} className="grid gap-3 rounded-xl border border-[#dde3ec] p-3 sm:grid-cols-2">
@@ -1162,18 +1183,18 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
               </div>
             </div>
-            <div className="sticky bottom-0 z-10 flex justify-end gap-2.5 border-t border-[#e7ebf1] bg-white px-4 py-3 sm:px-6">
+            <div className="sticky bottom-0 z-10 flex justify-end gap-2.5 border-t border-[#E3E8F0] bg-white px-4 py-3 sm:px-6">
               <button
                 type="button"
                 onClick={() => setIsEditingModalOpen(false)}
-                className="min-h-11 cursor-pointer rounded-xl border border-[#dde3ec] px-4 py-2.5 text-sm font-bold text-[#5a6a80] hover:bg-slate-50"
+                className="min-h-11 cursor-pointer rounded-xl border border-[#E3E8F0] bg-white px-5 py-2.5 text-sm font-semibold text-[#14211F] hover:bg-[#F4F7FC] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleSaveEdit}
-                className="min-h-11 flex-1 cursor-pointer rounded-xl bg-[#1b3a60] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#24507f] sm:flex-none"
+                className="min-h-11 flex-1 cursor-pointer rounded-xl bg-[#1D4ED8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-colors shadow-xs sm:flex-none"
               >
                 Salvar alterações
               </button>
@@ -1193,19 +1214,19 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   setIsZoomModalOpen(false);
                   setLocation('/documentos');
                 }}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-slate-50"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-4 text-sm font-semibold text-[#14211F] transition-colors hover:bg-[#F4F7FC]"
               >
                 <ArrowLeft size={17} />
                 Voltar aos documentos
               </button>
               <DialogPrimitive.Close
                 aria-label="Fechar visualização ampliada"
-                className="rounded-lg p-1 text-[#5a6a80] hover:bg-slate-100"
+                className="rounded-xl p-1 text-[#5B6878] hover:bg-[#F4F7FC] transition-colors"
               >
                 <X size={18} />
               </DialogPrimitive.Close>
             </div>
-            <div className="flex justify-center rounded-2xl border border-[#dde3ec] bg-slate-50 p-4">
+            <div className="flex justify-center rounded-2xl border border-[#E3E8F0] bg-[#F4F7FC] p-4">
               {fileUrl && <img src={fileUrl} alt={`Documento original ampliado: ${docTitle}`} className="max-h-[75vh] object-contain" />}
             </div>
           </DialogPrimitive.Content>

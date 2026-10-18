@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace SaudeMemora.Domain.Entities;
 
+[BsonIgnoreExtraElements]
 public class AlertaDocumento
 {
     [BsonElement("id")]
@@ -31,6 +32,7 @@ public class AlertaDocumento
     public bool Retentavel { get; set; } = false;
 }
 
+[BsonIgnoreExtraElements]
 public class MedicamentoDocumento
 {
     [BsonElement("nome")]
@@ -43,6 +45,7 @@ public class MedicamentoDocumento
     public string Horario { get; set; } = string.Empty;
 }
 
+[BsonIgnoreExtraElements]
 public class ResultadoExameItem
 {
     [BsonElement("nome")]
@@ -82,6 +85,7 @@ public class ResultadoExameItem
     public string MotivoConfirmacao { get; set; } = string.Empty;
 }
 
+[BsonIgnoreExtraElements]
 public class LinhaIndentadaDocumento
 {
     [BsonElement("tipo")]
@@ -97,6 +101,7 @@ public class LinhaIndentadaDocumento
     public string Valor { get; set; } = string.Empty;
 }
 
+[BsonIgnoreExtraElements]
 public class RegistroDocumento
 {
     [BsonId]

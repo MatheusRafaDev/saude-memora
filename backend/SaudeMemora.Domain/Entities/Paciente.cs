@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace SaudeMemora.Domain.Entities;
 
+[BsonIgnoreExtraElements]
 public class MedicamentoContinuo
 {
     [BsonElement("nome")]

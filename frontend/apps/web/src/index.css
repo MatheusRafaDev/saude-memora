@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=DM+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -28,89 +28,120 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
+  --color-brand-blue: var(--blue);
+  --color-brand-sky: var(--sky);
+  --color-brand-coral: var(--coral);
+  --color-brand-ice: var(--ice);
+  --color-brand-ink: var(--ink);
+  --color-brand-navy: var(--navy);
 }
 
 /* ── Light (default / only) theme ─────────────────────────────── */
 :root {
-  /* Pure white background / #fff */
+  /* Pure white background / #FFFFFF */
   --background:          0 0% 100%;
-  --foreground:          216 36% 18%; /* #1d2a3d */
+  --foreground:          171 25% 10%; /* #14211F (Tinta) */
 
-  --border:              216 26% 89%; /* #dde3ec */
-  --input:               216 22% 82%; /* #c6cfdb */
-  --ring:                213 56% 24%; /* #1b3a60 */
+  --border:              217 27% 92%; /* #E3E8F0 (Linha) */
+  --input:               217 27% 92%; /* #E3E8F0 */
+  --ring:                224 76% 48%; /* #1D4ED8 (Azul Confiança) */
 
   /* Cards: pure white with soft border */
   --card:                0 0% 100%;
-  --card-foreground:     216 36% 18%; /* #1d2a3d */
+  --card-foreground:     171 25% 10%; /* #14211F */
 
-  /* Primary = Navy #1b3a60 */
-  --primary:             213 56% 24%;
+  /* Primary = Azul Confiança #1D4ED8 */
+  --primary:             224 76% 48%;
   --primary-foreground:  0 0% 100%;
 
-  /* Secondary = Soft neutral #f1f4f8 */
-  --secondary:           214 33% 96%;
-  --secondary-foreground:213 56% 24%;
+  /* Secondary = Gelo #F4F7FC */
+  --secondary:           219 50% 97%;
+  --secondary-foreground:171 25% 10%;
 
-  /* Muted = Slate text #5a6a80 */
-  --muted:               214 33% 96%;
-  --muted-foreground:    215 17% 43%;
+  /* Muted = Texto secundário #5B6878 */
+  --muted:               219 50% 97%;
+  --muted-foreground:    214 14% 41%;
 
-  /* Accent = Blue #1f7fe0 */
-  --accent:              211 76% 50%;
+  /* Accent = Azul Confiança #1D4ED8 */
+  --accent:              224 76% 48%;
   --accent-foreground:   0 0% 100%;
 
-  /* Destructive = Red #c0463a / #a13a30 */
-  --destructive:         5 53% 49%;
+  /* Destructive / Alerta = Coral #E8664A */
+  --destructive:         11 77% 60%;
   --destructive-foreground: 0 0% 100%;
 
   --radius: 0.75rem;
-  --app-font-sans: 'Figtree', system-ui, -apple-system, sans-serif;
+  --app-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --app-font-serif: 'Fraunces', Georgia, serif;
   --app-font-mono: 'DM Mono', monospace;
 
-  /* Specific Design System Palette */
-  --color-navy: #1b3a60;
-  --color-navy-hover: #244d7e;
-  --color-blue: #1f7fe0;
-  --color-blue-light: #e5eefb;
-  --color-blue-border: #bfd8f7;
-  --color-sky: #1f7fe0;
-  --color-sky-light: #7cc4e6;
-  --color-bg-neutral: #f7f9fc;
-  --color-card-border: #dde3ec;
-  --color-input-border: #c6cfdb;
-  --color-badge-amber-bg: #fdf3d8;
-  --color-badge-amber-text: #6b4208;
-  --color-badge-amber-border: #e3b95a;
-  --color-badge-blue-bg: #e5eefb;
-  --color-badge-blue-text: #1b3a60;
-  --color-badge-red-bg: #fff5f4;
-  --color-badge-red-text: #a13a30;
-  --color-badge-red-border: #f0b8b2;
-  --color-danger: #c0463a;
+  /* Saúde Memora Design Tokens (desing.md) */
+  --blue: #1D4ED8;
+  --blue-hover: #1e40af;
+  --sky: #CFE0FF;
+  --coral: #E8664A;
+  --ice: #F4F7FC;
+  --ink: #14211F;
+  --navy: #1C2438;
+  --white: #FFFFFF;
 
-  --shadow-card: 0 12px 30px -24px rgba(27, 58, 96, 0.4);
-  --shadow-modal: 0 40px 90px -30px rgba(0, 0, 0, 0.6);
-  --shadow-float: 0 30px 70px -30px rgba(27, 58, 96, 0.35);
+  --line: #E3E8F0;
+  --line-navy: #36425F;
+  --muted-text: #5B6878;
+  --muted-navy: #A9B6CE;
+  --warn-bg: #FDE1DA;
+  --warn-text: #9B2C16;
+
+  /* Compat aliases for existing components */
+  --color-blue: #1D4ED8;
+  --color-blue-light: #CFE0FF;
+  --color-blue-border: #CFE0FF;
+  --color-sky: #CFE0FF;
+  --color-sky-light: #CFE0FF;
+  --color-coral: #E8664A;
+  --color-ice: #F4F7FC;
+  --color-ink: #14211F;
+  --color-navy: #1C2438;
+  --color-navy-hover: #293450;
+  --color-bg-neutral: #F4F7FC;
+  --color-card-border: #E3E8F0;
+  --color-input-border: #E3E8F0;
+  --color-badge-amber-bg: #FDE1DA;
+  --color-badge-amber-text: #9B2C16;
+  --color-badge-amber-border: #E8664A;
+  --color-badge-blue-bg: #CFE0FF;
+  --color-badge-blue-text: #1D4ED8;
+  --color-badge-red-bg: #FDE1DA;
+  --color-badge-red-text: #9B2C16;
+  --color-badge-red-border: #E8664A;
+  --color-danger: #E8664A;
+
+  --shadow-xs: 0 1px 2px 0 rgba(20, 33, 31, 0.04);
+  --shadow-soft: 0 2px 8px -2px rgba(20, 33, 31, 0.04), 0 1px 3px -1px rgba(20, 33, 31, 0.02);
+  --shadow-lift: 0 12px 28px -8px rgba(20, 33, 31, 0.08), 0 4px 10px -4px rgba(20, 33, 31, 0.03);
+  --shadow-card: 0 12px 30px -24px rgba(20, 33, 31, 0.15);
+  --shadow-modal: 0 40px 90px -30px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 24px 48px -12px rgba(29, 78, 216, 0.15), 0 4px 12px -2px rgba(20, 33, 31, 0.04);
 }
 
 .dark {
   --background:          0 0% 100%;
-  --foreground:          216 36% 18%;
-  --border:              216 26% 89%;
-  --input:               216 22% 82%;
+  --foreground:          171 25% 10%;
+  --border:              217 27% 92%;
+  --input:               217 27% 92%;
   --card:                0 0% 100%;
-  --card-foreground:     216 36% 18%;
-  --primary:             213 56% 24%;
+  --card-foreground:     171 25% 10%;
+  --primary:             224 76% 48%;
   --primary-foreground:  0 0% 100%;
-  --secondary:           214 33% 96%;
-  --secondary-foreground:213 56% 24%;
-  --muted:               214 33% 96%;
-  --muted-foreground:    215 17% 43%;
-  --accent:              211 76% 50%;
+  --secondary:           219 50% 97%;
+  --secondary-foreground:171 25% 10%;
+  --muted:               219 50% 97%;
+  --muted-foreground:    214 14% 41%;
+  --accent:              224 76% 48%;
   --accent-foreground:   0 0% 100%;
-  --destructive:         5 53% 49%;
+  --destructive:         11 77% 60%;
   --destructive-foreground: 0 0% 100%;
 }
 
@@ -119,21 +150,25 @@
   html { 
     scroll-behavior: smooth; 
     -webkit-font-smoothing: antialiased; 
+    -moz-osx-font-smoothing: grayscale;
     overscroll-behavior-y: none; /* Prevents PWA bouncy overscroll */
   }
   body {
     @apply font-sans bg-background text-foreground;
     min-width: 320px;
-    font-feature-settings: "cv02","cv03","cv04","cv11";
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
     overscroll-behavior-y: none;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
   button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; transition: all 0.2s ease; }
   button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, main:focus-visible {
     outline: 3px solid hsl(var(--ring));
     outline-offset: 2px;
   }
-  h1, h2, h3, h4, h5, h6 { letter-spacing: -0.025em; }
+  h1, h2, h3, h4, h5, h6 { 
+    font-family: var(--app-font-sans);
+    letter-spacing: -0.025em; 
+  }
 }
 
 @layer utilities {
@@ -178,6 +213,90 @@
     box-shadow: var(--shadow-lift);
     border-color: hsl(var(--primary) / .25);
     transform: translateY(-2px);
+  }
+
+  /* Saúde Memora Design System - Standard Buttons */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px 0 rgba(29, 78, 216, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%);
+    box-shadow: 0 4px 14px 0 rgba(29, 78, 216, 0.32);
+    transform: translateY(-0.5px);
+  }
+  .btn-primary:active:not(:disabled) {
+    background: #1E3A8A;
+    transform: translateY(0.5px) scale(0.99);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  }
+  .btn-primary:disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #14211F;
+    background-color: #ffffff;
+    border: 1px solid #E3E8F0;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #F8FAFC;
+    border-color: #CFE0FF;
+    color: #1D4ED8;
+    box-shadow: 0 2px 6px 0 rgba(29, 78, 216, 0.08);
+    transform: translateY(-0.5px);
+  }
+  .btn-secondary:active:not(:disabled) {
+    transform: translateY(0.5px) scale(0.99);
+    background-color: #F1F5F9;
+  }
+
+  .btn-destructive {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(180deg, #F07055 0%, #E8664A 100%);
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px 0 rgba(232, 102, 74, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  .btn-destructive:hover:not(:disabled) {
+    background: linear-gradient(180deg, #E8664A 0%, #D45338 100%);
+    box-shadow: 0 4px 14px 0 rgba(232, 102, 74, 0.32);
+    transform: translateY(-0.5px);
+  }
+  .btn-destructive:active:not(:disabled) {
+    background: #B9381E;
+    transform: translateY(0.5px) scale(0.99);
   }
 }
 

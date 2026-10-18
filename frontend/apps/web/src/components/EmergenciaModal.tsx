@@ -219,47 +219,47 @@ export function EmergenciaModal({
         className="relative flex max-h-[96dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#dde3ec] bg-[#f7f9fc] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] sm:rounded-[28px]"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex shrink-0 items-start gap-3 border-b border-[#dde3ec] bg-white p-4 pr-14 sm:p-6 sm:pr-16">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#fde8e6] text-[#a13a30] sm:h-14 sm:w-14">
+        <header className="flex shrink-0 items-start gap-3 border-b border-[#E3E8F0] bg-white p-4 pr-14 sm:p-6 sm:pr-16">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#FDE1DA] text-[#E8664A] sm:h-14 sm:w-14">
             <ShieldAlert size={26} />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#c0463a]">
+            <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#E8664A]">
               Ficha rápida
             </div>
             <h2
               id="emergency-modal-title"
-              className="mt-0.5 text-2xl font-extrabold tracking-[-0.03em] text-[#1b3a60] sm:text-3xl"
+              className="mt-0.5 text-2xl font-bold tracking-tight text-[#14211F] sm:text-3xl"
             >
               Emergência
             </h2>
-            <p className="mb-0 mt-1 text-sm leading-relaxed text-[#5a6a80]">
-              Informações essenciais, em letras grandes e fáceis de ler.
+            <p className="mb-0 mt-1 text-sm leading-relaxed text-[#5B6878]">
+              Informações essenciais, em letras grandes e fáceis de ler para socorristas.
             </p>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#f1f4f8] text-[#5a6a80] transition-colors hover:bg-slate-200 sm:right-4 sm:top-4"
+            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#F4F7FC] text-[#5B6878] transition-colors hover:bg-[#E3E8F0] sm:right-4 sm:top-4"
             aria-label="Fechar ficha de emergência"
           >
             <X size={20} />
           </button>
         </header>
 
-        <div className="overflow-y-auto p-3 sm:p-6">
+        <div className="overflow-y-auto p-3 sm:p-6 bg-[#F4F7FC]">
           {isLoadingData && (
             <div
-              className="mb-3 flex items-center gap-2 rounded-xl bg-white p-3 text-sm text-[#5a6a80]"
+              className="mb-3 flex items-center gap-2 rounded-xl bg-white p-3 text-sm text-[#5B6878]"
               role="status"
             >
-              <LoaderCircle size={16} className="animate-spin" />
+              <LoaderCircle size={16} className="animate-spin text-[#1D4ED8]" />
               Carregando dados de emergência…
             </div>
           )}
           {hasDataError && (
             <p
-              className="mb-3 rounded-xl border border-[#f0b8b2] bg-[#fff5f4] p-3 text-sm text-[#a13a30]"
+              className="mb-3 rounded-xl border border-[#E8664A]/30 bg-[#FDE1DA] p-3 text-sm text-[#9B2C16]"
               role="alert"
             >
               Não foi possível carregar todos os dados de emergência. Tente
@@ -267,16 +267,16 @@ export function EmergenciaModal({
             </p>
           )}
 
-          <div className="rounded-2xl border-2 border-[#c0463a] p-4 shadow-sm sm:rounded-[24px] sm:p-6">
+          <div className="rounded-2xl border-2 border-[#E8664A] bg-white p-4 shadow-sm sm:rounded-[24px] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#c0463a]">
+                <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#E8664A]">
                   Ficha de emergência
                 </div>
-                <h3 className="mb-0 mt-1 text-2xl font-extrabold tracking-[-0.03em] text-[#1d2a3d] sm:text-4xl">
+                <h3 className="mb-0 mt-1 text-2xl font-bold tracking-tight text-[#14211F] sm:text-4xl">
                   {user.nome || "Não informado"}
                 </h3>
-                <p className="mb-0 mt-1 text-sm text-[#5a6a80] sm:text-base">
+                <p className="mb-0 mt-1 text-sm text-[#5B6878] sm:text-base">
                   {age !== null ? `${age} anos` : "Idade não informada"}
                   {birthDateFormatted
                     ? ` · Nascimento ${birthDateFormatted}`
@@ -284,17 +284,17 @@ export function EmergenciaModal({
                   {sex ? ` · ${sex}` : ""}
                 </p>
               </div>
-              <div className="flex h-[92px] w-[100px] shrink-0 flex-col items-center justify-center rounded-2xl bg-[#c0463a] text-white shadow-sm sm:h-[110px] sm:w-[120px]">
+              <div className="flex h-[92px] w-[100px] shrink-0 flex-col items-center justify-center rounded-2xl bg-[#E8664A] text-white shadow-sm sm:h-[110px] sm:w-[120px]">
                 <span className="text-[11px] font-bold tracking-[0.1em]">
                   SANGUE
                 </span>
-                <span className="mt-0.5 text-3xl font-extrabold leading-tight sm:text-4xl">
+                <span className="mt-0.5 text-3xl font-black leading-tight sm:text-4xl">
                   {bloodType}
                 </span>
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 border-t border-[#dde3ec] pt-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-4 border-t border-[#E3E8F0] pt-4 sm:grid-cols-2">
               <InfoSection title="Alergias">
                 {allergies.length ? allergies.join(" · ") : ""}
               </InfoSection>
@@ -327,41 +327,45 @@ export function EmergenciaModal({
                 </InfoSection>
               </div>
             </div>
+
+            <div className="mt-4 pt-3 border-t border-[#E3E8F0] text-[12px] text-[#5B6878]">
+              ⚠️ Informado por você na ficha médica. Confira com um profissional de saúde.
+            </div>
           </div>
 
           <div className="mt-3 grid gap-3 sm:mt-4 sm:grid-cols-2">
-            <section className="rounded-2xl bg-[#1b3a60] p-4 text-white sm:p-5">
-              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#b7d9ff]">
+            <section className="rounded-2xl bg-[#1C2438] border border-[#36425F] p-4 text-white sm:p-5">
+              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#CFE0FF]">
                 Emergência no Brasil
               </div>
-              <div className="my-1 text-4xl font-extrabold leading-none sm:text-5xl">
+              <div className="my-1 text-4xl font-extrabold leading-none sm:text-5xl text-white">
                 192
               </div>
-              <p className="mb-3 text-sm leading-relaxed text-[#d8e5f5]">
-                SAMU · ligue ou procure um serviço de urgência
+              <p className="mb-3 text-sm leading-relaxed text-[#A9B6CE]">
+                SAMU · ligue imediatamente ou procure socorro
               </p>
               <a
                 href="tel:192"
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-extrabold text-[#1b3a60] transition-colors hover:bg-[#e5eefb]"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#E8664A] px-4 text-sm font-bold text-white transition-colors hover:bg-[#d45338]"
               >
                 <Phone size={17} />
                 Ligar para 192
               </a>
             </section>
 
-            <section className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5">
-              <div className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#1f7fe0]">
+            <section className="rounded-2xl border border-[#E3E8F0] bg-white p-4 sm:p-5">
+              <div className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#1D4ED8]">
                 Contatos de emergência
               </div>
               <div className="flex min-h-16 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f4f8] text-[#1b3a60]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F4F7FC] text-[#1D4ED8]">
                   <User size={20} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <b className="block break-words text-base text-[#1d2a3d]">
+                  <b className="block break-words text-base text-[#14211F]">
                     {emergencyContact || "Não informado"}
                   </b>
-                  <span className="text-xs text-[#5a6a80]">
+                  <span className="text-xs text-[#5B6878]">
                     {emergencyContact
                       ? "Contato de emergência cadastrado"
                       : "Cadastre um contato no seu perfil"}
@@ -370,7 +374,7 @@ export function EmergenciaModal({
                 {hasEmergencyPhone && (
                   <a
                     href={`tel:${emergencyPhone}`}
-                    className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#1f7fe0] px-3 text-sm font-bold text-white transition-colors hover:bg-[#1765b8]"
+                    className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#1D4ED8] px-3 text-sm font-bold text-white transition-colors hover:bg-[#1e40af]"
                   >
                     <Phone size={15} />
                     Ligar
@@ -387,19 +391,19 @@ export function EmergenciaModal({
               </h3>
             </div>
 
-            <div className="mx-auto mb-3 flex h-36 w-36 items-center justify-center overflow-hidden rounded-2xl border border-[#dde3ec] bg-[#f7f9fc] p-2">
+            <div className="mx-auto mb-3 flex h-36 w-36 items-center justify-center overflow-hidden rounded-2xl border border-[#E3E8F0] bg-[#F4F7FC] p-2">
               {shareUrl ? (
                 <QRCodeSVG
                   value={shareUrl}
                   size={124}
-                  bgColor="#f7f9fc"
-                  fgColor="#1b3a60"
+                  bgColor="#F4F7FC"
+                  fgColor="#1C2438"
                   level="M"
                   title="QR Code de emergência"
                 />
               ) : (
                 <span className="px-3 text-xs text-[#5a6a80]">
-                  {tokenError ? tokenErrorMessage || "N\u00e3o foi poss\u00edvel gerar o QR Code. Tente novamente." : "Gerando QR Code da ficha de emerg\u00eancia\u2026"}
+                  {tokenError ? tokenErrorMessage || "Não foi possível gerar o QR Code. Tente novamente." : "Gerando QR Code da ficha de emergência…"}
                 </span>
               )}
             </div>
@@ -407,28 +411,26 @@ export function EmergenciaModal({
               Mostre este QR Code para quem for prestar socorro acessar esta
               ficha.
             </p>
-{shareUrl && (
-              <>
-<div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f7f9fc] disabled:opacity-50"
-              >
-                {isCopied ? <Check size={16} /> : <Copy size={16} />}
-                {isCopied ? "Link copiado!" : "Copiar link"}
-              </button>
-              <a
-                href={shareUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dde3ec] px-3 text-sm font-bold text-[#1b3a60] transition-colors hover:bg-[#f7f9fc]"
-              >
-                <ExternalLink size={16} />
-                Abrir link
-              </a>
-            </div>
-                          </>
+            {shareUrl && (
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] disabled:opacity-50 shadow-xs"
+                >
+                  {isCopied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                  {isCopied ? "Link copiado!" : "Copiar link"}
+                </button>
+                <a
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] shadow-xs"
+                >
+                  <ExternalLink size={16} />
+                  Abrir link
+                </a>
+              </div>
             )}
             <p className="mb-0 mt-3 text-left text-[11px] leading-relaxed text-[#5a6a80]">
               Quem tiver o QR Code ou link poderá ver os dados exibidos nesta

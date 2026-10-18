@@ -2,9 +2,7 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { useLocation } from 'wouter';
 import {
   Check,
-  CheckCircle2,
   ChevronDown,
-  Circle,
   Droplet,
   HeartPulse,
   Info,
@@ -43,92 +41,6 @@ type Condition = { nome: string; tem: boolean; detalhes?: string };
 
 type SecaoId = 'gerais' | 'condicoes' | 'alergias' | 'habitos';
 
-/**
- * Contagem de itens preenchidos por seção, para o resumo lateral e para os
- * indicadores do cabeçalho de cada bloco.
- */
-function contarSecoes(dados: {
-  bloodType: string;
-  surgeries: string;
-  observations: string;
-  conditions: Condition[];
-  allergies: string[];
-  medications: string[];
-  habits: string;
-  familyHistory: string;
-  donor: boolean;
-  smoker: boolean;
-  alcohol: boolean;
-}) {
-  const condicoesMarcadas = dados.conditions.filter((condition) => condition.tem).length;
-
-  return {
-    gerais: {
-      preenchidos:
-        (dados.bloodType ? 1 : 0) +
-        (dados.surgeries.trim() ? 1 : 0) +
-        (dados.observations.trim() ? 1 : 0),
-      total: 3,
-    },
-    condicoes: {
-      preenchidos: condicoesMarcadas,
-      total: Math.max(dados.conditions.length, 1),
-      quantidade: condicoesMarcadas,
-    },
-    alergias: {
-      preenchidos:
-        (dados.allergies.length > 0 ? 1 : 0) + (dados.medications.length > 0 ? 1 : 0),
-      total: 2,
-      quantidade: dados.allergies.length,
-      medicamentos: dados.medications.length,
-    },
-    habitos: {
-      preenchidos:
-        (dados.habits.trim() ? 1 : 0) +
-        (dados.familyHistory.trim() ? 1 : 0) +
-        1 + // doador de órgãos sempre tem resposta (Sim/Não)
-        (dados.smoker ? 1 : 0) +
-        (dados.alcohol ? 1 : 0),
-      total: 5,
-    },
-  };
-}
-
-function percentual(preenchidos: number, total: number) {
-  return total === 0 ? 0 : Math.round((preenchidos / total) * 100);
-}
-
-const SECOES: {
-  id: SecaoId;
-  titulo: string;
-  descricao: string;
-  icon: typeof Droplet;
-}[] = [
-  {
-    id: 'gerais',
-    titulo: 'Dados gerais',
-    descricao: 'Tipo sanguíneo, cirurgias e observações',
-    icon: Droplet,
-  },
-  {
-    id: 'condicoes',
-    titulo: 'Condições de saúde',
-    descricao: 'Doenças e condições que você acompanha',
-    icon: HeartPulse,
-  },
-  {
-    id: 'alergias',
-    titulo: 'Alergias e medicamentos',
-    descricao: 'O que você não pode tomar e o que usa todo dia',
-    icon: Pill,
-  },
-  {
-    id: 'habitos',
-    titulo: 'Hábitos e histórico',
-    descricao: 'Rotina, histórico familiar e doação de órgãos',
-    icon: Moon,
-  },
-];
 
 
 function EditableList({
@@ -172,22 +84,20 @@ function EditableList({
         .slice(0, 6)
     : [];
 
-  // Sugestões rápidas sempre visíveis: sem isso a seção parece vazia e o usuário não
-  // descobre que pode apenas tocar numa opção em vez de digitar.
   const sugestoesRapidas = suggestions
     .filter((suggestion) => !items.some((item) => normalizeAnamneseTerm(item) === normalizeAnamneseTerm(suggestion.label)))
     .slice(0, 8);
 
   return (
     <section>
-      <label className="mb-1.5 block text-sm font-bold text-[#1d2a3d]">
+      <label className="mb-1.5 block text-sm font-bold text-[#14211F]">
         {label}
       </label>
 
       {value.trim().length < 2 && sugestoesRapidas.length > 0 && (
         <div className="mb-2.5">
           <div className="mb-1.5 flex items-center gap-1.5 text-xs text-[#5a6a80]">
-            <Sparkles size={13} className="shrink-0 text-[#1f7fe0]" />
+            <Sparkles size={13} className="shrink-0 text-[#1D4ED8]" />
             <span>Toque para adicionar:</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -196,9 +106,9 @@ function EditableList({
                 key={suggestion.label}
                 type="button"
                 onClick={() => addItem(suggestion.label)}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 text-xs font-semibold text-[#1b3a60] transition-colors hover:border-[#1f7fe0] hover:bg-[#f1f7ff]"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E3E8F0] bg-white px-3 text-xs font-semibold text-[#14211F] transition-colors hover:border-[#CFE0FF] hover:bg-[#F4F7FC]"
               >
-                <Plus size={12} strokeWidth={2.5} className="shrink-0 text-[#1f7fe0]" />
+                <Plus size={12} strokeWidth={2.5} className="shrink-0 text-[#1D4ED8]" />
                 <span>{suggestion.label}</span>
               </button>
             ))}
@@ -206,21 +116,21 @@ function EditableList({
         </div>
       )}
 
-      <div className="flex min-h-12 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 focus-within:border-[#1b3a60]">
+      <div className="flex min-h-12 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 focus-within:border-[#1D4ED8] focus-within:ring-2 focus-within:ring-[#1D4ED8]/15">
         <input
           value={value}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
-          className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#1d2a3d] outline-none"
+          className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#14211F] outline-none"
         />
         <button
           type="button"
           onClick={() => addItem(value)}
           disabled={!value.trim()}
           aria-label={`Adicionar ${label.toLowerCase()}`}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1b3a60] text-white hover:bg-[#244d7e] disabled:opacity-40 transition-colors"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1D4ED8] text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-40 transition-colors shadow-xs"
         >
           <Plus size={17} />
         </button>
@@ -231,7 +141,7 @@ function EditableList({
             Sugestões:
           </div>
           <div
-            className="absolute inset-x-0 top-1 max-h-52 overflow-y-auto rounded-xl border border-[#dde3ec] bg-white p-1.5 shadow-lg"
+            className="absolute inset-x-0 top-1 max-h-52 overflow-y-auto rounded-xl border border-[#E3E8F0] bg-white p-1.5 shadow-lg"
             aria-label={`Sugestões para ${label.toLowerCase()}`}
           >
             {matchingSuggestions.map((suggestion) => (
@@ -239,7 +149,7 @@ function EditableList({
                 key={suggestion.label}
                 type="button"
                 onClick={() => addItem(suggestion.label)}
-                className="flex min-h-10 w-full items-center rounded-lg px-3 py-2 text-left text-sm text-[#1b3a60] hover:bg-[#f1f7ff]"
+                className="flex min-h-10 w-full items-center rounded-lg px-3 py-2 text-left text-sm text-[#14211F] hover:bg-[#F4F7FC] hover:text-[#1D4ED8]"
               >
                 <span>{suggestion.label}</span>
               </button>
@@ -251,7 +161,7 @@ function EditableList({
         {items.map((item) => (
           <span
             key={item}
-            className="inline-flex max-w-full items-center gap-2 rounded-full bg-[#e5eefb] px-3 py-1.5 text-sm font-semibold text-[#1b3a60]"
+            className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#CFE0FF] bg-[#CFE0FF]/40 px-3 py-1.5 text-sm font-semibold text-[#1D4ED8]"
           >
             <span className="break-words">{item}</span>
             <button
@@ -266,12 +176,6 @@ function EditableList({
             </button>
           </span>
         ))}
-        {items.length === 0 && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-[#78879a]">
-            <Info size={13} className="shrink-0" />
-            Nada informado ainda — use as opções acima ou escreva no campo.
-          </span>
-        )}
       </div>
     </section>
   );
@@ -282,81 +186,70 @@ function TextAreaField({
   value,
   onChange,
   placeholder,
-  suggestions,
   rows = 3,
+  suggestions = [],
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  placeholder: string;
-  suggestions?: AnamneseSuggestion[];
+  placeholder?: string;
   rows?: number;
+  suggestions?: AnamneseSuggestion[];
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [query, setQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
-  const displaySuggestions = suggestions
-    ? (searchQuery.trim().length >= 2
-        ? findAnamneseSuggestions(searchQuery, suggestions, 10)
-        : [])
-    : [];
-
-  const handleAddCustom = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    onChange(appendAnamneseEntry(value, trimmed));
-    setSearchQuery('');
-  };
+  const displaySuggestions = isSearching && query.trim().length >= 1
+    ? findAnamneseSuggestions(query, suggestions).slice(0, 8)
+    : suggestions.slice(0, 8);
 
   return (
     <section>
-      <label className="mb-1.5 block text-sm font-bold text-[#1d2a3d]">
-        {label}
-      </label>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <label className="block text-sm font-bold text-[#14211F]">{label}</label>
+        {suggestions.length > 0 && !isSearching && (
+          <button
+            type="button"
+            onClick={() => setIsSearching(true)}
+            className="inline-flex items-center gap-1 text-xs text-[#5a6a80] hover:text-[#1D4ED8]"
+          >
+            <Search size={12} />
+            <span>Buscar sugestões</span>
+          </button>
+        )}
+      </div>
 
-      {suggestions && suggestions.length > 0 && (
-        <div className="mb-3 space-y-2.5">
-          {/* Campo para buscar ou adicionar opção */}
-          <div className="flex min-h-11 items-center gap-2 rounded-xl border border-[#c6cfdb] bg-white px-3 focus-within:border-[#1b3a60]">
-            <Search size={16} className="shrink-0 text-[#5a6a80]" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddCustom(searchQuery);
-                }
-              }}
-              placeholder={`Buscar ou adicionar opção para ${label.toLowerCase()}...`}
-              autoComplete="off"
-              className="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm text-[#1d2a3d] outline-none placeholder:text-[#78879a]"
-            />
-            <button
-              type="button"
-              onClick={() => handleAddCustom(searchQuery)}
-              disabled={!searchQuery.trim()}
-              aria-label={`Adicionar a ${label.toLowerCase()}`}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg bg-[#1b3a60] px-3 text-xs font-bold text-white transition-colors hover:bg-[#244d7e] disabled:opacity-40"
-            >
-              <Plus size={14} />
-              <span>Adicionar</span>
-            </button>
-          </div>
+      {suggestions.length > 0 && (
+        <div className="mb-2">
+          {isSearching && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border border-[#c6cfdb] bg-white px-2.5 py-1 focus-within:border-[#1D4ED8] focus-within:ring-2 focus-within:ring-[#1D4ED8]/15">
+              <Search size={13} className="shrink-0 text-[#78879a]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Filtrar opções…"
+                className="min-w-0 flex-1 border-0 bg-transparent text-xs text-[#14211F] outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('');
+                  setIsSearching(false);
+                }}
+                aria-label="Fechar busca de sugestões"
+                className="text-[#78879a] hover:text-[#14211F]"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
 
-          {/* Sugestões rápidas para preencher */}
           {displaySuggestions.length > 0 && (
             <div>
-              <div className="mb-1.5 flex items-center justify-between text-xs text-[#5a6a80]">
-                <span>
-                  {searchQuery.trim().length >= 2
-                    ? 'Opções encontradas — clique para selecionar:'
-                    : 'Opções rápidas para preencher (clique para marcar):'}
-                </span>
+              <div className="mb-1.5 text-xs text-[#5a6a80]">
+                {isSearching ? 'Resultados:' : 'Sugestões rápidas:'}
               </div>
-              <div
-                className="flex flex-wrap gap-2"
-                aria-label={`Sugestões para ${label.toLowerCase()}`}
-              >
+              <div className="flex flex-wrap gap-1.5">
                 {displaySuggestions.map((suggestion) => {
                   const isSelected = hasAnamneseEntry(value, suggestion.label);
                   return (
@@ -368,14 +261,14 @@ function TextAreaField({
                       }
                       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                         isSelected
-                          ? 'border border-[#1b3a60] bg-[#1b3a60] text-white shadow-xs'
-                          : 'border border-[#c6cfdb] bg-white text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff]'
+                          ? 'border border-[#1D4ED8] bg-[#1D4ED8] text-white shadow-xs'
+                          : 'border border-[#E3E8F0] bg-white text-[#14211F] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
                       }`}
                     >
                       {isSelected ? (
                         <Check size={13} strokeWidth={2.5} className="shrink-0" />
                       ) : (
-                        <Plus size={13} strokeWidth={2.5} className="shrink-0 text-[#1f7fe0]" />
+                        <Plus size={13} strokeWidth={2.5} className="shrink-0 text-[#1D4ED8]" />
                       )}
                       <span>{suggestion.label}</span>
                     </button>
@@ -393,7 +286,7 @@ function TextAreaField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-[#c6cfdb] bg-white p-3.5 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60]"
+        className="w-full rounded-xl border border-[#c6cfdb] bg-white p-3.5 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15"
       />
       <p className="mt-1 text-xs text-[#78879a]">
         Digite para ver sugestões ou escreva livremente no campo.
@@ -413,7 +306,7 @@ function ChoiceField({
 }) {
   return (
     <fieldset>
-      <legend className="mb-2 text-sm font-bold text-[#1d2a3d]">{label}</legend>
+      <legend className="mb-2 text-sm font-bold text-[#14211F]">{label}</legend>
       <div className="flex gap-2">
         {[
           { label: 'Sim', value: true },
@@ -424,10 +317,10 @@ function ChoiceField({
             type="button"
             aria-pressed={value === choice.value}
             onClick={() => onChange(choice.value)}
-            className={`min-h-10 rounded-xl border px-5 text-sm font-semibold transition-colors ${
+            className={`min-h-11 rounded-xl border px-5 text-sm font-semibold transition-colors ${
               value === choice.value
-                ? 'border-[#1b3a60] bg-[#1b3a60] text-white'
-                : 'border-[#c6cfdb] bg-white text-[#5a6a80] hover:border-[#1b3a60]'
+                ? 'border-[#1D4ED8] bg-[#1D4ED8] text-white shadow-xs'
+                : 'border-[#E3E8F0] bg-white text-[#14211F] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
             }`}
           >
             {choice.label}
@@ -462,8 +355,6 @@ export default function AnamneseEdit() {
   const [alcohol, setAlcohol] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  // No celular as seções funcionam como acordeão; no desktop todas ficam abertas.
-  // `null` = todas recolhidas.
   const [secaoAberta, setSecaoAberta] = useState<SecaoId | null>('gerais');
 
   useEffect(() => {
@@ -609,7 +500,7 @@ export default function AnamneseEdit() {
     return (
       <div
         role="alert"
-        className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#f0b8b2] bg-white p-5 sm:p-8 text-center text-[#a13a30]"
+        className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#FFF5F3] p-5 sm:p-8 text-center text-[#E8664A]"
       >
         Não foi possível carregar sua anamnese. Tente novamente mais tarde.
       </div>
@@ -618,62 +509,18 @@ export default function AnamneseEdit() {
 
   const conditionInput = <ConditionInput onAdd={addCondition} />;
 
-  const resumoSecoes = contarSecoes({
-    bloodType,
-    surgeries,
-    observations,
-    conditions,
-    allergies,
-    medications,
-    habits,
-    familyHistory,
-    donor,
-    smoker,
-    alcohol,
-  });
-
-  const totalPreenchidos = Object.values(resumoSecoes).reduce(
-    (soma, secao) => soma + secao.preenchidos,
-    0,
-  );
-  const totalCampos = Object.values(resumoSecoes).reduce(
-    (soma, secao) => soma + secao.total,
-    0,
-  );
-  const percentualGeral = percentual(totalPreenchidos, totalCampos);
-  const condicoesMarcadas = conditions.filter((condition) => condition.tem);
-
-  const resumoItens: { key: SecaoId; preenchidos: number; total: number; extra?: string }[] = [
-    { key: 'gerais', preenchidos: resumoSecoes.gerais.preenchidos, total: resumoSecoes.gerais.total },
-    {
-      key: 'condicoes',
-      preenchidos: resumoSecoes.condicoes.preenchidos,
-      total: resumoSecoes.condicoes.total,
-      extra: condicoesMarcadas.length > 0 ? `${condicoesMarcadas.length} em acompanhamento` : undefined,
-    },
-    {
-      key: 'alergias',
-      preenchidos: resumoSecoes.alergias.preenchidos,
-      total: resumoSecoes.alergias.total,
-      extra:
-        allergies.length + medications.length > 0
-          ? `${allergies.length} alergia(s) · ${medications.length} medicamento(s)`
-          : undefined,
-    },
-    { key: 'habitos', preenchidos: resumoSecoes.habitos.preenchidos, total: resumoSecoes.habitos.total },
-  ];
-
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[1240px] px-5 pb-16 pt-9 text-[#1d2a3d] sm:px-10">
+    <main className="mx-auto min-h-screen w-full max-w-4xl px-5 pb-16 pt-9 text-[#14211F] sm:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1f7fe0]">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
             Ficha de saúde
           </div>
-          <h1 className="mb-0 mt-2 text-3xl font-extrabold tracking-[-0.035em] text-[#1b3a60] sm:text-4xl">
+          <h1 className="mb-0 mt-1 text-3xl font-bold tracking-[-0.035em] text-[#14211F] sm:text-4xl">
             Anamnese
           </h1>
-          <p className="mb-0 mt-1.5 text-sm text-[#5a6a80] sm:text-base">
+          <p className="mb-0 mt-1.5 text-sm text-[#5B6878] sm:text-base">
             Seu histórico de saúde, reunido em um só lugar.
           </p>
         </div>
@@ -681,7 +528,7 @@ export default function AnamneseEdit() {
           <button
             type="button"
             onClick={() => setLocation('/visao-geral')}
-            className="min-h-11 rounded-xl border border-[#c6cfdb] bg-white px-5 text-sm font-bold text-[#1b3a60] hover:bg-[#f1f4f8] transition-colors"
+            className="btn-secondary"
           >
             Cancelar
           </button>
@@ -689,46 +536,300 @@ export default function AnamneseEdit() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white hover:bg-[#244d7e] disabled:opacity-60 transition-colors shadow-sm"
+            className="btn-primary"
           >
             {isSaving ? (
               <LoaderCircle size={17} className="animate-spin" />
             ) : (
               <Save size={17} />
             )}
-            {isSaving ? 'Salvando…' : 'Salvar anamnese'}
+            <span>{isSaving ? 'Salvando…' : 'Salvar anamnese'}</span>
           </button>
         </div>
       </div>
 
-      <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#c9d9ee] bg-[#edf5ff] p-4 text-sm leading-relaxed text-[#315477]">
-        <ShieldCheck size={19} className="mt-0.5 shrink-0" />
-        <p className="mb-0">
+      <div className="mb-6 flex items-start gap-3 rounded-2xl border border-[#CFE0FF] bg-gradient-to-r from-[#CFE0FF]/35 to-[#F4F7FC] p-4 text-sm leading-relaxed text-[#1D4ED8] shadow-xs">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1D4ED8]/10 text-[#1D4ED8]">
+          <ShieldCheck size={17} />
+        </div>
+        <p className="mb-0 text-[#14211F]">
           Preencha apenas o que quiser — os campos são opcionais. Estas informações aparecem na
           <strong className="font-bold"> Visão geral</strong> e na
           <strong className="font-bold"> ficha de emergência</strong>.
         </p>
       </div>
 
+      <div className="space-y-6">
+        {/* Seção 1: Dados gerais */}
+        <section id="secao-gerais" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+          <button
+            type="button"
+            onClick={() => setSecaoAberta(secaoAberta === 'gerais' ? null : 'gerais')}
+            aria-expanded={secaoAberta === 'gerais'}
+            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+              <Droplet size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2">
+                <h2 className="m-0 text-lg font-bold text-[#14211F]">Dados gerais</h2>
+              </span>
+              <span className="mt-0.5 block text-[13px] text-[#5B6878]">
+                Tipo sanguíneo, cirurgias e observações
+              </span>
+            </span>
+            <ChevronDown
+              size={18}
+              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
+                secaoAberta === 'gerais' ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
 
-      <div className="mt-6 flex flex-wrap justify-end gap-3 rounded-2xl border border-[#dde3ec] bg-white p-4 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-        <span className="mr-auto hidden items-center gap-2 self-center text-sm text-[#5a6a80] sm:flex">
-          {percentualGeral >= 100 ? (
-            <>
-              <CheckCircle2 size={16} className="text-[#1f7a45]" />
-              Ficha completa.
-            </>
-          ) : (
-            <>
-              <Circle size={15} className="text-[#9aa8b8]" />
-              {percentualGeral}% preenchido — você pode salvar e completar depois.
-            </>
-          )}
-        </span>
+          <div className={`mt-5 ${secaoAberta === 'gerais' ? '' : 'hidden'} lg:block`}>
+            <div className="space-y-5">
+              <div>
+                <label
+                  htmlFor="blood-type"
+                  className="mb-1.5 block text-sm font-bold text-[#14211F]"
+                >
+                  Tipo sanguíneo
+                </label>
+                <select
+                  id="blood-type"
+                  value={bloodType}
+                  onChange={(event) => setBloodType(event.target.value)}
+                  className="min-h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 sm:max-w-xs text-[#14211F]"
+                >
+                  <option value="">Não informado</option>
+                  {BLOOD_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <TextAreaField
+                label="Cirurgias anteriores"
+                value={surgeries}
+                onChange={setSurgeries}
+                placeholder="Informe cirurgias e, se souber, o ano."
+                suggestions={SURGERY_SUGGESTIONS}
+              />
+              <TextAreaField
+                label="Observações"
+                value={observations}
+                onChange={setObservations}
+                placeholder="Outras informações de saúde que deseja registrar."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Seção 2: Condições de saúde */}
+        <section id="secao-condicoes" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+          <button
+            type="button"
+            onClick={() => setSecaoAberta(secaoAberta === 'condicoes' ? null : 'condicoes')}
+            aria-expanded={secaoAberta === 'condicoes'}
+            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+              <HeartPulse size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2">
+                <h2 className="m-0 text-lg font-bold text-[#14211F]">Condições de saúde</h2>
+              </span>
+              <span className="mt-0.5 block text-[13px] text-[#5B6878]">
+                Doenças e condições que você acompanha
+              </span>
+            </span>
+            <ChevronDown
+              size={18}
+              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
+                secaoAberta === 'condicoes' ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          <div className={`mt-5 ${secaoAberta === 'condicoes' ? '' : 'hidden'} lg:block`}>
+            <div className="space-y-3">
+              {conditions.map((condition, index) => (
+                <div
+                  key={normalizeAnamneseTerm(condition.nome)}
+                  className="rounded-xl border border-[#E3E8F0] p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      id={`condition-${index}`}
+                      type="checkbox"
+                      checked={condition.tem}
+                      onChange={(event) =>
+                        updateCondition(index, { tem: event.target.checked })
+                      }
+                      className="h-4 w-4 rounded text-[#1D4ED8] focus:ring-[#1D4ED8] accent-[#1D4ED8]"
+                    />
+                    <label
+                      htmlFor={`condition-${index}`}
+                      className="min-w-0 flex-1 text-sm font-semibold text-[#14211F]"
+                    >
+                      {condition.nome}
+                    </label>
+                    <button
+                      type="button"
+                      aria-label={`Remover condição ${condition.nome}`}
+                      onClick={() =>
+                        setConditions((current) =>
+                          current.filter((_, itemIndex) => itemIndex !== index),
+                        )
+                      }
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#E8664A] transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  {condition.tem && (
+                    <input
+                      value={condition.detalhes || ''}
+                      onChange={(event) =>
+                        updateCondition(index, { detalhes: event.target.value })
+                      }
+                      placeholder="Detalhes (opcional)"
+                      className="ml-7 mt-2 min-h-10 w-[calc(100%-1.75rem)] rounded-lg border border-[#c6cfdb] px-3 text-sm outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 text-[#14211F]"
+                    />
+                  )}
+                </div>
+              ))}
+              {conditions.length === 0 && (
+                <p className="mb-0 flex items-center gap-2 rounded-xl bg-[#F4F7FC] p-3 text-sm text-[#78879a]">
+                  <Info size={14} className="shrink-0 text-[#1D4ED8]" />
+                  Nenhuma condição registrada ainda. Use o campo abaixo ou as sugestões.
+                </p>
+              )}
+            </div>
+            {conditionInput}
+          </div>
+        </section>
+
+        {/* Seção 3: Alergias e medicamentos */}
+        <section id="secao-alergias" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+          <button
+            type="button"
+            onClick={() => setSecaoAberta(secaoAberta === 'alergias' ? null : 'alergias')}
+            aria-expanded={secaoAberta === 'alergias'}
+            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+              <Pill size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2">
+                <h2 className="m-0 text-lg font-bold text-[#14211F]">Alergias e medicamentos</h2>
+              </span>
+              <span className="mt-0.5 block text-[13px] text-[#5B6878]">
+                O que você não pode tomar e o que usa todos os dias
+              </span>
+            </span>
+            <ChevronDown
+              size={18}
+              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
+                secaoAberta === 'alergias' ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          <div className={`mt-5 ${secaoAberta === 'alergias' ? '' : 'hidden'} lg:block`}>
+            <div className="space-y-6">
+              <EditableList
+                label="Alergias"
+                items={allergies}
+                suggestions={ALLERGY_SUGGESTIONS}
+                onChange={setAllergies}
+                placeholder="Digite uma alergia e pressione Enter"
+              />
+              <EditableList
+                label="Medicamentos contínuos"
+                items={medications}
+                suggestions={[]}
+                onChange={setMedications}
+                placeholder="Digite o medicamento e pressione Enter"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Seção 4: Hábitos e histórico */}
+        <section id="secao-habitos" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+          <button
+            type="button"
+            onClick={() => setSecaoAberta(secaoAberta === 'habitos' ? null : 'habitos')}
+            aria-expanded={secaoAberta === 'habitos'}
+            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+              <Moon size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2">
+                <h2 className="m-0 text-lg font-bold text-[#14211F]">Hábitos e histórico</h2>
+              </span>
+              <span className="mt-0.5 block text-[13px] text-[#5B6878]">
+                Rotina, histórico familiar e doação de órgãos
+              </span>
+            </span>
+            <ChevronDown
+              size={18}
+              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
+                secaoAberta === 'habitos' ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          <div className={`mt-5 ${secaoAberta === 'habitos' ? '' : 'hidden'} lg:block`}>
+            <div className="space-y-5">
+              <TextAreaField
+                label="Hábitos gerais (sono, alimentação, atividade física)"
+                value={habits}
+                onChange={setHabits}
+                placeholder="Descreva os hábitos e a rotina que deseja registrar."
+                suggestions={HABIT_SUGGESTIONS}
+              />
+              <div className="grid gap-5 sm:grid-cols-3">
+                <ChoiceField
+                  label="Doador de órgãos"
+                  value={donor}
+                  onChange={setDonor}
+                />
+                <ChoiceField
+                  label="Tabagismo"
+                  value={smoker}
+                  onChange={setSmoker}
+                />
+                <ChoiceField
+                  label="Consome bebidas alcoólicas"
+                  value={alcohol}
+                  onChange={setAlcohol}
+                />
+              </div>
+              <TextAreaField
+                label="Histórico familiar"
+                value={familyHistory}
+                onChange={setFamilyHistory}
+                placeholder="Informe condições de saúde relevantes na família."
+                suggestions={FAMILY_HISTORY_SUGGESTIONS}
+              />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="mt-8 flex flex-wrap justify-end gap-3 rounded-2xl border border-[#E3E8F0] bg-white p-4 shadow-xs">
         <button
           type="button"
           onClick={() => setLocation('/visao-geral')}
-          className="min-h-11 rounded-xl border border-[#c6cfdb] bg-white px-5 text-sm font-bold text-[#1b3a60] hover:bg-[#f1f4f8]"
+          className="min-h-11 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-semibold text-[#14211F] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all shadow-xs"
         >
           Cancelar
         </button>
@@ -736,7 +837,7 @@ export default function AnamneseEdit() {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1b3a60] px-5 text-sm font-bold text-white hover:bg-[#244d7e] disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-6 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-60 transition-all shadow-xs"
         >
           {isSaving ? (
             <LoaderCircle size={17} className="animate-spin" />
@@ -762,7 +863,7 @@ function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
 
   return (
     <div className="mt-4">
-      <label htmlFor="add-condition" className="mb-1.5 block text-sm font-bold">
+      <label htmlFor="add-condition" className="mb-1.5 block text-sm font-bold text-[#14211F]">
         Adicionar outra condição
       </label>
       <div className="flex gap-2">
@@ -777,13 +878,13 @@ function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
             }
           }}
           placeholder="Ex.: enxaqueca, tireoide, pressão alta"
-          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#c6cfdb] px-3 text-sm outline-none focus:border-[#1b3a60]"
+          className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm outline-none focus:border-[#1D4ED8] focus:ring-2 focus:ring-[#1D4ED8]/15 text-[#14211F]"
         />
         <button
           type="button"
           onClick={() => add(value)}
           disabled={!value.trim()}
-          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-[#1b3a60] px-4 text-sm font-bold text-white hover:bg-[#244d7e] disabled:opacity-50 transition-colors"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-[#1D4ED8] px-4 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-50 transition-all shadow-xs"
         >
           <Plus size={16} />
           Adicionar
@@ -803,9 +904,9 @@ function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
                 key={suggestion.label}
                 type="button"
                 onClick={() => add(suggestion.label)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#c6cfdb] bg-white px-3 py-1.5 text-xs font-semibold text-[#1b3a60] hover:border-[#1f7fe0] hover:bg-[#f1f7ff] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E3E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#14211F] hover:border-[#CFE0FF] hover:bg-[#F4F7FC] transition-colors"
               >
-                <Plus size={13} className="text-[#1f7fe0]" />
+                <Plus size={13} className="text-[#1D4ED8]" />
                 <span>{suggestion.label}</span>
               </button>
             ))}

@@ -1,19 +1,20 @@
 import path from 'path';
+import type { IncomingMessage } from 'node:http';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type ProxyOptions, type UserConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-export default defineConfig(async ({ mode, command }) => {
+export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   const envDir = path.resolve(import.meta.dirname);
-  const env = loadEnv(mode, envDir, '');
-  const apiTarget = (env.VITE_API_URL || process.env.VITE_API_URL)?.trim();
-
-  if (command === 'serve' && !apiTarget) {
-    throw new Error(`Configure VITE_API_URL em ${path.join(envDir, '.env')} antes de iniciar o frontend.`);
-  }
+  const parentEnvDir = path.resolve(envDir, '../..');
+  const env = {
+    ...loadEnv(mode, parentEnvDir, ''),
+    ...loadEnv(mode, envDir, ''),
+  };
+  const apiTarget = (env.VITE_API_URL || process.env.VITE_API_URL || 'https://saude-memora.vercel.app')?.trim();
 
   const rawPort = process.env.PORT || env.PORT || '5173';
   const port = Number(rawPort);
@@ -41,13 +42,13 @@ export default defineConfig(async ({ mode, command }) => {
       VitePWA({
         registerType: 'autoUpdate',
         manifest: {
-          name: 'SaúdeMemora',
-          short_name: 'SaúdeMemora',
-          description: 'Prontuário Médico Inteligente',
+          name: 'Saúde Memora',
+          short_name: 'Saúde Memora',
+          description: 'Seu histórico de saúde, sempre à mão.',
           id: '/',
           scope: '/',
           start_url: '/visao-geral',
-          theme_color: '#1f7fe0',
+          theme_color: '#1D4ED8',
           background_color: '#ffffff',
           display: 'standalone',
           display_override: ['window-controls-overlay', 'standalone'],
@@ -158,8 +159,21 @@ export default defineConfig(async ({ mode, command }) => {
           target: apiTarget,
           changeOrigin: true,
           secure: true,
-        },
-      } : {},
+          cookieDomainRewrite: '',
+          configure: (proxy: any) => {
+            proxy.on('proxyRes', (proxyRes: IncomingMessage) => {
+              const sc = proxyRes.headers['set-cookie'];
+              if (sc && Array.isArray(sc)) {
+                proxyRes.headers['set-cookie'] = sc.map((cookie: string) =>
+                  cookie
+                    .replace(/;\s*secure/gi, '')
+                    .replace(/;\s*samesite=none/gi, '; SameSite=Lax')
+                );
+              }
+            });
+          },
+        } satisfies ProxyOptions,
+      } : undefined,
     },
     preview: {
       port: previewPort,
@@ -170,8 +184,9 @@ export default defineConfig(async ({ mode, command }) => {
           target: apiTarget,
           changeOrigin: true,
           secure: true,
-        },
-      } : {},
+          cookieDomainRewrite: '',
+        } satisfies ProxyOptions,
+      } : undefined,
     },
   };
 });

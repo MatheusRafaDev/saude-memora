@@ -77,8 +77,8 @@ function getDocumentTypeIcon(type: string) {
 function DocumentTypeBadge({ type }: { type: string }) {
   const Icon = getDocumentTypeIcon(type);
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e5eefb] px-2.5 py-1 text-xs font-bold text-[#1f7fe0] whitespace-nowrap">
-      <Icon size={13} aria-hidden="true" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F] whitespace-nowrap">
+      <Icon size={13} className="text-[#1D4ED8]" aria-hidden="true" />
       {type}
     </span>
   );
@@ -100,15 +100,15 @@ function DocumentThumbnail({
   const TypeIcon = getDocumentTypeIcon(type);
 
   return (
-    <div className={`group relative flex shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[#e5eaf1] bg-gradient-to-br from-[#f7f9fc] to-[#eaf0f7] transition-colors hover:from-[#f1f6fc] hover:to-[#e1ebf8] ${compact ? 'h-16 w-16 sm:h-[72px] sm:w-[72px]' : 'h-[150px] w-full'}`}>
+    <div className={`group relative flex shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[#E3E8F0] bg-[#F4F7FC] transition-colors hover:border-[#CFE0FF] ${compact ? 'h-16 w-16 sm:h-[72px] sm:w-[72px]' : 'h-[150px] w-full'}`}>
       {src && !hasLoadError ? (
         <img src={src} alt={`Prévia de ${title}`} loading="lazy" onError={() => setHasLoadError(true)} className="h-full w-full object-cover" />
       ) : (
-        <div className={`flex flex-col items-center justify-center gap-1.5 text-[#1b3a60] ${compact ? '' : 'px-4'}`}>
-          <span className={`flex items-center justify-center rounded-xl bg-white/90 shadow-sm ${compact ? 'h-8 w-8' : 'h-14 w-14 rounded-2xl'}`}>
-            <TypeIcon size={compact ? 17 : 25} strokeWidth={1.8} />
+        <div className={`flex flex-col items-center justify-center gap-1.5 text-[#14211F] ${compact ? '' : 'px-4'}`}>
+          <span className={`flex items-center justify-center rounded-xl bg-white shadow-xs ${compact ? 'h-8 w-8' : 'h-14 w-14 rounded-2xl'}`}>
+            <TypeIcon size={compact ? 17 : 25} strokeWidth={1.8} className="text-[#1D4ED8]" />
           </span>
-          <span className={`font-semibold text-[#718096] ${compact ? 'text-[9px]' : 'text-[11px]'}`}>Sem imagem</span>
+          <span className={`font-medium text-[#5B6878] ${compact ? 'text-[9px]' : 'text-[11px]'}`}>Sem imagem</span>
         </div>
       )}
     </div>
@@ -292,50 +292,69 @@ export default function Documents() {
   const renderBadge = (doc: { status: string; revisaoPendente: boolean }) => {
     if (doc.status === 'processing' || doc.status === 'pending') {
       return (
-        <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
+        <span className="inline-block px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] text-[#14211F] text-xs font-medium whitespace-nowrap">
           Processando
         </span>
       );
     }
     if (doc.status === 'failed') {
-      return <span className="inline-block whitespace-nowrap rounded-full bg-[#fde8e6] px-2.5 py-1 text-xs font-bold text-[#a13a30]">Falhou</span>;
+      return <span className="inline-block whitespace-nowrap rounded-full bg-[#FDE1DA] border border-[#E8664A]/30 px-2.5 py-1 text-xs font-semibold text-[#9B2C16]">Falhou</span>;
     }
     if (doc.revisaoPendente || doc.status === 'revisar') {
       return (
-        <span className="inline-block px-2.5 py-1 rounded-full bg-[#fdf3d8] text-[#6b4208] text-xs font-bold whitespace-nowrap">
-          Revisar
+        <span className="inline-block px-2.5 py-1 rounded-full bg-[#FDE1DA] border border-[#E8664A]/30 text-[#9B2C16] text-xs font-semibold whitespace-nowrap">
+          Conferir dados
         </span>
       );
     }
     return (
-      <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
-        Pronto
+      <span className="inline-block px-2.5 py-1 rounded-full bg-[#CFE0FF] text-[#1D4ED8] text-xs font-semibold whitespace-nowrap">
+        Revisado
       </span>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
         {/* Header Title & CTA */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 mb-7">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
               Seu acervo
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+            <h1 className="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-[#14211F]">
               Documentos
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+            <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
               Receitas, exames e laudos reunidos e pesquisáveis.
             </p>
           </div>
 
+          <button
+            type="button"
+            onClick={() => triggerUploadModal()}
+            className="btn-primary min-h-[44px] w-full sm:w-auto shadow-xs"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            <span>Adicionar documento</span>
+          </button>
         </div>
 
-        <section aria-label="Filtros de documentos" className="mb-7 rounded-2xl border border-[#dde3ec] bg-white p-3 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)] sm:p-4">
+        {/* AI Disclaimer Banner */}
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#CFE0FF] bg-gradient-to-r from-[#CFE0FF]/35 to-[#F4F7FC] px-4.5 py-3 text-[13px] text-[#14211F] shadow-xs">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1D4ED8]/10 text-[#1D4ED8]">
+            <ShieldCheck size={15} />
+          </div>
+          <span className="text-[#5B6878] leading-relaxed">
+            <b className="font-semibold text-[#14211F]">Aviso de IA:</b> Os dados extraídos por inteligência artificial podem conter imprecisões. Confira sempre com o documento original.
+          </span>
+        </div>
+
+        <section aria-label="Filtros de documentos" className="mb-7 rounded-2xl border border-[#E3E8F0] bg-white p-3 shadow-xs sm:p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#c6cfdb] bg-[#fbfcfe] px-3.5 text-sm text-[#5a6a80] transition-colors focus-within:border-[#1b3a60] focus-within:ring-1 focus-within:ring-[#1b3a60]">
+            <label className="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] px-3.5 text-sm text-[#5B6878] transition-colors focus-within:border-[#1D4ED8] focus-within:ring-1 focus-within:ring-[#1D4ED8]">
               <Search size={18} className="shrink-0" />
               <input
                 type="search"
@@ -343,17 +362,17 @@ export default function Documents() {
                 placeholder="Buscar por título, tipo ou conteúdo"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="w-full min-w-0 bg-transparent text-sm text-[#1d2a3d] outline-none placeholder:text-[#7b8798]"
+                className="w-full min-w-0 bg-transparent text-sm text-[#14211F] outline-none placeholder:text-[#5B6878]"
               />
             </label>
 
-            <div className="flex h-11 shrink-0 items-center justify-between rounded-xl border border-[#dde3ec] bg-[#f7f9fc] p-1 sm:justify-start">
+            <div className="flex h-11 shrink-0 items-center justify-between rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1 sm:justify-start">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 aria-label="Visualizar em grade"
                 aria-pressed={viewMode === 'grid'}
-                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-bold transition-colors sm:flex-none ${viewMode === 'grid' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1b3a60]'}`}
+                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors sm:flex-none ${viewMode === 'grid' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
               >
                 <LayoutGrid size={16} /> <span>Grade</span>
               </button>
@@ -362,7 +381,7 @@ export default function Documents() {
                 onClick={() => setViewMode('list')}
                 aria-label="Visualizar em lista"
                 aria-pressed={viewMode === 'list'}
-                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-bold transition-colors sm:flex-none ${viewMode === 'list' ? 'bg-white text-[#1b3a60] shadow-sm' : 'text-[#5a6a80] hover:text-[#1b3a60]'}`}
+                className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors sm:flex-none ${viewMode === 'list' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
               >
                 <List size={16} /> <span>Lista</span>
               </button>
@@ -371,15 +390,15 @@ export default function Documents() {
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <label className="block min-w-0">
-              <span className="mb-1 block text-xs font-semibold text-[#52627a]">Tipo</span>
-              <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)} className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]">
+              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Tipo</span>
+              <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)} className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8]">
                 <option value="all">Todos os tipos ({counts.all})</option>
                 {DOCUMENT_TYPES.map(({ id, label }) => <option key={id} value={id}>{label} ({counts[id]})</option>)}
               </select>
             </label>
             <label className="block min-w-0">
-              <span className="mb-1 block text-xs font-semibold text-[#52627a]">Status</span>
-              <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]">
+              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Status</span>
+              <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8]">
                 <option value="all">Todos os status</option>
                 <option value="pronto">Pronto</option>
                 <option value="revisar">Revisar</option>
@@ -388,8 +407,8 @@ export default function Documents() {
               </select>
             </label>
             <label className="block min-w-0">
-              <span className="mb-1 block text-xs font-semibold text-[#52627a]">Período</span>
-              <select value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)} className="h-11 w-full rounded-xl border border-[#c6cfdb] bg-white px-3 text-sm text-[#1d2a3d] outline-none focus:border-[#1b3a60] focus:ring-1 focus:ring-[#1b3a60]">
+              <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Período</span>
+              <select value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)} className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] outline-none focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8]">
                 <option value="all">Qualquer período</option>
                 <option value="30days">Últimos 30 dias</option>
                 <option value="thisyear">Este ano</option>
@@ -397,10 +416,10 @@ export default function Documents() {
             </label>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#edf0f5] pt-3 text-xs text-[#718096]">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#E3E8F0] pt-3 text-xs text-[#5B6878]">
             <span>{filteredItems.length} {filteredItems.length === 1 ? 'documento encontrado' : 'documentos encontrados'}</span>
             {(search || selectedCategory !== 'all' || selectedStatus !== 'all' || selectedPeriod !== 'all') && (
-              <button type="button" onClick={() => { setSearch(''); setSelectedCategory('all'); setSelectedStatus('all'); setSelectedPeriod('all'); }} className="min-h-9 rounded-lg px-3 font-bold text-[#1f7fe0] hover:bg-[#f1f6fc]">
+              <button type="button" onClick={() => { setSearch(''); setSelectedCategory('all'); setSelectedStatus('all'); setSelectedPeriod('all'); }} className="min-h-9 rounded-lg px-3 font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/30 transition-colors">
                 Limpar filtros
               </button>
             )}
@@ -409,21 +428,21 @@ export default function Documents() {
 
         {/* Grouped Month Sections */}
         {isLoading ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-[#dde3ec] text-[#5a6a80]">
-            <LoaderCircle size={24} className="mx-auto animate-spin mb-3" />
+          <div className="bg-white rounded-2xl p-12 text-center border border-[#E3E8F0] text-[#5B6878]">
+            <LoaderCircle size={24} className="mx-auto animate-spin mb-3 text-[#1D4ED8]" />
             Carregando documentos…
           </div>
         ) : isError ? (
-          <div role="alert" className="bg-white rounded-2xl p-12 text-center border border-[#f0b8b2] text-[#a13a30]">
+          <div role="alert" className="bg-white rounded-2xl p-12 text-center border border-[#E8664A]/30 text-[#9B2C16] bg-[#FDE1DA]">
             Não foi possível carregar seus documentos. Tente novamente mais tarde.
           </div>
         ) : Object.keys(groupedByMonth).length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-[#dde3ec]">
-            <FileText size={40} className="mx-auto text-[#5a6a80] opacity-40 mb-3" />
-            <h3 className="text-lg font-bold text-[#1b3a60]">
+          <div className="bg-white rounded-2xl p-12 text-center border border-[#E3E8F0] shadow-xs">
+            <FileText size={40} className="mx-auto text-[#5B6878] opacity-40 mb-3" />
+            <h3 className="text-lg font-bold text-[#14211F]">
               {activeDocs.length === 0 ? 'Você ainda não tem documentos' : 'Nenhum documento encontrado'}
             </h3>
-            <p className="text-sm text-[#5a6a80] mt-1">
+            <p className="text-sm text-[#5B6878] mt-1">
               {activeDocs.length === 0
                 ? 'Adicione um documento para começar seu acervo.'
                 : 'Tente ajustar a busca ou os filtros acima.'}
@@ -466,10 +485,10 @@ export default function Documents() {
                           <p className="m-0 line-clamp-2 leading-relaxed">{doc.resumo || doc.diagnostico}</p>
                         )}
                         {(doc.nomeExame || doc.tipoExame || doc.exames.length > 0) && (
-                          <div className="flex items-start gap-1.5"><Activity size={14} className="mt-0.5 shrink-0 text-[#1f7fe0]" /><span className="line-clamp-1">{doc.nomeExame || doc.exames.map((exame: any) => exame.nome).filter(Boolean).join(', ') || doc.tipoExame}</span></div>
+                          <div className="flex items-start gap-1.5"><Activity size={14} className="mt-0.5 shrink-0 text-[#1D4ED8]" /><span className="line-clamp-1">{doc.nomeExame || doc.exames.map((exame: any) => exame.nome).filter(Boolean).join(', ') || doc.tipoExame}</span></div>
                         )}
                         {doc.medicamentos.length > 0 && (
-                          <div className="flex items-start gap-1.5"><Pill size={14} className="mt-0.5 shrink-0 text-[#1b3a60]" /><span className="line-clamp-1">{doc.medicamentos.map((medicamento: any) => medicamento.nome).filter(Boolean).join(', ')}</span></div>
+                          <div className="flex items-start gap-1.5"><Pill size={14} className="mt-0.5 shrink-0 text-[#1D4ED8]" /><span className="line-clamp-1">{doc.medicamentos.map((medicamento: any) => medicamento.nome).filter(Boolean).join(', ')}</span></div>
                         )}
                         {doc.quantidadeAlertas > 0 && <div className="flex items-center gap-1.5 text-amber-800"><AlertTriangle size={14} />{doc.quantidadeAlertas} {doc.quantidadeAlertas === 1 ? 'alerta ativo' : 'alertas ativos'}</div>}
                       </div>
@@ -483,7 +502,7 @@ export default function Documents() {
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-1 rounded-md text-[#5a6a80] hover:bg-slate-100 transition-colors">
+                            <button className="p-1 rounded-md text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F] transition-colors">
                               <MoreVertical size={16} />
                             </button>
                           </DropdownMenuTrigger>
@@ -504,7 +523,7 @@ export default function Documents() {
                             )}
                             <DropdownMenuItem
                               onClick={(e) => handleDelete(doc.id, e)}
-                              className="text-red-600 focus:text-red-600 flex items-center gap-2 cursor-pointer"
+                              className="text-[#E8664A] focus:text-[#E8664A] flex items-center gap-2 cursor-pointer"
                             >
                               <Trash2 size={14} /> Excluir
                             </DropdownMenuItem>
@@ -516,11 +535,11 @@ export default function Documents() {
                 </div>
               ) : (
                 /* List View */
-                <div className="bg-white border border-[#dde3ec] rounded-[20px] divide-y divide-[#dde3ec] overflow-hidden shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+                <div className="bg-white border border-[#E3E8F0] rounded-[20px] divide-y divide-[#E3E8F0] overflow-hidden shadow-xs">
                   {docs.map((doc) => (
                     <div
                       key={doc.id}
-                      className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-3 p-3 transition-colors hover:bg-slate-50/70 sm:grid-cols-[72px_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-4 sm:p-4"
+                      className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-3 p-3 transition-colors hover:bg-[#F4F7FC]/70 sm:grid-cols-[72px_minmax(0,1fr)_auto_auto] sm:items-center sm:gap-4 sm:p-4"
                     >
                       <Link href={`/documentos/${doc.id}`} aria-label={`Abrir ${doc.titulo}`} className="group block">
                         <DocumentThumbnail src={doc.previewUrl} title={doc.titulo} type={doc.tipo} compact />
@@ -528,14 +547,14 @@ export default function Documents() {
 
                       <div className="flex-1 min-w-0">
                         <Link href={`/documentos/${doc.id}`} className="block">
-                          <div className="text-[15px] font-bold text-[#1d2a3d] hover:text-[#1b3a60] truncate">
+                          <div className="text-[15px] font-bold text-[#14211F] hover:text-[#1D4ED8] transition-colors truncate">
                             {doc.titulo}
                           </div>
-                          <div className="text-xs text-[#5a6a80] mt-0.5">
+                          <div className="text-xs text-[#5B6878] mt-0.5">
                             Adicionado {doc.dateStr}{doc.dataDocumento ? ` · Documento: ${doc.dataDocumento}` : ''}
                           </div>
                           {(doc.resumo || doc.diagnostico || doc.medico || doc.clinica || doc.medicamentos.length > 0 || doc.exames.length > 0) && (
-                            <div className="mt-1.5 space-y-0.5 text-xs text-[#52627a]">
+                            <div className="mt-1.5 space-y-0.5 text-xs text-[#5B6878]">
                               {(doc.medico || doc.clinica) && <div className="truncate">{[doc.medico, doc.clinica].filter(Boolean).join(' · ')}</div>}
                               {(doc.resumo || doc.diagnostico) && <div className="line-clamp-1">{doc.resumo || doc.diagnostico}</div>}
                               {doc.medicamentos.length > 0 && <div className="line-clamp-1">Medicamentos: {doc.medicamentos.map((medicamento: any) => medicamento.nome).filter(Boolean).join(', ')}</div>}
@@ -545,14 +564,14 @@ export default function Documents() {
                         </Link>
                       </div>
 
-                      <div className="col-span-2 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-[#edf0f5] pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
+                      <div className="col-span-2 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-[#E3E8F0] pt-2 sm:col-span-1 sm:justify-end sm:border-0 sm:pt-0">
                         {doc.quantidadeAlertas > 0 && <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800"><AlertTriangle size={14} />{doc.quantidadeAlertas}</span>}
                         {doc.status === 'failed' && (
                           <button
                             type="button"
                             onClick={(event) => handleRetry(doc.id, event)}
                             disabled={retryingId === doc.id}
-                            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#f0b8b2] px-3 text-xs font-bold text-[#a13a30] hover:bg-[#fff5f4] disabled:opacity-50"
+                            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#E8664A]/30 px-3 text-xs font-semibold text-[#E8664A] hover:bg-[#FDE1DA] transition-colors disabled:opacity-50"
                           >
                             <RotateCw size={14} /> Tentar novamente
                           </button>
@@ -564,7 +583,7 @@ export default function Documents() {
                       <div className="hidden items-center gap-2 sm:flex">
                         <Link
                           href={`/documentos/${doc.id}`}
-                          className="p-2 text-[#5a6a80] hover:text-[#1b3a60] hover:bg-slate-100 rounded-lg transition-colors"
+                          className="p-2 text-[#5B6878] hover:text-[#1D4ED8] hover:bg-[#F4F7FC] rounded-lg transition-colors"
                         >
                           <ChevronRight size={18} />
                         </Link>

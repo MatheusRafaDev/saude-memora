@@ -230,27 +230,28 @@ export default function Upload() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-8 pb-16">
         {/* Breadcrumb */}
-        <div className="text-sm text-[#5a6a80] mb-3.5 flex items-center gap-2">
-          <Link href="/documentos" className="hover:text-[#1b3a60] transition-colors">
+        <div className="text-sm text-[#5B6878] mb-3.5 flex items-center gap-2">
+          <Link href="/documentos" className="hover:text-[#1D4ED8] transition-colors">
             Documentos
           </Link>
           <span>/</span>
-          <span className="text-[#1d2a3d] font-medium">Adicionar documento</span>
+          <span className="text-[#14211F] font-medium">Adicionar documento</span>
         </div>
 
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
           <div>
-            <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1f7fe0]">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
               Envio de arquivos
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#1b3a60]">
+            <h1 className="mt-1 mb-0 text-3xl sm:text-4xl font-bold tracking-tight text-[#14211F]">
               Adicionar documento
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5a6a80] text-sm sm:text-base">
+            <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
               Selecione vários arquivos: cada um será salvo como um documento, e o tipo será identificado automaticamente.
             </p>
           </div>
@@ -266,8 +267,8 @@ export default function Upload() {
               onDragLeave={onDragLeave}
               onDrop={onDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-[24px] bg-gradient-to-br from-[#f4f8fd] to-[#e5eefb] py-14 px-6 text-center cursor-pointer transition-all ${
-                isDragging ? 'border-[#1b3a60] bg-blue-50/80 scale-[1.01]' : 'border-[#9fb4d0] hover:border-[#1b3a60]'
+              className={`border-2 border-dashed rounded-[24px] bg-[#F4F7FC] py-14 px-6 text-center cursor-pointer transition-all duration-200 ${
+                isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30 scale-[1.01]' : 'border-[#E3E8F0] hover:border-[#1D4ED8] hover:bg-[#F8FAFC]'
               }`}
             >
               <input
@@ -283,35 +284,35 @@ export default function Upload() {
                 }}
               />
 
-              <div className="w-[76px] h-[76px] rounded-[24px] bg-[#1b3a60] mx-auto mb-4.5 flex items-center justify-center shadow-[0_14px_28px_-12px_rgba(27,58,96,0.5)]">
+              <div className="w-[76px] h-[76px] rounded-[24px] bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] mx-auto mb-4.5 flex items-center justify-center shadow-md">
                 <UploadCloud size={34} className="text-white" strokeWidth={2} />
               </div>
 
-              <div className="text-[22px] font-extrabold tracking-[-0.02em] text-[#1d2a3d]">
+              <div className="text-[22px] font-bold tracking-tight text-[#14211F]">
                 Arraste arquivos aqui
               </div>
-              <p className="mt-2 mb-5.5 text-[#5a6a80] text-base">
+              <p className="mt-2 mb-5.5 text-[#5B6878] text-base">
                 ou toque para escolher fotos e PDFs do seu aparelho
               </p>
 
               <button
                 type="button"
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors shadow-xs pointer-events-none"
+                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1D4ED8] text-white hover:bg-[#1e40af] transition-colors shadow-xs pointer-events-none"
               >
                 Escolher arquivos
               </button>
 
-              <div className="mt-4.5 text-[13px] text-[#5a6a80]">
+              <div className="mt-4.5 text-[13px] text-[#5B6878]">
                 PDF, JPG ou PNG · até 10 MB por arquivo
               </div>
             </div>
 
             {/* Document Type Selector Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-5.5 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="text-sm font-bold text-[#1d2a3d] mb-1">
+            <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-5.5 shadow-xs">
+              <div className="text-sm font-bold text-[#14211F] mb-1">
                 Tipo dos documentos
               </div>
-              <p className="mb-3 text-xs text-[#5a6a80]">No modo automático, a IA identifica o tipo de cada arquivo separadamente.</p>
+              <p className="mb-3 text-xs text-[#5B6878]">No modo automático, a IA identifica o tipo de cada arquivo separadamente.</p>
               <div className="flex gap-2.5 flex-wrap">
                 {DOC_TYPES.map((t) => {
                   const Icon = t.icon;
@@ -323,11 +324,11 @@ export default function Upload() {
                       onClick={() => setSelectedType(t.id)}
                       className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs scale-[1.02]'
-                          : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb] hover:bg-slate-50'
+                          ? 'bg-[#14211F] text-white border border-[#14211F] shadow-xs'
+                          : 'bg-white text-[#14211F] border border-[#E3E8F0] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
                       }`}
                     >
-                      <Icon size={16} className={isSelected ? 'text-white' : 'text-[#1f7fe0]'} />
+                      <Icon size={16} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
                       <span>{t.label}</span>
                     </button>
                   );
@@ -336,76 +337,76 @@ export default function Upload() {
             </div>
 
             {/* Enviados agora Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
+            <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-6 shadow-xs">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-[#f1f4f8] flex items-center justify-center shrink-0">
-                  <FileText size={18} className="text-[#1b3a60]" />
+                <div className="w-9 h-9 rounded-xl bg-[#F4F7FC] flex items-center justify-center shrink-0">
+                  <FileText size={18} className="text-[#1D4ED8]" />
                 </div>
-                <b className="text-base text-[#1d2a3d] flex-1">Enviados agora</b>
-                <span className="inline-block px-2.5 py-1 rounded-full bg-[#f1f4f8] text-[#1d2a3d] text-xs font-bold whitespace-nowrap">
+                <b className="text-base font-bold text-[#14211F] flex-1">Enviados agora</b>
+                <span className="inline-block px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] text-[#14211F] text-xs font-medium whitespace-nowrap">
                   {queue.length} arquivos
                 </span>
               </div>
 
-              <div className="divide-y divide-[#dde3ec]">
+              <div className="divide-y divide-[#E3E8F0]">
                 {queue.map((item) => (
                   <div key={item.id} className="flex items-center gap-3.5 py-4">
                     {/* File icon preview */}
                     {item.previewUrl ? (
-                      <div className="w-11 h-14 rounded-lg overflow-hidden border border-[#dde3ec] shrink-0 bg-white shadow-xs">
+                      <div className="w-11 h-14 rounded-lg overflow-hidden border border-[#E3E8F0] shrink-0 bg-white shadow-xs">
                         <img src={item.previewUrl} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="w-11 h-14 rounded-lg bg-white border border-[#dde3ec] p-2.5 shrink-0 flex flex-col justify-between shadow-xs">
+                      <div className="w-11 h-14 rounded-lg bg-white border border-[#E3E8F0] p-2.5 shrink-0 flex flex-col justify-between shadow-xs">
                         <div className="space-y-1">
-                          <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[90%]" />
-                          <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[65%]" />
-                          <div className="h-[4px] rounded-[2px] bg-[#d5dce8] w-[85%]" />
+                          <div className="h-[4px] rounded-[2px] bg-[#E3E8F0] w-[90%]" />
+                          <div className="h-[4px] rounded-[2px] bg-[#E3E8F0] w-[65%]" />
+                          <div className="h-[4px] rounded-[2px] bg-[#E3E8F0] w-[85%]" />
                         </div>
-                        <div className="h-[4px] rounded-[2px] bg-[#1f7fe0]/50 w-[70%]" />
+                        <div className="h-[4px] rounded-[2px] bg-[#CFE0FF] w-[70%]" />
                       </div>
                     )}
 
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-0.5">
-                        <b className="text-[15px] text-[#1d2a3d] truncate">{item.name}</b>
+                        <b className="text-[15px] text-[#14211F] truncate">{item.name}</b>
                         {item.status === 'pronto' && (
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
-                            Pronto
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#CFE0FF] text-[#1D4ED8] text-xs font-semibold whitespace-nowrap">
+                            Revisado
                           </span>
                         )}
                         {item.status === 'processando' && (
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#e5eefb] text-[#1b3a60] text-xs font-bold whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] text-[#14211F] text-xs font-medium whitespace-nowrap">
                             {item.statusText}
                           </span>
                         )}
                         {item.status === 'fila' && (
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#fdf3d8] text-[#6b4208] text-xs font-bold whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#FDE1DA] border border-[#E8664A]/30 text-[#9B2C16] text-xs font-semibold whitespace-nowrap">
                             Na fila
                           </span>
                         )}
                         {item.status === 'falha' && (
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#fde8e6] text-[#a13a30] text-xs font-bold whitespace-nowrap">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#FDE1DA] border border-[#E8664A]/30 text-[#9B2C16] text-xs font-semibold whitespace-nowrap">
                             Falhou
                           </span>
                         )}
                       </div>
 
-                      <div className="text-[13px] text-[#5a6a80] mb-2">
+                      <div className="text-[13px] text-[#5B6878] mb-2">
                         {item.sizeStr}
                       </div>
 
                       {/* Progress bar */}
-                      <div className="h-2 rounded-full bg-[#f1f4f8] overflow-hidden">
+                      <div className="h-2 rounded-full bg-[#F4F7FC] overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
                             item.status === 'pronto'
-                              ? 'bg-[#1f7fe0]'
+                              ? 'bg-[#1D4ED8]'
                               : item.status === 'processando'
-                              ? 'bg-[#1f7fe0]'
+                              ? 'bg-[#1D4ED8]'
                               : item.status === 'fila'
-                              ? 'bg-[#e3b95a]'
-                              : 'bg-[#a13a30]'
+                              ? 'bg-[#E8664A]'
+                              : 'bg-[#9B2C16]'
                           }`}
                           style={{ width: `${item.progress}%` }}
                         />
@@ -414,14 +415,14 @@ export default function Upload() {
                       {item.error && (
                         <div
                           onClick={() => fileInputRef.current?.click()}
-                          className="flex gap-2 items-center mt-2 text-[13px] text-[#a13a30] font-semibold cursor-pointer hover:underline"
+                          className="flex gap-2 items-center mt-2 text-[13px] text-[#9B2C16] font-semibold cursor-pointer hover:underline"
                         >
                           <RotateCw size={14} />
                           {item.error}
                         </div>
                       )}
                       {item.documentId && item.status === 'fila' && (
-                        <Link href={`/documentos/${item.documentId}`} className="mt-2 inline-flex text-[13px] font-bold text-[#1f7fe0] hover:underline">
+                        <Link href={`/documentos/${item.documentId}`} className="mt-2 inline-flex text-[13px] font-bold text-[#1D4ED8] hover:underline">
                           Acompanhar no acervo
                         </Link>
                       )}
@@ -435,44 +436,44 @@ export default function Upload() {
           {/* Right Column (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-5">
             {/* Como funciona Card */}
-            <div className="bg-white border border-[#dde3ec] rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(27,58,96,0.3)]">
-              <div className="text-base font-extrabold text-[#1d2a3d] mb-4">
+            <div className="bg-white border border-[#E3E8F0] rounded-[20px] p-6 shadow-xs">
+              <div className="text-base font-bold text-[#14211F] mb-4">
                 Como funciona
               </div>
 
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1b3a60] text-white font-extrabold flex items-center justify-center shrink-0 text-sm">
+                  <div className="w-8 h-8 rounded-full bg-[#1D4ED8] text-white font-bold flex items-center justify-center shrink-0 text-sm">
                     1
                   </div>
                   <div>
-                    <b className="text-[15px] text-[#1d2a3d] block">Envie</b>
-                    <div className="text-[13px] text-[#5a6a80] leading-relaxed mt-0.5">
+                    <b className="text-[15px] font-bold text-[#14211F] block">Envie</b>
+                    <div className="text-[13px] text-[#5B6878] leading-relaxed mt-0.5">
                       Foto ou PDF do documento.
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1b3a60] text-white font-extrabold flex items-center justify-center shrink-0 text-sm">
+                  <div className="w-8 h-8 rounded-full bg-[#1D4ED8] text-white font-bold flex items-center justify-center shrink-0 text-sm">
                     2
                   </div>
                   <div>
-                    <b className="text-[15px] text-[#1d2a3d] block">Aguarde a leitura</b>
-                    <div className="text-[13px] text-[#5a6a80] leading-relaxed mt-0.5">
-                      Organizamos as informações automaticamente.
+                    <b className="text-[15px] font-bold text-[#14211F] block">Aguarde a leitura</b>
+                    <div className="text-[13px] text-[#5B6878] leading-relaxed mt-0.5">
+                      Organizamos as informações automaticamente com auxílio de IA.
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#1b3a60] text-white font-extrabold flex items-center justify-center shrink-0 text-sm">
+                  <div className="w-8 h-8 rounded-full bg-[#1D4ED8] text-white font-bold flex items-center justify-center shrink-0 text-sm">
                     3
                   </div>
                   <div>
-                    <b className="text-[15px] text-[#1d2a3d] block">Confira</b>
-                    <div className="text-[13px] text-[#5a6a80] leading-relaxed mt-0.5">
-                      Revise e corrija o que for preciso.
+                    <b className="text-[15px] font-bold text-[#14211F] block">Confira</b>
+                    <div className="text-[13px] text-[#5B6878] leading-relaxed mt-0.5">
+                      Revise e valide com o original sempre visível.
                     </div>
                   </div>
                 </div>
@@ -480,8 +481,8 @@ export default function Upload() {
             </div>
 
             {/* Boas práticas Card */}
-            <div className="bg-[#e5eefb] border border-[#bfd8f7] rounded-[20px] p-5.5">
-              <div className="flex gap-2.5 items-center font-extrabold text-[#1f7fe0] mb-2.5 text-base">
+            <div className="bg-[#CFE0FF]/30 border border-[#CFE0FF] rounded-[20px] p-5.5">
+              <div className="flex gap-2.5 items-center font-extrabold text-[#1D4ED8] mb-2.5 text-base">
                 <Shield size={20} strokeWidth={2} />
                 Boas práticas
               </div>

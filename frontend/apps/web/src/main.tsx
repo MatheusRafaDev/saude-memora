@@ -4,9 +4,14 @@ import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 
-// Keep API requests on the app origin so production rewrites can proxy them.
+// Configuração de conexão com a API lida diretamente das variáveis de ambiente (.env)
+const configuredApiUrl = (import.meta.env.VITE_API_URL || '').trim();
+if (configuredApiUrl && !import.meta.env.DEV) {
+  setBaseUrl(configuredApiUrl);
+}
+
 setAuthTokenGetter(() => null);
 
 // Register PWA Service Worker

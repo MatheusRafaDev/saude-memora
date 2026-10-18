@@ -314,17 +314,17 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 w-10 h-10 rounded-[13px] bg-[#f1f4f8] hover:bg-slate-200 transition-colors flex items-center justify-center text-[#5a6a80] cursor-pointer"
+          className="absolute right-4 top-4 w-10 h-10 rounded-xl bg-[#F4F7FC] hover:bg-[#E3E8F0] transition-colors flex items-center justify-center text-[#5B6878] cursor-pointer"
           aria-label="Fechar"
         >
           <X size={20} />
         </button>
 
-        <h2 className="m-0 mb-1 text-2xl font-extrabold tracking-[-0.03em] text-[#1b3a60]">
+        <h2 className="m-0 mb-1 text-2xl font-bold tracking-tight text-[#14211F]">
           Adicionar documento
         </h2>
-        <p className="m-0 mb-4.5 text-sm text-[#5a6a80]">
-          Envie uma foto ou PDF.
+        <p className="m-0 mb-4.5 text-sm text-[#5B6878]">
+          Envie uma foto ou arquivo PDF do seu exame ou receita.
         </p>
 
         {status === 'idle' && (
@@ -341,7 +341,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
             {/* Upload Area / Preview */}
             {files.length === 0 ? (
-              /* Empty Dropzone */
+              /* Empty Dropzone (ice background #F4F7FC, dashed border #E3E8F0, blue #1D4ED8 on hover) */
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -353,18 +353,18 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   isAppendingRef.current = false;
                   fileInputRef.current?.click();
                 }}
-                className={`border-2 border-dashed rounded-[20px] bg-[#f4f8fd] p-8 text-center cursor-pointer transition-colors ${
-                  isDragging ? 'border-[#1b3a60] bg-blue-50' : 'border-[#9fb4d0] hover:border-[#1b3a60]'
+                className={`border-2 border-dashed rounded-[22px] bg-[#F4F7FC] p-8 text-center cursor-pointer transition-colors ${
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#E3E8F0] hover:border-[#1D4ED8]'
                 }`}
               >
-                <div className="w-14 h-14 rounded-[18px] bg-[#1b3a60] mx-auto mb-3 flex items-center justify-center shadow-xs">
+                <div className="w-14 h-14 rounded-[18px] bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] mx-auto mb-3 flex items-center justify-center shadow-xs">
                   <UploadCloud size={26} className="text-white" strokeWidth={2} />
                 </div>
 
-                <b className="text-[17px] text-[#1d2a3d] block">
+                <b className="text-[17px] font-bold text-[#14211F] block">
                   Arraste ou escolha um arquivo
                 </b>
-                <div className="text-[13px] text-[#5a6a80] mt-1.5">
+                <div className="text-[13px] text-[#5B6878] mt-1.5">
                   PDF, JPG ou PNG (até 10 MB)
                 </div>
               </div>
@@ -378,13 +378,13 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-[22px] bg-[#f8fafc] p-3.5 transition-colors ${
-                  isDragging ? 'border-[#1b3a60] bg-blue-50' : 'border-[#b6c7dc]'
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#b6c7dc]'
                 }`}
               >
                 {/* Header info */}
                 <div className="flex items-center justify-between gap-2 mb-2.5 px-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#e5eefb] text-[#1b3a60] shrink-0">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#CFE0FF]/40 border border-[#CFE0FF] text-[#1D4ED8] shrink-0">
                       <ImageIcon size={13} />
                       Foto pronta
                     </span>
@@ -400,7 +400,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     <button
                       type="button"
                       onClick={() => setZoomedImage({ url: filePreviews[0].url!, name: filePreviews[0].file.name })}
-                      className="w-8 h-8 rounded-lg text-[#5a6a80] hover:text-[#1b3a60] hover:bg-white transition-colors flex items-center justify-center cursor-pointer shadow-xs bg-white/80 border border-[#dde3ec]"
+                      className="w-8 h-8 rounded-lg text-[#5a6a80] hover:text-[#1D4ED8] hover:bg-white transition-colors flex items-center justify-center cursor-pointer shadow-xs bg-white/80 border border-[#dde3ec]"
                       title="Ampliar foto"
                       aria-label="Ampliar foto"
                     >
@@ -429,7 +429,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     className="max-h-[234px] w-auto max-w-full rounded-lg object-contain transition-transform duration-200 group-hover:scale-[1.02]"
                   />
                   <div className="absolute inset-0 bg-[#0f1e3c]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
-                    <span className="px-3.5 py-1.5 rounded-full bg-white text-[#1b3a60] text-xs font-bold shadow-md flex items-center gap-1.5">
+                    <span className="px-3.5 py-1.5 rounded-full bg-white text-[#1D4ED8] text-xs font-bold shadow-md flex items-center gap-1.5">
                       <Maximize2 size={13} />
                       Clique para ampliar
                     </span>
@@ -444,7 +444,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       isAppendingRef.current = false;
                       fileInputRef.current?.click();
                     }}
-                    className="font-bold text-[#1b3a60] hover:text-[#24507f] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
+                    className="font-bold text-[#1D4ED8] hover:text-[#1E40AF] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
                   >
                     <RefreshCw size={12} />
                     Trocar imagem
@@ -456,7 +456,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       isAppendingRef.current = true;
                       fileInputRef.current?.click();
                     }}
-                    className="font-bold text-[#5a6a80] hover:text-[#1b3a60] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
+                    className="font-bold text-[#5a6a80] hover:text-[#1D4ED8] cursor-pointer inline-flex items-center gap-1.5 hover:underline"
                   >
                     <Plus size={13} />
                     Adicionar outra foto/página
@@ -473,7 +473,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-[22px] bg-[#f8fafc] p-6 text-center transition-colors ${
-                  isDragging ? 'border-[#1b3a60] bg-blue-50' : 'border-[#b6c7dc]'
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#b6c7dc]'
                 }`}
               >
                 <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 mx-auto mb-3 flex items-center justify-center shadow-xs border border-rose-100">
@@ -495,7 +495,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       isAppendingRef.current = false;
                       fileInputRef.current?.click();
                     }}
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#dde3ec] text-[#1b3a60] hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#E3E8F0] text-[#14211F] hover:bg-[#F4F7FC] transition-colors cursor-pointer"
                   >
                     Trocar arquivo
                   </button>
@@ -518,7 +518,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-[22px] bg-[#f8fafc] p-4 transition-colors ${
-                  isDragging ? 'border-[#1b3a60] bg-blue-50' : 'border-[#b6c7dc]'
+                  isDragging ? 'border-[#1D4ED8] bg-[#CFE0FF]/30' : 'border-[#b6c7dc]'
                 }`}
               >
                 <div className="flex items-center justify-between mb-3 px-1">
@@ -591,7 +591,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       isAppendingRef.current = true;
                       fileInputRef.current?.click();
                     }}
-                    className="min-h-[140px] rounded-xl border-2 border-dashed border-[#b6c7dc] hover:border-[#1b3a60] bg-white/60 hover:bg-blue-50/50 flex flex-col items-center justify-center gap-1 text-[#1b3a60] transition-colors cursor-pointer"
+                    className="min-h-[140px] rounded-xl border-2 border-dashed border-[#b6c7dc] hover:border-[#1D4ED8] bg-white/60 hover:bg-[#CFE0FF]/30 flex flex-col items-center justify-center gap-1 text-[#1D4ED8] transition-colors cursor-pointer"
                   >
                     <Plus size={22} />
                     <span className="text-xs font-bold">Adicionar mais</span>
@@ -602,9 +602,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
             {/* Opção de Envio em Lote (exibida quando há 2 ou mais arquivos) */}
             {files.length > 1 && (
-              <div className="mt-4 rounded-2xl border border-[#bfd8f7] bg-[#f0f6fd] p-3.5 sm:p-4 text-[#1b3a60] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="mt-4 rounded-2xl border border-[#CFE0FF] bg-[#CFE0FF]/30 p-3.5 sm:p-4 text-[#14211F] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shrink-0 text-[#1f7fe0] shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shrink-0 text-[#1D4ED8] shadow-xs">
                     <Layers size={18} />
                   </div>
                   <div>
@@ -624,7 +624,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                     type="button"
                     onClick={() => setIsBatchMode(!isBatchMode)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                      isBatchMode ? 'bg-[#1b3a60]' : 'bg-[#c6cfdb]'
+                      isBatchMode ? 'bg-[#1D4ED8]' : 'bg-[#c6cfdb]'
                     }`}
                     role="switch"
                     aria-checked={isBatchMode}
@@ -635,7 +635,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       }`}
                     />
                   </button>
-                  <span className="text-xs font-bold text-[#1b3a60]">
+                  <span className="text-xs font-bold text-[#1D4ED8]">
                     {isBatchMode ? 'Ativado' : 'Desativado'}
                   </span>
                 </div>
@@ -665,11 +665,11 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                       onClick={() => setSelectedType(t.id)}
                       className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[13px] font-semibold transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#1b3a60] text-white border border-[#1b3a60] shadow-xs scale-[1.02]'
-                          : 'bg-white text-[#1d2a3d] border border-[#dde3ec] hover:border-[#c6cfdb] hover:bg-slate-50'
+                          ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8] shadow-xs scale-[1.02]'
+                          : 'bg-white text-[#14211F] border border-[#E3E8F0] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
                       }`}
                     >
-                      <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1f7fe0]'} />
+                      <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
                       <span>{t.label}</span>
                     </button>
                   );
@@ -682,14 +682,14 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               <button
                 type="button"
                 onClick={handleClose}
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-white text-[#1d2a3d] border border-[#dde3ec] hover:bg-slate-50 transition-colors cursor-pointer"
+                className="min-h-11 px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-white text-[#14211F] border border-[#E3E8F0] hover:bg-[#F4F7FC] hover:border-[#CFE0FF] transition-all cursor-pointer shadow-xs"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleUpload}
-                className="min-h-[44px] px-5 rounded-xl inline-flex items-center gap-2 font-bold text-sm bg-[#1b3a60] text-white hover:bg-[#24507f] transition-colors cursor-pointer shadow-xs"
+                className="min-h-11 px-5 rounded-xl inline-flex items-center gap-2 font-semibold text-sm bg-[#1D4ED8] text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer shadow-xs"
               >
                 {files.length > 1 && isBatchMode
                   ? `Enviar ${files.length} documentos em lote`
@@ -703,9 +703,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
         {(status === 'uploading' || status === 'processing') && (
           <div className="py-8 text-center space-y-4">
-            <LoaderCircle size={36} className="mx-auto text-[#1b3a60] animate-spin" />
+            <LoaderCircle size={36} className="mx-auto text-[#1D4ED8] animate-spin" />
             <div>
-              <b className="text-lg text-[#1d2a3d] block">
+              <b className="text-lg text-[#14211F] block">
                 {batchTotalCount > 1
                   ? `Enviando em lote: ${batchCurrentIndex} de ${batchTotalCount} arquivos...`
                   : status === 'uploading'
@@ -718,9 +718,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   : 'Aguarde um instante enquanto organizamos os dados.'}
               </p>
             </div>
-            <div className="h-2 rounded-full bg-[#f1f4f8] max-w-sm mx-auto overflow-hidden">
+            <div className="h-2 rounded-full bg-[#F4F7FC] max-w-sm mx-auto overflow-hidden">
               <div
-                className="h-full bg-[#1b3a60] rounded-full transition-all duration-300"
+                className="h-full bg-[#1D4ED8] rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -729,9 +729,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
         {status === 'done' && (
           <div className="py-6 text-center space-y-4">
-            <CheckCircle2 size={42} className="mx-auto text-[#1b3a60]" />
+            <CheckCircle2 size={42} className="mx-auto text-emerald-600" />
             <div>
-              <b className="text-lg text-[#1d2a3d] block">
+              <b className="text-lg text-[#14211F] block">
                 {processedDocsCount > 1
                   ? `${processedDocsCount} documentos enviados com sucesso!`
                   : 'Documento processado com sucesso!'}
@@ -750,7 +750,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   if (resultId && processedDocsCount <= 1) setLocation(`/documentos/${resultId}`);
                   else setLocation('/documentos');
                 }}
-                className="min-h-[44px] px-6 rounded-xl bg-[#1b3a60] text-white font-bold text-sm hover:bg-[#24507f] transition-colors cursor-pointer"
+                className="min-h-11 px-6 rounded-xl bg-[#1D4ED8] text-white font-semibold text-sm hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer shadow-xs"
               >
                 {processedDocsCount > 1 ? 'Ir para o acervo de documentos' : 'Ver documento'}
               </button>
@@ -760,16 +760,16 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
         {status === 'error' && (
           <div className="py-6 text-center space-y-4">
-            <AlertTriangle size={42} className="mx-auto text-[#a13a30]" />
+            <AlertTriangle size={42} className="mx-auto text-[#E8664A]" />
             <div>
-              <b className="text-lg text-[#1d2a3d] block">Falha no processamento</b>
-              <p className="text-sm text-red-600 mt-1">{errorMessage}</p>
+              <b className="text-lg text-[#14211F] block">Falha no processamento</b>
+              <p className="text-sm text-[#E8664A] mt-1">{errorMessage}</p>
             </div>
             <div className="flex gap-2.5 justify-center pt-2">
               <button
                 type="button"
                 onClick={() => setStatus('idle')}
-                className="min-h-[44px] px-6 rounded-xl bg-[#1b3a60] text-white font-bold text-sm hover:bg-[#24507f] transition-colors cursor-pointer"
+                className="min-h-11 px-6 rounded-xl bg-[#1D4ED8] text-white font-semibold text-sm hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all cursor-pointer shadow-xs"
               >
                 Tentar novamente
               </button>
@@ -779,9 +779,9 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
         {status === 'timeout' && (
           <div className="py-6 text-center space-y-4">
-            <LoaderCircle size={42} className="mx-auto animate-spin text-[#1f7fe0]" />
+            <LoaderCircle size={42} className="mx-auto animate-spin text-[#1D4ED8]" />
             <div>
-              <b className="block text-lg text-[#1d2a3d]">Ainda estamos processando</b>
+              <b className="block text-lg text-[#14211F]">Ainda estamos processando</b>
               <p className="mt-1 text-sm text-[#5a6a80]">{errorMessage}</p>
             </div>
             <button
@@ -791,7 +791,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 if (resultId) setLocation(`/documentos/${resultId}`);
                 else setLocation('/documentos');
               }}
-              className="min-h-[44px] rounded-xl bg-[#1b3a60] px-6 text-sm font-bold text-white hover:bg-[#24507f]"
+              className="min-h-11 rounded-xl bg-[#1D4ED8] px-6 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] shadow-xs transition-all"
             >
               Acompanhar documento
             </button>
