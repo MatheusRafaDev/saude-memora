@@ -151,6 +151,29 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
     build: {
       outDir: path.resolve(import.meta.dirname, 'dist'),
       emptyOutDir: true,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react/') || id.includes('react-dom/') || id.includes('wouter')) {
+                return 'vendor-react';
+              }
+              if (id.includes('@tanstack/react-query')) {
+                return 'vendor-query';
+              }
+              if (id.includes('lucide-react')) {
+                return 'vendor-icons';
+              }
+              if (id.includes('@radix-ui')) {
+                return 'vendor-radix';
+              }
+              if (id.includes('date-fns') || id.includes('qrcode.react') || id.includes('clsx') || id.includes('tailwind-merge')) {
+                return 'vendor-utils';
+              }
+            }
+          },
+        },
+      },
     },
     server: {
       port,

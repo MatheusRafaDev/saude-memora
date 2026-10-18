@@ -128,6 +128,7 @@ public class DocumentRepository : IDocumentRepository
             .Exclude(d => d.Conteudo);
 
         var docs = await _documents.Find(d => d.PacienteId == userId)
+                                   .SortByDescending(d => d.CriadoEm)
                                    .Project<RegistroDocumento>(projection)
                                    .ToListAsync();
         

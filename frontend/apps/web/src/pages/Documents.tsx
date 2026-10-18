@@ -145,6 +145,7 @@ function DocumentThumbnail({
           src={src}
           alt={`Prévia de ${title}`}
           loading="lazy"
+          decoding="async"
           onError={() => setHasLoadError(true)}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />

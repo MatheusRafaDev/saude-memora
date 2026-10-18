@@ -261,9 +261,25 @@ function HomeRoute() {
   return <Home />;
 }
 
-function ProtectedRoute({ children }: { children: ReactNode }) {
-  // Authentication is cookie-backed, so the fetch layer relies on the browser's
-  // credentials policy instead of reading a JS-accessible token from storage.
+const PROTECTED_PREFIXES = [
+  '/visao-geral',
+  '/documentos',
+  '/enviar',
+  '/anamnese',
+  '/perfil',
+  '/chat',
+  '/analises',
+  '/emergencia',
+];
+
+function isProtectedPath(path: string) {
+  if (path.startsWith('/emergencia/') && path !== '/emergencia') {
+    return false;
+  }
+  return PROTECTED_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
+function ProtectedLayout() {
   const { data: user, isLoading, isError, error, isFetching } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
@@ -278,6 +294,33 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   });
 
   const [, setLocation] = useLocation();
+
+  // Background idle prefetch of core pages
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(() => {
+        void import('@/pages/Documents');
+        void import('@/pages/Dashboard');
+        void import('@/pages/AnamneseEdit');
+        void import('@/pages/Chat');
+        void import('@/pages/Profile');
+      });
+    } else {
+      timer = setTimeout(() => {
+        void import('@/pages/Documents');
+        void import('@/pages/Dashboard');
+        void import('@/pages/AnamneseEdit');
+        void import('@/pages/Chat');
+        void import('@/pages/Profile');
+      }, 1200);
+    }
+    return () => {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!isFetching && isError && getHttpStatus(error) === 401 && !user) {
@@ -331,18 +374,30 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (isError) {
-    // A página inicial é pública; uma sessão ausente não deve redirecionar ao login.
     return null;
   }
   
   return (
-    <AppPage>
-      <Suspense fallback={<ProtectedPageLoading />}>{children}</Suspense>
-    </AppPage>
+    <AppShell>
+      <Suspense fallback={<ProtectedPageLoading />}>
+        <Switch>
+          <Route path="/visao-geral">{() => <Dashboard />}</Route>
+          <Route path="/documentos">{() => <Documents />}</Route>
+          <Route path="/documentos/:id">{(params) => <DocumentDetail id={params.id} />}</Route>
+          <Route path="/enviar">{() => <Upload />}</Route>
+          <Route path="/anamnese">{() => <AnamneseEdit />}</Route>
+          <Route path="/anamnese/inicio">{() => <Record />}</Route>
+          <Route path="/anamnese/editar">{() => <AnamneseEdit />}</Route>
+          <Route path="/perfil">{() => <Profile />}</Route>
+          <Route path="/emergencia">{() => null}</Route>
+          <Route path="/chat">{() => <Chat />}</Route>
+          <Route path="/analises">{() => <Insights />}</Route>
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    </AppShell>
   );
 }
-
-function AppPage({ children }: { children: ReactNode }) { return <AppShell>{children}</AppShell>; }
 
 function StaticFileViewer({ path, mimeType }: { path: string; mimeType: string }) {
   useEffect(() => {
@@ -376,34 +431,27 @@ function Router() {
       <SeoMetadata />
       <SessionKeepAlive />
       <RoutedErrorBoundary>
-        <div key={location} className="min-h-[100dvh] flex flex-col flex-1">
-          <Switch>
-            <Route path="/" component={HomeRoute} />
-            <Route path="/sitemap.xml">{() => <StaticFileViewer path="/sitemap.xml" mimeType="application/xml" />}</Route>
-            <Route path="/robots.txt">{() => <StaticFileViewer path="/robots.txt" mimeType="text/plain" />}</Route>
-            <Route path="/googleac2641f37da00fc5.html">{() => <StaticFileViewer path="/googleac2641f37da00fc5.html" mimeType="text/html" />}</Route>
-            <Route path="/entrar" component={Auth} />
-            <Route path="/cadastro">{() => <Auth defaultMode="register" />}</Route>
-            <Route path="/criar-conta">{() => <Auth defaultMode="register" />}</Route>
-            <Route path="/reset-password" component={ResetPassword} />
-            <Route path="/termos" component={Termos} />
-            <Route path="/privacidade" component={Privacidade} />
-            <Route path="/sobre" component={Sobre} />
-            <Route path="/recursos" component={Recursos} />
-            <Route path="/visao-geral">{() => <ProtectedRoute><Dashboard /></ProtectedRoute>}</Route>
-            <Route path="/documentos">{() => <ProtectedRoute><Documents /></ProtectedRoute>}</Route>
-            <Route path="/documentos/:id">{(params) => <ProtectedRoute><DocumentDetail id={params.id} /></ProtectedRoute>}</Route>
-            <Route path="/enviar">{() => <ProtectedRoute><Upload /></ProtectedRoute>}</Route>
-            <Route path="/anamnese">{() => <ProtectedRoute><AnamneseEdit /></ProtectedRoute>}</Route>
-            <Route path="/anamnese/inicio">{() => <ProtectedRoute><Record /></ProtectedRoute>}</Route>
-            <Route path="/anamnese/editar">{() => <ProtectedRoute><AnamneseEdit /></ProtectedRoute>}</Route>
-            <Route path="/perfil">{() => <ProtectedRoute><Profile /></ProtectedRoute>}</Route>
-            <Route path="/emergencia">{() => <ProtectedRoute>{null}</ProtectedRoute>}</Route>
-            <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
-            <Route path="/chat">{() => <ProtectedRoute><Chat /></ProtectedRoute>}</Route>
-            <Route path="/analises">{() => <ProtectedRoute><Insights /></ProtectedRoute>}</Route>
-            <Route component={NotFound} />
-          </Switch>
+        <div className="min-h-[100dvh] flex flex-col flex-1">
+          {isProtectedPath(location) ? (
+            <ProtectedLayout />
+          ) : (
+            <Switch>
+              <Route path="/" component={HomeRoute} />
+              <Route path="/sitemap.xml">{() => <StaticFileViewer path="/sitemap.xml" mimeType="application/xml" />}</Route>
+              <Route path="/robots.txt">{() => <StaticFileViewer path="/robots.txt" mimeType="text/plain" />}</Route>
+              <Route path="/googleac2641f37da00fc5.html">{() => <StaticFileViewer path="/googleac2641f37da00fc5.html" mimeType="text/html" />}</Route>
+              <Route path="/entrar" component={Auth} />
+              <Route path="/cadastro">{() => <Auth defaultMode="register" />}</Route>
+              <Route path="/criar-conta">{() => <Auth defaultMode="register" />}</Route>
+              <Route path="/reset-password" component={ResetPassword} />
+              <Route path="/termos" component={Termos} />
+              <Route path="/privacidade" component={Privacidade} />
+              <Route path="/sobre" component={Sobre} />
+              <Route path="/recursos" component={Recursos} />
+              <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
+              <Route component={NotFound} />
+            </Switch>
+          )}
         </div>
       </RoutedErrorBoundary>
     </>

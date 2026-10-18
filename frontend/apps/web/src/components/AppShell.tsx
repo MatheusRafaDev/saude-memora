@@ -6,8 +6,10 @@ import { ConsentModal } from '@/components/ConsentModal';
 import { BrandLogo } from '@/components/BrandLogo';
 import { BrandWordmark } from '@/components/BrandWordmark';
 import { useGetApiPacientesMe } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { EmergenciaModal } from '@/components/EmergenciaModal';
 import { subscribeToEmergencyModal } from '@/lib/emergency-modal';
+import { prefetchRoute } from '@/lib/prefetch';
 import { Layers } from 'lucide-react';
 
 const desktopNavItems = [
@@ -107,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const menuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const { signOut } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: profileRaw } = useGetApiPacientesMe();
   const profile = (profileRaw as unknown as any) || { nome: '', email: '' };
@@ -274,6 +277,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   key={href}
                   href={href}
+                  onMouseEnter={() => prefetchRoute(href, queryClient)}
+                  onPointerDown={() => prefetchRoute(href, queryClient)}
+                  onFocus={() => prefetchRoute(href, queryClient)}
                   className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-[14px] transition-all duration-150 ${
                     isActive
                       ? 'bg-[#1D4ED8]/10 font-bold text-[#1D4ED8] shadow-[inset_0_0_0_1px_rgba(29,78,216,0.18)]'
@@ -403,6 +409,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={href}
               href={href}
+              onMouseEnter={() => prefetchRoute(href, queryClient)}
+              onPointerDown={() => prefetchRoute(href, queryClient)}
+              onTouchStart={() => prefetchRoute(href, queryClient)}
+              onFocus={() => prefetchRoute(href, queryClient)}
               aria-current={isActive ? 'page' : undefined}
               className={`flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] leading-tight transition-all active:scale-95 touch-manipulation focus-visible:outline-offset-[-2px] ${
                 isActive ? 'font-bold text-[#1D4ED8]' : 'font-medium text-[#5B6878]'

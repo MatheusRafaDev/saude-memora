@@ -23,6 +23,8 @@ using MongoDB.Driver;
 using DotNetEnv;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.IO.Compression;
 
 // Load .env variables
 Env.Load();
@@ -410,9 +412,32 @@ else
     builder.Services.AddDistributedMemoryCache();
 }
 
+// Compressão de resposta HTTP (Brotli e Gzip) para otimizar transferência de JSONs e payloads clínicos
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+    {
+        "application/json",
+        "text/plain",
+        "application/problem+json"
+    });
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseForwardedHeaders();
+app.UseResponseCompression();
 
 // Migrações de banco (índices, TTL e carga inicial dos catálogos) são aplicadas de forma
 // versionada e idempotente ANTES de a aplicação aceitar tráfego. Antes isso rodava em uma
