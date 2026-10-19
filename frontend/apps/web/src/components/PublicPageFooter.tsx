@@ -18,7 +18,7 @@ export function PublicPageFooter() {
         <div>
           <b className="text-[14px] font-bold text-[#14211F]">Produto</b>
           <div className="mt-2.5 text-[14px]">
-            <Link href="/recursos" className="transition-colors hover:text-[#1D4ED8]">Recursos</Link>
+            <Link href="/#recursos" className="transition-colors hover:text-[#1D4ED8]">Recursos</Link>
           </div>
           <div className="mt-2.5 text-[14px]">
             <Link href="/sobre" className="transition-colors hover:text-[#1D4ED8]">Sobre</Link>

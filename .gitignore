@@ -30,6 +30,7 @@ next-env.d.ts
 .DS_Store
 .tmp/
 *.tmp
+*.zip
 .env
 .env.local
 .env.development.local

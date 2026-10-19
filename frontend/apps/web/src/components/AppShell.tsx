@@ -389,11 +389,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Main page content - anima apenas os objetos da tela */}
+      {/* Main page content */}
       <div
         id="main-content"
-        key={location}
-        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 page-transition-enter bg-white"
+        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 bg-white flex flex-col"
       >
         {children}
       </div>

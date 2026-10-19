@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ReactNode, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -293,7 +294,7 @@ function ProtectedLayout() {
     },
   });
 
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   // Background idle prefetch of core pages
   useEffect(() => {
@@ -380,20 +381,31 @@ function ProtectedLayout() {
   return (
     <AppShell>
       <Suspense fallback={<ProtectedPageLoading />}>
-        <Switch>
-          <Route path="/visao-geral">{() => <Dashboard />}</Route>
-          <Route path="/documentos">{() => <Documents />}</Route>
-          <Route path="/documentos/:id">{(params) => <DocumentDetail id={params.id} />}</Route>
-          <Route path="/enviar">{() => <Upload />}</Route>
-          <Route path="/anamnese">{() => <AnamneseEdit />}</Route>
-          <Route path="/anamnese/inicio">{() => <Record />}</Route>
-          <Route path="/anamnese/editar">{() => <AnamneseEdit />}</Route>
-          <Route path="/perfil">{() => <Profile />}</Route>
-          <Route path="/emergencia">{() => null}</Route>
-          <Route path="/chat">{() => <Chat />}</Route>
-          <Route path="/analises">{() => <Insights />}</Route>
-          <Route component={NotFound} />
-        </Switch>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="flex-1"
+          >
+            <Switch>
+              <Route path="/visao-geral">{() => <Dashboard />}</Route>
+              <Route path="/documentos">{() => <Documents />}</Route>
+              <Route path="/documentos/:id">{(params) => <DocumentDetail id={params.id} />}</Route>
+              <Route path="/enviar">{() => <Upload />}</Route>
+              <Route path="/anamnese">{() => <AnamneseEdit />}</Route>
+              <Route path="/anamnese/inicio">{() => <Record />}</Route>
+              <Route path="/anamnese/editar">{() => <AnamneseEdit />}</Route>
+              <Route path="/perfil">{() => <Profile />}</Route>
+              <Route path="/emergencia">{() => null}</Route>
+              <Route path="/chat">{() => <Chat />}</Route>
+              <Route path="/analises">{() => <Insights />}</Route>
+              <Route component={NotFound} />
+            </Switch>
+          </motion.div>
+        </AnimatePresence>
       </Suspense>
     </AppShell>
   );
@@ -424,6 +436,20 @@ function Router() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+
+    const isPublic = !isProtectedPath(location);
+    if (isPublic) {
+      document.documentElement.classList.add('hide-scrollbar');
+      document.body.classList.add('hide-scrollbar');
+    } else {
+      document.documentElement.classList.remove('hide-scrollbar');
+      document.body.classList.remove('hide-scrollbar');
+    }
+
+    return () => {
+      document.documentElement.classList.remove('hide-scrollbar');
+      document.body.classList.remove('hide-scrollbar');
+    };
   }, [location]);
 
   return (
@@ -431,26 +457,31 @@ function Router() {
       <SeoMetadata />
       <SessionKeepAlive />
       <RoutedErrorBoundary>
-        <div className="min-h-[100dvh] flex flex-col flex-1">
+        <div className="min-h-[100dvh] flex flex-col flex-1 bg-[#193B9E]">
           {isProtectedPath(location) ? (
             <ProtectedLayout />
           ) : (
-            <Switch>
-              <Route path="/" component={HomeRoute} />
-              <Route path="/sitemap.xml">{() => <StaticFileViewer path="/sitemap.xml" mimeType="application/xml" />}</Route>
-              <Route path="/robots.txt">{() => <StaticFileViewer path="/robots.txt" mimeType="text/plain" />}</Route>
-              <Route path="/googleac2641f37da00fc5.html">{() => <StaticFileViewer path="/googleac2641f37da00fc5.html" mimeType="text/html" />}</Route>
-              <Route path="/entrar" component={Auth} />
-              <Route path="/cadastro">{() => <Auth defaultMode="register" />}</Route>
-              <Route path="/criar-conta">{() => <Auth defaultMode="register" />}</Route>
-              <Route path="/reset-password" component={ResetPassword} />
-              <Route path="/termos" component={Termos} />
-              <Route path="/privacidade" component={Privacidade} />
-              <Route path="/sobre" component={Sobre} />
-              <Route path="/recursos" component={Recursos} />
-              <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
-              <Route component={NotFound} />
-            </Switch>
+            <div className="flex-1 flex flex-col min-h-full">
+              <Switch>
+                <Route path="/" component={HomeRoute} />
+                <Route path="/sitemap.xml">{() => <StaticFileViewer path="/sitemap.xml" mimeType="application/xml" />}</Route>
+                <Route path="/robots.txt">{() => <StaticFileViewer path="/robots.txt" mimeType="text/plain" />}</Route>
+                <Route path="/googleac2641f37da00fc5.html">{() => <StaticFileViewer path="/googleac2641f37da00fc5.html" mimeType="text/html" />}</Route>
+                <Route path="/entrar" component={Auth} />
+                <Route path="/cadastro">{() => <Auth defaultMode="register" />}</Route>
+                <Route path="/criar-conta">{() => <Auth defaultMode="register" />}</Route>
+                <Route path="/reset-password" component={ResetPassword} />
+                <Route path="/termos" component={Termos} />
+                <Route path="/privacidade" component={Privacidade} />
+                <Route path="/sobre" component={Sobre} />
+                <Route path="/recursos">{() => {
+                  window.location.replace('/#recursos');
+                  return <Home />;
+                }}</Route>
+                <Route path="/emergencia/:token">{(params) => <Suspense fallback={<PageLoading />}><Emergencia token={params.token} /></Suspense>}</Route>
+                <Route component={NotFound} />
+              </Switch>
+            </div>
           )}
         </div>
       </RoutedErrorBoundary>

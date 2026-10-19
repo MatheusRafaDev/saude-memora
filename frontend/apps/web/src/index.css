@@ -29,6 +29,7 @@
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
+  --font-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
   --color-brand-blue: var(--blue);
   --color-brand-sky: var(--sky);
   --color-brand-coral: var(--coral);
@@ -352,37 +353,43 @@
   animation: brand-logo-breathe 3.2s ease-in-out infinite;
 }
 
-/* Animations */
-.page-transition-enter {
-  /* Animação suave e fluida de transição subindo de baixo com fade-in */
-  animation: page-transition-enter 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: opacity, transform;
+/* Object Animations - Fluid, staggered entrances for UI elements, avoiding background blinking */
+.animate-hero-title {
+  animation: hero-title-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-hero-text {
+  animation: hero-text-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+}
+.animate-hero-actions {
+  animation: hero-actions-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
 }
 
-
-.page-enter { animation: page-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.fade-in    { animation: fade-in 0.35s ease both; }
-.slide-up   { animation: slide-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.home-logo-arrival { animation: home-logo-arrival 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.legal-document-section { animation: legal-section-enter 0.42s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.legal-document-section:nth-child(2) { animation-delay: 70ms; }
-.legal-document-section:nth-child(3) { animation-delay: 140ms; }
-
-.stagger-1 { animation-delay: 60ms; }
-.stagger-2 { animation-delay: 120ms; }
-.stagger-3 { animation-delay: 180ms; }
-.stagger-4 { animation-delay: 240ms; }
-.stagger-5 { animation-delay: 300ms; }
-
-/* Transição suave e elegante com subida apenas para os objetos da tela (não afeta o header) */
-.page-transition-enter {
-  animation: page-transition-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes page-transition-enter {
+@keyframes hero-title-enter {
   0% {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-text-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-actions-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
   }
   100% {
     opacity: 1;
@@ -482,6 +489,28 @@ input::placeholder, textarea::placeholder {
     width: 0;
     height: 0;
   }
+}
+
+/* ── Esconder Scrollbar na Área Não Logada (Rolagem fluida sem barra visível) ── */
+html.hide-scrollbar,
+body.hide-scrollbar,
+.hide-scrollbar,
+.hide-scrollbar *,
+.no-scrollbar,
+.no-scrollbar * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html.hide-scrollbar::-webkit-scrollbar,
+body.hide-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar,
+.hide-scrollbar *::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.no-scrollbar *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Selection */

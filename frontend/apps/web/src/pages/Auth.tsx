@@ -12,7 +12,6 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowRight,
-  ShieldCheck,
   FileText,
   CalendarDays,
   Heart,
@@ -225,12 +224,12 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}
-      className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex flex-col lg:grid lg:grid-cols-12 selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
+      className="min-h-screen lg:h-screen lg:overflow-hidden bg-[#F8FAFC] text-[#1E293B] flex flex-col lg:grid lg:grid-cols-12 selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
     >
       {/* ───────────────────────────────────────────────────────────── */}
       {/* PAINEL DO FORMULÁRIO: Lado Esquerdo                          */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <main className="flex-1 lg:col-span-7 xl:col-span-7 flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 bg-[#F8FAFC]">
+      <main className="flex-1 lg:col-span-7 xl:col-span-7 flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-12 bg-[#F8FAFC] overflow-y-auto no-scrollbar">
         
         {/* Topo: Logo & Voltar ao início */}
         <motion.div
@@ -285,43 +284,43 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               </AnimatePresence>
             </div>
 
-            {/* Alternância de Modo com indicador deslizante (Animated Pill) */}
-            <div className="relative mb-6 grid grid-cols-2 rounded-xl bg-slate-100 p-1 border border-slate-200">
+            {/* Alternância de Modo com indicador em linha embaixo (Underline Tabs) */}
+            <div className="relative mb-6 flex border-b border-slate-200 gap-8">
               <button
                 type="button"
                 onClick={() => handleModeChange('login')}
-                className={`relative z-10 rounded-lg py-2 text-center text-sm font-semibold transition-colors cursor-pointer ${
+                className={`relative pb-3 text-sm font-semibold transition-colors cursor-pointer ${
                   mode === 'login'
-                    ? 'text-blue-700'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'text-blue-700 font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
+                <span>Entrar</span>
                 {mode === 'login' && (
                   <motion.div
                     layoutId="authActiveTab"
-                    className="absolute inset-0 rounded-lg bg-white shadow-xs border border-slate-200/60"
+                    className="absolute bottom-0 inset-x-0 h-[2.5px] rounded-full bg-blue-700"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
-                <span className="relative z-10">Entrar</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleModeChange('register')}
-                className={`relative z-10 rounded-lg py-2 text-center text-sm font-semibold transition-colors cursor-pointer ${
+                className={`relative pb-3 text-sm font-semibold transition-colors cursor-pointer ${
                   mode === 'register'
-                    ? 'text-blue-700'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'text-blue-700 font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
+                <span>Criar conta</span>
                 {mode === 'register' && (
                   <motion.div
                     layoutId="authActiveTab"
-                    className="absolute inset-0 rounded-lg bg-white shadow-xs border border-slate-200/60"
+                    className="absolute bottom-0 inset-x-0 h-[2.5px] rounded-full bg-blue-700"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
-                <span className="relative z-10">Criar conta</span>
               </button>
             </div>
 
@@ -541,7 +540,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                       transition={{ duration: 0.18 }}
                       className="inline-flex items-center gap-2"
                     >
-                      <span>{mode === 'login' ? 'Acessar o sistema' : 'Criar minha conta'}</span>
+                      <span>{mode === 'login' ? 'Entrar' : 'Criar minha conta'}</span>
                       <ArrowRight size={15} />
                     </motion.span>
                   </AnimatePresence>
@@ -593,7 +592,65 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
       </main>
 
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* PAINEL LATERAL: Lado Direito                                 */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <aside className="hidden lg:flex lg:col-span-5 xl:col-span-5 relative overflow-hidden bg-gradient-to-br from-[#1E5ECC] via-[#193B9E] to-[#122568] text-white flex-col justify-between p-10 xl:p-12 select-none h-full">
+        {/* Topo do painel */}
+        <div className="relative z-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#CFE0FF]/90">
+          <FileText size={18} />
+          Histórico de Saúde Pessoal
+        </div>
 
+        {/* Centro: Destaques de Utilidade */}
+        <div className="relative z-10 my-auto flex flex-col gap-8 py-6">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-2xl xl:text-3xl font-extrabold text-white leading-tight">
+              Todos os seus exames e receitas reunidos em um só lugar.
+            </h2>
+            <p className="text-sm xl:text-base text-white/85 leading-relaxed">
+              Consulte laudos, prescrições e histórico de atendimentos com total clareza sempre que precisar.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-5 pt-2">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-[#CFE0FF]">
+                <FileText size={18} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white">Exames e Laudos</h4>
+                <p className="text-xs text-white/75 leading-relaxed">Guarde exames de sangue, imagem e consultas em uma linha do tempo clara.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-[#CFE0FF]">
+                <Heart size={18} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white">Receitas e Medicamentos</h4>
+                <p className="text-xs text-white/75 leading-relaxed">Acompanhe remédios prescritos, dosagens e instruções médicas com facilidade.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-[#CFE0FF]">
+                <CheckCircle2 size={18} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white">Pronto para suas Consultas</h4>
+                <p className="text-xs text-white/75 leading-relaxed">Apresente seu histórico completo ao médico sem precisar carregar papéis.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rodapé do painel */}
+        <div className="relative z-10 pt-6 border-t border-white/15 text-xs text-white/70">
+          Saúde Memora • Praticidade e clareza para o seu histórico de saúde
+        </div>
+      </aside>
 
       {/* ───────────────────────────────────────────────────────────── */}
       {/* Modal: Recuperar Senha                                        */}
