@@ -25,8 +25,6 @@ import {
 } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
-import { BrandLogo } from '@/components/BrandLogo';
-
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -58,147 +56,69 @@ export default function Home() {
       <PublicPageHeader />
 
       <main className="flex-1 page-transition-enter">
-        {/* ── Hero Section ────────────────────────────────────────── */}
-        <section className="relative overflow-hidden border-b border-[#E3E8F0] bg-gradient-to-b from-[#F8FAFC] via-white to-white px-4 py-12 sm:px-8 sm:py-20 lg:py-24">
-          <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-12 lg:flex-row lg:items-center lg:gap-16">
-            
-            {/* Left Column: Human, trustworthy value proposition */}
-            <div className="w-full min-w-0 flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#1D4ED8]/20 bg-[#CFE0FF]/60 px-3.5 py-1.5 text-xs font-bold text-[#1D4ED8] shadow-2xs">
-                <span className="h-2 w-2 rounded-full bg-[#1D4ED8] animate-pulse" />
-                Histórico de Saúde Pessoal & Familiar
+        {/* ── Hero Section ────────────────────────────────────────────── */}
+        <section className="relative overflow-hidden border-b border-[#E3E8F0] bg-gradient-to-b from-[#F8FAFD] via-white to-white py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto w-full max-w-[1360px] px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
+              
+              {/* Lado Esquerdo: Textos, Ações e Selos de Confiança */}
+              <div className="text-center lg:col-span-6 lg:text-left">
+    
+
+                <h1 className="mt-4 text-[34px] sm:text-[46px] lg:text-[50px] xl:text-[54px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#14211F]">
+                  Seus exames, receitas e consultas reunidos em um{' '}
+                  <span className="text-[#1D4ED8]">só lugar seguro.</span>
+                </h1>
+
+                <p className="mt-5 text-base sm:text-lg leading-relaxed text-[#4A5568] max-w-[560px] mx-auto lg:mx-0 font-normal">
+                  A tranquilidade de ter seu histórico médico completo na palma da mão pronto para qualquer consulta, retorno ou momento de emergência.
+                </p>
+
+                {/* Botões de Ação */}
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
+                  <Link
+                    href="/entrar?mode=register"
+                    className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-7 text-base font-bold text-white shadow-sm transition-all hover:bg-[#1E40AF] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <span>Começar gratuitamente</span>
+                    <ArrowRight size={18} />
+                  </Link>
+
+                  <a
+                    href="#como-funciona"
+                    className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center rounded-xl border border-[#D5DCE6] bg-white px-6 text-base font-bold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF]"
+                  >
+                    Conhecer como funciona
+                  </a>
+                </div>
+
+              
               </div>
 
-              <h1 className="mt-5 text-[36px] sm:text-[52px] lg:text-[58px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#14211F]">
-                Seus exames, receitas e consultas reunidos em um{' '}
-                <span className="text-[#1D4ED8]">só lugar seguro.</span>
-              </h1>
+              {/* Lado Direito: Ilustração Institucional HD com Moldura Premium */}
+              <div className="w-full lg:col-span-6">
+                <div className="relative mx-auto max-w-[640px] lg:max-w-none">
+                  {/* Brilho sutil de fundo */}
+                  <div className="absolute -inset-4 rounded-3xl bg-gradient-to-tr from-[#CFE0FF]/40 via-[#DBE8FC]/20 to-amber-100/30 blur-2xl -z-10" />
 
-              <p className="mt-5 text-base sm:text-lg leading-relaxed text-[#5B6878] max-w-[560px] mx-auto lg:mx-0">
-                A tranquilidade de ter seu histórico médico completo na palma da mão — pronto para qualquer consulta, retorno ou momento de emergência.
-              </p>
+                  <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#E3E8F0] bg-white shadow-xl shadow-blue-950/5">
+                    <img
+                      src="/home-institucional-cartoon.jpg?v=20261018e"
+                      alt="Organização de saúde e prontuário médico pessoal no Saúde Memora"
+                      className="w-full h-auto object-cover block"
+                      loading="eager"
+                    />
 
-              {/* Action buttons */}
-              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
-                <Link
-                  href="/entrar?mode=register"
-                  className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-7 text-base font-bold text-white shadow-sm transition-all hover:bg-[#1E40AF] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
-                >
-                  <span>Começar gratuitamente</span>
-                  <ArrowRight size={18} />
-                </Link>
+                    {/* Tag informativa elegante no rodapé da imagem */}
+                    <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 rounded-xl bg-white/95 backdrop-blur-md px-3 sm:px-4 py-2 border border-[#E3E8F0] shadow-sm flex items-center gap-2.5">
+                      <div className="h-2 w-2 rounded-full bg-[#10B981]" />
 
-                <a
-                  href="#como-funciona"
-                  className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center rounded-xl border border-[#D5DCE6] bg-white px-6 text-base font-bold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF]"
-                >
-                  Conhecer como funciona
-                </a>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Reassuring trust badges */}
-              <div className="mt-8 pt-6 border-t border-[#E3E8F0] flex flex-wrap items-center justify-center lg:justify-start gap-y-2 gap-x-6 text-xs sm:text-[13px] font-semibold text-[#5B6878]">
-                <span className="inline-flex items-center gap-1.5">
-                  <ShieldCheck size={16} className="text-[#1D4ED8]" />
-                  Conforme com a LGPD
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 size={16} className="text-[#10B981]" />
-                  Você confere e valida tudo
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Lock size={15} className="text-[#1D4ED8]" />
-                  Criptografia de ponta a ponta
-                </span>
-              </div>
             </div>
-
-            {/* Right Column: Realistic Interactive Product Showcase (No fake OS dots) */}
-            <div className="w-full flex-1 max-w-[500px] lg:max-w-[520px]">
-              <div className="relative rounded-[32px] border border-[#DCE4F0] bg-[#F8FAFD] p-4 sm:p-6 shadow-xl">
-                
-                {/* Visual Item 1: Realistic Digital Health Card */}
-                <div className="relative overflow-hidden rounded-[24px] border border-[#1D4ED8]/30 bg-gradient-to-br from-[#CFE0FF] via-[#DBE8FC] to-[#CFE0FF] p-5 sm:p-6 text-[#14211F] shadow-md">
-                  {/* Subtle guilloche wave */}
-                  <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-white/40 blur-xl pointer-events-none" />
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-bold text-[#1D4ED8] border border-[#1D4ED8]/20 shadow-2xs">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8]" />
-                        CARTEIRINHA DIGITAL
-                      </span>
-                    </div>
-                    <BrandLogo withLink={false} iconClassName="h-6 w-6" wordmarkClassName="text-sm font-bold" layout="inline" />
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#14211F]">
-                      Maria Clara Santos
-                    </div>
-                    <div className="text-xs font-bold text-[#1D4ED8] mt-0.5">
-                      Plano Unimed Nacional · Nº 0824 1928 3491
-                    </div>
-                  </div>
-
-                  {/* Badges: Sangue & Alergia */}
-                  <div className="mt-4 grid grid-cols-2 gap-2.5">
-                    <div className="rounded-xl bg-white/85 p-2.5 border border-[#1D4ED8]/15 shadow-2xs">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#1D4ED8] flex items-center gap-1">
-                        <Droplets size={11} /> TIPO SANGUÍNEO
-                      </div>
-                      <div className="text-base font-extrabold text-[#14211F]">A positivo (A+)</div>
-                    </div>
-                    <div className="rounded-xl bg-[#FFF5F3] p-2.5 border border-[#E8664A]/25 shadow-2xs">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#E8664A] flex items-center gap-1">
-                        <AlertCircle size={11} /> ALERGIA
-                      </div>
-                      <div className="text-base font-extrabold text-[#9B2C16] truncate">Dipirona</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Visual Item 2: Real Clinical Exam Summary Tile */}
-                <div className="mt-3.5 rounded-2xl border border-[#E3E8F0] bg-white p-4 shadow-sm flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
-                      <FlaskConical size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-[#14211F] truncate">Hemograma Completo</div>
-                      <div className="text-xs text-[#5B6878]">Laboratório Fleury · 14 Outubro</div>
-                    </div>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-[#E8F8F0] px-2.5 py-1 text-xs font-bold text-[#059669] border border-[#10B981]/25">
-                    Normal ✓
-                  </span>
-                </div>
-
-                {/* Visual Item 3: Continuous Medication Tile */}
-                <div className="mt-3 rounded-2xl border border-[#E3E8F0] bg-white p-4 shadow-sm flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FDE1DA] text-[#E8664A]">
-                      <Pill size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold text-[#14211F] truncate">Losartana Potássica 50mg</div>
-                      <div className="text-xs text-[#5B6878]">Uso contínuo · 1x ao dia pela manhã</div>
-                    </div>
-                  </div>
-                  <span className="shrink-0 text-xs font-semibold text-[#1D4ED8]">
-                    Ativo
-                  </span>
-                </div>
-
-                {/* Floating Reassurance Tag */}
-                <div className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-[#5B6878]">
-                  <ShieldCheck size={14} className="text-[#1D4ED8]" />
-                  <span>Histórico completo acessível em 1 clique durante suas consultas</span>
-                </div>
-
-              </div>
-            </div>
-
           </div>
         </section>
 

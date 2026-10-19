@@ -180,6 +180,9 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
       strictPort: true,
       host: '0.0.0.0',
       allowedHosts: true,
+      hmr: {
+        host: 'localhost',
+      },
       fs: {
         strict: true,
       },

@@ -4,14 +4,9 @@ import App from './App';
 import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
-import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
-// Configuração de conexão com a API lida diretamente das variáveis de ambiente (.env)
-const configuredApiUrl = (import.meta.env.VITE_API_URL || '').trim();
-if (configuredApiUrl && !import.meta.env.DEV) {
-  setBaseUrl(configuredApiUrl);
-}
-
+// Manter requisições de API na mesma origem para que os rewrites de produção da Vercel façam o proxy
 setAuthTokenGetter(() => null);
 
 // Register PWA Service Worker

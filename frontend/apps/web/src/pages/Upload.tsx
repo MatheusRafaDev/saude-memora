@@ -42,7 +42,7 @@ type UploadQueueItem = {
 };
 
 const DOC_TYPES = [
-  { id: 'auto', label: 'Triagem Automática', icon: Sparkles, badge: 'IA' },
+  { id: 'auto', label: 'Identificação Automática', icon: Layers },
   { id: 'receita', label: 'Receita', icon: Pill },
   { id: 'exame', label: 'Exame', icon: Activity },
   { id: 'laudo', label: 'Laudo', icon: FileSearch },
@@ -398,11 +398,11 @@ export default function Upload() {
                   Tipo dos documentos
                 </div>
                 <span className="text-xs text-[#1D4ED8] font-semibold">
-                  Classificação inteligente
+                  Organização automática
                 </span>
               </div>
               <p className="mb-3.5 text-xs text-[#5B6878]">
-                Na Triagem Automática, a IA identifica e categoriza o tipo de cada exame, receita ou laudo separadamente.
+                O sistema identifica e categoriza o tipo de cada exame, receita ou laudo para você revisar.
               </p>
               <div className="flex gap-2 flex-wrap">
                 {DOC_TYPES.map((t) => {
@@ -421,11 +421,6 @@ export default function Upload() {
                     >
                       <Icon size={15} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
                       <span>{t.label}</span>
-                      {t.badge && (
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-[#CFE0FF] text-[#1D4ED8]'}`}>
-                          {t.badge}
-                        </span>
-                      )}
                     </button>
                   );
                 })}
