@@ -42,7 +42,7 @@ export default function Recursos() {
 
               <div className="flex flex-wrap items-center justify-center gap-4 pt-2 animate-hero-actions">
                 <Link
-                  href="/entrar?mode=register"
+                  href="/criar-conta"
                   className="inline-flex h-[52px] sm:h-[56px] items-center justify-center gap-2 rounded-full bg-white px-8 text-sm sm:text-base font-extrabold text-[#193B9E] shadow-[0_10px_24px_rgba(8,25,80,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#F8FAFD] active:translate-y-0"
                 >
                   Criar conta grátis
@@ -153,7 +153,7 @@ export default function Recursos() {
             </p>
             <div className="mt-8">
               <Link
-                href="/entrar?mode=register"
+                href="/criar-conta"
                 className="inline-flex h-[52px] sm:h-[56px] items-center justify-center gap-2 rounded-full bg-white px-9 text-sm sm:text-base font-extrabold text-[#193B9E] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[#F8FAFD]"
               >
                 <span>Criar conta gratuita</span>

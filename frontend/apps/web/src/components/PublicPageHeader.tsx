@@ -82,7 +82,7 @@ export function PublicPageHeader() {
             Entrar
           </Link>
           <Link
-            href="/entrar?mode=register"
+            href="/criar-conta"
             className="inline-flex h-10 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-[#193B9E] shadow-xs transition-all hover:bg-[#F8FAFD] hover:shadow-sm active:translate-y-0"
           >
             Criar conta
@@ -144,7 +144,7 @@ export function PublicPageHeader() {
               Entrar
             </Link>
             <Link
-              href="/entrar?mode=register"
+              href="/criar-conta"
               onClick={() => setMobileMenuOpen(false)}
               className="flex h-11 w-full items-center justify-center rounded-full bg-white text-sm font-bold text-[#193B9E] shadow-sm transition-all hover:bg-[#F8FAFD]"
             >

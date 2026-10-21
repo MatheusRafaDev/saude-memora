@@ -104,9 +104,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         setMode('register');
       }
     }
-    if (typeof window !== 'undefined' && (window.location.pathname === '/cadastro' || window.location.pathname === '/criar-conta')) {
-      window.history.replaceState(null, '', '/entrar');
-    }
   }, [defaultMode, location]);
 
   const switchMode = (newMode: 'login' | 'register', successMessage = '') => {
@@ -114,8 +111,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     setMode(newMode);
     setError('');
     setMessage(successMessage);
-    if (typeof window !== 'undefined' && window.location.pathname !== '/entrar') {
-      window.history.replaceState(null, '', '/entrar');
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', newMode === 'register' ? '/criar-conta' : '/entrar');
     }
   };
 
@@ -227,9 +224,9 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       className="min-h-screen lg:h-screen lg:overflow-hidden bg-[#F8FAFC] text-[#1E293B] flex flex-col lg:grid lg:grid-cols-12 selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
     >
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* PAINEL DO FORMULÁRIO: Lado Esquerdo                          */}
+      {/* PAINEL DO FORMULÁRIO                                        */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <main className="flex-1 lg:col-span-7 xl:col-span-7 flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-12 bg-[#F8FAFC] overflow-y-auto no-scrollbar">
+      <main className="order-2 flex-1 lg:order-2 lg:col-start-7 lg:col-span-6 xl:col-start-7 xl:col-span-6 flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-12 bg-[radial-gradient(ellipse_at_top_right,_#e7efff_0%,_transparent_45%),linear-gradient(135deg,_#ffffff_0%,_#f4f7fc_100%)] overflow-y-auto no-scrollbar">
         
         {/* Topo: Logo & Voltar ao início */}
         <motion.div
@@ -259,11 +256,11 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             initial={{ opacity: 0, y: 22, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-2xl border border-slate-200 bg-white p-7 sm:p-9 shadow-sm"
+            className="rounded-[28px] border border-white/80 bg-white/95 p-6 sm:p-9 shadow-[0_28px_80px_-38px_rgba(29,78,216,0.28)] ring-1 ring-slate-900/[0.03] backdrop-blur-sm"
           >
             
             {/* Título com transição suave ao alternar modo */}
-            <div className="text-left mb-6 overflow-hidden min-h-[64px]">
+            <div className="text-left mb-6 overflow-hidden min-h-[72px]">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={mode}
@@ -272,7 +269,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.22, ease: 'easeOut' }}
                 >
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
+                    {mode === 'login' ? 'Bem-vindo de volta' : 'Comece por aqui'}
+                  </p>
+                  <h2 className="text-[27px] font-bold tracking-tight text-slate-900">
                     {mode === 'login' ? 'Entrar na sua conta' : 'Criar sua conta'}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
@@ -284,43 +284,35 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               </AnimatePresence>
             </div>
 
-            {/* Alternância de Modo com indicador em linha embaixo (Underline Tabs) */}
-            <div className="relative mb-6 flex border-b border-slate-200 gap-8">
+            {/* Navegação entre entrar e criar conta */}
+            <div role="tablist" aria-label="Acesso à conta" className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'login'}
+                aria-controls="auth-form-panel"
                 onClick={() => handleModeChange('login')}
-                className={`relative pb-3 text-sm font-semibold transition-colors cursor-pointer ${
+                className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                   mode === 'login'
-                    ? 'text-blue-700 font-bold'
+                    ? 'bg-white text-blue-800 shadow-sm ring-1 ring-slate-200/70'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <span>Entrar</span>
-                {mode === 'login' && (
-                  <motion.div
-                    layoutId="authActiveTab"
-                    className="absolute bottom-0 inset-x-0 h-[2.5px] rounded-full bg-blue-700"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  />
-                )}
+                Entrar
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={mode === 'register'}
+                aria-controls="auth-form-panel"
                 onClick={() => handleModeChange('register')}
-                className={`relative pb-3 text-sm font-semibold transition-colors cursor-pointer ${
+                className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                   mode === 'register'
-                    ? 'text-blue-700 font-bold'
+                    ? 'bg-white text-blue-800 shadow-sm ring-1 ring-slate-200/70'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <span>Criar conta</span>
-                {mode === 'register' && (
-                  <motion.div
-                    layoutId="authActiveTab"
-                    className="absolute bottom-0 inset-x-0 h-[2.5px] rounded-full bg-blue-700"
-                    transition={{ type: 'spring', stiffness: 500, damping: 38 }}
-                  />
-                )}
+                Criar conta
               </button>
             </div>
 
@@ -361,7 +353,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             </AnimatePresence>
 
             {/* Form */}
-            <form onSubmit={submit} className="space-y-4">
+            <form id="auth-form-panel" role="tabpanel" onSubmit={submit} className="space-y-4">
               
               {/* Campos dinâmicos do cadastro com animação de expansão/colapso suave */}
               <AnimatePresence initial={false}>
@@ -386,13 +378,13 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                           placeholder="Ex.: Maria Clara Santos"
                           value={form.name}
                           onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                          className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 pl-9 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
+                          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 pl-10 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 placeholder:text-slate-400"
                         />
                         <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <label className="block mb-1 text-xs font-semibold text-slate-700">
                           Nascimento
@@ -404,7 +396,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                           max={new Date().toISOString().slice(0, 10)}
                           value={form.birthDate}
                           onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
-                          className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80"
                         />
                       </div>
 
@@ -416,7 +408,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                           required
                           value={form.sex}
                           onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
-                          className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80"
                         >
                           <option value="">Selecione</option>
                           <option value="Feminino">Feminino</option>
@@ -443,7 +435,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                     value={form.email}
                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                     onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
-                    className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 pl-9 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 pl-10 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 placeholder:text-slate-400"
                   />
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 </div>
@@ -474,7 +466,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                     placeholder={mode === 'register' ? 'Mínimo de 8 caracteres' : 'Sua senha'}
                     value={form.password}
                     onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3.5 pl-9 pr-10 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
+                    className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 placeholder:text-slate-400"
                   />
                   <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <button
@@ -526,7 +518,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-700 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-blue-800 active:bg-blue-900 disabled:opacity-50 cursor-pointer overflow-hidden"
+                className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-sm font-bold text-white shadow-[0_10px_22px_-12px_rgba(29,78,216,0.8)] transition-all hover:-translate-y-0.5 hover:from-blue-800 hover:to-blue-700 active:translate-y-0 disabled:opacity-50 cursor-pointer overflow-hidden"
               >
                 {isPending ? (
                   <LoaderCircle className="h-5 w-5 animate-spin" />
@@ -593,23 +585,25 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       </main>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* PAINEL LATERAL: Lado Direito                                 */}
+      {/* PAINEL DA MARCA E DOS RECURSOS                               */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex lg:col-span-5 xl:col-span-5 relative overflow-hidden bg-gradient-to-br from-[#1E5ECC] via-[#193B9E] to-[#122568] text-white flex-col justify-between p-10 xl:p-12 select-none h-full">
+      <aside className="order-1 hidden lg:row-start-1 lg:col-start-1 lg:col-span-6 lg:flex xl:col-span-6 relative overflow-hidden bg-gradient-to-br from-[#1E5ECC] via-[#193B9E] to-[#122568] text-white flex-col justify-between p-10 xl:p-14 select-none h-full">
+        <div aria-hidden="true" className="absolute -right-24 top-16 h-80 w-80 rounded-full bg-[#CFE0FF]/10 blur-3xl" />
+        <div aria-hidden="true" className="absolute -left-28 bottom-10 h-72 w-72 rounded-full bg-[#7FAAFF]/15 blur-3xl" />
         {/* Topo do painel */}
-        <div className="relative z-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#CFE0FF]/90">
+        <div className="relative z-10 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#CFE0FF]/90">
           <FileText size={18} />
-          Histórico de Saúde Pessoal
+          Sua saúde em um só lugar
         </div>
 
         {/* Centro: Destaques de Utilidade */}
         <div className="relative z-10 my-auto flex flex-col gap-8 py-6">
           <div className="flex flex-col gap-3">
             <h2 className="text-2xl xl:text-3xl font-extrabold text-white leading-tight">
-              Todos os seus exames e receitas reunidos em um só lugar.
+              Cuide da sua história de saúde com mais clareza.
             </h2>
             <p className="text-sm xl:text-base text-white/85 leading-relaxed">
-              Consulte laudos, prescrições e histórico de atendimentos com total clareza sempre que precisar.
+              Reúna exames, receitas e informações importantes para encontrar tudo com tranquilidade quando precisar.
             </p>
           </div>
 
