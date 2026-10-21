@@ -5,7 +5,6 @@ import {
   Pill,
   Plus,
   Shield,
-  ShieldCheck,
   ArrowRight,
   Activity,
   ZoomIn,
@@ -32,6 +31,7 @@ import { triggerUploadModal } from '@/components/UploadModal';
 import { triggerEmergencyModal } from '@/lib/emergency-modal';
 import { CarteirinhaModal } from '@/components/CarteirinhaModal';
 import { BrandLogo } from '@/components/BrandLogo';
+import { AiDataNotice } from '@/components/AiDataNotice';
 import {
   useDashboardResumo,
   ROTULO_TIPO_DOCUMENTO,
@@ -89,10 +89,10 @@ function valorExibido(biomarcador: DashboardBiomarcador) {
 }
 
 const TOM_CLASSES: Record<Indicador['tom'], string> = {
-  destaque: 'border-[#25416B]/60 bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-white shadow-md hover:border-[#3B82F6]/60',
+  destaque: 'border-[#E3E8F0] bg-white text-[#14211F]',
   neutro: 'border-[#E3E8F0] bg-white text-[#14211F]',
-  atencao: 'border-[#f0d9b2] bg-[#fffaf0]',
-  alerta: 'border-[#E8664A]/30 bg-[#E8664A]/10',
+  atencao: 'border-[#FDE1DA] bg-[#FDE1DA]/60 text-[#9B2C16]',
+  alerta: 'border-[#E8664A]/40 bg-[#FDE1DA] text-[#9B2C16]',
 };
 
 export default function Dashboard() {
@@ -210,8 +210,8 @@ export default function Dashboard() {
       rotulo: 'Documentos arquivados',
       valor: indicadores.total,
       detalhe: pluralizar(indicadores.prontos, 'processado', 'processados'),
-      tom: 'destaque',
-      icon: <FileText size={18} className="text-[#93C5FD]" />,
+      tom: 'neutro',
+      icon: <FileText size={18} className="text-[#1D4ED8]" />,
       href: '/documentos',
     },
     // Mostra os tipos de documentos que o usuário TEM adicionados
@@ -238,7 +238,7 @@ export default function Dashboard() {
               <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] animate-pulse" />
               Visão geral
             </div>
-            <h1 className="mt-1 mb-0 text-2xl sm:text-[38px] font-bold tracking-[-0.035em] text-[#14211F]">
+            <h1 className="mt-1 mb-0 text-2xl sm:text-[32px] font-semibold tracking-[-0.035em] text-[#14211F]">
               Olá{firstName ? `, ${firstName}` : ''}
             </h1>
             <p className="mt-1 mb-0 text-[#5B6878] text-xs sm:text-base">
@@ -267,148 +267,62 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Prontuário Pessoal Auditável & Conformidade */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-[#CFE0FF] bg-gradient-to-r from-[#F8FAFD] via-white to-[#F4F7FC] p-4 text-[13px] shadow-xs">
-          <div className="flex items-start sm:items-center gap-3 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8]">
-              <ShieldCheck size={18} />
-            </div>
-            <div className="leading-relaxed text-[#14211F] min-w-0">
-              <span className="font-bold text-[#1D4ED8]">Prontuário Pessoal Auditável:</span>{' '}
-              <span className="text-[#475569]">
-                Seus laudos e prescrições são organizados com checagem assistida. Você possui autonomia total para auditar, retificar e validar qualquer dado clínico com base nos documentos originais.
-              </span>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E3E8F0] text-xs font-semibold text-[#5B6878]">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-[#E3E8F0] shadow-2xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-              LGPD Art. 11
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 border border-[#E3E8F0] shadow-2xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8]" />
-              AES-256
-            </span>
-          </div>
+        <div className="mb-6">
+          <AiDataNotice />
         </div>
 
-        {/* Carteirinha Digital (Navy Card Azul Escuro Clínico) + Emergência (Navy com faixa coral) */}
+        {/* Carteirinha em azul céu e um único cartão azul-marinho de destaque. */}
         <div className="mb-6 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-3">
-          {/* Carteirinha de saúde com visual azul escuro padrão ficha clínica */}
           <button
             type="button"
             onClick={() => setIsCarteirinhaOpen(true)}
             aria-label="Abrir carteirinha de saúde em tela inteira"
-            className="group block w-full cursor-zoom-in bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-left text-white rounded-[22px] sm:rounded-[24px] p-5 sm:p-7 border border-[#25416B]/60 border-t-4 border-t-[#1D4ED8] shadow-md relative overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 hover:border-[#3B82F6]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6] lg:col-span-2 flex flex-col justify-between"
+            className="group flex w-full cursor-zoom-in flex-col justify-between rounded-[20px] border border-[#CFE0FF] bg-[#CFE0FF] p-5 text-left text-[#14211F] transition-colors hover:bg-[#CFE0FF]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] lg:col-span-2 sm:p-7"
           >
-            {/* Subtle background glow & security pattern */}
-            <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#1D4ED8]/20 blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-[#3B82F6]/10 blur-xl pointer-events-none" />
-
             <div>
-              {/* Header: Badge + Contactless wave + Brand Logo */}
-              <div className="flex justify-between items-center text-xs tracking-[0.14em] font-bold">
-                <div className="inline-flex items-center gap-1.5 sm:gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] sm:text-[11px] font-bold text-[#93C5FD] shadow-xs backdrop-blur-xs">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#60A5FA] animate-pulse" />
-                    CARTEIRINHA DIGITAL
-                  </span>
-                </div>
-                <div className="opacity-95 transition-opacity group-hover:opacity-100">
-                  <BrandLogo
-                    withLink={false}
-                    inverse={true}
-                    iconClassName="h-6 w-6 sm:h-7 sm:w-7"
-                    wordmarkClassName="text-xs sm:text-sm"
-                    layout="inline"
-                  />
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-[#1D4ED8]">Carteirinha de saúde</span>
+                <BrandLogo withLink={false} iconClassName="h-6 w-6" wordmarkClassName="text-xs text-[#14211F]" layout="inline" />
               </div>
-
-              {/* Beneficiary name and health plan */}
-              <div className="mt-4 sm:mt-5">
-                <div className="text-xl sm:text-2xl lg:text-[26px] font-extrabold tracking-tight text-white truncate group-hover:text-[#93C5FD] transition-colors">
-                  {fullName}
-                </div>
-
-                <div className="mt-2.5 text-[13px] sm:text-[14px] bg-white/10 backdrop-blur-xs rounded-xl p-3 border border-white/10">
-                  <span className="text-[9.5px] sm:text-[10px] font-extrabold uppercase tracking-wider text-[#93C5FD] block">
-                    Plano de Saúde
-                  </span>
-                  <span className="text-sm sm:text-base font-bold text-white block truncate">
-                    {healthPlan || 'Plano particular / Não informado'}
-                  </span>
-                  <div className="text-xs sm:text-[13px] text-slate-300 font-mono tracking-wider font-semibold mt-0.5">
-                    Nº {insuranceCardNumber || 'Não informado'}
-                  </div>
-                </div>
+              <div className="mt-4">
+                <div className="font-serif text-2xl font-semibold text-[#14211F]">{fullName}</div>
+                <div className="mt-1 text-base text-[#14211F]">{healthPlan || 'Plano não informado'}</div>
+                <div className="mt-1 font-mono text-sm text-[#5B6878]">Nº {insuranceCardNumber || 'Não informado'}</div>
               </div>
-
-              {/* Mini Badges: Sangue & Alergias em vidro translúcido */}
-              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 mt-4 sm:mt-5">
-                <div className="flex-1 bg-white/10 backdrop-blur-xs rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 shadow-xs">
-                  <div className="text-[9.5px] sm:text-[10px] text-[#93C5FD] font-extrabold tracking-wider uppercase">TIPO SANGUÍNEO</div>
-                  <div className="text-lg sm:text-xl font-extrabold mt-0.5 text-white">{bloodType}</div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-[#E3E8F0] bg-white p-3">
+                  <div className="text-xs font-semibold text-[#5B6878]">Tipo sanguíneo</div>
+                  <div className="mt-1 font-serif text-lg font-semibold text-[#14211F]">{bloodType}</div>
                 </div>
-                <div className="flex-[2] bg-white/10 backdrop-blur-xs rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 shadow-xs">
-                  <div className="text-[9.5px] sm:text-[10px] text-[#93C5FD] font-extrabold tracking-wider uppercase">ALERGIAS</div>
-                  <div className="text-xs sm:text-sm font-semibold mt-0.5 line-clamp-1 text-white/90">{allergiesDisplay}</div>
+                <div className="rounded-xl border border-[#E3E8F0] bg-white p-3">
+                  <div className="text-xs font-semibold text-[#5B6878]">Alergias</div>
+                  <div className="mt-1 text-sm text-[#14211F]">{allergiesDisplay}</div>
                 </div>
               </div>
             </div>
-
-            <div className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 py-2.5 text-xs font-bold shadow-xs transition-all">
-              <ZoomIn size={14} className="group-hover:scale-110 transition-transform text-[#93C5FD]" />
-              <span>Toque para abrir a carteirinha completa</span>
+            <div className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-4 text-sm font-semibold text-white transition-colors group-hover:bg-[#1E40AF]">
+              <ZoomIn size={15} />
+              Abrir carteirinha
             </div>
           </button>
 
-          {/* Card Destaque de Emergência: Navy com faixa coral de 4px */}
-          <div className="rounded-[24px] bg-gradient-to-br from-[#0F1E36] via-[#1A253C] to-[#0D1726] text-white p-6 sm:p-7 shadow-md border border-[#25416B]/60 border-t-4 border-t-[#E8664A] flex flex-col justify-between relative overflow-hidden">
+          <section className="relative flex flex-col justify-between overflow-hidden rounded-[20px] border border-[#36425F] border-t-4 border-t-[#E8664A] bg-[#1C2438] p-5 text-white sm:p-6">
             <div>
               <div className="flex items-center justify-between">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#E8664A]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#E8664A] animate-pulse" />
-                  ACESSO RÁPIDO
-                </div>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#E8664A]/20 text-[#E8664A]">
-                  <Shield size={16} />
-                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#A9B6CE]">Acesso rápido em emergências</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-[#E8664A]" aria-hidden="true"><Shield size={17} /></span>
               </div>
-
-              <h2 className="text-[20px] font-bold mt-3 mb-1 tracking-tight text-white">
-                Ficha de emergência
-              </h2>
-
-              <p className="text-[13px] leading-relaxed text-[#A9B6CE] mt-2">
-                Informado por você na ficha médica. Confira com um profissional de saúde.
-              </p>
-
-              <div className="mt-4 space-y-2.5 border-t border-[#25416B]/60 pt-3.5 text-[13px]">
-                <div className="flex justify-between items-center">
-                  <span className="text-[#A9B6CE]">Contato:</span>
-                  <span className="font-semibold text-white truncate max-w-[140px]">
-                    {resumoFicha.contatoEmergencia || 'Não informado'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[#A9B6CE]">Condições:</span>
-                  <span className="font-semibold text-white truncate max-w-[140px]">
-                    {resumoFicha.condicoes.length > 0 ? resumoFicha.condicoes.join(', ') : 'Nenhuma'}
-                  </span>
-                </div>
+              <h2 className="mt-3 text-xl text-white">Ficha de emergência</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#A9B6CE]">Informado por você na ficha médica. Confira com um profissional de saúde.</p>
+              <div className="mt-4 space-y-2 border-t border-[#36425F] pt-3 text-sm">
+                <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Contato</span><span className="truncate text-right font-semibold text-white">{resumoFicha.contatoEmergencia || 'Não informado'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Condições</span><span className="truncate text-right font-semibold text-white">{resumoFicha.condicoes.length > 0 ? resumoFicha.condicoes.join(', ') : 'Nenhuma'}</span></div>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={triggerEmergencyModal}
-              className="mt-6 w-full min-h-[44px] rounded-xl bg-gradient-to-r from-[#E8664A] to-[#F07055] px-4 text-sm font-bold text-white transition-all duration-150 hover:shadow-lg hover:shadow-[#E8664A]/25 hover:-translate-y-0.5 active:translate-y-0 shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>Abrir modo emergência</span>
-              <ArrowRight size={16} />
+            <button type="button" onClick={triggerEmergencyModal} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-4 text-sm font-bold text-white transition-colors hover:bg-[#1E40AF]">
+              Abrir modo emergência <ArrowRight size={16} />
             </button>
-          </div>
+          </section>
         </div>
 
         {/* Indicadores Dinâmicos por Tipo de Documento */}
@@ -443,7 +357,7 @@ export default function Dashboard() {
                       {item.icon}
                     </span>
                   </div>
-                  <div className={`mt-2.5 sm:mt-3 text-2xl sm:text-[38px] font-bold leading-none tracking-tight ${
+                  <div className={`mt-2.5 sm:mt-3 text-2xl font-serif font-semibold leading-none tracking-tight sm:text-[42px] ${
                     isDestaque ? 'text-white' : 'text-[#14211F]'
                   }`}>
                     {item.valor}

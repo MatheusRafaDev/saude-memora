@@ -457,7 +457,7 @@ function Router() {
       <SeoMetadata />
       <SessionKeepAlive />
       <RoutedErrorBoundary>
-        <div className="min-h-[100dvh] flex flex-col flex-1 bg-[#193B9E]">
+        <div className="min-h-[100dvh] flex flex-col flex-1 bg-white">
           {isProtectedPath(location) ? (
             <ProtectedLayout />
           ) : (

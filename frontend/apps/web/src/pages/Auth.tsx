@@ -221,7 +221,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}
-      className="min-h-screen lg:h-screen lg:overflow-hidden bg-[#F8FAFC] text-[#1E293B] flex flex-col lg:grid lg:grid-cols-12 selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
+      className="min-h-screen lg:h-screen lg:overflow-hidden bg-white text-[#14211F] flex flex-col lg:grid lg:grid-cols-12 selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
     >
       {/* ───────────────────────────────────────────────────────────── */}
       {/* PAINEL DO FORMULÁRIO                                        */}
@@ -256,7 +256,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             initial={{ opacity: 0, y: 22, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-[28px] border border-white/80 bg-white/95 p-6 sm:p-9 shadow-[0_28px_80px_-38px_rgba(29,78,216,0.28)] ring-1 ring-slate-900/[0.03] backdrop-blur-sm"
+            className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 sm:p-9 sm:shadow-[0_8px_24px_-20px_rgba(20,33,31,0.18)]"
           >
             
             {/* Título com transição suave ao alternar modo */}
@@ -587,7 +587,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       {/* ───────────────────────────────────────────────────────────── */}
       {/* PAINEL DA MARCA E DOS RECURSOS                               */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <aside className="order-1 hidden lg:row-start-1 lg:col-start-1 lg:col-span-6 lg:flex xl:col-span-6 relative overflow-hidden bg-gradient-to-br from-[#1E5ECC] via-[#193B9E] to-[#122568] text-white flex-col justify-between p-10 xl:p-14 select-none h-full">
+      <aside className="order-1 hidden lg:row-start-1 lg:col-start-1 lg:col-span-6 lg:flex xl:col-span-6 relative overflow-hidden bg-[#F4F7FC] text-[#14211F] flex-col justify-between p-10 xl:p-14 select-none h-full">
         <div aria-hidden="true" className="absolute -right-24 top-16 h-80 w-80 rounded-full bg-[#CFE0FF]/10 blur-3xl" />
         <div aria-hidden="true" className="absolute -left-28 bottom-10 h-72 w-72 rounded-full bg-[#7FAAFF]/15 blur-3xl" />
         {/* Topo do painel */}
@@ -599,10 +599,10 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         {/* Centro: Destaques de Utilidade */}
         <div className="relative z-10 my-auto flex flex-col gap-8 py-6">
           <div className="flex flex-col gap-3">
-            <h2 className="text-2xl xl:text-3xl font-extrabold text-white leading-tight">
+            <h2 className="text-2xl xl:text-3xl font-extrabold text-[#14211F] leading-tight">
               Cuide da sua história de saúde com mais clareza.
             </h2>
-            <p className="text-sm xl:text-base text-white/85 leading-relaxed">
+            <p className="text-sm xl:text-base text-[#5B6878] leading-relaxed">
               Reúna exames, receitas e informações importantes para encontrar tudo com tranquilidade quando precisar.
             </p>
           </div>
@@ -613,8 +613,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                 <FileText size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">Exames e Laudos</h4>
-                <p className="text-xs text-white/75 leading-relaxed">Guarde exames de sangue, imagem e consultas em uma linha do tempo clara.</p>
+                <h4 className="text-sm font-bold text-[#14211F]">Exames e Laudos</h4>
+                <p className="text-xs text-[#5B6878] leading-relaxed">Guarde exames de sangue, imagem e consultas em uma linha do tempo clara.</p>
               </div>
             </div>
 
@@ -623,8 +623,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                 <Heart size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">Receitas e Medicamentos</h4>
-                <p className="text-xs text-white/75 leading-relaxed">Acompanhe remédios prescritos, dosagens e instruções médicas com facilidade.</p>
+                <h4 className="text-sm font-bold text-[#14211F]">Receitas e Medicamentos</h4>
+                <p className="text-xs text-[#5B6878] leading-relaxed">Acompanhe remédios prescritos, dosagens e instruções médicas com facilidade.</p>
               </div>
             </div>
 
@@ -633,15 +633,15 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                 <CheckCircle2 size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">Pronto para suas Consultas</h4>
-                <p className="text-xs text-white/75 leading-relaxed">Apresente seu histórico completo ao médico sem precisar carregar papéis.</p>
+                <h4 className="text-sm font-bold text-[#14211F]">Pronto para suas Consultas</h4>
+                <p className="text-xs text-[#5B6878] leading-relaxed">Apresente seu histórico completo ao médico sem precisar carregar papéis.</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Rodapé do painel */}
-        <div className="relative z-10 pt-6 border-t border-white/15 text-xs text-white/70">
+        <div className="relative z-10 pt-6 border-t border-[#E3E8F0] text-xs text-[#5B6878]">
           Saúde Memora • Praticidade e clareza para o seu histórico de saúde
         </div>
       </aside>

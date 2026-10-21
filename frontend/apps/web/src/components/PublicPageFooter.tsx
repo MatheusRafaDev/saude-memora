@@ -3,7 +3,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 
 export function PublicPageFooter() {
   return (
-    <footer className="border-t border-[#E3E8F0] bg-[#F4F7FC] px-6 py-10 sm:px-8 sm:py-12">
+    <footer className="border-t border-[#E3E8F0] bg-white px-6 py-10 sm:px-8 sm:py-12">
       <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 text-[#5B6878] sm:gap-x-8 lg:grid-cols-[44%_21%_24%_11%] lg:gap-x-0 lg:gap-y-0">
         <div className="col-span-2 max-w-[340px] lg:col-span-1">
           <BrandLogo
@@ -11,7 +11,7 @@ export function PublicPageFooter() {
             wordmarkClassName="text-[19px] text-[#14211F]"
           />
           <p className="mt-3 text-[14px] leading-relaxed text-[#5B6878]">
-            Seu histórico de saúde, sempre à mão. Organize exames, receitas e laudos em um espaço pessoal e seguro.
+            Seu histórico de saúde, sempre à mão. Organize exames, receitas e laudos em um espaço pessoal.
           </p>
         </div>
 

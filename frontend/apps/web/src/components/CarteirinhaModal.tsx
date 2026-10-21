@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { BrandLogo } from '@/components/BrandLogo';
+import { AiDataNotice } from '@/components/AiDataNotice';
 import { useToast } from '@/hooks/use-toast';
 import { rotateEmergencyToken } from '@/lib/emergency-token';
 
@@ -663,6 +664,7 @@ export function CarteirinhaModal({
                       </div>
                     )}
                   </div>
+                  <AiDataNotice />
                 </>
               ) : (
                 /* ── ABA: DOCUMENTO ORIGINAL DO CONVÊNIO ─────────────── */

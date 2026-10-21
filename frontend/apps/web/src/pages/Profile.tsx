@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { useConsentimento, useSaveConsentimento } from '@/hooks/useConsentimento';
 import { CarteirinhaModal } from '@/components/CarteirinhaModal';
+import { AiDataNotice } from '@/components/AiDataNotice';
 
 export default function Profile() {
   const { toast } = useToast();
@@ -306,7 +307,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
         <div className={`flex justify-between items-end gap-4 sm:gap-5 mb-5 sm:mb-7 flex-wrap ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
@@ -517,6 +518,10 @@ export default function Profile() {
                 <p className="mb-5 ml-11 text-sm leading-relaxed text-[#5B6878]">
                   Cadastre os dados manualmente ou envie uma imagem para preencher os campos com ajuda da leitura automática. Confira as informações extraídas.
                 </p>
+
+                <div className="mb-5">
+                  <AiDataNotice />
+                </div>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

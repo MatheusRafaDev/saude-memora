@@ -350,14 +350,14 @@ export function EmergenciaModal({
           </div>
 
           <div className="mt-3 grid gap-3 sm:mt-4 sm:grid-cols-2">
-            <section className="rounded-2xl bg-[#1C2438] border border-[#36425F] p-4 text-white sm:p-5">
-              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#CFE0FF]">
+            <section className="rounded-2xl border border-[#E3E8F0] bg-[#CFE0FF] p-4 text-[#14211F] sm:p-5">
+              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1D4ED8]">
                 Emergência no Brasil
               </div>
-              <div className="my-1 text-4xl font-extrabold leading-none sm:text-5xl text-white">
+              <div className="my-1 font-serif text-4xl font-semibold leading-none text-[#14211F] sm:text-5xl">
                 192
               </div>
-              <p className="mb-3 text-sm leading-relaxed text-[#A9B6CE]">
+              <p className="mb-3 text-sm leading-relaxed text-[#5B6878]">
                 SAMU · ligue imediatamente ou procure socorro
               </p>
               <a

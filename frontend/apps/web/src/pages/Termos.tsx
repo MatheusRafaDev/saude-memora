@@ -5,22 +5,21 @@ export default function Termos() {
   return (
     <div
       className="min-h-screen bg-white text-[#14211F] flex flex-col selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
-      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
     >
       <PublicPageHeader />
       <main className="flex-1">
         {/* ── Hero Section em Azul Oficial (#193B9E) com Degradê ──────────── */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-[#1E5ECC] via-[#193B9E] to-[#122568] text-white">
+        <section className="relative overflow-hidden bg-white text-[#14211F]">
           <div className="h-20 sm:h-24 lg:h-28 shrink-0" aria-hidden="true" />
 
           <div className="relative z-10 max-w-[1000px] mx-auto px-6 sm:px-12 py-10 sm:py-14">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1 text-xs font-bold tracking-[0.12em] text-white uppercase border border-white/20 backdrop-blur-xs">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#CFE0FF] px-4 py-1 text-xs font-bold tracking-[0.12em] text-[#1D4ED8] uppercase border border-[#CFE0FF]">
               Documento Legal
             </div>
-            <h1 className="mt-3 mb-2 text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-white">
+            <h1 className="mt-3 mb-2 text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#14211F]">
               Termos de Uso
             </h1>
-            <p className="m-0 text-sm sm:text-base text-white/85">
+            <p className="m-0 text-sm sm:text-base text-[#5B6878]">
               Última atualização: {new Date().toLocaleDateString('pt-BR')}
             </p>
           </div>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import ReactMarkdown from 'react-markdown';
+import { AiDataNotice } from '@/components/AiDataNotice';
 
 type Citation = {
   id?: string;
@@ -250,7 +251,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] font-sans text-[#14211F]">
+    <div className="min-h-screen bg-white font-sans text-[#14211F]">
       <main className="mx-auto max-w-[1240px] px-3 pb-8 pt-4 sm:px-6 sm:pt-8 lg:px-10 lg:pb-16">
         <div className="mb-3.5 sm:mb-6">
           <div className="min-w-0">
@@ -305,15 +306,8 @@ export default function Chat() {
               )}
             </div>
 
-            {/* Reassuring institutional clinical notice */}
-            <div className="my-3 flex items-start gap-2.5 rounded-xl border border-[#CFE0FF] bg-[#F8FAFD] p-3 text-xs leading-relaxed text-[#14211F] sm:my-3.5 sm:p-3.5">
-              <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#1D4ED8]" />
-              <div className="min-w-0">
-                <span className="font-bold text-[#1D4ED8]">Conformidade Médica & LGPD:</span>{' '}
-                <span className="text-[#475569]">
-                  Este assistente organiza e consulta informações a partir dos seus laudos e receitas catalogados. Não prescreve nem realiza diagnósticos clínicos (Resolução CFM nº 2.314/2022). Seus dados pertencem a você e não são utilizados para treinamento de modelos públicos.
-                </span>
-              </div>
+            <div className="my-3 sm:my-3.5">
+              <AiDataNotice />
             </div>
 
             {avisoNovoDia && (

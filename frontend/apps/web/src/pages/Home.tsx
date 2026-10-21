@@ -44,132 +44,56 @@ export default function Home() {
     <div
       id="inicio"
       className="min-h-screen bg-white text-[#14211F] flex flex-col selection:bg-[#CFE0FF] selection:text-[#1D4ED8] no-scrollbar"
-      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" }}
     >
       {/* ── CABEÇALHO OFICIAL UNIFICADO ─────────────────────────── */}
       <PublicPageHeader />
 
       {/* ── HERO SECTION DIRETO E OBJETIVO ─────────────────────── */}
-      <section className="relative overflow-hidden min-h-[calc(100dvh-80px)] lg:min-h-[82vh] bg-gradient-to-br from-[#1E5ECC] via-[#193B9E] to-[#122568] text-white flex flex-col justify-between">
-        <div className="h-20 sm:h-24 lg:h-28 shrink-0 relative z-10" aria-hidden="true" />
-
-        <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-1 flex-col items-center justify-center text-center px-6 py-12 sm:px-8 sm:py-16">
-          <div className="flex flex-col items-center gap-6 max-w-[760px]">
-            {/* Tag / Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs sm:text-sm font-bold tracking-[0.08em] text-white uppercase border border-white/20 backdrop-blur-xs animate-hero-title">
-              <span className="h-2 w-2 rounded-full bg-[#52D17C] animate-pulse" />
-              Sua Saúde Digital
+      <section className="bg-white px-6 pb-14 pt-28 sm:px-8 sm:pb-20 sm:pt-32">
+        <div className="mx-auto grid max-w-[1120px] items-center gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
+          <div className="max-w-[570px]">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#CFE0FF]/60 px-3.5 py-1.5 text-xs font-semibold text-[#1D4ED8]">
+              <FileText size={14} aria-hidden="true" />
+              Seu histórico de saúde, sempre à mão
             </div>
-
-            <h1 className="m-0 text-[36px] sm:text-[52px] lg:text-[62px] font-extrabold leading-[1.08] tracking-[-0.035em] text-white animate-hero-title">
-              Seus exames e receitas,{' '}
-              <span className="text-[#CFE0FF]">sempre com você.</span>
+            <h1 className="m-0 text-[40px] font-semibold leading-[1.08] tracking-[-0.03em] text-[#14211F] sm:text-[54px] lg:text-[64px]">
+              Seus documentos de saúde, em um só lugar.
             </h1>
-
-            <p className="m-0 text-base sm:text-lg leading-[1.6] text-white/90 max-w-[580px] animate-hero-text">
-              Guarde e organize seus documentos de saúde em um só lugar. Simples, prático e sempre à mão no celular.
+            <p className="mt-5 max-w-[540px] text-base leading-[1.6] text-[#5B6878] sm:text-[17px]">
+              Organize receitas, exames e laudos. A leitura assistida ajuda a localizar informações para você conferir no documento original.
             </p>
-
-            {/* Botões de Ação */}
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-2 animate-hero-actions">
-              <Link
-                href="/criar-conta"
-                className="group inline-flex h-[52px] sm:h-[56px] items-center justify-center gap-2.5 rounded-full bg-white px-8 text-sm sm:text-base font-extrabold text-[#193B9E] shadow-[0_10px_24px_rgba(8,25,80,0.25)] transition-all hover:-translate-y-0.5 hover:bg-[#F8FAFD] hover:shadow-[0_14px_30px_rgba(8,25,80,0.35)] active:translate-y-0 cursor-pointer"
-              >
-                <span>Criar conta grátis</span>
-                <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/criar-conta" className="btn-primary inline-flex min-h-12 items-center gap-2 rounded-xl px-6 text-sm">
+                Criar conta grátis <ArrowRight size={17} aria-hidden="true" />
               </Link>
-
-              <button
-                type="button"
-                onClick={() => document.getElementById('recursos')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex h-[52px] sm:h-[56px] items-center justify-center rounded-full border border-white/30 bg-white/10 px-8 text-sm sm:text-base font-bold text-white backdrop-blur-xs transition-all hover:bg-white/20 active:translate-y-0 cursor-pointer"
-              >
-                Ver recursos
-              </button>
+              <a href="#como-funciona" className="btn-secondary inline-flex min-h-12 items-center rounded-xl px-6 text-sm font-semibold text-[#14211F]">
+                Como funciona
+              </a>
             </div>
           </div>
-        </div>
 
-        <div className="h-6 sm:h-10 relative z-10" aria-hidden="true" />
-      </section>
-
-      {/* ── RECURSOS DA PLATAFORMA (INTEGRADO AO INÍCIO) ───────────── */}
-      <section id="recursos" className="scroll-mt-24 border-b border-[#E3E8F0] bg-[#F4F7FC] px-6 py-16 sm:px-8 sm:py-20">
-        <div className="mx-auto max-w-[1100px]">
-          <div className="text-center">
-            <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">
-              Recursos da Plataforma
-            </div>
-            <h2 className="mt-2 text-[26px] font-extrabold tracking-[-0.03em] text-[#14211F] sm:text-[36px]">
-              Tudo o que você pode fazer
-            </h2>
-          </div>
-
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-[22px] border border-[#E3E8F0] bg-white p-6 transition-all hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
-                <FolderHeart size={20} />
+          <div className="mx-auto w-full max-w-[470px] rounded-[28px] bg-[#1C2438] p-5 text-white sm:p-7">
+            <div className="flex items-center justify-between gap-3 border-b border-[#36425F] pb-4">
+              <div>
+                <div className="text-xs font-medium text-[#A9B6CE]">Documento recente</div>
+                <h2 className="mt-1 text-xl text-white">Receita</h2>
               </div>
-              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Central de Documentos</h3>
-              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
-                Guarde exames de sangue, laudos, atestados e encaminhamentos organizados por data.
-              </p>
+              <span className="rounded-full bg-[#CFE0FF] px-3 py-1 text-xs font-semibold text-[#1D4ED8]">Conferir dados</span>
             </div>
-
-            <div className="rounded-[22px] border border-[#E3E8F0] bg-white p-6 transition-all hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
-                <Upload size={20} />
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl border border-[#36425F] bg-white/5 p-4">
+                <div className="text-xs text-[#A9B6CE]">Clínica</div>
+                <div className="mt-1 font-medium text-white">[Clínica]</div>
+                <div className="mt-3 text-xs text-[#A9B6CE]">Paciente</div>
+                <div className="mt-1 font-medium text-white">[Nome]</div>
               </div>
-              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Envio Rápido</h3>
-              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
-                Tire fotos da câmera do celular ou anexe PDFs com facilidade e rapidez.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-[#E3E8F0] bg-white p-6 transition-all hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
-                <Pill size={20} />
+              <div className="rounded-xl bg-[#CFE0FF] p-3.5 text-sm leading-relaxed text-[#14211F]">
+                Os dados extraídos por IA podem conter erros. Confira sempre com o documento original.
               </div>
-              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Receitas e Medicamentos</h3>
-              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
-                Acompanhe remédios prescritos, dosagens e orientações médicas sempre que precisar.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-[#E3E8F0] bg-white p-6 transition-all hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
-                <Search size={20} />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Busca Instantânea</h3>
-              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
-                Localize qualquer laudo ou exame por médico, clínica, data ou tipo em segundos.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-[#E3E8F0] bg-white p-6 transition-all hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
-                <CalendarDays size={20} />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Linha do Tempo</h3>
-              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
-                Visualize toda a história dos seus atendimentos em ordem cronológica contínua.
-              </p>
-            </div>
-
-            <div className="rounded-[22px] border border-[#E3E8F0] bg-white p-6 transition-all hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
-                <Activity size={20} />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Carteirinha de Saúde</h3>
-              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
-                Tipo sanguíneo, alergias e contatos de emergência sempre à mão em um toque.
-              </p>
             </div>
           </div>
         </div>
       </section>
-
       {/* ── COMO FUNCIONA (3 PASSOS RÁPIDOS) ────────────────────────── */}
       <section id="como-funciona" className="scroll-mt-24 border-b border-[#E3E8F0] bg-white px-6 py-16 sm:px-8 sm:py-20">
         <div className="mx-auto max-w-[1100px]">
@@ -184,7 +108,7 @@ export default function Home() {
 
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {/* Passo 1 */}
-            <div className="flex flex-col items-center text-center rounded-[22px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:shadow-md">
+            <div className="flex flex-col items-center text-center rounded-[20px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:border-[#CFE0FF]">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1D4ED8] text-white font-bold text-lg shadow-xs">
                 1
               </div>
@@ -195,7 +119,7 @@ export default function Home() {
             </div>
 
             {/* Passo 2 */}
-            <div className="flex flex-col items-center text-center rounded-[22px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:shadow-md">
+            <div className="flex flex-col items-center text-center rounded-[20px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:border-[#CFE0FF]">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1D4ED8] text-white font-bold text-lg shadow-xs">
                 2
               </div>
@@ -206,13 +130,88 @@ export default function Home() {
             </div>
 
             {/* Passo 3 */}
-            <div className="flex flex-col items-center text-center rounded-[22px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:shadow-md">
+            <div className="flex flex-col items-center text-center rounded-[20px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:border-[#CFE0FF]">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#1D4ED8] text-white font-bold text-lg shadow-xs">
                 3
               </div>
               <h3 className="mt-4 text-lg font-bold text-[#14211F]">Consulte na hora</h3>
               <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
                 Mostre exames e receitas direto ao médico durante suas consultas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="recursos" className="scroll-mt-24 border-b border-[#E3E8F0] bg-white px-6 py-16 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="text-center">
+            <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">
+              Recursos da Plataforma
+            </div>
+            <h2 className="mt-2 text-[26px] font-extrabold tracking-[-0.03em] text-[#14211F] sm:text-[36px]">
+              Tudo o que você pode fazer
+            </h2>
+          </div>
+
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 transition-all hover:border-[#CFE0FF]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+                <FolderHeart size={20} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Central de Documentos</h3>
+              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                Guarde exames de sangue, laudos, atestados e encaminhamentos organizados por data.
+              </p>
+            </div>
+
+            <div className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 transition-all hover:border-[#CFE0FF]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+                <Upload size={20} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Envio Rápido</h3>
+              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                Tire fotos da câmera do celular ou anexe PDFs com facilidade e rapidez.
+              </p>
+            </div>
+
+            <div className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 transition-all hover:border-[#CFE0FF]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+                <Pill size={20} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Receitas e Medicamentos</h3>
+              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                Acompanhe remédios prescritos, dosagens e orientações médicas sempre que precisar.
+              </p>
+            </div>
+
+            <div className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 transition-all hover:border-[#CFE0FF]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+                <Search size={20} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Busca Instantânea</h3>
+              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                Localize qualquer laudo ou exame por médico, clínica, data ou tipo em segundos.
+              </p>
+            </div>
+
+            <div className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 transition-all hover:border-[#CFE0FF]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+                <CalendarDays size={20} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Linha do Tempo</h3>
+              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                Visualize toda a história dos seus atendimentos em ordem cronológica contínua.
+              </p>
+            </div>
+
+            <div className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 transition-all hover:border-[#CFE0FF]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+                <Activity size={20} />
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-[#14211F]">Carteirinha de Saúde</h3>
+              <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                Tipo sanguíneo, alergias e contatos de emergência sempre à mão em um toque.
               </p>
             </div>
           </div>
@@ -262,27 +261,36 @@ export default function Home() {
       </section>
 
       {/* ── CHAMADA FINAL (CTA) ─────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-[#1E5ECC] via-[#193B9E] to-[#122568] px-6 py-16 text-center text-white sm:px-8 sm:py-20">
-        <div className="mx-auto max-w-[680px]">
-          <h2 className="text-[28px] font-extrabold tracking-[-0.03em] sm:text-[38px] leading-tight">
-            Pronto para organizar sua saúde?
-          </h2>
-          <p className="mt-3 text-sm sm:text-base text-white/90">
-            Crie sua conta gratuita em menos de 1 minuto e comece a reunir seus exames.
-          </p>
-          <div className="mt-8">
-            <Link
-              href="/criar-conta"
-              className="inline-flex h-[52px] sm:h-[56px] items-center justify-center gap-2 rounded-full bg-white px-9 text-sm sm:text-base font-extrabold text-[#193B9E] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[#F8FAFD]"
-            >
-              <span>Começar agora gratuitamente</span>
-              <ArrowRight size={17} />
-            </Link>
+      <section id="privacidade" className="scroll-mt-24 border-t border-[#E3E8F0] bg-white px-6 py-14 sm:px-8 sm:py-16">
+        <div className="mx-auto grid max-w-[1120px] gap-5 sm:grid-cols-2 sm:gap-10">
+          <div>
+            <h2 className="m-0 text-2xl text-[#14211F] sm:text-[32px]">Privacidade e uso responsável</h2>
+            <p className="mb-0 mt-3 text-[15px] leading-relaxed text-[#5B6878]">
+              Suas informações de saúde são sensíveis. O serviço organiza documentos e dados que você fornece; não faz diagnóstico nem aconselhamento médico. Confira os dados extraídos e converse com profissionais de saúde.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-[#F4F7FC] p-5 sm:p-6">
+            <h3 className="m-0 text-lg text-[#14211F]">A IA ajuda na organização</h3>
+            <p className="mb-0 mt-2 text-sm leading-relaxed text-[#5B6878]">
+              A leitura automática pode errar ou deixar informações de fora. Use sempre o documento original para conferir nomes, datas e resultados.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ── RODAPÉ ──────────────────────────────────────────────────── */}
+      <section className="bg-white px-6 py-14 text-center sm:px-8 sm:py-16">
+        <div className="mx-auto max-w-[680px]">
+          <h2 className="m-0 text-[28px] text-[#14211F] sm:text-[38px]">Pronto para organizar sua saúde?</h2>
+          <p className="mt-3 text-sm text-[#5B6878] sm:text-base">
+            Reúna exames, receitas e laudos em um só lugar.
+          </p>
+          <div className="mt-7">
+            <Link href="/criar-conta" className="btn-primary inline-flex min-h-12 items-center gap-2 rounded-xl px-6 text-sm">
+              Criar conta grátis <ArrowRight size={17} aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
       <PublicPageFooter />
     </div>
   );

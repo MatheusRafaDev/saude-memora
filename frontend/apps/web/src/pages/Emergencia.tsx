@@ -220,7 +220,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-[#1d2a3d] font-sans pb-16">
+      <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
         {/* Header Title */}
         <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
@@ -279,7 +279,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
 
                 <div className="w-[120px] h-[120px] rounded-[28px] bg-[#E8664A] text-white flex flex-col items-center justify-center shrink-0 shadow-md">
                   <div className="text-xs font-bold tracking-[0.1em]">SANGUE</div>
-                  <div className="text-4xl sm:text-[48px] font-extrabold leading-tight">
+                  <div className="font-serif text-4xl font-semibold leading-tight sm:text-[48px]">
                     {bloodType || 'Não informado'}
                   </div>
                 </div>
@@ -387,20 +387,24 @@ export default function Emergencia({ token }: { token?: string } = {}) {
                 </div>
                 </>}
               </div>
+
+              <p className="mt-6 border-t border-white/10 pt-4 text-xs leading-relaxed text-[#A9B6CE]">
+                Informado por você na ficha médica. Confira com um profissional de saúde.
+              </p>
             </div>
           </div>
 
           {/* Right Column (flex: 1) */}
           <div className="w-full min-w-0 flex-1 flex flex-col gap-6">
             {/* SAMU 192 Card */}
-            <div className="bg-[#1C2438] text-white rounded-[20px] p-6 shadow-[0_12px_30px_-24px_rgba(28,36,56,0.3)]">
-              <div className="text-xs font-bold tracking-[0.14em] uppercase text-[#CFE0FF] mb-1">
+            <div className="rounded-[20px] border border-[#E3E8F0] bg-[#CFE0FF] p-6 text-[#14211F]">
+              <div className="text-xs font-bold tracking-[0.14em] uppercase text-[#1D4ED8] mb-1">
                 EMERGÊNCIA NO BRASIL
               </div>
-              <div className="text-5xl font-extrabold leading-none my-1 tracking-tight text-white">
+              <div className="my-1 font-serif text-5xl font-semibold leading-none tracking-tight text-[#14211F]">
                 192
               </div>
-              <p className="text-sm text-[#c9d6e8] mt-1 mb-4 leading-relaxed">
+              <p className="text-sm text-[#5B6878] mt-1 mb-4 leading-relaxed">
                 SAMU · ligue ou procure um serviço de urgência
               </p>
               <a

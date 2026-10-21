@@ -9,7 +9,6 @@ import {
   FileText,
   Pill,
   Activity,
-  ShieldCheck,
   AlertTriangle,
   LoaderCircle,
   MoreVertical,
@@ -41,6 +40,7 @@ import {
   customFetch,
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
+import { AiDataNotice } from '@/components/AiDataNotice';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import {
@@ -429,7 +429,7 @@ export default function Documents() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFD] text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title & CTA Actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-5 mb-5 sm:mb-6">
@@ -467,60 +467,8 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* Card Destaque Acervo Médico Seguro (Card Azul Escuro Clínico Padrão) */}
-        <div className="mb-6 rounded-[22px] sm:rounded-[24px] bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] border border-[#25416B]/60 border-t-4 border-t-[#1D4ED8] p-5 sm:p-6 text-white shadow-md relative overflow-hidden">
-          {/* Glow lights */}
-          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#1D4ED8]/25 blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-[#3B82F6]/10 blur-xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] sm:text-[11px] font-bold text-[#93C5FD] shadow-xs backdrop-blur-xs">
-                  <ShieldCheck size={13} className="text-[#60A5FA]" />
-                  ACERVO AUDITÁVEL & SEGURO
-                </span>
-                <span className="text-[11px] font-medium text-slate-300 hidden sm:inline">
-                  • Criptografia AES-256 e LGPD Art. 11
-                </span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-2 mb-1">
-                Central de Prontuário e Laudos
-              </h2>
-              <p className="text-xs sm:text-sm text-blue-100/80 max-w-xl leading-relaxed m-0">
-                Todos os seus exames, prescrições e laudos são arquivados com índice de busca rápido, extração assistida por IA e conferência auditável.
-              </p>
-            </div>
-
-            {/* Quick Micro-Metrics */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3 shrink-0">
-              <div className="flex-1 sm:flex-none rounded-xl bg-white/10 backdrop-blur-xs border border-white/15 px-3.5 py-2.5 min-w-[100px]">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#93C5FD]">DOCUMENTOS</div>
-                <div className="text-xl font-black text-white mt-0.5">{allItems.length}</div>
-                <div className="text-[10px] text-blue-100/70 truncate">{counts.exame || 0} exames · {counts.receita || 0} receitas</div>
-              </div>
-
-              <div className="flex-1 sm:flex-none rounded-xl bg-white/10 backdrop-blur-xs border border-white/15 px-3.5 py-2.5 min-w-[100px]">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#93C5FD]">STATUS</div>
-                <div className="text-xl font-black text-white mt-0.5 flex items-center gap-1.5">
-                  {pendingReviewCount > 0 ? (
-                    <>
-                      <span className="text-amber-400">{pendingReviewCount}</span>
-                      <span className="text-[10px] font-bold text-amber-300">a revisar</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={18} className="text-emerald-400" />
-                      <span className="text-[10px] font-bold text-emerald-300">100% OK</span>
-                    </>
-                  )}
-                </div>
-                <div className="text-[10px] text-blue-100/70 truncate">
-                  {pendingReviewCount > 0 ? 'Conferência pendente' : 'Acervo atualizado'}
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="mb-6">
+          <AiDataNotice />
         </div>
 
         {/* Pending Review Alert Banner if needed */}
@@ -535,7 +483,7 @@ export default function Documents() {
                   {pendingReviewCount} {pendingReviewCount === 1 ? 'documento precisa' : 'documentos precisam'} de conferência:
                 </strong>{' '}
                 <span className="text-amber-800">
-                  Alguns dados extraídos requerem sua validação para máxima precisão clínica.
+                  Confira os dados extraídos com o documento original.
                 </span>
               </div>
             </div>

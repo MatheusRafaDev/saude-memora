@@ -515,3 +515,52 @@ body.hide-scrollbar::-webkit-scrollbar,
 
 /* Selection */
 ::selection { background: hsl(var(--accent) / .15); color: hsl(var(--foreground)); }
+
+/* Shared visual rules from desing.md: editorial headings and restrained actions. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--app-font-serif);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.btn-primary {
+  background: var(--blue);
+  box-shadow: none;
+  font-weight: 700;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--blue-hover);
+  box-shadow: none;
+  transform: none;
+}
+.btn-primary:active:not(:disabled) {
+  background: #1E3A8A;
+  transform: scale(0.99);
+  box-shadow: none;
+}
+.btn-secondary {
+  border: 1.5px solid var(--ink);
+  box-shadow: none;
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: none;
+  transform: none;
+}
+
+.card-base,
+.card-interactive {
+  box-shadow: none;
+}
+.card-base:hover,
+.card-interactive:hover {
+  box-shadow: none;
+  transform: none;
+}
+.shadow-xs,
+.shadow-2xs,
+.shadow-sm {
+  box-shadow: none;
+}

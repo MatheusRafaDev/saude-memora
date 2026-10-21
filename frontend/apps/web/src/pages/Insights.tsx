@@ -20,6 +20,7 @@ import {
 import { customFetch } from '@workspace/api-client-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getApiErrorMessage } from '@/lib/api-error-message';
+import { AiDataNotice } from '@/components/AiDataNotice';
 
 type InsightTab = 'relatorio' | 'exames' | 'catalogos';
 type CatalogKind = 'cid10' | 'cnes' | 'medicamentos';
@@ -169,6 +170,8 @@ export default function Insights({ embedded = false }: { embedded?: boolean }) {
           <FileBarChart size={16} /> Ver documentos
         </Link>
       </header>}
+
+      {!embedded && <div className="mb-5"><AiDataNotice /></div>}
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InsightTab)}>
         <TabsList className="mb-5 flex h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-[#E3E8F0] bg-white p-1">

@@ -15,7 +15,6 @@ import {
   ChevronDown,
   Copy,
   RotateCw,
-  ShieldCheck,
 } from 'lucide-react';
 import {
   useGetApiDocumentsId,
@@ -24,6 +23,7 @@ import {
   customFetch,
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
+import { AiDataNotice } from '@/components/AiDataNotice';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
@@ -523,19 +523,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
         </div>
 
-        {/* Auditoria & Conferência Documental */}
-        <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#CFE0FF] bg-[#F8FAFD] px-4.5 py-3 text-[13px] text-[#14211F] shadow-2xs">
-          <div className="flex items-start sm:items-center gap-3 min-w-0">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8]/10 text-[#1D4ED8]">
-              <ShieldCheck size={16} />
-            </div>
-            <span className="text-[#475569] leading-relaxed">
-              <strong className="font-semibold text-[#14211F]">Conferência Documental:</strong> Dados digitalizados a partir do documento anexado. Compare as informações transcritas com o laudo original ao lado para auditar ou retificar resultados antes de finalizar.
-            </span>
-          </div>
-          <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] border border-[#CFE0FF] shadow-2xs">
-            SBPC/ML · Auditoria Ativa
-          </span>
+        <div className="mb-5">
+          <AiDataNotice />
         </div>
 
         {doc.errorMessage && (

@@ -398,7 +398,7 @@ export default function Record() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
         <div className="flex justify-between items-end gap-4 sm:gap-5 mb-5 sm:mb-7 flex-wrap">
