@@ -89,6 +89,7 @@ type BrandLogoProps = {
   variant?: BrandLogoVariant;
   withLink?: boolean;
   href?: string;
+  showIcon?: boolean;
   showWordmark?: boolean;
   withDot?: boolean;
   layout?: 'stacked' | 'inline';
@@ -103,6 +104,7 @@ export function BrandLogo({
   variant,
   withLink = true,
   href = '/',
+  showIcon = true,
   showWordmark = true,
   withDot = true,
   layout = 'stacked',
@@ -112,7 +114,7 @@ export function BrandLogo({
 
   const content = (
     <div className={`inline-flex items-center gap-2.5 ${className}`}>
-      <BrandLogoIcon className={iconClassName} variant={resolvedVariant} />
+      {showIcon && <BrandLogoIcon className={iconClassName} variant={resolvedVariant} />}
       {showWordmark && (
         <div className="flex flex-col leading-none">
           <BrandWordmark

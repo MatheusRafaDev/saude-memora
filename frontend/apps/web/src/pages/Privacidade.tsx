@@ -31,23 +31,26 @@ const sections = [
 export default function Privacidade() {
   return (
     <div
-      className="min-h-screen bg-white text-[#14211F] flex flex-col selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
+      className="min-h-screen bg-white text-[#173754] flex flex-col font-sans selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
     >
-      <PublicPageHeader />
+      <PublicPageHeader variant="blue" />
 
       <main className="flex-1">
-        {/* ── Hero Section em Azul Oficial (#193B9E) com Degradê ──────────── */}
-        <section className="relative overflow-hidden bg-white text-[#14211F]">
-          <div className="h-20 sm:h-24 lg:h-28 shrink-0" aria-hidden="true" />
-
-          <div className="relative z-10 max-w-[1000px] mx-auto px-6 sm:px-12 py-10 sm:py-14">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#CFE0FF] px-4 py-1 text-xs font-bold tracking-[0.12em] text-[#1D4ED8] uppercase border border-[#CFE0FF]">
+        {/* ── Hero Section ─────────────────────────────────────────── */}
+        <section className="bg-[#1C51BB] text-white py-14 sm:py-18">
+          <div className="relative z-10 max-w-[1000px] mx-auto px-6 sm:px-12">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold tracking-[0.12em] text-white uppercase border border-white/20">
               Documento Legal
             </div>
-            <h1 className="mt-3 mb-2 text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#14211F]">
+            <h1
+              className="mt-4 mb-2 text-3xl sm:text-5xl font-bold tracking-[-0.03em] text-white"
+              style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+            >
               Política de Privacidade
             </h1>
-            <p className="m-0 text-sm sm:text-base text-[#5B6878]">Última atualização: 12 de outubro de 2026</p>
+            <p className="m-0 text-sm sm:text-base text-white/80">
+              Última atualização: {new Date().toLocaleDateString('pt-BR')}
+            </p>
           </div>
         </section>
 
@@ -56,10 +59,13 @@ export default function Privacidade() {
           <div className="space-y-9">
             {sections.map((section) => (
               <section key={section.id} id={section.id} className="scroll-mt-28">
-                <h2 className="mb-2.5 text-2xl font-bold tracking-tight text-[#14211F]">
+                <h2
+                  className="mb-2.5 text-2xl font-bold tracking-tight text-[#173754]"
+                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+                >
                   {section.title}
                 </h2>
-                <p className="text-[16px] leading-[1.8] text-[#5B6878]">
+                <p className="text-[15px] sm:text-[16px] leading-[1.8] text-[#536C80]">
                   {section.content}
                 </p>
               </section>

@@ -4,22 +4,23 @@ import { PublicPageFooter } from '@/components/PublicPageFooter';
 export default function Termos() {
   return (
     <div
-      className="min-h-screen bg-white text-[#14211F] flex flex-col selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
+      className="min-h-screen bg-white text-[#173754] flex flex-col font-sans selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
     >
-      <PublicPageHeader />
+      <PublicPageHeader variant="blue" />
       <main className="flex-1">
-        {/* ── Hero Section em Azul Oficial (#193B9E) com Degradê ──────────── */}
-        <section className="relative overflow-hidden bg-white text-[#14211F]">
-          <div className="h-20 sm:h-24 lg:h-28 shrink-0" aria-hidden="true" />
-
-          <div className="relative z-10 max-w-[1000px] mx-auto px-6 sm:px-12 py-10 sm:py-14">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#CFE0FF] px-4 py-1 text-xs font-bold tracking-[0.12em] text-[#1D4ED8] uppercase border border-[#CFE0FF]">
+        {/* ── Hero Section ─────────────────────────────────────────── */}
+        <section className="bg-[#1C51BB] text-white py-14 sm:py-18">
+          <div className="relative z-10 max-w-[1000px] mx-auto px-6 sm:px-12">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold tracking-[0.12em] text-white uppercase border border-white/20">
               Documento Legal
             </div>
-            <h1 className="mt-3 mb-2 text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#14211F]">
+            <h1
+              className="mt-4 mb-2 text-3xl sm:text-5xl font-bold tracking-[-0.03em] text-white"
+              style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+            >
               Termos de Uso
             </h1>
-            <p className="m-0 text-sm sm:text-base text-[#5B6878]">
+            <p className="m-0 text-sm sm:text-base text-white/80">
               Última atualização: {new Date().toLocaleDateString('pt-BR')}
             </p>
           </div>
@@ -29,10 +30,13 @@ export default function Termos() {
         <div className="max-w-[1000px] mx-auto px-6 sm:px-12 py-14">
           <div className="flex-1 space-y-10">
             <section id="sobre" className="scroll-mt-28">
-              <h2 className="text-2xl font-bold tracking-tight text-[#14211F] mb-2.5">
+              <h2
+                className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
                 1. Sobre o serviço
               </h2>
-              <p className="text-[15px] sm:text-base leading-relaxed text-[#5B6878]">
+              <p className="text-[15px] sm:text-base leading-relaxed text-[#536C80]">
                 O Saúde Memora é uma ferramenta de organização pessoal de informações de saúde.
                 A plataforma permite a digitalização, catalogação e consulta unificada de exames, receitas,
                 atestados e dados clínicos, facilitando o acompanhamento do histórico pelo próprio paciente
@@ -41,7 +45,10 @@ export default function Termos() {
             </section>
 
             <section id="nao-e" className="scroll-mt-28">
-              <h2 className="text-2xl font-bold tracking-tight text-[#14211F] mb-2.5">
+              <h2
+                className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
                 2. O que o serviço não é
               </h2>
               <div className="p-4 rounded-2xl bg-[#FFF5F3] border border-[#E8664A]/30 mb-3">
@@ -50,7 +57,7 @@ export default function Termos() {
                   Em emergência médica no Brasil, ligue imediatamente para o <strong>192 (SAMU)</strong> ou dirija-se à UPA/Pronto-Socorro mais próximo.
                 </p>
               </div>
-              <p className="text-[15px] sm:text-base leading-relaxed text-[#5B6878]">
+              <p className="text-[15px] sm:text-base leading-relaxed text-[#536C80]">
                 O Saúde Memora não prescreve tratamentos nem substitui o julgamento clínico individual de médicos,
                 enfermeiros ou farmacêuticos. As respostas e resumos gerados pelo assistente virtual devem ser
                 utilizados estritamente para suporte à organização pessoal do usuário.
@@ -58,30 +65,48 @@ export default function Termos() {
             </section>
 
             <section id="dados" className="scroll-mt-28">
-              <h2 className="text-2xl font-bold tracking-tight text-[#14211F] mb-2.5">
-                3. Dados extraídos
+              <h2
+                className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                3. Responsabilidade pelos dados
               </h2>
-              <p className="text-[15px] sm:text-base leading-relaxed text-[#5B6878]">
-                Os dados extraídos por inteligência artificial podem conter imprecisões
-                ou omissões e devem ser conferidos por você na tela de detalhes do documento antes da confirmação.
-                Você é responsável por validar e retificar qualquer dado inserido no seu prontuário digital.
+              <p className="text-[15px] sm:text-base leading-relaxed text-[#536C80]">
+                O usuário é o único responsável pela veracidade e exatidão dos documentos e informações que insere na plataforma.
+                A leitura automática assistida por OCR e inteligência artificial visa facilitar o preenchimento,
+                mas pode conter imprecisões e deve ser sempre conferida pelo usuário em relação ao documento original.
               </p>
             </section>
 
-            <section id="responsabilidades" className="scroll-mt-28">
-              <h2 className="text-2xl font-bold tracking-tight text-[#14211F] mb-2.5">
-                4. Responsabilidades
+            <section id="privacidade-seguranca" className="scroll-mt-28">
+              <h2
+                className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                4. Privacidade e segurança
               </h2>
-              <p className="text-[15px] sm:text-base leading-relaxed text-[#5B6878]">
-                Você é responsável por manter a confidencialidade de suas credenciais de acesso e pela veracidade
-                dos documentos que escolhe carregar na plataforma. O Saúde Memora compromete-se a aplicar padrões
-                modernos de criptografia e proteção de dados em conformidade com a LGPD.
+              <p className="text-[15px] sm:text-base leading-relaxed text-[#536C80]">
+                Adotamos medidas técnicas e administrativas aptas a proteger seus dados pessoais e dados sensíveis de saúde,
+                em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018). Seus dados não são comercializados
+                nem compartilhados para finalidades comerciais ou publicitárias de terceiros.
+              </p>
+            </section>
+
+            <section id="encerramento" className="scroll-mt-28">
+              <h2
+                className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                5. Exclusão de conta e encerramento
+              </h2>
+              <p className="text-[15px] sm:text-base leading-relaxed text-[#536C80]">
+                Você pode excluir documentos individualmente ou encerrar sua conta a qualquer momento por meio das configurações de perfil.
+                Ao solicitar a exclusão da conta, seus documentos e dados pessoais são removidos definitivamente dos nossos servidores ativos.
               </p>
             </section>
           </div>
         </div>
       </main>
-
       <PublicPageFooter />
     </div>
   );

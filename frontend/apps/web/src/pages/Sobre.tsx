@@ -12,89 +12,105 @@ import { PublicPageFooter } from '@/components/PublicPageFooter';
 export default function Sobre() {
   return (
     <div
-      className="min-h-screen bg-white text-[#14211F] flex flex-col selection:bg-[#CFE0FF] selection:text-[#1D4ED8] no-scrollbar"
+      className="min-h-screen bg-white text-[#173754] flex flex-col font-sans selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
     >
-      <PublicPageHeader />
+      <PublicPageHeader variant="blue" />
 
       <main className="flex-1">
-        {/* ── HERO SECTION DIRETO ───────────────────────────────── */}
-        <section className="relative overflow-hidden min-h-[calc(100dvh-80px)] lg:min-h-[75vh] bg-white text-[#14211F] flex flex-col justify-between">
-          <div className="h-20 sm:h-24 lg:h-28 shrink-0 relative z-10" aria-hidden="true" />
+        {/* ── HERO SECTION ─────────────────────────────────────────── */}
+        <section className="bg-[#1C51BB] text-white py-16 sm:py-20">
+          <div className="mx-auto max-w-[1100px] px-6 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs sm:text-sm font-bold tracking-[0.08em] text-white uppercase border border-white/20 mb-6">
+              Sobre o Saúde Memora
+            </div>
 
-          <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-1 flex-col items-center justify-center text-center px-6 py-12 sm:px-8 sm:py-16">
-            <div className="flex flex-col items-center gap-6 max-w-[760px]">
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#CFE0FF] px-4 py-1.5 text-xs sm:text-sm font-bold tracking-[0.08em] text-[#1D4ED8] uppercase border border-[#CFE0FF] animate-hero-title">
-                Sobre Nós
-              </div>
+            <h1
+              className="text-[36px] sm:text-[50px] lg:text-[56px] font-bold leading-[1.1] tracking-[-0.025em] text-white mb-6"
+              style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+            >
+              Sua saúde organizada, sem complicação.
+            </h1>
 
-              <h1 className="m-0 text-[36px] sm:text-[50px] lg:text-[60px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#14211F] animate-hero-title">
-                Sua saúde organizada,{' '}
-                <span className="text-[#1D4ED8]">sem complicação.</span>
-              </h1>
+            <p className="text-base sm:text-lg leading-relaxed text-white/90 max-w-[580px] mx-auto mb-8 font-sans">
+              O Saúde Memora nasceu para que você nunca mais perca exames ou receitas importantes em gavetas ou pastas antigas.
+            </p>
 
-              <p className="m-0 text-base sm:text-lg leading-[1.6] text-[#5B6878] max-w-[580px] animate-hero-text">
-                O Saúde Memora nasceu para que você nunca mais perca exames ou receitas importantes em gavetas ou pastas antigas.
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center gap-4 pt-2 animate-hero-actions">
-                <Link
-                  href="/criar-conta"
-                  className="inline-flex h-[52px] sm:h-[56px] items-center justify-center gap-2 rounded-full bg-[#1D4ED8] px-8 text-sm sm:text-base font-bold text-white transition-colors hover:bg-[#1E40AF] active:translate-y-0"
-                >
-                  Criar conta grátis
-                </Link>
-                <Link
-                  href="/recursos"
-                  className="inline-flex h-[52px] sm:h-[56px] items-center justify-center rounded-full border border-[#14211F] bg-white px-7 text-sm sm:text-base font-bold text-[#14211F] transition-colors hover:bg-[#F4F7FC] active:translate-y-0"
-                >
-                  Ver recursos
-                </Link>
-              </div>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/criar-conta"
+                className="inline-flex h-[52px] items-center justify-center gap-2 rounded-full bg-white text-[#2357D9] px-8 text-sm sm:text-base font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Criar conta grátis
+              </Link>
+              <a
+                href="/#recursos"
+                className="inline-flex h-[52px] items-center justify-center rounded-full border border-white/40 bg-white/10 text-white px-7 text-sm sm:text-base font-medium transition-all hover:bg-white/20 active:translate-y-0.5 cursor-pointer"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Ver recursos
+              </a>
             </div>
           </div>
-
-          <div className="h-6 sm:h-10 relative z-10" aria-hidden="true" />
         </section>
 
-        {/* ── PILARES DO PROJETO ───────────────────────────────────────── */}
+        {/* ── PILARES DO PROJETO ───────────────────────────────────── */}
         <section className="px-6 py-16 sm:px-8 sm:py-20 bg-white">
           <div className="mx-auto max-w-[1100px]">
             <div className="text-center">
-              <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-[#2357D9] mb-2">
                 Nosso Propósito
               </div>
-              <h2 className="mt-2 text-[26px] font-extrabold tracking-[-0.03em] text-[#14211F] sm:text-[36px]">
+              <h2
+                className="text-[28px] sm:text-[36px] font-bold tracking-[-0.02em] text-[#173754]"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
                 Por que criamos a plataforma
               </h2>
             </div>
 
             <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-              <div className="rounded-[20px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:border-[#CFE0FF]">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+              <div className="rounded-[20px] bg-[#F7F9FC] p-6 transition-all hover:border-[#DFEBFF] border border-transparent">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#DFEBFF] text-[#2357D9]">
                   <FolderHeart size={20} />
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-[#14211F]">Tudo em um só lugar</h3>
-                <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                <h3
+                  className="mt-4 text-[20px] font-normal text-[#173754]"
+                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+                >
+                  Tudo em um só lugar
+                </h3>
+                <p className="mt-2 text-sm text-[#536C80] leading-relaxed">
                   Reúna exames de sangue, laudos e receitas em uma linha do tempo única e clara.
                 </p>
               </div>
 
-              <div className="rounded-[20px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:border-[#CFE0FF]">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+              <div className="rounded-[20px] bg-[#F7F9FC] p-6 transition-all hover:border-[#DFEBFF] border border-transparent">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#DFEBFF] text-[#2357D9]">
                   <Smartphone size={20} />
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-[#14211F]">Sempre com você</h3>
-                <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                <h3
+                  className="mt-4 text-[20px] font-normal text-[#173754]"
+                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+                >
+                  Sempre com você
+                </h3>
+                <p className="mt-2 text-sm text-[#536C80] leading-relaxed">
                   Acesse seu histórico no celular para consultar ou mostrar ao médico na consulta.
                 </p>
               </div>
 
-              <div className="rounded-[20px] border border-[#E3E8F0] bg-[#F8FAFD] p-6 transition-all hover:border-[#CFE0FF]">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#CFE0FF] text-[#1D4ED8]">
+              <div className="rounded-[20px] bg-[#F7F9FC] p-6 transition-all hover:border-[#DFEBFF] border border-transparent">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#DFEBFF] text-[#2357D9]">
                   <User size={20} />
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-[#14211F]">Você no controle</h3>
-                <p className="mt-2 text-sm text-[#5B6878] leading-relaxed">
+                <h3
+                  className="mt-4 text-[20px] font-normal text-[#173754]"
+                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+                >
+                  Você no controle
+                </h3>
+                <p className="mt-2 text-sm text-[#536C80] leading-relaxed">
                   Total autonomia para adicionar, revisar e excluir seus documentos com facilidade.
                 </p>
               </div>
@@ -102,28 +118,33 @@ export default function Sobre() {
           </div>
         </section>
 
-        {/* ── CRIADOR DO PROJETO ───────────────────────────────────────── */}
-        <section className="border-t border-[#E3E8F0] bg-[#F4F7FC] px-6 py-14 sm:px-8 sm:py-18">
-          <div className="mx-auto max-w-[820px] rounded-[24px] border border-[#CFE0FF] bg-white p-7 sm:p-9 shadow-xs flex flex-col sm:flex-row items-center gap-6">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#1D4ED8] text-xl font-extrabold text-white shadow-sm">
+        {/* ── CRIADOR DO PROJETO ───────────────────────────────────── */}
+        <section className="border-t border-[#DFE7EF] bg-[#F7F9FC] px-6 py-14 sm:px-8 sm:py-18">
+          <div className="mx-auto max-w-[820px] rounded-[24px] border border-[#DFE7EF] bg-white p-7 sm:p-9 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#2357D9] text-xl font-bold text-white shadow-sm">
               MR
             </div>
             <div className="flex-1 text-center sm:text-left">
-              <div className="text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
-                Desenvolvedor
+              <div className="text-xs font-bold uppercase tracking-wider text-[#2357D9]">
+                Criador
               </div>
-              <h3 className="mt-1 text-xl font-bold text-[#14211F]">Matheus Rafael</h3>
-              <p className="mt-1.5 text-sm text-[#5B6878] leading-relaxed">
+              <h3
+                className="mt-1 text-xl font-bold text-[#173754]"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                Matheus Rafael
+              </h3>
+              <p className="mt-1.5 text-sm text-[#536C80] leading-relaxed">
                 Criou o Saúde Memora para simplificar o acesso aos históricos de saúde de forma acolhedora, prática e direta.
               </p>
-              <div className="mt-3 flex items-center justify-center sm:justify-start gap-4 text-xs font-bold text-[#1D4ED8]">
+              <div className="mt-3 flex items-center justify-center sm:justify-start gap-4 text-xs font-bold text-[#2357D9]">
                 <a
                   href="https://www.linkedin.com/in/matheus-rafael-50a676219/"
                   target="_blank"
                   rel="noreferrer"
                   className="hover:underline"
                 >
-                  LinkedIn
+                  LinkedIn ↗
                 </a>
                 <span>•</span>
                 <a
@@ -132,36 +153,41 @@ export default function Sobre() {
                   rel="noreferrer"
                   className="hover:underline"
                 >
-                  GitHub
+                  GitHub ↗
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="mx-auto mt-8 flex max-w-[820px] items-center justify-center gap-2 text-center text-xs text-[#5B6878]">
-            <Info size={15} className="text-[#1D4ED8] shrink-0" />
+          <div className="mx-auto mt-8 flex max-w-[820px] items-center justify-center gap-2 text-center text-xs text-[#536C80]">
+            <Info size={15} className="text-[#2357D9] shrink-0" />
             <span>O Saúde Memora é um organizador pessoal de saúde e não substitui avaliação médica profissional.</span>
           </div>
         </section>
 
-        {/* ── CHAMADA FINAL (CTA) ─────────────────────────────────────── */}
-        <section className="border-t border-[#E3E8F0] bg-white px-6 py-14 text-center sm:px-8 sm:py-16">
-          <div className="mx-auto max-w-[680px]">
-            <h2 className="text-[28px] font-extrabold tracking-[-0.03em] sm:text-[38px] leading-tight">
-              Comece a organizar seus exames hoje.
-            </h2>
-            <p className="mt-3 text-sm sm:text-base text-[#5B6878]">
-              Cadastre-se gratuitamente em menos de 1 minuto.
-            </p>
-            <div className="mt-8">
-              <Link
-                href="/criar-conta"
-                className="inline-flex h-[52px] sm:h-[56px] items-center justify-center gap-2 rounded-full bg-[#1D4ED8] px-9 text-sm sm:text-base font-bold text-white transition-colors hover:bg-[#1E40AF]"
+        {/* ── CHAMADA FINAL (CTA) ─────────────────────────────────── */}
+        <section className="max-w-[1312px] mx-auto px-6 py-16 sm:px-8">
+          <div className="bg-[#14377B] text-white rounded-[32px] p-8 sm:p-11 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
+            <div>
+              <h2
+                className="font-medium text-[26px] sm:text-[32px] text-white leading-tight"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
-                <span>Criar conta gratuita</span>
-                <ArrowRight size={17} />
-              </Link>
+                Comece a organizar seus exames hoje.
+              </h2>
+              <p className="mt-1 text-[15px] text-white/90">
+                Cadastre-se gratuitamente em menos de 1 minuto.
+              </p>
             </div>
+
+            <Link
+              href="/criar-conta"
+              className="inline-flex items-center justify-center gap-2.5 h-[54px] px-7 rounded-[27px] bg-white text-[#2357D9] text-[16px] font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer shrink-0"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              <span>Criar conta gratuita</span>
+              <ArrowRight size={18} />
+            </Link>
           </div>
         </section>
       </main>

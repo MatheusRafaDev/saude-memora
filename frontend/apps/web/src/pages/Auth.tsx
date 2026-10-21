@@ -7,14 +7,9 @@ import {
   LoaderCircle,
   X,
   Lock,
-  Mail,
-  User,
   AlertCircle,
   CheckCircle2,
-  ArrowRight,
-  FileText,
-  CalendarDays,
-  Heart,
+  Check,
   ChevronLeft,
 } from 'lucide-react';
 import {
@@ -28,7 +23,7 @@ import {
   getGetApiFichaMedicaMeQueryOptions,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { BrandLogo } from '@/components/BrandLogo';
+import { BrandWordmark } from '@/components/BrandWordmark';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 
 export interface AuthProps {
@@ -72,6 +67,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
   const [mode, setMode] = useState<'login' | 'register'>(getInitialMode);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [form, setForm] = useState({
     name: '',
     birthDate: '',
@@ -102,6 +98,8 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     } else if (location === '/entrar') {
       if (typeof window !== 'undefined' && (window.location.search.includes('mode=register') || window.location.search.includes('cadastro'))) {
         setMode('register');
+      } else {
+        setMode('login');
       }
     }
   }, [defaultMode, location]);
@@ -115,8 +113,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
       window.history.replaceState(null, '', newMode === 'register' ? '/criar-conta' : '/entrar');
     }
   };
-
-  const handleModeChange = (newMode: 'login' | 'register') => switchMode(newMode);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -154,12 +150,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           return;
         }
 
-        const hoje = new Date().toISOString().slice(0, 10);
-        if (form.birthDate > hoje) {
-          setError('A data de nascimento não pode estar no futuro.');
-          return;
-        }
-
         if (form.password.length < 8) {
           setError('A senha deve ter no mínimo 8 caracteres.');
           return;
@@ -168,34 +158,23 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
         await registerMutation.mutateAsync({
           data: {
             nome: trimmedName,
-            dataNascimento: form.birthDate,
-            sexo: form.sex || undefined,
             email: form.email.trim(),
             senha: form.password,
+            dataNascimento: form.birthDate,
+            sexo: form.sex || undefined,
           },
         });
 
-        // Login automático após cadastro
-        await loginMutation.mutateAsync({ data: { email: form.email.trim(), senha: form.password } });
-
-        queryClient.removeQueries({ queryKey: getGetApiPacientesMeQueryKey() });
-        await queryClient.fetchQuery(getGetApiPacientesMeQueryOptions());
-
-        void Promise.allSettled([
-          queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
-          queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
-        ]);
-
-        setLocation('/anamnese/inicio');
+        // Switch to login tab with success alert
+        switchMode('login', 'Conta criada com sucesso! Faça login para continuar.');
       }
-    } catch (err: unknown) {
-      const fallback = mode === 'login' ? 'E-mail ou senha incorretos.' : 'Não foi possível criar sua conta.';
-      setError(getApiErrorMessage(err, fallback));
+    } catch (err: any) {
+      setError(getApiErrorMessage(err, 'Ocorreu um erro ao processar sua solicitação. Verifique seus dados.'));
     }
   };
 
-  const handleForgotPassword = async (event: FormEvent) => {
-    event.preventDefault();
+  const handleForgotPassword = async (e: FormEvent) => {
+    e.preventDefault();
     setForgotError('');
     setForgotMessage('');
     setIsForgotLoading(true);
@@ -217,198 +196,238 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.35 }}
-      className="min-h-screen lg:h-screen lg:overflow-hidden bg-white text-[#14211F] flex flex-col lg:grid lg:grid-cols-12 selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
+    <div
+      className="min-h-screen bg-white text-[#173754] font-sans selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
+      style={{ fontFamily: "'Plus Jakarta Sans', Inter, system-ui, sans-serif" }}
     >
-      {/* ───────────────────────────────────────────────────────────── */}
-      {/* PAINEL DO FORMULÁRIO                                        */}
-      {/* ───────────────────────────────────────────────────────────── */}
-      <main className="order-2 flex-1 lg:order-2 lg:col-start-7 lg:col-span-6 xl:col-start-7 xl:col-span-6 flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-12 bg-[radial-gradient(ellipse_at_top_right,_#e7efff_0%,_transparent_45%),linear-gradient(135deg,_#ffffff_0%,_#f4f7fc_100%)] overflow-y-auto no-scrollbar">
-        
-        {/* Topo: Logo & Voltar ao início */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center justify-between w-full max-w-[460px] mx-auto mb-6 lg:mb-8"
-        >
-          <BrandLogo
-            iconClassName="h-9 w-9"
-            wordmarkClassName="text-lg font-bold text-[#1E293B]"
-          />
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] gap-8 box-border">
+        {/* ── PAINEL DO FORMULÁRIO (ESQUERDA) ────────────────────────── */}
+        <section className="flex flex-col justify-between px-2 sm:px-6 lg:px-12 py-4">
+          {/* Topo: Logo & Voltar */}
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/" aria-label="Saúde Memora — início" className="transition-opacity hover:opacity-90">
+              <BrandWordmark height={28} />
+            </Link>
 
-          <Link
-            href="/"
-            className="group inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-700 transition-colors py-1.5 px-2.5 rounded-md hover:bg-slate-200/50"
-          >
-            <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
-            <span>Voltar ao início</span>
-          </Link>
-        </motion.div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#536C80] hover:text-[#2357D9] transition-colors py-1 px-2.5 rounded-lg hover:bg-[#F7F9FC]"
+            >
+              <ChevronLeft size={16} />
+              <span>Voltar ao início</span>
+            </Link>
+          </div>
 
-        {/* Formulário Central */}
-        <div className="w-full max-w-[460px] mx-auto my-auto">
-          
-          <motion.div
-            initial={{ opacity: 0, y: 22, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-[20px] border border-[#E3E8F0] bg-white p-6 sm:p-9 sm:shadow-[0_8px_24px_-20px_rgba(20,33,31,0.18)]"
-          >
-            
-            {/* Título com transição suave ao alternar modo */}
-            <div className="text-left mb-6 overflow-hidden min-h-[72px]">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={mode}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.22, ease: 'easeOut' }}
+          {/* Área Central do Formulário */}
+          <div className="flex-1 flex items-center justify-center py-6 sm:py-10">
+            <div className="w-full max-w-[400px]">
+              {/* Abas Alternadoras (Tabs) */}
+              <div className="flex gap-1 bg-[#EEF3FA] rounded-[14px] p-1 mb-6">
+                <button
+                  type="button"
+                  onClick={() => switchMode('login')}
+                  className={`flex-1 text-center py-2.5 px-2 rounded-[10px] text-[14px] font-bold transition-all cursor-pointer ${
+                    mode === 'login'
+                      ? 'bg-white text-[#2357D9] shadow-[0_1px_4px_rgba(18,42,83,0.12)]'
+                      : 'text-[#607187] hover:text-[#173754]'
+                  }`}
                 >
-                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
-                    {mode === 'login' ? 'Bem-vindo de volta' : 'Comece por aqui'}
-                  </p>
-                  <h2 className="text-[27px] font-bold tracking-tight text-slate-900">
-                    {mode === 'login' ? 'Entrar na sua conta' : 'Criar sua conta'}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {mode === 'login'
-                      ? 'Digite seus dados para acessar seu histórico médico.'
-                      : 'Cadastre-se para começar a organizar seus exames e receitas.'}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            {/* Navegação entre entrar e criar conta */}
-            <div role="tablist" aria-label="Acesso à conta" className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === 'login'}
-                aria-controls="auth-form-panel"
-                onClick={() => handleModeChange('login')}
-                className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                  mode === 'login'
-                    ? 'bg-white text-blue-800 shadow-sm ring-1 ring-slate-200/70'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Entrar
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === 'register'}
-                aria-controls="auth-form-panel"
-                onClick={() => handleModeChange('register')}
-                className={`flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                  mode === 'register'
-                    ? 'bg-white text-blue-800 shadow-sm ring-1 ring-slate-200/70'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Criar conta
-              </button>
-            </div>
-
-            {/* Avisos */}
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, y: -6 }}
-                  animate={{ opacity: 1, height: 'auto', y: 0 }}
-                  exit={{ opacity: 0, height: 0, y: -6 }}
-                  transition={{ duration: 0.2 }}
-                  role="alert"
-                  className="mb-4 overflow-hidden"
+                  Entrar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode('register')}
+                  className={`flex-1 text-center py-2.5 px-2 rounded-[10px] text-[14px] font-bold transition-all cursor-pointer ${
+                    mode === 'register'
+                      ? 'bg-white text-[#2357D9] shadow-[0_1px_4px_rgba(18,42,83,0.12)]'
+                      : 'text-[#607187] hover:text-[#173754]'
+                  }`}
                 >
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs sm:text-sm text-red-700 flex items-start gap-2.5">
-                    <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-600" />
-                    <span className="leading-relaxed">{error}</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  Criar conta
+                </button>
+              </div>
 
-            <AnimatePresence>
-              {message && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, y: -6 }}
-                  animate={{ opacity: 1, height: 'auto', y: 0 }}
-                  exit={{ opacity: 0, height: 0, y: -6 }}
-                  transition={{ duration: 0.2 }}
-                  className="mb-4 overflow-hidden"
-                >
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs sm:text-sm text-blue-700 flex items-start gap-2.5">
-                    <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-600" />
-                    <span className="leading-relaxed">{message}</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Form */}
-            <form id="auth-form-panel" role="tabpanel" onSubmit={submit} className="space-y-4">
-              
-              {/* Campos dinâmicos do cadastro com animação de expansão/colapso suave */}
-              <AnimatePresence initial={false}>
-                {mode === 'register' && (
+              {/* Mensagens de Sucesso e Erro */}
+              <AnimatePresence>
+                {error && (
                   <motion.div
-                    key="register-fields"
-                    initial={{ opacity: 0, height: 0, y: -8 }}
+                    initial={{ opacity: 0, height: 0, y: -6 }}
                     animate={{ opacity: 1, height: 'auto', y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -8 }}
-                    transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden space-y-3.5"
+                    exit={{ opacity: 0, height: 0, y: -6 }}
+                    className="mb-5 overflow-hidden"
                   >
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs sm:text-sm text-red-700 flex items-start gap-2.5">
+                      <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-600" />
+                      <span className="leading-relaxed font-medium">{error}</span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {message && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, y: -6 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -6 }}
+                    className="mb-5 overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-blue-200 bg-[#EEF3FA] p-3.5 text-xs sm:text-sm text-[#2357D9] flex items-start gap-2.5">
+                      <CheckCircle2 size={17} className="shrink-0 mt-0.5 text-[#2357D9]" />
+                      <span className="leading-relaxed font-medium">{message}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Formulário: LOGIN */}
+              {mode === 'login' ? (
+                <div>
+                  <h1 className="text-[32px] sm:text-[36px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#173754] mb-2.5">
+                    Bem-vindo de volta
+                  </h1>
+                  <p className="text-[#536C80] text-[15px] mb-8 leading-relaxed">
+                    Entre para acessar seus exames, receitas e todo o seu histórico de saúde.
+                  </p>
+
+                  <form onSubmit={submit} className="space-y-5">
                     <div>
-                      <label className="block mb-1 text-xs font-semibold text-slate-700">
-                        Nome completo
+                      <label className="block mb-2 text-[#24364B] text-[13px] font-bold" htmlFor="email">
+                        E-mail
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder="voce@email.com"
+                        value={form.email}
+                        onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                        className="w-full h-12 px-3.5 rounded-xl border border-[#D8E1EC] bg-white text-[#18324B] text-[15px] font-medium outline-none transition-all focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-2 text-[#24364B] text-[13px] font-bold" htmlFor="pw">
+                        Senha
                       </label>
                       <div className="relative">
                         <input
-                          type="text"
+                          id="pw"
+                          type={showPassword ? 'text' : 'password'}
                           required
-                          autoComplete="name"
-                          placeholder="Ex.: Maria Clara Santos"
-                          value={form.name}
-                          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 pl-10 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 placeholder:text-slate-400"
+                          autoComplete="current-password"
+                          placeholder="Digite sua senha"
+                          value={form.password}
+                          onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                          className="w-full h-12 px-3.5 pr-11 rounded-xl border border-[#D8E1EC] bg-white text-[#18324B] text-[15px] font-medium outline-none transition-all focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
                         />
-                        <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#536C80] hover:text-[#173754] transition-colors p-1 cursor-pointer"
+                          aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="flex justify-between items-center text-[14px] pt-1 pb-2">
+                      <label className="flex items-center gap-2.5 text-[#536C80] cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="h-4 w-4 rounded border-[#D8E1EC] text-[#2357D9] focus:ring-[#2357D9]"
+                        />
+                        <span>Manter conectado</span>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotModal(true)}
+                        className="text-[#2357D9] font-semibold hover:underline cursor-pointer"
+                      >
+                        Esqueci a senha
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isPending}
+                      className="w-full h-[54px] rounded-[14px] bg-gradient-to-br from-[#3169DF] to-[#2357D9] hover:from-[#2a5fc9] hover:to-[#1F4FC5] text-white font-bold text-[16px] shadow-[0_10px_24px_rgba(35,87,217,0.2)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:translate-y-0.5"
+                    >
+                      {isPending ? (
+                        <LoaderCircle className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <span>Entrar</span>
+                      )}
+                    </button>
+                  </form>
+
+                  <p className="mt-7 text-center text-[#536C80] text-[15px]">
+                    Ainda não tem conta?{' '}
+                    <button
+                      type="button"
+                      onClick={() => switchMode('register')}
+                      className="text-[#2357D9] font-bold hover:underline cursor-pointer"
+                    >
+                      Criar conta
+                    </button>
+                  </p>
+                </div>
+              ) : (
+                /* Formulário: CADASTRO / CRIAR CONTA */
+                <div>
+                  <h1 className="text-[30px] sm:text-[34px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#173754] mb-2.5">
+                    Crie sua conta
+                  </h1>
+                  <p className="text-[#536C80] text-[15px] mb-6 leading-relaxed">
+                    Organize seus exames e receitas em um só lugar.
+                  </p>
+
+                  <form onSubmit={submit} className="space-y-3.5">
+                    <div>
+                      <label className="block mb-2 text-[#24364B] text-[13px] font-bold" htmlFor="signup-name">
+                        Nome completo
+                      </label>
+                      <input
+                        id="signup-name"
+                        type="text"
+                        required
+                        autoComplete="name"
+                        placeholder="Seu nome completo"
+                        value={form.name}
+                        onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                        className="w-full h-12 px-3.5 rounded-xl border border-[#D8E1EC] bg-white text-[#18324B] text-[15px] font-medium outline-none transition-all focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block mb-1 text-xs font-semibold text-slate-700">
-                          Nascimento
+                        <label className="block mb-2 text-[#24364B] text-[13px] font-bold" htmlFor="signup-birth">
+                          Data de nascimento
                         </label>
                         <input
+                          id="signup-birth"
                           type="date"
                           required
                           autoComplete="bday"
                           max={new Date().toISOString().slice(0, 10)}
                           value={form.birthDate}
                           onChange={(e) => setForm((prev) => ({ ...prev, birthDate: e.target.value }))}
-                          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80"
+                          className="w-full h-12 px-3.5 rounded-xl border border-[#D8E1EC] bg-white text-[#18324B] text-[15px] font-medium outline-none transition-all focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
                         />
                       </div>
 
                       <div>
-                        <label className="block mb-1 text-xs font-semibold text-slate-700">
+                        <label className="block mb-2 text-[#24364B] text-[13px] font-bold" htmlFor="signup-sex">
                           Sexo biológico
                         </label>
                         <select
-                          required
+                          id="signup-sex"
                           value={form.sex}
                           onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
-                          className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80"
+                          className="w-full h-12 px-3.5 rounded-xl border border-[#D8E1EC] bg-white text-[#18324B] text-[15px] font-medium outline-none transition-all focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
                         >
                           <option value="">Selecione</option>
                           <option value="Feminino">Feminino</option>
@@ -417,238 +436,149 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                         </select>
                       </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
-              {/* Email */}
-              <div>
-                <label className="block mb-1 text-xs font-semibold text-slate-700">
-                  E-mail
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="seu.email@exemplo.com"
-                    value={form.email}
-                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                    onBlur={() => setForm((prev) => ({ ...prev, email: prev.email.trim() }))}
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 pl-10 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 placeholder:text-slate-400"
-                  />
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                </div>
-              </div>
+                    <div>
+                      <label className="block mb-2 text-[#24364B] text-[13px] font-bold" htmlFor="signup-email">
+                        E-mail
+                      </label>
+                      <input
+                        id="signup-email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder="voce@email.com"
+                        value={form.email}
+                        onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                        className="w-full h-12 px-3.5 rounded-xl border border-[#D8E1EC] bg-white text-[#18324B] text-[15px] font-medium outline-none transition-all focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
+                      />
+                    </div>
 
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Senha
-                  </label>
-                  {mode === 'login' && (
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotModal(true)}
-                      className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                    >
-                      Esqueceu a senha?
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    minLength={mode === 'register' ? 8 : undefined}
-                    autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-                    placeholder={mode === 'register' ? 'Mínimo de 8 caracteres' : 'Sua senha'}
-                    value={form.password}
-                    onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 pl-10 pr-10 text-sm text-slate-900 outline-none transition-all focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 placeholder:text-slate-400"
-                  />
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1 cursor-pointer"
-                    aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
+                    <div>
+                      <label className="block mb-2 text-[#24364B] text-[13px] font-bold" htmlFor="signup-password">
+                        Senha
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="signup-password"
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          minLength={8}
+                          autoComplete="new-password"
+                          placeholder="Mínimo de 8 caracteres"
+                          value={form.password}
+                          onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                          className="w-full h-12 px-3.5 pr-11 rounded-xl border border-[#D8E1EC] bg-white text-[#18324B] text-[15px] font-medium outline-none transition-all focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#536C80] hover:text-[#173754] transition-colors p-1 cursor-pointer"
+                          aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
 
-              {/* Termos no cadastro */}
-              <AnimatePresence initial={false}>
-                {mode === 'register' && (
-                  <motion.div
-                    key="terms-checkbox"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                    className="overflow-hidden pt-1"
-                  >
-                    <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                    <label className="flex items-start gap-2.5 text-[#536C80] text-[12px] leading-relaxed pt-1 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={form.termsAccepted}
                         onChange={(e) => setForm((prev) => ({ ...prev, termsAccepted: e.target.checked }))}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="mt-0.5 h-4 w-4 rounded border-[#D8E1EC] text-[#2357D9] focus:ring-[#2357D9]"
                       />
-                      <span className="leading-relaxed">
+                      <span>
                         Concordo com os{' '}
-                        <Link href="/termos" className="font-medium text-blue-600 underline hover:text-blue-800">
+                        <Link href="/termos" className="text-[#2357D9] font-semibold hover:underline">
                           Termos de Uso
                         </Link>{' '}
                         e a{' '}
-                        <Link href="/privacidade" className="font-medium text-blue-600 underline hover:text-blue-800">
+                        <Link href="/privacidade" className="text-[#2357D9] font-semibold hover:underline">
                           Política de Privacidade
                         </Link>
                         .
                       </span>
                     </label>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
-              {/* Botão Principal */}
-              <button
-                type="submit"
-                disabled={isPending}
-                className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-sm font-bold text-white shadow-[0_10px_22px_-12px_rgba(29,78,216,0.8)] transition-all hover:-translate-y-0.5 hover:from-blue-800 hover:to-blue-700 active:translate-y-0 disabled:opacity-50 cursor-pointer overflow-hidden"
-              >
-                {isPending ? (
-                  <LoaderCircle className="h-5 w-5 animate-spin" />
-                ) : (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={mode}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      transition={{ duration: 0.18 }}
-                      className="inline-flex items-center gap-2"
+                    <button
+                      type="submit"
+                      disabled={isPending}
+                      className="w-full h-[54px] rounded-[14px] bg-gradient-to-br from-[#3169DF] to-[#2357D9] hover:from-[#2a5fc9] hover:to-[#1F4FC5] text-white font-bold text-[16px] shadow-[0_10px_24px_rgba(35,87,217,0.2)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:translate-y-0.5"
                     >
-                      <span>{mode === 'login' ? 'Entrar' : 'Criar minha conta'}</span>
-                      <ArrowRight size={15} />
-                    </motion.span>
-                  </AnimatePresence>
-                )}
-              </button>
-            </form>
+                      {isPending ? (
+                        <LoaderCircle className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <span>Criar minha conta</span>
+                      )}
+                    </button>
+                  </form>
 
-            {/* Alternar modo no rodapé do card */}
-            <div className="mt-6 pt-5 border-t border-slate-200 text-center text-xs text-slate-600 min-h-[24px]">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={mode}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  {mode === 'login' ? (
-                    <span>
-                      Ainda não tem conta?{' '}
-                      <button
-                        type="button"
-                        onClick={() => handleModeChange('register')}
-                        className="font-semibold text-blue-700 hover:underline cursor-pointer"
-                      >
-                        Cadastre-se gratuitamente
-                      </button>
-                    </span>
-                  ) : (
-                    <span>
-                      Já possui conta?{' '}
-                      <button
-                        type="button"
-                        onClick={() => handleModeChange('login')}
-                        className="font-semibold text-blue-700 hover:underline cursor-pointer"
-                      >
-                        Fazer login
-                      </button>
-                    </span>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+                  <p className="mt-6 text-center text-[#536C80] text-[14px]">
+                    Já possui conta?{' '}
+                    <button
+                      type="button"
+                      onClick={() => switchMode('login')}
+                      className="text-[#2357D9] font-bold hover:underline cursor-pointer"
+                    >
+                      Fazer login
+                    </button>
+                  </p>
+                </div>
+              )}
             </div>
+          </div>
 
-          </motion.div>
+          {/* Rodapé informativo */}
+          <p className="text-[13px] text-[#536C80] text-center mt-6">
+            Seus dados de saúde ficam protegidos e só você acessa.
+          </p>
+        </section>
 
+        {/* ── PAINEL DA DIREITA (ASIDE AZUL COM IMAGEM E PONTOS) ───────── */}
+        <aside className="hidden lg:flex bg-[#1C51BB] rounded-[32px] p-8 xl:p-10 flex-col gap-7 text-white justify-between shadow-xl">
+          <div>
+            <img
+              src="/images/hero-home.jpg"
+              alt="Mulher à mesa com o celular e documentos organizados"
+              className="w-full aspect-[4/3] object-cover rounded-[20px] shadow-md block mb-8"
+              loading="lazy"
+            />
 
-        </div>
-
-      </main>
-
-      {/* ───────────────────────────────────────────────────────────── */}
-      {/* PAINEL DA MARCA E DOS RECURSOS                               */}
-      {/* ───────────────────────────────────────────────────────────── */}
-      <aside className="order-1 hidden lg:row-start-1 lg:col-start-1 lg:col-span-6 lg:flex xl:col-span-6 relative overflow-hidden bg-[#F4F7FC] text-[#14211F] flex-col justify-between p-10 xl:p-14 select-none h-full">
-        <div aria-hidden="true" className="absolute -right-24 top-16 h-80 w-80 rounded-full bg-[#CFE0FF]/10 blur-3xl" />
-        <div aria-hidden="true" className="absolute -left-28 bottom-10 h-72 w-72 rounded-full bg-[#7FAAFF]/15 blur-3xl" />
-        {/* Topo do painel */}
-        <div className="relative z-10 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#CFE0FF]/90">
-          <FileText size={18} />
-          Sua saúde em um só lugar
-        </div>
-
-        {/* Centro: Destaques de Utilidade */}
-        <div className="relative z-10 my-auto flex flex-col gap-8 py-6">
-          <div className="flex flex-col gap-3">
-            <h2 className="text-2xl xl:text-3xl font-extrabold text-[#14211F] leading-tight">
-              Cuide da sua história de saúde com mais clareza.
+            <h2 className="text-[28px] xl:text-[32px] leading-[1.2] tracking-[-0.015em] font-extrabold max-w-[20ch] text-white mb-6">
+              Todo o seu histórico médico num só lugar.
             </h2>
-            <p className="text-sm xl:text-base text-[#5B6878] leading-relaxed">
-              Reúna exames, receitas e informações importantes para encontrar tudo com tranquilidade quando precisar.
-            </p>
-          </div>
 
-          <div className="flex flex-col gap-5 pt-2">
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-[#CFE0FF]">
-                <FileText size={18} />
+            <div className="grid gap-4 font-medium text-[15px] xl:text-[16px]">
+              <div className="flex items-center gap-3.5">
+                <span className="w-[38px] h-[38px] rounded-full bg-white text-[#1C51BB] flex items-center justify-center shrink-0 shadow-sm">
+                  <Check size={18} strokeWidth={2.5} />
+                </span>
+                <span>Guarde exames, receitas e prontuários</span>
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-[#14211F]">Exames e Laudos</h4>
-                <p className="text-xs text-[#5B6878] leading-relaxed">Guarde exames de sangue, imagem e consultas em uma linha do tempo clara.</p>
-              </div>
-            </div>
 
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-[#CFE0FF]">
-                <Heart size={18} />
+              <div className="flex items-center gap-3.5">
+                <span className="w-[38px] h-[38px] rounded-full bg-white text-[#1C51BB] flex items-center justify-center shrink-0 shadow-sm">
+                  <Check size={18} strokeWidth={2.5} />
+                </span>
+                <span>Leitura automática dos documentos</span>
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-[#14211F]">Receitas e Medicamentos</h4>
-                <p className="text-xs text-[#5B6878] leading-relaxed">Acompanhe remédios prescritos, dosagens e instruções médicas com facilidade.</p>
-              </div>
-            </div>
 
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-[#CFE0FF]">
-                <CheckCircle2 size={18} />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-[#14211F]">Pronto para suas Consultas</h4>
-                <p className="text-xs text-[#5B6878] leading-relaxed">Apresente seu histórico completo ao médico sem precisar carregar papéis.</p>
+              <div className="flex items-center gap-3.5">
+                <span className="w-[38px] h-[38px] rounded-full bg-white text-[#1C51BB] flex items-center justify-center shrink-0 shadow-sm">
+                  <Check size={18} strokeWidth={2.5} />
+                </span>
+                <span>Acesse rápido em consultas e emergências</span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Rodapé do painel */}
-        <div className="relative z-10 pt-6 border-t border-[#E3E8F0] text-xs text-[#5B6878]">
-          Saúde Memora • Praticidade e clareza para o seu histórico de saúde
-        </div>
-      </aside>
+          <div className="pt-6 border-t border-white/15 text-xs text-white/80">
+            Saúde Memora • Seu histórico de saúde, sempre à mão.
+          </div>
+        </aside>
+      </div>
 
-      {/* ───────────────────────────────────────────────────────────── */}
-      {/* Modal: Recuperar Senha                                        */}
-      {/* ───────────────────────────────────────────────────────────── */}
+      {/* ── MODAL: RECUPERAR SENHA ─────────────────────────────────── */}
       <AnimatePresence>
         {showForgotModal && (
           <motion.div
@@ -663,7 +593,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 14 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full max-w-[420px] rounded-2xl bg-white p-6 sm:p-7 shadow-xl border border-slate-200"
+              className="relative w-full max-w-[420px] rounded-[24px] bg-white p-6 sm:p-8 shadow-2xl border border-[#DFE7EF]"
             >
               <button
                 type="button"
@@ -672,55 +602,55 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                   setForgotMessage('');
                   setForgotError('');
                 }}
-                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg bg-[#F7F9FC] text-[#536C80] hover:text-[#173754] transition-colors cursor-pointer"
                 aria-label="Fechar"
               >
                 <X size={16} />
               </button>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                <Lock size={20} />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#DFEBFF] text-[#2357D9]">
+                <Lock size={22} />
               </div>
 
-              <h2 className="mt-3.5 text-lg font-bold text-slate-900">Recuperar senha</h2>
-              <p className="mt-1 text-xs sm:text-sm text-slate-500 leading-relaxed">
+              <h2 className="mt-4 text-xl font-bold text-[#173754]">Recuperar senha</h2>
+              <p className="mt-1 text-sm text-[#536C80] leading-relaxed">
                 Digite o e-mail da sua conta para receber as instruções de recuperação.
               </p>
 
               {forgotMessage ? (
-                <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3.5 text-xs sm:text-sm text-blue-800 flex items-start gap-2.5">
-                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                <div className="mt-5 rounded-xl border border-blue-200 bg-[#EEF3FA] p-3.5 text-xs sm:text-sm text-[#2357D9] flex items-start gap-2.5">
+                  <CheckCircle2 size={16} className="text-[#2357D9] shrink-0 mt-0.5" />
                   <span>{forgotMessage}</span>
                 </div>
               ) : (
-                <form onSubmit={handleForgotPassword} className="mt-4 space-y-3">
+                <form onSubmit={handleForgotPassword} className="mt-5 space-y-4">
                   {forgotError && (
-                    <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-center gap-2">
+                    <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-center gap-2">
                       <AlertCircle size={15} className="shrink-0 text-red-600" />
                       <span>{forgotError}</span>
                     </div>
                   )}
                   <div>
-                    <label className="block mb-1 text-xs font-semibold text-slate-700">
+                    <label className="block mb-1.5 text-xs font-bold text-[#24364B]">
                       Seu e-mail cadastrado
                     </label>
                     <input
                       type="email"
                       required
                       autoComplete="email"
-                      placeholder="seu.email@exemplo.com"
+                      placeholder="voce@email.com"
                       value={forgotEmail}
                       onChange={(e) => {
                         setForgotEmail(e.target.value);
                         setForgotError('');
                       }}
-                      className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400"
+                      className="h-11 w-full rounded-xl border border-[#D8E1EC] bg-white px-3.5 text-sm text-[#18324B] outline-none focus:border-[#4C7BE7] focus:ring-4 focus:ring-[#2357D9]/10"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={isForgotLoading}
-                    className="flex h-10 w-full items-center justify-center rounded-lg bg-blue-700 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-blue-800 disabled:opacity-50 cursor-pointer"
+                    className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-br from-[#3169DF] to-[#2357D9] text-sm font-bold text-white shadow-md transition-all hover:from-[#2a5fc9] hover:to-[#1F4FC5] disabled:opacity-50 cursor-pointer"
                   >
                     {isForgotLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : 'Enviar instruções'}
                   </button>
@@ -730,6 +660,6 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
