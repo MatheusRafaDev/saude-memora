@@ -60,7 +60,7 @@ public class AccountDeletionService : IAccountDeletionService
             return true;
         }
 
-        _logger.LogInformation("Processando exclusão do paciente {PacienteId}", pacienteId);
+        _logger.LogInformation("Processing account deletion request.");
 
         try
         {
@@ -74,7 +74,7 @@ public class AccountDeletionService : IAccountDeletionService
                 {
                     if (string.IsNullOrWhiteSpace(pubId)) continue;
                     try { await _storage.DeleteImageAsync(pubId); }
-                    catch (Exception ex) { _logger.LogWarning(ex, "Erro ao remover imagem {PubId}", pubId); }
+                    catch (Exception ex) { _logger.LogWarning("Could not remove a document image. FailureType={FailureType}.", ex.GetType().Name); }
                 }
 
                 if (!string.IsNullOrEmpty(doc.Id))
@@ -87,7 +87,7 @@ public class AccountDeletionService : IAccountDeletionService
             if (!string.IsNullOrWhiteSpace(paciente.IdPublicoCarteirinha))
             {
                 try { await _storage.DeleteImageAsync(paciente.IdPublicoCarteirinha); }
-                catch (Exception ex) { _logger.LogWarning(ex, "Erro ao remover carteirinha {PubId}", paciente.IdPublicoCarteirinha); }
+                catch (Exception ex) { _logger.LogWarning("Could not remove the health card image. FailureType={FailureType}.", ex.GetType().Name); }
             }
 
             // 3. Ficha médica.
@@ -121,12 +121,12 @@ public class AccountDeletionService : IAccountDeletionService
                 Detalhes = $"Exclusão de conta concluída em todas as bases.{prazo}"
             });
 
-            _logger.LogInformation("Paciente {PacienteId} e seus dados foram excluídos.", pacienteId);
+            _logger.LogInformation("Account deletion completed.");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao excluir dados do paciente {PacienteId}", pacienteId);
+            _logger.LogError("Account deletion failed. FailureType={FailureType}.", ex.GetType().Name);
             return false;
         }
     }

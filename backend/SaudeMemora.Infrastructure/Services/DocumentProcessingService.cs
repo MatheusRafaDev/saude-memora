@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +28,7 @@ public class DocumentProcessingService : IOcrAiService
     private readonly string? _groqApiKey;
     private readonly string? _geminiModel;
     private readonly string? _groqModel;
+    private readonly IConfiguration _configuration;
 
     private readonly ILogger<DocumentProcessingService> _logger;
 
@@ -43,6 +45,7 @@ public class DocumentProcessingService : IOcrAiService
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
         _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"];
         _groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL") ?? config["Groq:Model"];
+        _configuration = config;
 
         _logger = logger;
     }
@@ -53,9 +56,9 @@ public class DocumentProcessingService : IOcrAiService
 
     public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_geminiApiKey))
+        if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey))
         {
-            throw new Exception("Faltam chaves de API (OCR_SPACE_API_KEY ou GEMINI_API_KEY). Configure no .env.");
+            throw new Exception("Falta a chave OCR_SPACE_API_KEY. Configure-a no ambiente do servidor.");
         }
 
         // 1. Chamar os dois motores do OCR.space em paralelo
@@ -83,8 +86,8 @@ public class DocumentProcessingService : IOcrAiService
 
     public async Task<DocumentoExtraidoDto> ExtractMultipleDocumentsDataAsync(List<string> imageUrls, string documentType, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey) || string.IsNullOrWhiteSpace(_geminiApiKey))
-            throw new Exception("Faltam chaves de API (OCR_SPACE_API_KEY ou GEMINI_API_KEY). Configure no .env.");
+        if (string.IsNullOrWhiteSpace(_ocrSpaceApiKey))
+            throw new Exception("Falta a chave OCR_SPACE_API_KEY. Configure-a no ambiente do servidor.");
 
         var allTexts = new List<string>();
 
@@ -137,7 +140,8 @@ public class DocumentProcessingService : IOcrAiService
 
         string unifiedText = await UnifyTextsWithGeminiAsync(textEngine1, textEngine2, cancellationToken);
 
-        var prompt = string.Format(AiPrompts.CarteirinhaPrompt, unifiedText, AiPrompts.CarteirinhaFormat);
+        var prompt = AiPrompts.ProtectUntrustedSource(
+            string.Format(AiPrompts.CarteirinhaPrompt, unifiedText, AiPrompts.CarteirinhaFormat));
 
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
@@ -186,13 +190,12 @@ public class DocumentProcessingService : IOcrAiService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Erro ao deserializar carteirinha: {JsonResult}", jsonResult);
+                    _logger.LogWarning("Could not parse the structured health card response. FailureType={FailureType}.", ex.GetType().Name);
                 }
             }
             else
             {
-                var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Gemini falhou na extração de carteirinha. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+                _logger.LogWarning("Gemini card extraction failed. HTTP {StatusCode}.", (int)response.StatusCode);
             }
         }
 
@@ -228,7 +231,7 @@ public class DocumentProcessingService : IOcrAiService
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Erro OCR API HTTP {StatusCode}: {RawJson}", response.StatusCode, rawJson);
+                    _logger.LogWarning("OCR provider request failed. HTTP {StatusCode}.", (int)response.StatusCode);
                     return new OcrCallResult("", false);
                 }
 
@@ -237,8 +240,7 @@ public class DocumentProcessingService : IOcrAiService
 
                 if (result.TryGetProperty("IsErroredOnProcessing", out var isErrored) && isErrored.GetBoolean())
                 {
-                    var errMessage = result.TryGetProperty("ErrorMessage", out var msg) ? msg.ToString() : "Erro desconhecido";
-                    _logger.LogWarning("Erro do Motor OCR {Engine}: {ErrMessage}", engine, errMessage);
+                    _logger.LogWarning("OCR engine returned an error. Engine={Engine}.", engine);
                     return new OcrCallResult("", false);
                 }
 
@@ -252,20 +254,27 @@ public class DocumentProcessingService : IOcrAiService
                 return new OcrCallResult("", true);
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (OperationCanceledException)
         {
             _logger.LogInformation("Chamada OCR Engine {Engine} foi cancelada.", engine);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro OCR Engine {Engine}", engine);
+            _logger.LogWarning("OCR request failed. Engine={Engine} FailureType={FailureType}.", engine, ex.GetType().Name);
         }
         return new OcrCallResult("", false);
     }
 
     private async Task<string> UnifyTextsWithGeminiAsync(string text1, string text2, CancellationToken cancellationToken)
     {
-        var prompt = string.Format(AiPrompts.UnifyPrompt, text1, text2);
+        if (string.IsNullOrWhiteSpace(_geminiApiKey) || string.IsNullOrWhiteSpace(_geminiModel))
+            return text1.Length > text2.Length ? text1 : text2;
+
+        var prompt = AiPrompts.ProtectUntrustedSource(string.Format(AiPrompts.UnifyPrompt, text1, text2));
         var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
         var payload = new
         {
@@ -273,11 +282,6 @@ public class DocumentProcessingService : IOcrAiService
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0
         };
-
-        var request = new HttpRequestMessage(HttpMethod.Post, groqUrl);
-        if (!string.IsNullOrWhiteSpace(_geminiApiKey))
-            request.Headers.Add("Authorization", $"Bearer {_geminiApiKey}");
-        request.Content = JsonContent.Create(payload);
 
         try
         {
@@ -308,9 +312,12 @@ public class DocumentProcessingService : IOcrAiService
                     return groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
                 }
 
-                var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Gemini falhou na unificação de texto. HTTP {StatusCode}: {Error}", response.StatusCode, err);
+                _logger.LogWarning("Gemini text unification failed. HTTP {StatusCode}.", (int)response.StatusCode);
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (OperationCanceledException)
         {
@@ -318,7 +325,7 @@ public class DocumentProcessingService : IOcrAiService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro na unificação via Gemini.");
+            _logger.LogWarning("Gemini text unification failed. FailureType={FailureType}.", ex.GetType().Name);
         }
         
         // Em caso de falha, retorna o que tiver mais conteúdo
@@ -369,7 +376,8 @@ public class DocumentProcessingService : IOcrAiService
             prompt = string.Format(AiPrompts.GenericoPrompt, documentType, unifiedText, AiPrompts.JsonSchema);
         }
 
-        var extractedData = await FallbackToGeminiAsync(unifiedText, prompt, cancellationToken);
+        prompt = AiPrompts.ProtectUntrustedSource(prompt);
+        var extractedData = await FallbackToGeminiThenGroqAsync(unifiedText, prompt, cancellationToken);
         if (string.IsNullOrWhiteSpace(extractedData.Cnes))
             extractedData.Cnes = CnesCodeExtractor.Extract(unifiedText);
 
@@ -378,143 +386,173 @@ public class DocumentProcessingService : IOcrAiService
 
 
 
-    private async Task<DocumentoExtraidoDto> FallbackToGeminiAsync(string unifiedText, string prompt, CancellationToken cancellationToken)
+    private async Task<DocumentoExtraidoDto> FallbackToGeminiThenGroqAsync(string unifiedText, string prompt, CancellationToken cancellationToken)
     {
-        var groqKey = _geminiApiKey;
-        if (string.IsNullOrWhiteSpace(groqKey))
-        {
-            _logger.LogWarning("Chave GROQ_API_KEY não encontrada. Usando modo de segurança string.");
-            var fallbackDto = ParseFallback(unifiedText);
-            fallbackDto.RevisaoPendente = true;
-            return fallbackDto;
-        }
+        var gemini = await TryExtractWithProviderAsync(
+            "Gemini", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            _geminiApiKey, _geminiModel, prompt, unifiedText, cancellationToken, isGemini: true);
+        if (gemini is not null) return gemini;
 
-        var groqUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+        var groq = await TryExtractWithProviderAsync(
+            "Groq", "https://api.groq.com/openai/v1/chat/completions",
+            _groqApiKey, _groqModel, prompt, unifiedText, cancellationToken, isGemini: false);
+        if (groq is not null) return groq;
+
+        _logger.LogWarning("Structured extraction providers were unavailable or returned invalid data; using OCR fallback.");
+        var fallback = ParseFallback(unifiedText);
+        fallback.RevisaoPendente = true;
+        fallback.Resumo = "Aviso: não foi possível validar a extração estruturada. Os dados abaixo foram extraídos apenas via OCR e precisam de revisão.";
+        return fallback;
+    }
+
+    private async Task<DocumentoExtraidoDto?> TryExtractWithProviderAsync(
+        string provider,
+        string url,
+        string? apiKey,
+        string? model,
+        string prompt,
+        string sourceText,
+        CancellationToken cancellationToken,
+        bool isGemini)
+    {
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(model))
+            return null;
+
         var payload = new
         {
-            model = GetGeminiModel(),
+            model,
             messages = new[] { new { role = "user", content = prompt } },
             temperature = 0.0,
             max_tokens = 8192,
-            reasoning_effort = "low",
             response_format = new { type = "json_object" }
         };
-        
-        var response = await _sender.SendAsync(
-            _httpClient,
-            () =>
-            {
-                var req = new HttpRequestMessage(HttpMethod.Post, groqUrl);
-                req.Headers.Add("Authorization", $"Bearer {groqKey}");
-                req.Content = JsonContent.Create(payload);
-                return req;
-            },
-            "Gemini (extração)",
-            TimeoutIa,
-            cancellationToken);
 
-        if (response is null)
+        var stopwatch = Stopwatch.StartNew();
+        var estimatedInputTokens = (int)Math.Ceiling((prompt.Length + 500) / 3d);
+        try
         {
-            var semResposta = ParseFallback(unifiedText);
-            semResposta.RevisaoPendente = true;
-            semResposta.Resumo = "Aviso: o serviço de IA não respondeu. Os dados abaixo foram extraídos apenas via OCR.";
-            return semResposta;
+            using var response = await _sender.SendAsync(
+                _httpClient,
+                () =>
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Post, url);
+                    request.Headers.Add("Authorization", $"Bearer {apiKey}");
+                    request.Content = JsonContent.Create(payload);
+                    return request;
+                },
+                $"{provider} (extração)",
+                TimeoutIa,
+                cancellationToken);
+
+            if (response is null)
+            {
+                stopwatch.Stop();
+                AiModelMetrics.Record("document_extraction", provider, model, "circuit_open", stopwatch.Elapsed.TotalMilliseconds);
+                _logger.LogWarning("{Provider} extraction was skipped by the circuit breaker.", provider);
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                stopwatch.Stop();
+                AiModelMetrics.Record("document_extraction", provider, model, "http_error", stopwatch.Elapsed.TotalMilliseconds);
+                _logger.LogWarning("{Provider} extraction failed. HTTP {StatusCode}.", provider, (int)response.StatusCode);
+                return null;
+            }
+
+            var providerResponse = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+            var jsonResult = providerResponse.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+            if (string.IsNullOrWhiteSpace(jsonResult) || jsonResult.Length > 60000)
+            {
+                stopwatch.Stop();
+                AiModelMetrics.Record("document_extraction", provider, model, "invalid_response", stopwatch.Elapsed.TotalMilliseconds);
+                _logger.LogWarning("{Provider} extraction returned empty or oversized output.", provider);
+                return null;
+            }
+
+            jsonResult = jsonResult.Replace("```json", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("```", "", StringComparison.Ordinal).Trim();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            options.Converters.Add(new FlexibleBooleanConverter());
+            var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options);
+            if (!IsValidExtraction(dto))
+            {
+                stopwatch.Stop();
+                AiModelMetrics.Record("document_extraction", provider, model, "invalid_response", stopwatch.Elapsed.TotalMilliseconds);
+                _logger.LogWarning("{Provider} extraction did not satisfy the document data contract.", provider);
+                return null;
+            }
+
+            dto!.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : sourceText;
+            stopwatch.Stop();
+            var inputTokens = ReadTokenCount(providerResponse, "prompt_tokens");
+            var outputTokens = ReadTokenCount(providerResponse, "completion_tokens");
+            var estimatedCost = AiCostEstimator.Estimate(_configuration, provider, inputTokens, outputTokens);
+            AiModelMetrics.Record(
+                "document_extraction", provider, model, "success", stopwatch.Elapsed.TotalMilliseconds,
+                inputTokens, outputTokens, estimatedCost);
+            _logger.LogInformation(
+                "Structured extraction completed. Provider={Provider} Model={Model} DurationMs={DurationMs} EstimatedInputTokens={EstimatedInputTokens} InputTokens={InputTokens} OutputTokens={OutputTokens} EstimatedCostUsd={EstimatedCostUsd} PromptVersion={PromptVersion} Fallback={Fallback}",
+                provider, model, stopwatch.ElapsedMilliseconds, estimatedInputTokens, inputTokens, outputTokens,
+                estimatedCost, AiPrompts.ExtractionPromptVersion, !isGemini);
+            return dto;
         }
-
-        using (response)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            if (response.IsSuccessStatusCode)
-            {
-                var groqJson = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-                var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
-
-                jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                options.Converters.Add(new FlexibleBooleanConverter());
-                var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-                _logger.LogInformation("Extração estruturada realizada com sucesso via Gemini.");
-                return dto;
-            }
-            else
-            {
-                var err = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Gemini falhou no fallback. HTTP {StatusCode}: {Error}", response.StatusCode, err);
-
-                if (!string.IsNullOrWhiteSpace(_groqApiKey) && !string.IsNullOrWhiteSpace(_groqModel))
-                {
-                    _logger.LogInformation("Tentando extração estruturada via fallback Groq.");
-                    try
-                    {
-                        var groqApiUrl = "https://api.groq.com/openai/v1/chat/completions";
-                        var groqPayload = new
-                        {
-                            model = _groqModel,
-                            messages = new[] { new { role = "user", content = prompt } },
-                            temperature = 0.0,
-                            response_format = new { type = "json_object" }
-                        };
-
-                        var groqResponse = await _sender.SendAsync(
-                            _httpClient,
-                            () =>
-                            {
-                                var req = new HttpRequestMessage(HttpMethod.Post, groqApiUrl);
-                                req.Headers.Add("Authorization", $"Bearer {_groqApiKey}");
-                                req.Content = JsonContent.Create(groqPayload);
-                                return req;
-                            },
-                            "Groq (extração)",
-                            TimeoutIa,
-                            cancellationToken);
-
-                        if (groqResponse is not null)
-                        {
-                            using (groqResponse)
-                            {
-                                if (groqResponse.IsSuccessStatusCode)
-                                {
-                                    var groqJson = await groqResponse.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-                                    var jsonResult = groqJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
-                                    jsonResult = jsonResult.Replace("```json", "").Replace("```", "").Trim();
-
-                                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                                    options.Converters.Add(new FlexibleBooleanConverter());
-                                    var dto = JsonSerializer.Deserialize<DocumentoExtraidoDto>(jsonResult, options) ?? new DocumentoExtraidoDto();
-                                    dto.TextoExtraido = !string.IsNullOrWhiteSpace(dto.TextoFormatado) ? dto.TextoFormatado : unifiedText;
-                                    _logger.LogInformation("Extração estruturada realizada com sucesso via fallback Groq.");
-                                    return dto;
-                                }
-
-                                var groqErr = await groqResponse.Content.ReadAsStringAsync(cancellationToken);
-                                _logger.LogError("Groq falhou no fallback. HTTP {StatusCode}: {Error}", groqResponse.StatusCode, groqErr);
-                            }
-                        }
-                    }
-                    catch (Exception groqEx)
-                    {
-                        _logger.LogError(groqEx, "Erro na chamada do Groq.");
-                    }
-                }
-
-                _logger.LogWarning("Retornando fallback básico devido à falha da API.");
-                var fallbackDto = ParseFallback(unifiedText);
-                fallbackDto.RevisaoPendente = true;
-
-                if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests || err.Contains("Quota exceeded") || err.Contains("RESOURCE_EXHAUSTED"))
-                {
-                    fallbackDto.Resumo = "Aviso: A API de inteligência artificial está com alto volume de uso/esgotada no momento. Os dados abaixo foram extraídos apenas via OCR.";
-                }
-                else
-                {
-                    fallbackDto.Resumo = "Aviso: Falha na extração de IA. Os dados abaixo foram extraídos apenas via OCR.";
-                }
-
-                return fallbackDto;
-            }
+            stopwatch.Stop();
+            AiModelMetrics.Record("document_extraction", provider, model, "cancelled", stopwatch.Elapsed.TotalMilliseconds);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            AiModelMetrics.Record("document_extraction", provider, model, "provider_error", stopwatch.Elapsed.TotalMilliseconds);
+            _logger.LogWarning("{Provider} extraction failed. FailureType={FailureType}.", provider, ex.GetType().Name);
+            return null;
         }
     }
+
+    private static bool IsValidExtraction(DocumentoExtraidoDto? dto)
+    {
+        if (dto is null) return false;
+        if (dto.Medicamentos is null || dto.ResultadosExame is null || dto.ConteudoIndentado is null || dto.Confiancas is null)
+            return false;
+        if (dto.Medicamentos.Count > 100 || dto.ResultadosExame.Count > 500
+            || dto.ConteudoIndentado.Count > 500 || dto.Confiancas.Count > 500)
+            return false;
+        if (new[]
+            {
+                dto.Titulo, dto.Medico, dto.Clinica, dto.Data, dto.Resumo, dto.Diagnostico,
+                dto.Crm, dto.Cid, dto.Cnes, dto.NomeExame, dto.TipoExame, dto.Resultado,
+                dto.Especialidade, dto.TipoClinico, dto.Conteudo, dto.Conclusoes, dto.Observacoes,
+                dto.TextoFormatado
+            }.Any(value => value is { Length: > 20000 }))
+            return false;
+        if (dto.Medicamentos.Any(item => item is null || item.Nome is null || item.Dosagem is null || item.Horario is null
+            || item.Nome.Length > 500 || item.Dosagem.Length > 500 || item.Horario.Length > 1000))
+            return false;
+        if (dto.Confiancas.Any(item => item is null || !double.IsFinite(item.Valor) || item.Valor is < 0 or > 1))
+            return false;
+        if (!dto.DocumentoValido)
+            return true;
+
+        var anyExtractedData = !string.IsNullOrWhiteSpace(dto.Titulo)
+            || !string.IsNullOrWhiteSpace(dto.Resumo)
+            || !string.IsNullOrWhiteSpace(dto.TextoFormatado)
+            || dto.Medicamentos.Count > 0
+            || dto.ResultadosExame.Count > 0
+            || dto.ConteudoIndentado.Count > 0;
+        return anyExtractedData
+            && new[] { "exame", "receita", "laudo", "atestado", "encaminhamento", "vacina", "clinico" }
+                .Contains(dto.TipoIdentificado, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static int? ReadTokenCount(JsonElement response, string fieldName) =>
+        response.TryGetProperty("usage", out var usage)
+        && usage.TryGetProperty(fieldName, out var value)
+        && value.TryGetInt32(out var tokens)
+            ? tokens
+            : null;
 
     private DocumentoExtraidoDto ParseFallback(string text)
     {

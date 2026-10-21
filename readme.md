@@ -68,6 +68,10 @@ Com o **SaúdeMemora**, o usuário pode:
 - **Banco de Dados:** MongoDB para dados da aplicação.
 - **Storage:** Cloudinary para arquivos enviados, quando configurado.
 
+### IA generativa e recuperação
+
+O chat mantém o consentimento e a autenticação existentes, usa chamadas de ferramenta locais do Groq para consultar a ficha médica e buscar documentos do próprio paciente, e limita o histórico, a entrada e a saída. A busca atual é lexical e executada pela API sobre os documentos processados do usuário; não é busca semântica por embeddings. Consulte [docs/ai-architecture.md](docs/ai-architecture.md) para o fluxo, decisões, variáveis de ambiente e limites de implantação.
+
 ---
 
 ## ⚕️ Uso responsável e privacidade
