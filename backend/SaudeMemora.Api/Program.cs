@@ -67,7 +67,12 @@ builder.Services.AddScoped<ICid10CatalogoService, Cid10CatalogoService>();
 builder.Services.AddScoped<ICnesCatalogoRepository, CnesCatalogoRepository>();
 builder.Services.AddScoped<ICnesCatalogoService, CnesCatalogoService>();
 builder.Services.AddScoped<IChatCompletionClient, GroqChatCompletionClient>();
-builder.Services.AddScoped<IPatientDocumentSearch, LexicalPatientDocumentSearch>();
+builder.Services.AddScoped<IDocumentVectorRepository, DocumentVectorRepository>();
+builder.Services.AddScoped<IEmbeddingService, GeminiEmbeddingService>();
+builder.Services.AddSingleton<IDocumentChunker, DocumentChunker>();
+builder.Services.AddScoped<IDocumentVectorIndexer, DocumentVectorIndexer>();
+builder.Services.AddScoped<LexicalPatientDocumentSearch>();
+builder.Services.AddScoped<IPatientDocumentSearch, HybridPatientDocumentSearch>();
 builder.Services.AddScoped<PatientChatTools>();
 builder.Services.AddScoped<PatientChatOrchestrator>();
 
@@ -1643,7 +1648,7 @@ app.MapPut("/api/documents/{id}", async (
 }).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 
 // Exclui documento por ID (e remove do Cloudinary)
-app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria) =>
+app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDocumentVectorRepository vectorRepo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -1660,6 +1665,7 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
         context.ParaAuditoria(), AuditoriaOperacao.Exclusao, "Documento", id, AuditoriaResultado.Sucesso);
 
     await repo.DeleteAsync(id);
+    await vectorRepo.DeleteByDocumentoIdAsync(id);
 
     if (doc.IdPublicos != null && doc.IdPublicos.Any())
     {

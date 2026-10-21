@@ -321,14 +321,14 @@ public sealed class PatientChatTools
         return string.Join("\n", paragraphs.Select(paragraph => paragraph.Text));
     }
 
-    private static IReadOnlyList<string> GetTerms(string text) => WordPattern.Matches(Normalize(text))
+    internal static IReadOnlyList<string> GetTerms(string text) => WordPattern.Matches(Normalize(text))
         .Select(match => match.Value)
         .Where(term => term.Length > 2 && !StopWords.Contains(term))
         .Distinct(StringComparer.Ordinal)
         .Take(12)
         .ToArray();
 
-    private static int MatchScore(string text, IReadOnlyList<string> terms)
+    internal static int MatchScore(string text, IReadOnlyList<string> terms)
     {
         if (terms.Count == 0 || string.IsNullOrWhiteSpace(text)) return 0;
         var normalized = Normalize(text);

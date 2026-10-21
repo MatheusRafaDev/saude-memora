@@ -126,6 +126,7 @@ public class DocumentProcessingWorker : BackgroundService
         var ocrAiService = scope.ServiceProvider.GetRequiredService<IOcrAiService>();
         var cache = scope.ServiceProvider.GetRequiredService<IDistributedCache>();
         var storage = scope.ServiceProvider.GetRequiredService<IImageStorageService>();
+        var vectorIndexer = scope.ServiceProvider.GetService<IDocumentVectorIndexer>();
 
         // Busca o próximo documento e coloca um lock de 10 minutos (tempo generoso para IA/OCR processar)
         var lockDuration = TimeSpan.FromMinutes(10);
@@ -351,6 +352,18 @@ public class DocumentProcessingWorker : BackgroundService
             await repo.UpdateAsync(doc);
             await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
             await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(doc.PacienteId));
+
+            if (vectorIndexer != null)
+            {
+                try
+                {
+                    await vectorIndexer.IndexDocumentAsync(doc, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Falha ao gerar embeddings vetoriais para documento {DocId}.", doc.Id);
+                }
+            }
 
             _logger.LogInformation("Documento {DocId} processado com SUCESSO.", doc.Id);
             

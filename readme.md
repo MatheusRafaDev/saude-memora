@@ -70,7 +70,7 @@ Com o **SaúdeMemora**, o usuário pode:
 
 ### IA generativa e recuperação
 
-O chat mantém o consentimento e a autenticação existentes, usa chamadas de ferramenta locais do Groq para consultar a ficha médica e buscar documentos do próprio paciente, e limita o histórico, a entrada e a saída. A busca atual é lexical e executada pela API sobre os documentos processados do usuário; não é busca semântica por embeddings. Consulte [docs/ai-architecture.md](docs/ai-architecture.md) para o fluxo, decisões, variáveis de ambiente e limites de implantação.
+O chat mantém o consentimento e a autenticação existentes, usa chamadas de ferramenta locais do Groq para consultar a ficha médica e buscar documentos do próprio paciente via **RAG Híbrido** (busca semântica com embeddings Google Gemini `text-embedding-004` armazenados no banco vetorial MongoDB com similaridade de cosseno e sobreposição lexical), limitando histórico, entrada e saída. Consulte [docs/ai-architecture.md](docs/ai-architecture.md) para o fluxo completo, matriz de conformidade, decisões e variáveis de ambiente.
 
 ---
 

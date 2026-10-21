@@ -57,6 +57,22 @@ public static class ChatEndpoints
                 day.UpdatedAt)).ToArray()));
         }).Produces<ChatHistoryDaysResponse>().RequireAuthorization();
 
+        app.MapPost("/api/chat/reindex", async (
+            ClaimsPrincipal user,
+            IDocumentVectorIndexer vectorIndexer,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId is null) return Results.Unauthorized();
+
+            var count = await vectorIndexer.IndexPendingDocumentsForPatientAsync(userId, cancellationToken);
+            return Results.Ok(new
+            {
+                message = $"{count} documento(s) indexado(s) com embeddings para busca vetorial.",
+                indexados = count
+            });
+        }).RequireAuthorization();
+
         app.MapPost("/api/chat", async (
             ChatRequest req,
             ClaimsPrincipal user,

@@ -32,6 +32,7 @@ public class AccountDeletionService : IAccountDeletionService
     private readonly ISistemaLogRepository _logRepo;
     private readonly IImageStorageService _storage;
     private readonly ILogger<AccountDeletionService> _logger;
+    private readonly IDocumentVectorRepository? _vectorRepo;
 
     public AccountDeletionService(
         IPacienteRepository pacienteRepo,
@@ -40,7 +41,8 @@ public class AccountDeletionService : IAccountDeletionService
         IChatHistoryRepository chatRepo,
         ISistemaLogRepository logRepo,
         IImageStorageService storage,
-        ILogger<AccountDeletionService> logger)
+        ILogger<AccountDeletionService> logger,
+        IDocumentVectorRepository? vectorRepo = null)
     {
         _pacienteRepo = pacienteRepo;
         _docRepo = docRepo;
@@ -49,6 +51,7 @@ public class AccountDeletionService : IAccountDeletionService
         _logRepo = logRepo;
         _storage = storage;
         _logger = logger;
+        _vectorRepo = vectorRepo;
     }
 
     public async Task<bool> ExcluirContaAsync(string pacienteId, CancellationToken cancellationToken = default)
@@ -81,6 +84,13 @@ public class AccountDeletionService : IAccountDeletionService
                 {
                     await _docRepo.DeleteAsync(doc.Id);
                 }
+            }
+
+            // 1.1 Chunks vetoriais e embeddings do titular
+            if (_vectorRepo != null)
+            {
+                try { await _vectorRepo.DeleteAllByPacienteIdAsync(pacienteId, cancellationToken); }
+                catch (Exception ex) { _logger.LogWarning("Could not remove patient vector chunks. FailureType={FailureType}.", ex.GetType().Name); }
             }
 
             // 2. Imagem da carteirinha.

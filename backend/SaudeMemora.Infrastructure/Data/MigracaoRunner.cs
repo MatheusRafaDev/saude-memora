@@ -44,6 +44,7 @@ public class MigracaoRunner
             ("20261014_06_indices_catalogos", IndicesCatalogosAsync),
             ("20261014_07_seed_catalogos", SeedCatalogosAsync),
             ("20261014_08_backfill_security_stamp", BackfillSecurityStampAsync),
+            ("20261021_01_indices_document_chunks", IndicesDocumentChunksAsync),
         };
 
         foreach (var (id, executar) in migracoes)
@@ -121,6 +122,9 @@ public class MigracaoRunner
 
     private Task IndicesChatAsync(CancellationToken ct)
         => ChatHistoryRepository.EnsureIndexesAsync(_context, ct);
+
+    private Task IndicesDocumentChunksAsync(CancellationToken ct)
+        => DocumentVectorRepository.EnsureIndexesAsync(_context, ct);
 
     private async Task IndicesLogsEAuditoriaAsync(CancellationToken ct)
     {
