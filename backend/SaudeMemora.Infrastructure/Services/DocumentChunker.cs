@@ -84,7 +84,7 @@ public class DocumentChunker : IDocumentChunker
             Data = document.Data ?? string.Empty,
             Texto = text.Trim(),
             Embedding = new List<float>(),
-            ModeloEmbedding = "text-embedding-004",
+            ModeloEmbedding = "gemini-embedding-2",
             Versao = version,
             CriadoEm = DateTime.UtcNow,
             AtualizadoEm = DateTime.UtcNow

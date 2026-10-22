@@ -8,7 +8,7 @@ namespace SaudeMemora.Api.Services;
 
 /// <summary>
 /// Provedor de busca vetorial semântica e híbrida para RAG do paciente autenticado.
-/// Combina similaridade de cosseno de embeddings gerados pelo Gemini (text-embedding-004)
+/// Combina similaridade de cosseno de embeddings gerados pelo Gemini (gemini-embedding-2)
 /// com pontuação lexical, garantindo isolamento estrito de paciente e fallback transparente
 /// para busca puramente lexical caso o serviço de embeddings esteja indisponível.
 /// </summary>
@@ -73,6 +73,7 @@ public sealed class HybridPatientDocumentSearch : IPatientDocumentSearch
         var scoredChunks = chunks
             .Where(chunk => string.Equals(chunk.PacienteId, authenticatedPatientId, StringComparison.Ordinal)
                 && chunk.Embedding is { Count: > 0 }
+                && string.Equals(chunk.ModeloEmbedding, _embeddingService.ModelName, StringComparison.Ordinal)
                 && !string.IsNullOrWhiteSpace(chunk.DocumentoId))
             .Select(chunk =>
             {

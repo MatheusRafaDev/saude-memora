@@ -13,7 +13,7 @@ public sealed class GroqChatCompletionClient : IChatCompletionClient
     private const string ProviderName = "Groq";
     private const string BaseUrl = "https://api.groq.com/openai/v1/";
     // Model selection belongs to the application code, not deployment settings.
-    public const string DefaultModel = "llama-3.1-8b-instant";
+    public const string DefaultModel = "qwen/qwen3.8-27b";
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ResilientHttpSender _sender;
     private readonly IConfiguration _configuration;
@@ -101,10 +101,12 @@ public sealed class GroqChatCompletionClient : IChatCompletionClient
             if (!response.IsSuccessStatusCode)
             {
                 stopwatch.Stop();
+                var providerDetail = await response.Content.ReadAsStringAsync(cancellationToken);
                 AiModelMetrics.Record("chat", ProviderName, request.Model, "http_error", stopwatch.Elapsed.TotalMilliseconds);
                 _logger.LogWarning(
-                    "AI request returned an error. Provider={Provider} Model={Model} StatusCode={StatusCode} DurationMs={DurationMs} CorrelationId={CorrelationId}",
-                    ProviderName, request.Model, (int)response.StatusCode, stopwatch.ElapsedMilliseconds, request.CorrelationId);
+                    "AI request returned an error. Provider={Provider} Model={Model} StatusCode={StatusCode} DurationMs={DurationMs} CorrelationId={CorrelationId} ProviderDetail={ProviderDetail}",
+                    ProviderName, request.Model, (int)response.StatusCode, stopwatch.ElapsedMilliseconds, request.CorrelationId,
+                    FormatProviderDetail(providerDetail));
                 throw new ChatProviderException("The AI provider rejected or could not complete the request.", (int)response.StatusCode);
             }
 
@@ -145,6 +147,12 @@ public sealed class GroqChatCompletionClient : IChatCompletionClient
     }
 
     internal static int EstimateTokens(int characterCount) => (int)Math.Ceiling(characterCount / 3d);
+
+    private static string FormatProviderDetail(string? value)
+    {
+        var normalized = string.Join(' ', (value ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return normalized.Length <= 1000 ? normalized : normalized[..1000];
+    }
 
     private static object CreatePayload(ChatCompletionRequest request)
     {

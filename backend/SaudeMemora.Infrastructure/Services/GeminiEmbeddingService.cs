@@ -10,7 +10,7 @@ namespace SaudeMemora.Infrastructure.Services;
 
 public class GeminiEmbeddingService : IEmbeddingService
 {
-    private const string DefaultModel = "text-embedding-004";
+    private const string DefaultModel = "gemini-embedding-2";
     private readonly string? _apiKey;
     private readonly string _modelName;
     private readonly HttpClient _httpClient;
@@ -85,8 +85,13 @@ public class GeminiEmbeddingService : IEmbeddingService
             if (response == null || !response.IsSuccessStatusCode)
             {
                 var statusCode = response?.StatusCode.ToString() ?? "NoResponse";
+                var providerDetail = response is null
+                    ? null
+                    : await response.Content.ReadAsStringAsync(cancellationToken);
                 AiModelMetrics.Record("embedding", "Gemini", _modelName, "failure", stopwatch.Elapsed.TotalMilliseconds);
-                _logger.LogWarning("Gemini embeddings batch request failed. StatusCode={StatusCode}", statusCode);
+                _logger.LogWarning(
+                    "Gemini embeddings batch request failed. Model={Model} StatusCode={StatusCode} ProviderDetail={ProviderDetail}",
+                    _modelName, statusCode, FormatProviderDetail(providerDetail));
                 return Array.Empty<float[]>();
             }
 
@@ -128,5 +133,11 @@ public class GeminiEmbeddingService : IEmbeddingService
             _logger.LogWarning("Failed to generate Gemini embeddings. FailureType={FailureType}", ex.GetType().Name);
             return Array.Empty<float[]>();
         }
+    }
+
+    private static string FormatProviderDetail(string? value)
+    {
+        var normalized = string.Join(' ', (value ?? string.Empty).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return normalized.Length <= 1000 ? normalized : normalized[..1000];
     }
 }

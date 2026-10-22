@@ -90,14 +90,19 @@ public class DocumentVectorIndexer : IDocumentVectorIndexer
         var readyDocs = allDocs
             .Where(d => d.PacienteId == pacienteId && string.Equals(d.Status, "pronto", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(d.Id))
             .ToList();
+        var existingChunks = await _vectorRepo.GetChunksByPacienteIdAsync(pacienteId, cancellationToken: cancellationToken);
+        var documentsWithCurrentModel = existingChunks
+            .Where(chunk => string.Equals(chunk.ModeloEmbedding, _embeddingService.ModelName, StringComparison.Ordinal))
+            .Select(chunk => chunk.DocumentoId)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToHashSet(StringComparer.Ordinal);
 
         var indexedCount = 0;
         foreach (var doc in readyDocs)
         {
             if (cancellationToken.IsCancellationRequested) break;
 
-            var alreadyIndexed = await _vectorRepo.HasIndexedChunksAsync(pacienteId, doc.Id!, cancellationToken);
-            if (!alreadyIndexed)
+            if (!documentsWithCurrentModel.Contains(doc.Id!))
             {
                 var success = await IndexDocumentAsync(doc, cancellationToken);
                 if (success) indexedCount++;
