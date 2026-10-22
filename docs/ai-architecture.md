@@ -1,5 +1,8 @@
 # Arquitetura de IA do SaúdeMemora
 
+> [!NOTE]
+> Para a documentação técnica exaustiva com fluxogramas detalhados, mapas mentais, análise de fine-tuning, código, variáveis de ambiente e banco vetorial, consulte o documento completo: [arquitetura-ia-fluxo-completo.md](file:///c:/Users/rafae/Documents/GitHub/saude-memora/docs/arquitetura-ia-fluxo-completo.md).
+
 ## Matriz de Conformidade e Decisões de IA
 
 | Componente | Status | Implementação e Justificativa |
