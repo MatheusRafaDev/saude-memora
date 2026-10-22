@@ -86,11 +86,14 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
+  // Só verifica sessão ativa se não está já no modo cadastro (evita request desnecessário)
   const { data: currentUser } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
       staleTime: 5 * 60 * 1000,
+      // Não dispara a query se chegou diretamente na página de cadastro
+      enabled: defaultMode !== 'register' && location !== '/cadastro' && location !== '/criar-conta',
       meta: { skipUnauthorizedRedirect: true },
     },
   });
@@ -240,11 +243,20 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           },
         });
 
-        // Alterna para aba de login com mensagem animada
+        // Reseta o formulário e alterna para aba de login com mensagem animada
+        setForm({ name: '', birthDate: '', sex: '', email: form.email.trim(), password: '', termsAccepted: false });
         switchMode('login', 'Conta criada com sucesso! Faça login para continuar.');
       }
     } catch (err: any) {
-      setError(getApiErrorMessage(err, 'Ocorreu um erro ao processar sua solicitação. Verifique seus dados.'));
+      // Mensagens de erro mais amigáveis baseadas no status HTTP
+      const status = err?.status ?? err?.response?.status;
+      if (status === 409) {
+        setError('Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.');
+      } else if (status === 400) {
+        setError(getApiErrorMessage(err, 'Dados inválidos. Verifique as informações e tente novamente.'));
+      } else {
+        setError(getApiErrorMessage(err, 'Ocorreu um erro ao processar sua solicitação. Verifique seus dados.'));
+      }
     }
   };
 

@@ -9,6 +9,10 @@ import {
   ShieldAlert,
   User,
   X,
+  AlertTriangle,
+  Activity,
+  Pill,
+  Heart,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -310,17 +314,85 @@ export function EmergenciaModal({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 border-t border-white/10 pt-4 sm:grid-cols-2">
-              <InfoSection dark title="Alergias">
-                {allergies.length ? allergies.join(" · ") : ""}
-              </InfoSection>
-              <InfoSection dark title="Condições de saúde">
-                {conditions.length ? conditions.join(" · ") : ""}
-              </InfoSection>
-              <InfoSection dark title="Medicamentos contínuos">
-                {medications.length ? medications.join(" · ") : ""}
-              </InfoSection>
-              <InfoSection dark title="Doador de órgãos">{donorLabel}</InfoSection>
+            {/* Alergias - Highest emergency priority */}
+            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-950/25 p-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-red-400 mb-2 uppercase tracking-[0.08em]">
+                <AlertTriangle size={14} className="text-[#E8664A] shrink-0" />
+                <span>Alergias e Restrições</span>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {allergies.length > 0 ? (
+                  allergies.map((item: string) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 text-xs font-bold shadow-xs"
+                    >
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400">Nenhuma alergia informada</span>
+                )}
+              </div>
+            </div>
+
+            {/* Condições de saúde */}
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-950/25 p-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 mb-2 uppercase tracking-[0.08em]">
+                <Activity size={14} className="text-amber-400 shrink-0" />
+                <span>Condições e Doenças Crônicas</span>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {conditions.length > 0 ? (
+                  conditions.map((item: string) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-bold shadow-xs"
+                    >
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400">Nenhuma condição informada</span>
+                )}
+              </div>
+            </div>
+
+            {/* Medicamentos contínuos */}
+            <div className="mt-3 rounded-xl border border-blue-500/30 bg-blue-950/25 p-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-blue-300 mb-2 uppercase tracking-[0.08em]">
+                <Pill size={14} className="text-blue-400 shrink-0" />
+                <span>Medicamentos em Uso Contínuo</span>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {medications.length > 0 ? (
+                  medications.map((item: string) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-200 text-xs font-bold shadow-xs"
+                    >
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400">Nenhum medicamento informado</span>
+                )}
+              </div>
+            </div>
+
+            {/* Doador de órgãos */}
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white">
+              <span className="font-semibold text-slate-300">Doador de órgãos:</span>
+              <span className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${
+                ficha.doadorOrgaos === true ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                ficha.doadorOrgaos === false ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                'bg-slate-700/50 text-slate-400'
+              }`}>
+                {donorLabel}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 border-t border-white/10 pt-3 sm:grid-cols-2">
               <InfoSection dark title="Cirurgias anteriores">
                 {ficha.cirurgias?.trim()}
               </InfoSection>
@@ -344,8 +416,8 @@ export function EmergenciaModal({
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-white/10 text-[12px] text-slate-300">
-              ⚠️ Informado por você na ficha médica. Confira com um profissional de saúde.
+            <div className="mt-3 pt-2.5 border-t border-white/10 text-[11px] text-slate-300">
+              ⚠️ Informado por você na ficha médica. Em caso de socorro, confirme os dados com a equipe de atendimento.
             </div>
           </div>
 

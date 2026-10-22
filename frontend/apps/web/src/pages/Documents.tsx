@@ -174,12 +174,69 @@ export default function Documents() {
       if (tipo && (DOCUMENT_TYPE_LABELS[tipo] || tipo === 'all')) {
         return tipo;
       }
+      try {
+        const saved = sessionStorage.getItem('docs-selected-category');
+        if (saved && (DOCUMENT_TYPE_LABELS[saved] || saved === 'all')) {
+          return saved;
+        }
+      } catch {
+        // sessionStorage indisponível
+      }
     }
     return 'all';
   });
-  const [selectedPeriod, setSelectedPeriod] = useState('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('docs-selected-period');
+      if (saved && PERIOD_OPTIONS.some((p) => p.id === saved)) {
+        return saved;
+      }
+    } catch {
+      // sessionStorage indisponível
+    }
+    return 'all';
+  });
+
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    // Recupera preferência salva na sessão para manter entre navegações
+    try {
+      const saved = sessionStorage.getItem('docs-view-mode');
+      if (saved === 'list' || saved === 'grid') return saved;
+    } catch {
+      // sessionStorage indisponível (ex: modo privado restrito)
+    }
+    return 'grid';
+  });
   const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  // Persiste preferência de visualização na sessionStorage
+  const handleViewModeChange = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    try {
+      sessionStorage.setItem('docs-view-mode', mode);
+    } catch {
+      // Ignora erros de storage
+    }
+  };
+
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    try {
+      sessionStorage.setItem('docs-selected-category', cat);
+    } catch {
+      // Ignora erros de storage
+    }
+  };
+
+  const handlePeriodChange = (period: string) => {
+    setSelectedPeriod(period);
+    try {
+      sessionStorage.setItem('docs-selected-period', period);
+    } catch {
+      // Ignora erros de storage
+    }
+  };
 
   // Listen to document-uploaded event
   useEffect(() => {
@@ -514,7 +571,7 @@ export default function Documents() {
             <div className="flex h-11 shrink-0 items-center justify-between rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1 sm:justify-start">
               <button
                 type="button"
-                onClick={() => setViewMode('grid')}
+                onClick={() => handleViewModeChange('grid')}
                 aria-label="Visualizar em grade"
                 aria-pressed={viewMode === 'grid'}
                 className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors sm:flex-none cursor-pointer ${viewMode === 'grid' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
@@ -523,7 +580,7 @@ export default function Documents() {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('list')}
+                onClick={() => handleViewModeChange('list')}
                 aria-label="Visualizar em lista"
                 aria-pressed={viewMode === 'list'}
                 className={`flex h-9 flex-1 items-center justify-center gap-2 rounded-lg px-3.5 text-xs font-semibold transition-colors sm:flex-none cursor-pointer ${viewMode === 'list' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'}`}
@@ -537,7 +594,7 @@ export default function Documents() {
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="min-w-0">
               <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Tipo de documento</span>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                 <SelectTrigger
                   aria-label="Filtrar por tipo de documento"
                   className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] shadow-none hover:border-[#1D4ED8]/50 focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8] transition-colors"
@@ -592,7 +649,7 @@ export default function Documents() {
 
             <div className="min-w-0">
               <span className="mb-1 block text-xs font-semibold text-[#5B6878]">Período de envio</span>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
                 <SelectTrigger
                   aria-label="Filtrar por período"
                   className="h-11 w-full rounded-xl border border-[#E3E8F0] bg-white px-3 text-sm text-[#14211F] shadow-none hover:border-[#1D4ED8]/50 focus:border-[#1D4ED8] focus:ring-1 focus:ring-[#1D4ED8] transition-colors"

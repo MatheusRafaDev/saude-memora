@@ -220,34 +220,58 @@ export default function Emergencia({ token }: { token?: string } = {}) {
   };
 
   return (
-      <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
-      <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-9 pb-16">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#14211F] font-sans pb-16">
+      <main className="max-w-[1240px] mx-auto px-3.5 sm:px-6 lg:px-8 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
-        <div className="flex justify-between items-end gap-5 mb-7 flex-wrap">
+        <div className="flex justify-between items-end gap-3 sm:gap-5 mb-5 sm:mb-7 flex-wrap">
           <div>
             <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1D4ED8]">
-              {isPublicMode ? 'Atendimento Médico' : 'Ficha rápida'}
+              {isPublicMode ? 'Atendimento Médico de Urgência' : 'Ficha rápida'}
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#14211F] font-serif">
-              Emergência
+            <h1 className="mt-1.5 mb-0 text-2xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#14211F]">
+              Ficha de Emergência
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
+            <p className="mt-1 mb-0 text-[#5B6878] text-xs sm:text-base">
               {isPublicMode
-                ? 'Ficha médica rápida para socorristas e equipe hospitalar.'
-                : 'Informações essenciais, em letras grandes e fáceis de ler.'}
+                ? 'Ficha médica prioritária para socorristas, médicos e equipe hospitalar.'
+                : 'Informações vitais em destaque para consulta rápida e socorro.'}
             </p>
           </div>
 
           {isPublicMode && (
-            <div className="inline-flex items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-4 py-2.5 text-xs font-semibold text-[#1D4ED8] shadow-xs">
+            <div className="inline-flex items-center gap-2 rounded-xl border border-[#CFE0FF] bg-blue-50 px-3.5 py-2 text-xs font-semibold text-[#1D4ED8] shadow-xs">
               <span className="h-2 w-2 rounded-full bg-[#1D4ED8] animate-pulse" />
-              Acesso autorizado via QR Code
+              Acesso seguro via QR Code
+            </div>
+          )}
+        </div>
+
+        {/* Quick mobile emergency action bar */}
+        <div className="grid grid-cols-2 gap-2.5 sm:hidden mb-4">
+          <a
+            href="tel:192"
+            className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-[#E8664A] px-3 text-sm font-bold text-white shadow-sm active:bg-[#D45338]"
+          >
+            <Phone size={16} />
+            Ligar 192 (SAMU)
+          </a>
+          {hasEmergencyContact && emergencyPhone.length >= 8 ? (
+            <a
+              href={`tel:${emergencyPhone}`}
+              className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-3 text-sm font-bold text-white shadow-sm active:bg-[#1E40AF]"
+            >
+              <Phone size={16} />
+              Ligar Contato
+            </a>
+          ) : (
+            <div className="flex min-h-[46px] items-center justify-center rounded-xl border border-[#E3E8F0] bg-white px-2 text-center text-xs font-medium text-[#5B6878]">
+              Sem contato cadastrado
             </div>
           )}
         </div>
 
         {/* 2-col Layout */}
-        <div className="flex gap-6 flex-wrap items-start">
+        <div className="flex gap-5 sm:gap-6 flex-wrap items-start">
           {(isLoadingPublic || (!isPublicMode && (isProfileLoading || isFichaLoading))) ? (
             <div className="w-full rounded-2xl border border-[#dde3ec] bg-white p-5 sm:p-8 text-center text-[#5a6a80]">
               Carregando ficha de emergência…
@@ -259,89 +283,97 @@ export default function Emergencia({ token }: { token?: string } = {}) {
           ) : (
           <>
           {/* Main Card (flex: 2) */}
-          <div className="min-w-0 flex-[2]">
-            <div className="bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-white border-2 border-[#E8664A] rounded-[28px] p-7 sm:p-9 shadow-xl relative overflow-hidden">
+          <div className="min-w-0 w-full lg:flex-[2]">
+            <div className="bg-gradient-to-br from-[#0F1E36] via-[#162B4D] to-[#0D1829] text-white border-2 border-[#E8664A] rounded-[22px] sm:rounded-[28px] p-4 sm:p-7 md:p-8 shadow-xl relative overflow-hidden">
               {/* Header inside card with Blood Badge */}
-              <div className="flex justify-between items-center gap-4 flex-wrap">
-                <div>
-                  <div className="text-[13px] font-extrabold tracking-[0.16em] text-[#E8664A] uppercase">
+              <div className="flex justify-between items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] sm:text-[13px] font-extrabold tracking-[0.16em] text-[#E8664A] uppercase">
                     Ficha de emergência
                   </div>
-                  <div className="text-3xl sm:text-[42px] font-extrabold tracking-[-0.03em] mt-1.5 text-white font-serif">
+                  <div className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-1 text-white truncate">
                     {name}
                   </div>
-                  <div className="text-base sm:text-lg text-slate-300 mt-0.5">
-                    {displayedAge !== null ? `${displayedAge} anos` : 'Idade não informada'}
-                    {hasValidBirthDate ? ` · Nascimento ${birthDateFormatted}` : ''}
-                    {sex ? ` · ${sex}` : ''}
+                  <div className="text-xs sm:text-base text-slate-300 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-medium">
+                    {displayedAge !== null ? <span>{displayedAge} anos</span> : <span>Idade não informada</span>}
+                    {hasValidBirthDate && <span>· Nasc. {birthDateFormatted}</span>}
+                    {sex && <span>· Sexo {sex}</span>}
                   </div>
                 </div>
 
-                <div className="w-[120px] h-[120px] rounded-[28px] bg-[#E8664A] text-white flex flex-col items-center justify-center shrink-0 shadow-md">
-                  <div className="text-xs font-bold tracking-[0.1em]">SANGUE</div>
-                  <div className="font-serif text-4xl font-semibold leading-tight sm:text-[48px]">
-                    {bloodType || 'Não informado'}
-                  </div>
+                {/* Blood Group Badge */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-2xl sm:rounded-[24px] bg-[#E8664A] text-white flex flex-col items-center justify-center shrink-0 shadow-lg border border-white/20">
+                  <span className="text-[9px] sm:text-[11px] font-extrabold tracking-[0.14em]">SANGUE</span>
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-black leading-none mt-0.5">
+                    {bloodType || 'N/I'}
+                  </span>
                 </div>
               </div>
 
-              {/* Alergias */}
-              <div className="mt-7">
-                <div className="text-sm font-bold text-[#93C5FD] mb-2.5 uppercase tracking-[0.08em]">
-                  Alergias
+              {/* Alergias - Highest emergency priority */}
+              <div className="mt-5 sm:mt-6 rounded-2xl border border-red-500/30 bg-red-950/20 p-3 sm:p-4">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-red-400 mb-2 uppercase tracking-[0.08em]">
+                  <AlertTriangle size={15} className="text-[#E8664A] shrink-0" />
+                  <span>Alergias e Restrições</span>
                 </div>
-                <div className="flex gap-2.5 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {allergies.length > 0 ? allergies.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-[#E8664A]/20 border border-[#E8664A]/40 text-[#FF9E8A] text-[15px] font-bold whitespace-nowrap"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-200 text-xs sm:text-sm font-bold shadow-xs"
                     >
                       {item}
                     </span>
-                  )) : <span className="text-sm text-slate-400">Não informado</span>}
+                  )) : <span className="text-xs sm:text-sm text-slate-400">Nenhuma alergia informada</span>}
                 </div>
               </div>
 
               {/* Condições de saúde */}
-              <div className="mt-7">
-                <div className="text-sm font-bold text-[#93C5FD] mb-2.5 uppercase tracking-[0.08em]">
-                  Condições de saúde
+              <div className="mt-4 sm:mt-5 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3 sm:p-4">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300 mb-2 uppercase tracking-[0.08em]">
+                  <Activity size={15} className="text-amber-400 shrink-0" />
+                  <span>Condições e Doenças Crônicas</span>
                 </div>
-                <div className="flex gap-2.5 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {conditions.length > 0 ? conditions.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-200 text-[15px] font-bold whitespace-nowrap"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs sm:text-sm font-bold shadow-xs"
                     >
                       {item}
                     </span>
-                  )) : <span className="text-sm text-slate-400">Não informado</span>}
+                  )) : <span className="text-xs sm:text-sm text-slate-400">Nenhuma condição informada</span>}
                 </div>
               </div>
 
               {/* Medicamentos contínuos */}
-              <div className="mt-7">
-                <div className="text-sm font-bold text-[#93C5FD] mb-2.5 uppercase tracking-[0.08em]">
-                  Medicamentos contínuos
+              <div className="mt-4 sm:mt-5 rounded-2xl border border-blue-500/30 bg-blue-950/20 p-3 sm:p-4">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-300 mb-2 uppercase tracking-[0.08em]">
+                  <Pill size={15} className="text-blue-400 shrink-0" />
+                  <span>Medicamentos em Uso Contínuo</span>
                 </div>
-                <div className="flex gap-2.5 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {medications.length > 0 ? medications.map((item: string) => (
                     <span
                       key={item}
-                      className="inline-block px-4 py-2 rounded-full bg-[#1D4ED8]/30 border border-[#1D4ED8]/50 text-blue-200 text-[15px] font-bold whitespace-nowrap"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-200 text-xs sm:text-sm font-bold shadow-xs"
                     >
                       {item}
                     </span>
-                  )) : <span className="text-sm text-slate-400">Não informado</span>}
+                  )) : <span className="text-xs sm:text-sm text-slate-400">Nenhum medicamento informado</span>}
                 </div>
               </div>
 
               {/* Doador de órgãos */}
-              <div className="mt-7 text-base text-white">
-                Doador de órgãos:{' '}
-                <b className={isDonor === undefined || isDonor === null ? 'text-slate-400' : isDonor ? 'text-[#93C5FD]' : 'text-[#FF8E75]'}>
-                  {isDonor === undefined || isDonor === null ? 'não informado' : isDonor ? 'sim' : 'não'}
-                </b>
+              <div className="mt-4 sm:mt-5 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs sm:text-sm text-white">
+                <span className="font-semibold text-slate-300">Doador de órgãos:</span>
+                <span className={`font-bold px-2.5 py-0.5 rounded-lg text-xs ${
+                  isDonor === true ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                  isDonor === false ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                  'bg-slate-700/50 text-slate-400'
+                }`}>
+                  {isDonor === true ? 'Sim' : isDonor === false ? 'Não' : 'Não informado'}
+                </span>
               </div>
 
               <div className="mt-7 grid gap-4 border-t border-white/10 pt-6 sm:grid-cols-2">
