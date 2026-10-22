@@ -15,6 +15,9 @@ internal readonly record struct OcrCallResult(string Text, bool Succeeded);
 
 public class DocumentProcessingService : IOcrAiService
 {
+    private const string GeminiModel = "gemini-3.8-flash";
+    private const string GroqModel = "qwen/qwen3.8-27b";
+
     /// <summary>Tempo máximo por tentativa de OCR (imagem pode ser grande).</summary>
     private static readonly TimeSpan TimeoutOcr = TimeSpan.FromSeconds(45);
 
@@ -43,8 +46,8 @@ public class DocumentProcessingService : IOcrAiService
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
-        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"] ?? "gemini-3.8-flash";
-        _groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL") ?? config["Groq:Model"] ?? "qwen/qwen3.8-27b";
+        _geminiModel = GeminiModel;
+        _groqModel = GroqModel;
         _configuration = config;
 
         _logger = logger;

@@ -140,10 +140,7 @@ public static class ChatEndpoints
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
 
-            var model = Environment.GetEnvironmentVariable("GROQ_MODEL")
-                ?? config["GROQ_MODEL"]
-                ?? config["Groq:Model"]
-                ?? "llama3-8b-8192";
+            var model = GroqChatCompletionClient.DefaultModel;
 
             var toolsEnabled = ReadBooleanSetting(
                 config,

@@ -12,6 +12,8 @@ public sealed class GroqChatCompletionClient : IChatCompletionClient
 {
     private const string ProviderName = "Groq";
     private const string BaseUrl = "https://api.groq.com/openai/v1/";
+    // Model selection belongs to the application code, not deployment settings.
+    public const string DefaultModel = "llama-3.1-8b-instant";
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ResilientHttpSender _sender;
     private readonly IConfiguration _configuration;

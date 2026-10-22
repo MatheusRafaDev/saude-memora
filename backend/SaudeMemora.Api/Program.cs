@@ -1779,7 +1779,7 @@ app.MapGet("/api/reports/generate", async (int? months, ClaimsPrincipal user, IP
     var reportInput = System.Text.Json.JsonSerializer.Serialize(reportSource);
 
     var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
-    var geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"];
+    const string geminiModel = "gemini-3.8-flash";
     if (string.IsNullOrEmpty(geminiKey)) return Results.BadRequest("GEMINI_API_KEY não configurada.");
     if (string.IsNullOrWhiteSpace(geminiModel)) return Results.Problem("GEMINI_MODEL não configurado.", statusCode: StatusCodes.Status503ServiceUnavailable);
 

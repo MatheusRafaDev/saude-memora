@@ -29,9 +29,7 @@ public class GeminiEmbeddingService : IEmbeddingService
         _sender = sender;
         _logger = logger;
         _apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
-        _modelName = Environment.GetEnvironmentVariable("GEMINI_EMBEDDING_MODEL")
-            ?? config["Gemini:EmbeddingModel"]
-            ?? DefaultModel;
+        _modelName = DefaultModel;
     }
 
     public async Task<float[]?> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)

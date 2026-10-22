@@ -12,6 +12,7 @@ namespace SaudeMemora.Infrastructure.Services;
 
 public class AlertaMedicamentoService : IAlertaMedicamentoService
 {
+    private const string GeminiModel = "gemini-3.8-flash";
     private readonly ILogger<AlertaMedicamentoService> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _geminiApiKey;
@@ -22,7 +23,7 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? configuration["Gemini:ApiKey"] ?? string.Empty;
-        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? configuration["Gemini:Model"] ?? "gemini-3.8-flash";
+        _geminiModel = GeminiModel;
     }
 
     public async Task<List<AlertaDocumento>> GerarAlertasAsync(RegistroDocumento documento, FichaMedica ficha)
