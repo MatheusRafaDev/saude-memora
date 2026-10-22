@@ -118,16 +118,18 @@ export default function Chat() {
 
   const loadConsultados = async () => {
     try {
-      const response = await fetch('/api/chat/documentos-consultados');
-      if (!response.ok) return; // endpoint not available yet — silently skip
-      const res = await response.json() as { documentos?: Array<{ documentId: string; titulo: string; data?: string }> };
-      if (res && Array.isArray(res.documentos)) {
+      const res = await customFetch<any>('/api/chat/documentos-consultados');
+      if (Array.isArray(res)) {
         setServerConsultados(
-          res.documentos.map((d) => ({ id: d.documentId, titulo: d.titulo, data: d.data })),
+          res.map((d: any) => ({ id: d.id || d.documentId, titulo: d.titulo, data: d.data })),
+        );
+      } else if (res && Array.isArray(res.documentos)) {
+        setServerConsultados(
+          res.documentos.map((d: any) => ({ id: d.documentId || d.id, titulo: d.titulo, data: d.data })),
         );
       }
     } catch {
-      // ignore
+      // endpoint silencioso se não autenticado ou indisponível
     }
   };
 
