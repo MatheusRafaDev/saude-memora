@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Menu, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { BrandLogo } from '@/components/BrandLogo';
 
 type PublicPageHeaderProps = {
@@ -10,6 +11,8 @@ type PublicPageHeaderProps = {
 export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('/#inicio');
+  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
 
   const navigation = [
     { href: '/#inicio', label: 'Início' },
@@ -20,6 +23,40 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
   ];
 
   const isBlue = variant === 'blue';
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleHashOrScroll = () => {
+      if (window.location.pathname !== '/' && window.location.pathname !== '') {
+        setActiveSection(window.location.pathname);
+        return;
+      }
+
+      const sectionIds = ['sobre', 'duvidas', 'como-funciona', 'recursos', 'inicio'];
+      const scrollPosition = window.scrollY + 220;
+
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          const top = el.offsetTop;
+          if (scrollPosition >= top) {
+            setActiveSection(`/#${id}`);
+            return;
+          }
+        }
+      }
+      setActiveSection('/#inicio');
+    };
+
+    handleHashOrScroll();
+    window.addEventListener('scroll', handleHashOrScroll, { passive: true });
+    window.addEventListener('hashchange', handleHashOrScroll);
+    return () => {
+      window.removeEventListener('scroll', handleHashOrScroll);
+      window.removeEventListener('hashchange', handleHashOrScroll);
+    };
+  }, [location]);
 
   return (
     <header
@@ -39,30 +76,49 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
           wordmarkClassName="text-[17px] sm:text-[19px]"
         />
 
-        {/* Menu de Navegação Desktop */}
+        {/* Menu de Navegação Desktop com Linha Branca Deslizante (Framer Motion) */}
         <nav
           aria-label="Navegação principal"
-          className={`hidden items-center gap-7 text-[14px] md:flex ${
-            isBlue ? 'text-white/85 font-medium' : 'text-[#5B6878] font-medium'
+          onMouseLeave={() => setHoveredHref(null)}
+          className={`hidden items-center gap-7 text-[15px] md:flex ${
+            isBlue ? 'text-white' : 'text-[#5B6878]'
           }`}
         >
           {navigation.map(({ href, label }) => {
-            const isCurrent = location === href || (href.startsWith('/#') && location === '/' && window.location.hash === href.replace('/', ''));
+            const isTarget = (hoveredHref ?? activeSection) === href;
+
             return (
               <a
                 key={href}
                 href={href}
-                className={`transition-colors cursor-pointer ${
+                onMouseEnter={() => setHoveredHref(href)}
+                onFocus={() => setHoveredHref(href)}
+                className={`relative py-2.5 transition-colors cursor-pointer select-none ${
                   isBlue
-                    ? isCurrent
-                      ? 'text-white font-semibold'
-                      : 'hover:text-white'
-                    : isCurrent
+                    ? isTarget
+                      ? 'text-white font-bold'
+                      : 'text-white/80 hover:text-white font-medium'
+                    : isTarget
                       ? 'text-[#2357D9] font-bold'
-                      : 'hover:text-[#2357D9]'
+                      : 'text-[#5B6878] hover:text-[#2357D9] font-medium'
                 }`}
               >
-                {label}
+                <span>{label}</span>
+                {isTarget && (
+                  <motion.div
+                    layoutId="public-nav-underline"
+                    className={`absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full ${
+                      isBlue
+                        ? 'bg-white shadow-[0_1px_8px_rgba(255,255,255,0.7)]'
+                        : 'bg-[#2357D9]'
+                    }`}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 450,
+                      damping: 32,
+                    }}
+                  />
+                )}
               </a>
             );
           })}
