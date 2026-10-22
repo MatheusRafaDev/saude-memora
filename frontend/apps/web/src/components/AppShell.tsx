@@ -158,18 +158,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       {/* ── Mobile Top Header Bar ───────────────────────────────── */}
-      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[#E3E8F0]/80 bg-white/90 backdrop-blur-md px-3.5 sm:px-6 lg:hidden shadow-[0_1px_3px_rgba(20,33,31,0.03)]">
+      <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-white/15 bg-[#2357D9] text-white px-3.5 sm:px-6 lg:hidden shadow-xs">
         <BrandLogo
           href="/visao-geral"
-          iconClassName="h-7 w-7"
-          wordmarkClassName="text-[17px] text-[#14211F] tracking-[-0.03em]"
+          variant="white"
+          iconClassName="h-7 w-7 drop-shadow-xs"
+          wordmarkClassName="text-[17px] tracking-[-0.03em]"
         />
 
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => triggerUploadModal({ mode: 'batch' })}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#CFE0FF] bg-[#F4F7FC] px-2.5 text-xs font-semibold text-[#1D4ED8] shadow-xs active:scale-95 transition-all"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-2.5 text-xs font-semibold text-white shadow-xs active:scale-95 transition-all hover:bg-white/20"
             aria-label="Enviar em lote"
           >
             <Layers size={13} />
@@ -179,10 +180,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => triggerUploadModal({ mode: 'single' })}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#1D4ED8] px-3 text-xs font-bold text-white shadow-xs active:scale-95 transition-all"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-xs font-bold text-[#2357D9] shadow-xs active:scale-95 transition-all hover:bg-white/95"
             aria-label="Adicionar documento"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
             <span>Adicionar</span>
@@ -194,7 +195,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setMobileUserMenuOpen((prev) => !prev)}
               aria-label="Menu do perfil"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] text-xs font-bold text-white shadow-xs ring-2 ring-white ring-offset-1 ring-offset-[#1D4ED8]/20 focus-visible:outline-none"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-xs font-bold text-[#2357D9] shadow-xs ring-2 ring-white/40 focus-visible:outline-none"
             >
               {initials}
             </button>
@@ -262,11 +263,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* ── Desktop Header ─────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 hidden h-[72px] items-center gap-7 border-b border-[#E3E8F0]/80 bg-white/85 backdrop-blur-md px-6 sm:px-10 lg:flex shadow-[0_1px_3px_rgba(20,33,31,0.03)]">
+      <header className="sticky top-0 z-40 hidden h-[72px] items-center gap-7 border-b border-white/15 bg-[#2357D9] text-white px-6 sm:px-10 lg:flex shadow-xs">
         <BrandLogo
           href="/visao-geral"
-          iconClassName="h-9 w-9 transition-transform group-hover:scale-105"
-          wordmarkClassName="text-[19px] text-[#14211F] tracking-[-0.03em]"
+          variant="white"
+          iconClassName="h-9 w-9 transition-transform group-hover:scale-105 drop-shadow-xs"
+          wordmarkClassName="text-[19px] tracking-[-0.03em]"
         />
 
         {/* Navigation center */}
@@ -282,11 +284,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                   onFocus={() => prefetchRoute(href, queryClient)}
                   className={`relative flex items-center gap-2 rounded-xl px-4 py-2 text-[14px] transition-all duration-150 ${
                     isActive
-                      ? 'bg-[#1D4ED8]/10 font-bold text-[#1D4ED8] shadow-[inset_0_0_0_1px_rgba(29,78,216,0.18)]'
-                      : 'font-medium text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#1D4ED8]'
+                      ? 'bg-white/20 font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)]'
+                      : 'font-medium text-white/85 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <span className={`transition-colors ${isActive ? 'text-[#1D4ED8]' : 'text-[#5B6878]'}`}>{icon}</span>
+                  <span className={`transition-colors ${isActive ? 'text-white' : 'text-white/80'}`}>{icon}</span>
                   <span>{label}</span>
                 </Link>
               );
@@ -299,7 +301,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             type="button"
             onClick={() => triggerUploadModal({ mode: 'batch' })}
             title="Importar múltiplos documentos em lote"
-            className="hidden lg:inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-[#CFE0FF] bg-[#F4F7FC] px-3.5 py-2 text-[13px] font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/40 transition-all shadow-xs cursor-pointer active:scale-98"
+            className="hidden lg:inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-white/20 transition-all shadow-xs cursor-pointer active:scale-98"
           >
             <Layers size={15} />
             <span>Em lote</span>
@@ -308,9 +310,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => triggerUploadModal({ mode: 'single' })}
-            className="hidden lg:inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-gradient-to-r from-[#1D4ED8] to-[#2563EB] px-4.5 py-2 text-[14px] font-bold text-white transition-all duration-150 hover:from-[#1E40AF] hover:to-[#1D4ED8] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 shadow-xs cursor-pointer"
+            className="hidden lg:inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-white px-4.5 py-2 text-[14px] font-bold text-[#2357D9] transition-all duration-150 hover:bg-white/95 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 shadow-xs cursor-pointer"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
             <span>Adicionar</span>
@@ -322,7 +324,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               type="button"
               onClick={() => setUserMenuOpen((prev) => !prev)}
               aria-label="Menu do usuário"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] text-[13px] font-bold text-white transition-all duration-150 hover:scale-105 hover:shadow-md ring-2 ring-white ring-offset-2 ring-offset-[#1D4ED8]/20 focus-visible:outline-none"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[13px] font-bold text-[#2357D9] transition-all duration-150 hover:scale-105 hover:shadow-md ring-2 ring-white/40 ring-offset-2 ring-offset-[#2357D9] focus-visible:outline-none"
             >
               {initials}
             </button>
