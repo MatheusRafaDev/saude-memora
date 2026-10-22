@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Eye,
   EyeOff,
@@ -44,6 +44,7 @@ export interface AuthProps {
 export default function Auth({ defaultMode }: AuthProps = {}) {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const shouldReduceMotion = useReducedMotion();
 
   // Verificação instantânea por cookies (0ms):
   // Se não houver cookie de autenticação no navegador OU o usuário estiver criando conta,
@@ -257,7 +258,12 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     <div className="min-h-screen min-h-[100dvh] bg-[#F8FAFC] lg:bg-white text-[#173754] font-sans selection:bg-[#CFE0FF] selection:text-[#1D4ED8]">
       <div className="min-h-screen min-h-[100dvh] grid grid-cols-1 lg:grid-cols-12 box-border">
         {/* ── PAINEL DO FORMULÁRIO (ESQUERDA) ────────────────────────── */}
-        <section className="lg:col-span-7 xl:col-span-6 flex flex-col justify-between px-4 sm:px-8 md:px-12 lg:px-12 xl:px-16 py-6 sm:py-8 lg:py-10 bg-white min-h-[100dvh] lg:min-h-0 overflow-y-auto">
+        <motion.section
+          initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="lg:col-span-7 xl:col-span-6 flex flex-col justify-between px-4 sm:px-8 md:px-12 lg:px-12 xl:px-16 py-6 sm:py-8 lg:py-10 bg-white min-h-[100dvh] lg:min-h-0 overflow-y-auto"
+        >
           {/* Topo: Logo & Voltar */}
           <div className="flex items-center justify-between w-full max-w-[440px] mx-auto mb-6 sm:mb-8">
             <BrandLogo
@@ -324,9 +330,16 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
 
             {/* Formulários com Transição Rápida e Direta (sem delays ou blurs) */}
             <div className="relative">
+              <AnimatePresence initial={!shouldReduceMotion} mode="wait">
               {mode === 'login' ? (
                 /* ── FORMULÁRIO: LOGIN ── */
-                <div key="login-form">
+                <motion.div
+                  key="login-form"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                >
                   <div className="mb-6 sm:mb-8">
                     <h1 className="text-[26px] sm:text-[32px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#173754] mb-2">
                       Bem-vindo de volta
@@ -449,10 +462,16 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                       Criar conta
                     </button>
                   </p>
-                </div>
+                </motion.div>
               ) : (
                 /* ── FORMULÁRIO: CADASTRO / CRIAR CONTA ── */
-                <div key="register-form">
+                <motion.div
+                  key="register-form"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                >
                   <div className="mb-5 sm:mb-6">
                     <h1 className="text-[26px] sm:text-[32px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#173754] mb-2">
                       Crie sua conta
@@ -667,24 +686,25 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                       Fazer login
                     </button>
                   </p>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           </div>
 
-          {/* Rodapé informativo */}
-          <div className="w-full max-w-[440px] mx-auto pt-6 pb-2 text-center text-xs text-[#64748B] flex items-center justify-center gap-2">
-            <ShieldCheck size={16} className="text-[#2357D9] shrink-0" />
-            <span>Seus dados de saúde protegidos e com criptografia de ponta a ponta.</span>
-          </div>
-        </section>
+        </motion.section>
 
         {/* ── PAINEL DA DIREITA ── */}
-        <aside className="hidden lg:flex lg:col-span-5 xl:col-span-6 relative h-full min-h-[100dvh] flex-col items-center justify-center bg-gradient-to-br from-[#F2F7FC] via-[#E8F1FA] to-[#DDEAF6] p-6 sm:p-8 xl:p-12 overflow-hidden select-none border-l border-[#E2E8F0]">
+        <motion.aside
+          initial={shouldReduceMotion ? false : { opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: shouldReduceMotion ? 0 : 0.08, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden lg:flex lg:col-span-5 xl:col-span-6 relative h-full min-h-[100dvh] flex-col items-center justify-center bg-[#2357D9] p-6 sm:p-8 xl:p-12 overflow-hidden select-none border-l border-[#1E4DC4]"
+        >
           {/* Luzes ambientes suaves de fundo */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-white/60 blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#2357D9]/10 blur-3xl" />
+            <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#1E4DC4]/50 blur-3xl" />
           </div>
 
           <div className="relative z-10 w-full max-w-[640px] flex flex-col items-center gap-6">
@@ -698,30 +718,16 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             </div>
 
             <div className="text-center max-w-[500px]">
-              <h2 className="text-[22px] xl:text-[26px] font-bold text-[#173754] leading-snug tracking-[-0.015em]">
+              <h2 className="text-[22px] xl:text-[26px] font-bold text-white leading-snug tracking-[-0.015em]">
                 Todo o seu histórico médico num só lugar.
               </h2>
-              <p className="mt-2 text-sm xl:text-[15px] text-[#536C80] leading-relaxed">
+              <p className="mt-2 text-sm xl:text-[15px] text-white/80 leading-relaxed">
                 Menos papéis espalhados e mais tranquilidade para você e sua família na hora da consulta.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-2.5 text-xs font-semibold text-[#173754]">
-              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/80 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2357D9]" />
-                <span>100% Gratuito</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/80 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2357D9]" />
-                <span>Acesso pelo celular</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/80 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2357D9]" />
-                <span>Seguro e Confidencial</span>
-              </div>
-            </div>
           </div>
-        </aside>
+        </motion.aside>
       </div>
 
       {/* ── MODAL: RECUPERAR SENHA ─────────────────────────────────── */}

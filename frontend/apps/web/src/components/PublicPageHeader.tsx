@@ -66,8 +66,8 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className={`fixed top-0 left-0 right-0 z-50 w-full transition-colors ${
           isBlue
-            ? 'bg-[#2357D9] text-white shadow-md'
-            : 'bg-white/95 text-[#14211F] border-b border-[#E3E8F0] backdrop-blur-md shadow-xs'
+            ? 'bg-[#2357D9] text-white'
+            : 'bg-white/95 text-[#14211F] border-b border-[#E3E8F0] backdrop-blur-md'
         }`}
       >
       <div className="mx-auto flex h-20 sm:h-24 max-w-[1376px] items-center justify-between px-6 sm:px-8">
@@ -113,7 +113,7 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
                     layoutId="public-nav-underline"
                     className={`absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full ${
                       isBlue
-                        ? 'bg-white shadow-[0_1px_8px_rgba(255,255,255,0.7)]'
+                        ? 'bg-white'
                         : 'bg-[#2357D9]'
                     }`}
                     transition={{
