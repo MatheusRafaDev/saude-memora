@@ -19,34 +19,50 @@ export default function Sobre() {
       <main className="flex-1">
         {/* ── HERO SECTION ─────────────────────────────────────────── */}
         <section className="bg-[#1C51BB] text-white py-16 sm:py-20">
-          <div className="mx-auto max-w-[1100px] px-6 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs sm:text-sm font-bold tracking-[0.08em] text-white uppercase border border-white/20 mb-6">
-              Sobre o Saúde Memora
-            </div>
+          <div className="mx-auto max-w-[1200px] px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+              <div className="lg:col-span-7 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs sm:text-sm font-bold tracking-[0.08em] text-white uppercase border border-white/20 mb-6">
+                  Sobre o Saúde Memora
+                </div>
 
-            <h1
-              className="text-[36px] sm:text-[50px] lg:text-[56px] font-bold leading-[1.1] tracking-[-0.025em] text-white mb-6"
-            >
-              Sua saúde organizada, sem complicação.
-            </h1>
+                <h1 className="text-[36px] sm:text-[48px] lg:text-[54px] font-bold leading-[1.1] tracking-[-0.025em] text-white mb-6">
+                  Sua saúde organizada, sem complicação.
+                </h1>
 
-            <p className="text-base sm:text-lg leading-relaxed text-white/90 max-w-[580px] mx-auto mb-8 font-sans">
-              O Saúde Memora nasceu para que você nunca mais perca exames ou receitas importantes em gavetas ou pastas antigas.
-            </p>
+                <p className="text-base sm:text-lg leading-relaxed text-white/90 max-w-[580px] mb-8 font-sans">
+                  O Saúde Memora nasceu para que você nunca mais perca exames ou receitas importantes em gavetas ou pastas antigas. Tudo reunido em um só lugar, seguro e fácil de consultar no dia a dia e na hora da consulta.
+                </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/criar-conta"
-                className="inline-flex h-[52px] items-center justify-center gap-2 rounded-full bg-white text-[#2357D9] px-8 text-sm sm:text-base font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer"
-              >
-                Criar conta grátis
-              </Link>
-              <a
-                href="/#recursos"
-                className="inline-flex h-[52px] items-center justify-center rounded-full border border-white/40 bg-white/10 text-white px-7 text-sm sm:text-base font-medium transition-all hover:bg-white/20 active:translate-y-0.5 cursor-pointer"
-              >
-                Ver recursos
-              </a>
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
+                  <Link
+                    href="/criar-conta"
+                    className="inline-flex h-[52px] items-center justify-center gap-2 rounded-full bg-white text-[#2357D9] px-8 text-sm sm:text-base font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer"
+                  >
+                    Criar conta grátis
+                  </Link>
+                  <a
+                    href="/#recursos"
+                    className="inline-flex h-[52px] items-center justify-center rounded-full border border-white/40 bg-white/10 text-white px-7 text-sm sm:text-base font-medium transition-all hover:bg-white/20 active:translate-y-0.5 cursor-pointer"
+                  >
+                    Ver recursos
+                  </a>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="w-full max-w-[420px] rounded-[28px] overflow-hidden bg-white p-5 shadow-2xl border border-white/20">
+                  <img
+                    src="/images/equipe-medica.jpg"
+                    alt="Equipe médica apoiando o paciente no Saúde Memora"
+                    className="w-full h-auto object-contain block max-h-[320px] mx-auto rounded-xl"
+                    loading="eager"
+                  />
+                  <div className="mt-3 text-center text-xs font-bold text-[#1C51BB]">
+                    Pensado para fortalecer a relação entre paciente e médico
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

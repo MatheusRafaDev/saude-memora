@@ -394,14 +394,14 @@ export default function Home() {
             </div>
 
             <div className="lg:col-span-5 flex justify-center">
-              <div className="relative w-full max-w-[360px] p-5 bg-gradient-to-b from-[#F0F5FF] to-white rounded-[28px] border border-[#DFE7EF] shadow-sm flex flex-col items-center text-center">
+              <div className="relative w-full max-w-[420px] p-6 bg-gradient-to-b from-[#F0F5FF] via-white to-[#F8FAFC] rounded-[28px] border border-[#DFE7EF] shadow-md flex flex-col items-center text-center">
                 <img
-                  src="/images/equipe-medica.png"
-                  alt="Profissionais de saúde e médicos apoiando o cuidado do paciente"
-                  className="w-full h-auto object-contain block max-h-[250px]"
+                  src="/images/equipe-medica.jpg"
+                  alt="Profissionais de saúde e médicos apoiando o cuidado e organização do paciente"
+                  className="w-full h-auto object-contain block max-h-[320px] rounded-2xl"
                   loading="lazy"
                 />
-                <span className="mt-3 text-xs font-bold text-[#2357D9]">
+                <span className="mt-4 text-xs sm:text-sm font-bold text-[#2357D9]">
                   Pensado para fortalecer a relação entre paciente e médico
                 </span>
               </div>
