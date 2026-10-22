@@ -8,8 +8,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Stethoscope,
-  Pill,
-  Activity,
+  ChevronDown,
   Copy,
   Check,
   Lock,
@@ -37,13 +36,6 @@ type Message = {
   citations?: Citation[];
   sendFailed?: boolean;
 };
-
-const CLINICAL_PROMPTS = [
-  { icon: Stethoscope, label: 'Síntese para consulta', query: 'Gere um resumo cronológico dos meus exames mais recentes para eu levar ao meu médico.' },
-  { icon: Pill, label: 'Medicamentos ativos', query: 'Quais medicamentos contínuos e dosagens constam no meu histórico?' },
-  { icon: Activity, label: 'Evolução de exames', query: 'Quando fiz meu último hemograma e houve alguma alteração?' },
-  { icon: ShieldCheck, label: 'Alergias e alertas', query: 'Quais alergias ou restrições clínicas estão registradas na minha ficha?' },
-];
 
 const SIDEBAR_PROMPTS = [
   'Quais laudos estão com status de conferência pendente?',
@@ -112,6 +104,7 @@ export default function Chat() {
   const [avisoNovoDia, setAvisoNovoDia] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
+  const [securityDetailsOpen, setSecurityDetailsOpen] = useState(false);
   const [serverConsultados, setServerConsultados] = useState<Citation[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const todayRequestId = useRef(0);
@@ -119,18 +112,22 @@ export default function Chat() {
 
   const loadConsultados = async () => {
     try {
-      const res = await customFetch<any>('/api/chat/documentos-consultados');
-      if (Array.isArray(res)) {
-        setServerConsultados(
-          res.map((d: any) => ({ id: d.id || d.documentId, titulo: d.titulo, data: d.data })),
-        );
-      } else if (res && Array.isArray(res.documentos)) {
-        setServerConsultados(
-          res.documentos.map((d: any) => ({ id: d.documentId || d.id, titulo: d.titulo, data: d.data })),
-        );
-      }
+      const result = await customFetch<Array<{
+        documentoId?: string;
+        id?: string;
+        titulo?: string;
+        dataDocumento?: string;
+        data?: string;
+      }>>('/api/chat/documentos-consultados');
+
+      if (!Array.isArray(result)) return;
+      setServerConsultados(result.map((documento) => ({
+        id: documento.documentoId ?? documento.id,
+        titulo: documento.titulo ?? 'Documento sem título',
+        data: documento.dataDocumento ?? documento.data,
+      })));
     } catch {
-      // endpoint silencioso se não autenticado ou indisponível
+      // A conversa continua disponível mesmo se o resumo de fontes estiver indisponível.
     }
   };
 
@@ -139,18 +136,16 @@ export default function Chat() {
   }, []);
 
   const allConsultedDocs = useMemo(() => {
-    const map = new Map<string, Citation>();
-    for (const d of serverConsultados) {
-      if (d.id || d.titulo) map.set(d.id || d.titulo, d);
+    const docs = new Map<string, Citation>();
+    for (const document of serverConsultados) {
+      docs.set(document.id ?? document.titulo, document);
     }
-    for (const m of messages) {
-      if (m.citations) {
-        for (const c of m.citations) {
-          map.set(c.id || c.titulo, c);
-        }
+    for (const message of messages) {
+      for (const citation of message.citations ?? []) {
+        docs.set(citation.id ?? citation.titulo, citation);
       }
     }
-    return Array.from(map.values());
+    return Array.from(docs.values());
   }, [messages, serverConsultados]);
 
   const handleCopyMessage = async (msgId: string, content: string) => {
@@ -470,25 +465,6 @@ export default function Chat() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Sugestões de perguntas: escondidas no mobile, visíveis a partir de sm */}
-            <div className="my-2.5 hidden sm:flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
-              {CLINICAL_PROMPTS.map((prompt) => {
-                const IconComponent = prompt.icon;
-                return (
-                  <button
-                    key={prompt.label}
-                    type="button"
-                    onClick={() => void handleSend(prompt.query)}
-                    disabled={isLoading}
-                    className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#E3E8F0] bg-white px-3 text-[11px] font-semibold text-[#14211F] transition-all hover:border-[#CFE0FF] hover:bg-[#F4F7FC] hover:text-[#1D4ED8] disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-[12px] shadow-2xs"
-                  >
-                    <IconComponent size={13} className="text-[#1D4ED8]" />
-                    <span>{prompt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
             {sendError && (
               <div className="mb-2.5 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs text-amber-900">
                 <div className="flex items-center gap-2">
@@ -526,7 +502,6 @@ export default function Chat() {
           </section>
 
           <aside className="flex flex-col gap-4 lg:col-span-4 lg:gap-5">
-            {/* Widget de Documentos Consultados pela IA no Prontuário */}
             <section className="rounded-2xl border border-[#CFE0FF]/80 bg-white p-4 shadow-xs sm:rounded-[24px] sm:p-6">
               <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#E3E8F0] pb-3">
                 <div className="flex items-center gap-2.5">
@@ -534,8 +509,8 @@ export default function Chat() {
                     <FileText size={18} />
                   </div>
                   <div>
-                    <b className="block text-sm text-[#14211F] sm:text-base">Documentos Consultados</b>
-                    <span className="text-[11px] text-[#5a6a80]">Fontes citadas pela IA no prontuário</span>
+                    <b className="block text-sm text-[#14211F] sm:text-base">Documentos consultados</b>
+                    <span className="text-[11px] text-[#5a6a80]">Fontes usadas nas respostas da IA</span>
                   </div>
                 </div>
                 <span className="rounded-full bg-[#1D4ED8] px-2.5 py-0.5 text-xs font-bold text-white shadow-2xs">
@@ -543,29 +518,26 @@ export default function Chat() {
                 </span>
               </div>
               {allConsultedDocs.length === 0 ? (
-                <div className="rounded-xl bg-[#F8FAFD] border border-[#E3E8F0] p-3.5 text-xs leading-relaxed text-[#5a6a80]">
-                  À medida que a IA responde suas perguntas clínicas, os laudos, receitas e exames consultados aparecerão aqui para total transparência e conferência.
-                </div>
+                <p className="m-0 rounded-xl border border-[#E3E8F0] bg-[#F8FAFD] p-3.5 text-xs leading-relaxed text-[#5a6a80]">
+                  Os documentos usados para responder às suas perguntas aparecerão aqui.
+                </p>
               ) : (
-                <div className="divide-y divide-[#E3E8F0] max-h-56 overflow-y-auto">
-                  {allConsultedDocs.map((doc, idx) => {
-                    const docHref = doc.id ? `/documentos/${doc.id}` : '/documentos';
-                    return (
-                      <div key={doc.id || idx} className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-2.5">
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-xs font-semibold text-[#14211F]">{doc.titulo}</div>
-                          {doc.data && <div className="text-[11px] text-[#5a6a80]">{doc.data}</div>}
-                        </div>
-                        <Link
-                          href={docHref}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#F0F5FF] border border-[#CFE0FF] px-2 py-1 text-[11px] font-bold text-[#1D4ED8] hover:bg-[#1D4ED8] hover:text-white transition-colors cursor-pointer"
-                        >
-                          <span>Abrir</span>
-                          <ExternalLink size={10} />
-                        </Link>
+                <div className="max-h-56 divide-y divide-[#E3E8F0] overflow-y-auto">
+                  {allConsultedDocs.map((document, index) => (
+                    <div key={document.id ?? `${document.titulo}-${index}`} className="flex items-center justify-between gap-2.5 py-2.5 first:pt-1 last:pb-1">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-semibold text-[#14211F]">{document.titulo}</div>
+                        {document.data && <div className="text-[11px] text-[#5a6a80]">{document.data}</div>}
                       </div>
-                    );
-                  })}
+                      <Link
+                        href={document.id ? `/documentos/${document.id}` : '/documentos'}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#CFE0FF] bg-[#F0F5FF] px-2 py-1 text-[11px] font-bold text-[#1D4ED8] transition-colors hover:bg-[#1D4ED8] hover:text-white"
+                      >
+                        <span>Abrir</span>
+                        <ExternalLink size={10} />
+                      </Link>
+                    </div>
+                  ))}
                 </div>
               )}
             </section>
@@ -613,10 +585,19 @@ export default function Chat() {
 
             {/* Institutional Security & Regulatory Card (apenas Desktop) */}
             <section className="hidden lg:block rounded-2xl border border-[#CFE0FF]/80 bg-gradient-to-br from-white to-[#F8FAFD] p-4 shadow-xs sm:rounded-[24px] sm:p-6">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
+              <button
+                type="button"
+                onClick={() => setSecurityDetailsOpen((isOpen) => !isOpen)}
+                aria-expanded={securityDetailsOpen}
+                className="flex w-full items-center justify-between gap-3 text-left cursor-pointer"
+              >
+                <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
                 <ShieldCheck size={16} />
                 <span>Sigilo & Segurança Clínica</span>
-              </div>
+                </span>
+                <ChevronDown size={18} className={`shrink-0 text-[#1D4ED8] transition-transform ${securityDetailsOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {securityDetailsOpen && <>
               <ul className="mt-3.5 space-y-2.5 text-xs text-[#475569]">
                 <li className="flex items-start gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#1D4ED8] mt-1.5 shrink-0" />
@@ -634,6 +615,7 @@ export default function Chat() {
               <div className="mt-4 pt-3 border-t border-[#E3E8F0] text-[11px] text-[#5a6a80]">
                 Em caso de urgência médica com risco à vida, contate imediatamente o <strong>SAMU (192)</strong> ou dirija-se a uma unidade de emergência.
               </div>
+              </>}
             </section>
           </aside>
         </div>

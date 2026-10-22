@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { UploadModal, triggerUploadModal } from '@/components/UploadModal';
 import { ConsentModal } from '@/components/ConsentModal';
 import { BrandLogo } from '@/components/BrandLogo';
-import { BrandWordmark } from '@/components/BrandWordmark';
 import { useGetApiPacientesMe } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EmergenciaModal } from '@/components/EmergenciaModal';
@@ -257,9 +256,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     href="/perfil"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#14211F] hover:bg-[#F4F7FC] transition-colors"
+                    className="group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#14211F] transition-all hover:-translate-y-px hover:bg-[#F0F5FF] hover:text-[#1D4ED8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F4F7FC] text-[#5B6878]">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F4F7FC] text-[#5B6878] transition-colors group-hover:bg-[#CFE0FF] group-hover:text-[#1D4ED8]">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM5 20a7 7 0 0114 0" />
                       </svg>
@@ -273,9 +272,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                       setUserMenuOpen(false);
                       setEmergencyModalOpen(true);
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[#E8664A] hover:bg-[#E8664A]/10 transition-colors"
+                    className="group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[#E8664A] transition-all hover:-translate-y-px hover:bg-[#E8664A]/10 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E8664A]"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8664A]/15 text-[#E8664A]">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8664A]/15 text-[#E8664A] transition-transform group-hover:scale-105">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 000-7.8z" />
                         <path d="M3.5 12h5l2-3 3 6 2-3h5" />
@@ -292,9 +291,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                       setUserMenuOpen(false);
                       void signOut();
                     }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#E8664A] hover:bg-[#E8664A]/10 transition-colors"
+                    className="group flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#E8664A] transition-all hover:-translate-y-px hover:bg-[#E8664A]/10 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E8664A]"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8664A]/15 text-[#E8664A]">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8664A]/15 text-[#E8664A] transition-transform group-hover:translate-x-0.5">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
                       </svg>
@@ -315,6 +314,20 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         {children}
       </div>
+
+      <footer className="hidden border-t border-[#E3E8F0] bg-[#F8FAFC] lg:block">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-10 py-5 text-xs text-[#5B6878]">
+          <div className="flex items-center gap-3">
+            <BrandLogo href="/visao-geral" iconClassName="h-7 w-7" wordmarkClassName="text-[14px]" />
+            <span className="border-l border-[#DCE5F0] pl-3">Seu histórico de saúde, sempre com você.</span>
+          </div>
+          <div className="flex items-center gap-5 font-medium">
+            <Link href="/termos" className="transition-colors hover:text-[#2357D9]">Termos de uso</Link>
+            <Link href="/privacidade" className="transition-colors hover:text-[#2357D9]">Privacidade</Link>
+            <span>© {new Date().getFullYear()} Saúde Memora</span>
+          </div>
+        </div>
+      </footer>
 
       {/* ── Mobile Floating Chat Button (discrete, non-obtrusive, links to assistant) ── */}
       {!location.startsWith('/chat') && (

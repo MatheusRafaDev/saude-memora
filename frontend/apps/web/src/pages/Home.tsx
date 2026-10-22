@@ -213,18 +213,14 @@ export default function Home() {
                 transition={{ duration: 0.85, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
                 className="relative w-full"
               >
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                  className="relative group"
-                >
+                <div className="relative group">
                   <img
-                    src="/images/saude-memora-app.jpg"
-                    alt="Mulher à mesa com documentos e celular exibindo o aplicativo Saúde Memora"
-                    className="w-full aspect-[666/474] object-cover rounded-[24px] shadow-2xl border border-white/20 block bg-white"
+                    src="/images/hero-home.png"
+                    alt="Ilustração de profissionais de saúde usando prontuário digital"
+                    className="w-full aspect-[666/474] object-cover rounded-[24px]  transition-transform duration-500 "
                     loading="eager"
                   />
-                </motion.div>
+                </div>
               </motion.div>
             </div>
           </div>
@@ -313,9 +309,9 @@ export default function Home() {
                 </a>
               </div>
             </div>
-            <div className="lg:col-span-6 overflow-hidden rounded-[20px] shadow-lg border border-white bg-white group">
+            <div className="lg:col-span-6  ">
               <img
-                src="/images/rotina-saude.jpg"
+                src="/images/rotina-saude.png"
                 alt="Mulher acompanhando medicamentos, lembretes e rotina de saúde no celular"
                 className="w-full aspect-[4/3] object-cover block group-hover:scale-[1.02] transition-transform duration-500"
                 loading="lazy"
@@ -333,11 +329,12 @@ export default function Home() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                className="lg:self-end lg:-mb-20"
               >
                 <img
-                  src="/images/consulta-medica.jpg"
+                  src="/images/consulta-medica.png"
                   alt="Médico e paciente em consulta analisando exames e histórico de saúde no tablet"
-                  className="w-full aspect-[530/392] object-cover rounded-[24px] shadow-2xl border border-white/20 block bg-white"
+                  className="w-full aspect-[530/392] object-cover rounded-[24px]  "
                   loading="lazy"
                 />
               </motion.div>
@@ -458,7 +455,8 @@ export default function Home() {
         </section>
 
         {/* ── SOBRE SECTION ─────────────────────────────────────────── */}
-        <section id="sobre" className="scroll-mt-24 max-w-[1312px] mx-auto px-6 pt-20 sm:px-8 sm:pt-24">
+        <section id="sobre" className="scroll-mt-24 bg-[#2357D9] py-20 sm:py-24">
+          <div className="max-w-[1312px] mx-auto px-6 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-10">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -467,26 +465,26 @@ export default function Home() {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="lg:col-span-7"
             >
-              <div className="text-[12px] font-bold text-[#2357D9] uppercase tracking-wider mb-2">
+              <div className="text-[12px] font-bold text-[#CFE0FF] uppercase tracking-wider mb-2">
                 Sobre o projeto
               </div>
-              <h2 className="text-[30px] sm:text-[38px] lg:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-[#173754]">
+              <h2 className="text-[30px] sm:text-[38px] lg:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-white">
                 Sua saúde organizada,<br />sem complicação.
               </h2>
-              <p className="mt-4 text-[16px] sm:text-[17px] text-[#536C80] leading-relaxed">
+              <p className="mt-4 text-[16px] sm:text-[17px] text-white/85 leading-relaxed">
                 O Saúde Memora nasceu para que você nunca mais perca exames, laudos ou receitas importantes em gavetas ou pastas antigas. Tudo reunido em um só lugar, seguro e fácil de consultar no dia a dia e na hora da consulta.
               </p>
-              <div className="mt-6 flex flex-wrap gap-2.5 text-xs sm:text-sm font-semibold text-[#173754]">
-                <div className="flex items-center gap-2 bg-[#F1F5F9] px-3.5 py-1.5 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-[#2357D9]" />
+              <div className="mt-6 flex flex-wrap gap-2.5 text-xs sm:text-sm font-semibold text-white">
+                <div className="flex items-center gap-2 bg-white/15 px-3.5 py-1.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-[#CFE0FF]" />
                   <span>Para pacientes e famílias</span>
                 </div>
-                <div className="flex items-center gap-2 bg-[#F1F5F9] px-3.5 py-1.5 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-[#2357D9]" />
+                <div className="flex items-center gap-2 bg-white/15 px-3.5 py-1.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-[#CFE0FF]" />
                   <span>Facilita a consulta médica</span>
                 </div>
-                <div className="flex items-center gap-2 bg-[#F1F5F9] px-3.5 py-1.5 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-[#2357D9]" />
+                <div className="flex items-center gap-2 bg-white/15 px-3.5 py-1.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-[#CFE0FF]" />
                   <span>Privacidade e segurança</span>
                 </div>
               </div>
@@ -501,7 +499,7 @@ export default function Home() {
             >
               <div className="relative w-full max-w-[420px] p-6 bg-gradient-to-b from-[#F0F5FF] via-white to-[#F8FAFC] rounded-[28px] border border-[#DFE7EF] shadow-md flex flex-col items-center text-center">
                 <img
-                  src="/images/equipe-medica.jpg"
+                  src="/images/equipe-medica.png"
                   alt="Profissionais de saúde e médicos apoiando o cuidado e organização do paciente"
                   className="w-full h-auto object-contain block max-h-[320px] rounded-2xl"
                   loading="lazy"
@@ -512,6 +510,10 @@ export default function Home() {
               </div>
             </motion.div>
           </div>
+          </div>
+        </section>
+
+        <section className="max-w-[1312px] mx-auto px-6 sm:px-8">
 
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
@@ -603,13 +605,13 @@ export default function Home() {
         </section>
 
         {/* ── CTA BANNER FINAL ─────────────────────────────────────── */}
-        <section className="max-w-[1312px] mx-auto px-6 mt-20 sm:px-8 sm:mt-24 mb-16 sm:mb-24">
+        <section className="w-full mt-20 sm:mt-24 mb-16 sm:mb-24">
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.98 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="bg-[#14377B] text-white rounded-[32px] p-8 sm:p-11 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden"
+            className="bg-[#14377B] text-white p-8 sm:p-11 flex flex-col lg:flex-row items-center justify-center gap-6 shadow-xl relative overflow-hidden"
           >
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 w-full lg:w-auto">
               <div className="w-16 h-16 rounded-[20px] bg-white/[0.07] text-white flex items-center justify-center shrink-0">

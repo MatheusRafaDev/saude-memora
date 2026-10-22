@@ -33,6 +33,7 @@ import {
   Sparkles,
   Stethoscope,
   Tag,
+  X,
 } from 'lucide-react';
 import {
   useGetApiDocuments,
@@ -87,6 +88,10 @@ function getDocumentTypeIcon(type: string) {
   if (normalized.includes('encaminh')) return Send;
   if (normalized.includes('relat')) return FileBarChart;
   return FileText;
+}
+
+function getCidCode(cid: string): string {
+  return cid.match(/[A-TV-Z][0-9]{2}(?:\.[0-9]{1,2})?/i)?.[0]?.toUpperCase() ?? '';
 }
 
 function getCategoryTheme(type: string) {
@@ -167,6 +172,8 @@ export default function Documents() {
   const deleteMutation = useDeleteApiDocumentsId();
 
   const [search, setSearch] = useState('');
+  const [originalPreview, setOriginalPreview] = useState<{ url: string; title: string } | null>(null);
+  const [documentPendingDeletion, setDocumentPendingDeletion] = useState<{ id: string; title: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -209,6 +216,7 @@ export default function Documents() {
     return 'grid';
   });
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [cidSummaries, setCidSummaries] = useState<Record<string, string>>({});
 
   // Persiste preferência de visualização na sessionStorage
   const handleViewModeChange = (mode: 'grid' | 'list') => {
@@ -348,6 +356,30 @@ export default function Documents() {
     });
   }, [activeDocs]);
 
+  useEffect(() => {
+    const codes = Array.from(new Set(allItems.map((item) => getCidCode(item.cid)).filter(Boolean)));
+    const pendingCodes = codes.filter((code) => !(code in cidSummaries));
+    if (pendingCodes.length === 0) return;
+
+    let cancelled = false;
+    void Promise.all(pendingCodes.map(async (code) => {
+      try {
+        const result = await customFetch<{ registros?: Array<{ codigo?: string; descricao?: string }> }>(
+          `/api/catalogo-cid10?${new URLSearchParams({ query: code, limit: '10' })}`,
+        );
+        const record = result.registros?.find((item) => getCidCode(item.codigo ?? '') === code);
+        return [code, record?.descricao?.trim() ?? ''] as const;
+      } catch {
+        return [code, ''] as const;
+      }
+    })).then((entries) => {
+      if (cancelled) return;
+      setCidSummaries((current) => ({ ...current, ...Object.fromEntries(entries) }));
+    });
+
+    return () => { cancelled = true; };
+  }, [allItems, cidSummaries]);
+
   // Filtering
   const filteredItems = useMemo(() => {
     return allItems.filter((item) => {
@@ -436,14 +468,18 @@ export default function Documents() {
     return groups;
   }, [filteredItems]);
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const requestDelete = (id: string, title: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm('Deseja realmente excluir este documento?')) return;
+    setDocumentPendingDeletion({ id, title });
+  };
 
+  const handleDelete = async () => {
+    if (!documentPendingDeletion) return;
     try {
-      await deleteMutation.mutateAsync({ id });
+      await deleteMutation.mutateAsync({ id: documentPendingDeletion.id });
       toast({ title: 'Documento excluído com sucesso' });
+      setDocumentPendingDeletion(null);
       refetch();
     } catch {
       toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
@@ -727,7 +763,7 @@ export default function Documents() {
           /* Empty State */
           activeDocs.length === 0 ? (
             /* First time onboarding empty state */
-            <div className="bg-white rounded-3xl p-8 sm:p-14 text-center border border-[#E3E8F0] shadow-sm max-w-2xl mx-auto my-6">
+            <div className="hidden">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] text-white mx-auto mb-4 flex items-center justify-center shadow-md">
                 <UploadCloud size={32} />
               </div>
@@ -766,6 +802,11 @@ export default function Documents() {
                 <span className="px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] inline-flex items-center gap-1"><FileHeart size={11} className="text-amber-600" /> Atestados</span>
                 <span className="px-2.5 py-1 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] inline-flex items-center gap-1"><Syringe size={11} className="text-emerald-600" /> Vacinas</span>
               </div>
+            </div>
+            <div className="my-6 rounded-2xl border border-[#E3E8F0] bg-white p-12 text-center shadow-xs">
+              <FileText size={36} className="mx-auto mb-3 text-[#5B6878] opacity-40" />
+              <h3 className="text-lg font-bold text-[#14211F]">Você ainda não possui documentos</h3>
+              <p className="mt-1 text-sm text-[#5B6878]">Seus documentos enviados aparecerão aqui.</p>
             </div>
           ) : (
             /* No search results found */
@@ -888,7 +929,7 @@ export default function Documents() {
                           )}
 
                           {/* Diagnosis & CID block */}
-                          {(doc.diagnostico || doc.resumo) && (
+                          {(doc.diagnostico || doc.resumo || doc.cid) && (
                             <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-2.5 text-xs space-y-1">
                               <div className="flex items-center justify-between gap-1.5">
                                 <div className="flex items-center gap-1.5 font-bold text-purple-900 text-[10.5px] uppercase tracking-wider">
@@ -902,8 +943,13 @@ export default function Documents() {
                                 )}
                               </div>
                               <p className="m-0 text-[11px] leading-relaxed text-[#3B4252] font-medium whitespace-pre-wrap break-words">
-                                {doc.diagnostico || doc.resumo}
+                                {doc.diagnostico || doc.resumo || `CID-10 ${doc.cid}`}
                               </p>
+                              {doc.cid && cidSummaries[getCidCode(doc.cid)] && (
+                                <p className="m-0 border-t border-purple-100 pt-1.5 text-[10.5px] leading-relaxed text-purple-800">
+                                  <span className="font-bold">Resumo CID-10: </span>{cidSummaries[getCidCode(doc.cid)]}
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -987,7 +1033,7 @@ export default function Documents() {
                           href={`/documentos/${doc.id}`}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-[#1D4ED8] hover:underline"
                         >
-                          <span>Ver prontuário</span>
+                          <span>Ver documento</span>
                           <ChevronRight size={14} />
                         </Link>
 
@@ -1001,31 +1047,32 @@ export default function Documents() {
                               <MoreVertical size={16} />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-xl border border-[#E3E8F0] bg-white shadow-lg p-1">
+                          <DropdownMenuContent align="end" className="min-w-44 rounded-xl border border-[#E3E8F0] bg-white p-1.5 shadow-xl shadow-slate-900/10">
                             <DropdownMenuItem asChild>
-                              <Link href={`/documentos/${doc.id}`} className="flex items-center gap-2 cursor-pointer text-xs py-2">
+                              <Link href={`/documentos/${doc.id}`} className="group flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#1D4ED8] transition-all hover:bg-[#1D4ED8] hover:text-white focus:bg-[#1D4ED8] focus:text-white">
                                 <ExternalLink size={14} /> Abrir detalhes
                               </Link>
                             </DropdownMenuItem>
                             {doc.previewUrl && (
-                              <DropdownMenuItem asChild>
-                                <a href={doc.previewUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 cursor-pointer text-xs py-2">
-                                  <Eye size={14} /> Ver arquivo original
-                                </a>
+                              <DropdownMenuItem
+                                onClick={() => setOriginalPreview({ url: doc.previewUrl!, title: doc.titulo })}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-[#14211F] transition-all hover:bg-[#F0F5FF] hover:text-[#1D4ED8] focus:bg-[#F0F5FF] focus:text-[#1D4ED8]"
+                              >
+                                <Eye size={14} /> Ver imagem original
                               </DropdownMenuItem>
                             )}
                             {doc.status === 'failed' && (
                               <DropdownMenuItem
                                 disabled={retryingId === doc.id}
                                 onClick={(event) => handleRetry(doc.id, event)}
-                                className="flex cursor-pointer items-center gap-2 text-xs py-2"
+                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-[#14211F] transition-all hover:bg-[#F0F5FF] hover:text-[#1D4ED8] focus:bg-[#F0F5FF] focus:text-[#1D4ED8]"
                               >
                                 <RotateCw size={14} /> Tentar novamente
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
-                              onClick={(e) => handleDelete(doc.id, e)}
-                              className="text-rose-600 focus:text-rose-600 flex items-center gap-2 cursor-pointer text-xs py-2"
+                              onClick={(e) => requestDelete(doc.id, doc.titulo, e)}
+                              className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#E8664A] transition-all hover:bg-[#FFF0ED] hover:text-[#C94E35] focus:bg-[#FFF0ED] focus:text-[#C94E35]"
                             >
                               <Trash2 size={14} /> Excluir documento
                             </DropdownMenuItem>
@@ -1167,7 +1214,7 @@ export default function Documents() {
                         {renderBadge(doc)}
                       </div>
 
-                      <div className="hidden items-center gap-1.5 sm:flex">
+                      <div className="flex items-center gap-1.5">
                         <Link
                           href={`/documentos/${doc.id}`}
                           aria-label={`Abrir detalhes de ${doc.titulo}`}
@@ -1175,6 +1222,42 @@ export default function Documents() {
                         >
                           <ChevronRight size={18} />
                         </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`Mais ações para ${doc.titulo}`}
+                              className="rounded-lg p-2 text-[#5B6878] transition-colors hover:bg-[#F4F7FC] hover:text-[#1D4ED8]"
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-44 rounded-xl border border-[#E3E8F0] bg-white p-1.5 shadow-xl shadow-slate-900/10">
+                            {doc.previewUrl && (
+                              <DropdownMenuItem
+                                onClick={() => setOriginalPreview({ url: doc.previewUrl!, title: doc.titulo })}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-[#14211F] transition-all hover:bg-[#F0F5FF] hover:text-[#1D4ED8]"
+                              >
+                                <Eye size={14} /> Ver imagem original
+                              </DropdownMenuItem>
+                            )}
+                            {doc.status === 'failed' && (
+                              <DropdownMenuItem
+                                disabled={retryingId === doc.id}
+                                onClick={(event) => handleRetry(doc.id, event)}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-[#14211F] transition-all hover:bg-[#F0F5FF] hover:text-[#1D4ED8]"
+                              >
+                                <RotateCw size={14} /> Tentar novamente
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={(event) => requestDelete(doc.id, doc.titulo, event)}
+                              className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#E8664A] transition-all hover:bg-[#FFF0ED] hover:text-[#C94E35] focus:bg-[#FFF0ED] focus:text-[#C94E35]"
+                            >
+                              <Trash2 size={14} /> Excluir documento
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))}
@@ -1188,6 +1271,87 @@ export default function Documents() {
           Seus documentos médicos são protegidos com criptografia de ponta a ponta e total conformidade com a LGPD.
         </p>
       </main>
+
+      {originalPreview && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Imagem original: ${originalPreview.title}`}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#14211F]/75 p-4 backdrop-blur-sm"
+          onMouseDown={() => setOriginalPreview(null)}
+        >
+          <div
+            className="relative flex h-[min(86dvh,860px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[#E3E8F0] px-5 py-3.5">
+              <h2 className="truncate pr-4 text-sm font-bold text-[#14211F]">{originalPreview.title}</h2>
+              <button
+                type="button"
+                onClick={() => setOriginalPreview(null)}
+                className="rounded-lg p-2 text-[#5B6878] transition-colors hover:bg-[#F4F7FC] hover:text-[#14211F]"
+                aria-label="Fechar imagem original"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {originalPreview.url.toLowerCase().includes('.pdf') ? (
+              <iframe title={originalPreview.title} src={originalPreview.url} className="min-h-0 flex-1 bg-[#F4F7FC]" />
+            ) : (
+              <div className="min-h-0 flex-1 overflow-auto bg-[#14211F] p-4">
+                <img src={originalPreview.url} alt={`Imagem original de ${originalPreview.title}`} className="mx-auto min-h-full max-w-full object-contain" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {documentPendingDeletion && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-document-title"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#14211F]/55 p-4 backdrop-blur-sm"
+          onMouseDown={() => !deleteMutation.isPending && setDocumentPendingDeletion(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-[#F3CBC0] bg-white p-6 shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FDE1DA] text-[#C94E35]">
+              <Trash2 size={21} />
+            </div>
+            <h2 id="delete-document-title" className="mt-4 text-xl font-bold text-[#14211F]">Excluir documento?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#5B6878]">
+              <strong className="text-[#14211F]">{documentPendingDeletion.title}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleteMutation.isPending}
+                onClick={() => setDocumentPendingDeletion(null)}
+                className="h-10 rounded-xl border border-[#E3E8F0] px-4 text-sm font-bold text-[#5B6878] transition-colors hover:bg-[#F4F7FC] disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleteMutation.isPending}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void handleDelete();
+                }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E8664A] px-4 text-sm font-bold text-white transition-colors hover:bg-[#C94E35] disabled:opacity-60"
+              >
+                {deleteMutation.isPending && <LoaderCircle size={16} className="animate-spin" />}
+                Excluir documento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

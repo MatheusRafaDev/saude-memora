@@ -22,6 +22,7 @@ import {
   Send,
   FileBarChart,
   Layers,
+  X,
 } from 'lucide-react';
 import {
   useGetApiPacientesMe,
@@ -31,6 +32,7 @@ import { triggerUploadModal } from '@/components/UploadModal';
 import { triggerEmergencyModal } from '@/lib/emergency-modal';
 import { CarteirinhaModal } from '@/components/CarteirinhaModal';
 import { BrandLogo } from '@/components/BrandLogo';
+import Insights from '@/pages/Insights';
 
 import {
   useDashboardResumo,
@@ -97,6 +99,7 @@ const TOM_CLASSES: Record<Indicador['tom'], string> = {
 
 export default function Dashboard() {
   const [isCarteirinhaOpen, setIsCarteirinhaOpen] = useState(false);
+  const [isAnalysesOpen, setIsAnalysesOpen] = useState(false);
 
   const { data: profile, isLoading: isProfileLoading, isError: profileError } = useGetApiPacientesMe();
   const { data: fichaRaw, isLoading: isFichaLoading, isError: fichaError } = useGetApiFichaMedicaMe();
@@ -249,55 +252,74 @@ export default function Dashboard() {
         </div>
 
 
-        {/* Carteirinha em azul céu e um único cartão azul-marinho de destaque. */}
+        {/* Carteirinha e acesso de emergência em azul-marinho. */}
         <div className="mb-6 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-3">
           <button
             type="button"
             onClick={() => setIsCarteirinhaOpen(true)}
             aria-label="Abrir carteirinha de saúde em tela inteira"
-            className="group flex w-full cursor-zoom-in flex-col justify-between rounded-[20px] border border-[#CFE0FF] bg-[#CFE0FF] p-5 text-left text-[#14211F] transition-colors hover:bg-[#CFE0FF]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] lg:col-span-2 sm:p-7"
+            className="group relative flex w-full cursor-pointer flex-col justify-between overflow-hidden rounded-[20px] border border-[#36425F] bg-[#1C2438] p-5 text-left text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#222d47] hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] lg:col-span-2 sm:p-7"
           >
-            <div>
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#60A5FA] via-[#2563EB] to-[#1D4ED8]" />
+            <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-[#2563EB]/20 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 right-0 h-24 w-2/3 bg-gradient-to-l from-[#2563EB]/10 to-transparent" />
+            <div className="relative">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-[#1D4ED8]">Carteirinha de saúde</span>
-                <BrandLogo withLink={false} iconClassName="h-6 w-6" wordmarkClassName="text-xs text-[#14211F]" layout="inline" />
+                <span className="text-xs font-semibold text-[#A9B6CE]">Carteirinha de saúde</span>
+                <BrandLogo withLink={false} variant="white" iconClassName="h-6 w-6" wordmarkClassName="text-xs" layout="inline" />
               </div>
               <div className="mt-4">
-                <div className="font-serif text-2xl font-semibold text-[#14211F]">{fullName}</div>
-                <div className="mt-1 text-base text-[#14211F]">{healthPlan || 'Plano não informado'}</div>
-                <div className="mt-1 font-mono text-sm text-[#5B6878]">Nº {insuranceCardNumber || 'Não informado'}</div>
+                <div className="font-serif text-2xl font-semibold text-white">{fullName}</div>
+                <div className="mt-1 text-base text-white">{healthPlan || 'Plano não informado'}</div>
+                <div className="mt-1 font-mono text-sm text-[#A9B6CE]">Nº {insuranceCardNumber || 'Não informado'}</div>
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-[#E3E8F0] bg-white p-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.08] p-3 backdrop-blur-sm [&>div:first-child]:text-[#A9B6CE] [&>div:last-child]:text-white">
                   <div className="text-xs font-semibold text-[#5B6878]">Tipo sanguíneo</div>
                   <div className="mt-1 font-serif text-lg font-semibold text-[#14211F]">{bloodType}</div>
                 </div>
-                <div className="rounded-xl border border-[#E3E8F0] bg-white p-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.08] p-3 backdrop-blur-sm [&>div:first-child]:text-[#A9B6CE] [&>div:last-child]:text-white">
                   <div className="text-xs font-semibold text-[#5B6878]">Alergias</div>
                   <div className="mt-1 text-sm text-[#14211F]">{allergiesDisplay}</div>
                 </div>
               </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-white/[0.08] p-3 backdrop-blur-sm">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-[#A9B6CE]">Contato de emergencia</div>
+                  <div className="mt-1 truncate text-sm font-semibold text-white" title={resumoFicha.contatoEmergencia || 'Nao informado'}>
+                    {resumoFicha.contatoEmergencia || 'Nao informado'}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.08] p-3 backdrop-blur-sm">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-[#A9B6CE]">Condicoes</div>
+                  <div className="mt-1 truncate text-sm font-semibold text-white" title={resumoFicha.condicoes.length > 0 ? resumoFicha.condicoes.join(', ') : 'Nenhuma'}>
+                    {resumoFicha.condicoes.length > 0 ? resumoFicha.condicoes.join(', ') : 'Nenhuma'}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-4 text-sm font-semibold text-white transition-colors group-hover:bg-[#1E40AF]">
+            <div className="relative mt-5 inline-flex min-h-11 items-center justify-center gap-2 self-stretch rounded-xl bg-[#2563EB] px-4 text-sm font-semibold text-white shadow-lg shadow-blue-950/20 transition-colors group-hover:bg-[#1D4ED8]">
               <ZoomIn size={15} />
               Abrir carteirinha
             </div>
           </button>
 
-          <section className="relative flex flex-col justify-between overflow-hidden rounded-[20px] border border-[#36425F] border-t-4 border-t-[#E8664A] bg-[#1C2438] p-5 text-white sm:p-6">
-            <div>
+          <section className="group relative flex flex-col justify-between overflow-hidden rounded-[20px] border border-[#36425F] border-t-4 border-t-[#E8664A] bg-[#1C2438] p-5 text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#29283c] hover:shadow-lg sm:p-6">
+            <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-[#E8664A]/25 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 right-0 h-24 w-2/3 bg-gradient-to-l from-[#E8664A]/15 to-transparent" />
+            <div className="relative">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-[#A9B6CE]">Acesso rápido em emergências</span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-[#E8664A]" aria-hidden="true"><Shield size={17} /></span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E8664A]/15 text-[#FCA5A5]" aria-hidden="true"><Shield size={17} /></span>
               </div>
               <h2 className="mt-3 text-xl text-white">Ficha de emergência</h2>
               <p className="mt-2 text-sm leading-relaxed text-[#A9B6CE]">Informado por você na ficha médica. Confira com um profissional de saúde.</p>
-              <div className="mt-4 space-y-2 border-t border-[#36425F] pt-3 text-sm">
+              <div className="hidden">
                 <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Contato</span><span className="break-words text-right font-semibold text-white">{resumoFicha.contatoEmergencia || 'Não informado'}</span></div>
                 <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Condições</span><span className="break-words text-right font-semibold text-white">{resumoFicha.condicoes.length > 0 ? resumoFicha.condicoes.join(', ') : 'Nenhuma'}</span></div>
               </div>
             </div>
-            <button type="button" onClick={triggerEmergencyModal} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-4 text-sm font-bold text-white transition-colors hover:bg-[#1E40AF]">
+            <button type="button" onClick={triggerEmergencyModal} className="relative mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#E8664A] px-4 text-sm font-bold text-white shadow-sm shadow-red-950/20 transition-colors hover:bg-[#C94E35] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E8664A]">
               Abrir modo emergência <ArrowRight size={16} />
             </button>
           </section>
@@ -376,9 +398,9 @@ export default function Dashboard() {
               <HeartPulse size={18} className="text-[#1D4ED8]" />
             </div>
             <h2 className="text-base font-bold text-[#14211F] flex-1">Últimos resultados de exames</h2>
-            <Link href="/analises" className="text-[13px] font-bold text-[#1D4ED8] hover:underline">
+            <button type="button" onClick={() => setIsAnalysesOpen(true)} className="text-[13px] font-bold text-[#1D4ED8] hover:underline">
               Ver tendências
-            </Link>
+            </button>
           </div>
 
           {biomarcadores.length === 0 ? (
@@ -567,6 +589,25 @@ export default function Dashboard() {
           Informações organizadas com segurança para o seu acompanhamento contínuo.
         </p>
       </main>
+
+      {isAnalysesOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="analyses-modal-title">
+          <div className="flex max-h-[94dvh] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border border-[#E3E8F0] bg-[#F4F7FC] shadow-2xl sm:rounded-[28px]">
+            <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[#E3E8F0] bg-white px-4 py-3 sm:px-6 sm:py-4">
+              <div className="min-w-0">
+                <p className="mb-0 text-xs font-bold uppercase tracking-[0.14em] text-[#1D4ED8]">Acompanhamento clínico</p>
+                <h2 id="analyses-modal-title" className="mb-0 mt-0.5 truncate text-lg font-bold text-[#14211F] sm:text-xl">Análises e tendências</h2>
+              </div>
+              <button type="button" onClick={() => setIsAnalysesOpen(false)} aria-label="Fechar análises" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#5B6878] transition-colors hover:bg-[#F4F7FC] hover:text-[#14211F]">
+                <X size={20} />
+              </button>
+            </header>
+            <div className="min-h-0 overflow-y-auto p-4 sm:p-6">
+              <Insights embedded />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Carteirinha Modal */}
       <CarteirinhaModal
