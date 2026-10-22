@@ -16,7 +16,6 @@ export default function Termos() {
             </div>
             <h1
               className="mt-4 mb-2 text-3xl sm:text-5xl font-bold tracking-[-0.03em] text-white"
-              style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
             >
               Termos de Uso
             </h1>
@@ -32,7 +31,6 @@ export default function Termos() {
             <section id="sobre" className="scroll-mt-28">
               <h2
                 className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 1. Sobre o serviço
               </h2>
@@ -47,7 +45,6 @@ export default function Termos() {
             <section id="nao-e" className="scroll-mt-28">
               <h2
                 className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 2. O que o serviço não é
               </h2>
@@ -67,7 +64,6 @@ export default function Termos() {
             <section id="dados" className="scroll-mt-28">
               <h2
                 className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 3. Responsabilidade pelos dados
               </h2>
@@ -81,7 +77,6 @@ export default function Termos() {
             <section id="privacidade-seguranca" className="scroll-mt-28">
               <h2
                 className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 4. Privacidade e segurança
               </h2>
@@ -95,7 +90,6 @@ export default function Termos() {
             <section id="encerramento" className="scroll-mt-28">
               <h2
                 className="text-2xl font-bold tracking-tight text-[#173754] mb-2.5"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 5. Exclusão de conta e encerramento
               </h2>

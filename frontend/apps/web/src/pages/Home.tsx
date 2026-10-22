@@ -136,7 +136,6 @@ export default function Home() {
               <div>
                 <h1
                   className="font-normal text-[38px] sm:text-[52px] lg:text-[64px] leading-[1.1] tracking-[-0.025em] mb-7 text-white"
-                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                 >
                   Seus exames<br />e receitas, sempre com você.
                 </h1>
@@ -147,7 +146,6 @@ export default function Home() {
                   <a
                     href="#recursos"
                     className="inline-flex items-center justify-center gap-2.5 h-[54px] px-7 rounded-[27px] bg-white text-[#2357D9] text-[16px] font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer"
-                    style={{ fontFamily: "'DM Sans', sans-serif" }}
                   >
                     Ver recursos
                   </a>
@@ -173,7 +171,6 @@ export default function Home() {
           </div>
           <h2
             className="text-[30px] sm:text-[38px] lg:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-[#173754]"
-            style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
           >
             Um lugar para o que importa.
           </h2>
@@ -190,7 +187,6 @@ export default function Home() {
                 <div>
                   <h3
                     className="font-normal text-[20px] text-[#173754] mb-1.5 leading-snug"
-                    style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                   >
                     {rec.title}
                   </h3>
@@ -211,7 +207,6 @@ export default function Home() {
               </div>
               <h3
                 className="text-[26px] sm:text-[34px] font-bold text-[#173754] leading-[1.2] mb-4"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Medicamentos, consultas e cuidados sempre em dia.
               </h3>
@@ -264,7 +259,6 @@ export default function Home() {
                 </div>
                 <h2
                   className="text-[30px] sm:text-[38px] lg:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-white mb-8"
-                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                 >
                   Da papelada à consulta.<br />Em três passos.
                 </h2>
@@ -277,7 +271,6 @@ export default function Home() {
                     <div>
                       <h3
                         className="font-normal text-[20px] text-white pt-1 leading-snug"
-                        style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                       >
                         Envie
                       </h3>
@@ -294,7 +287,6 @@ export default function Home() {
                     <div>
                       <h3
                         className="font-normal text-[20px] text-white pt-1 leading-snug"
-                        style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                       >
                         Organize
                       </h3>
@@ -311,7 +303,6 @@ export default function Home() {
                     <div>
                       <h3
                         className="font-normal text-[20px] text-white pt-1 leading-snug"
-                        style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                       >
                         Consulte
                       </h3>
@@ -335,7 +326,6 @@ export default function Home() {
               </div>
               <h2
                 className="text-[30px] sm:text-[38px] lg:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-[#173754]"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Bom saber antes<br />de começar.
               </h2>
@@ -353,7 +343,6 @@ export default function Home() {
                     >
                       <span
                         className="font-normal text-[18px] sm:text-[19px] text-[#173754] group-hover:text-[#2357D9] transition-colors"
-                        style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                       >
                         {faq.q}
                       </span>
@@ -382,7 +371,6 @@ export default function Home() {
               </div>
               <h2
                 className="text-[30px] sm:text-[38px] lg:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-[#173754]"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Sua saúde organizada,<br />sem complicação.
               </h2>
@@ -427,7 +415,6 @@ export default function Home() {
               </div>
               <h3
                 className="font-normal text-[20px] text-[#173754] mb-1.5 leading-snug"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Tudo em um só lugar
               </h3>
@@ -442,7 +429,6 @@ export default function Home() {
               </div>
               <h3
                 className="font-normal text-[20px] text-[#173754] mb-1.5 leading-snug"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Sempre com você
               </h3>
@@ -457,7 +443,6 @@ export default function Home() {
               </div>
               <h3
                 className="font-normal text-[20px] text-[#173754] mb-1.5 leading-snug"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Você no controle
               </h3>
@@ -478,7 +463,6 @@ export default function Home() {
               </div>
               <h3
                 className="mt-1 text-xl font-bold text-[#173754]"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Matheus Rafael
               </h3>
@@ -526,7 +510,6 @@ export default function Home() {
               <div>
                 <h2
                   className="font-medium text-[26px] sm:text-[32px] text-white leading-tight"
-                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                 >
                   Pronto para organizar sua saúde?
                 </h2>
@@ -539,7 +522,6 @@ export default function Home() {
             <Link
               href="/criar-conta"
               className="inline-flex items-center justify-center gap-2.5 h-[54px] px-7 rounded-[27px] bg-white text-[#2357D9] text-[16px] font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer shrink-0 w-full sm:w-auto"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Criar conta grátis
               <ArrowRight size={18} aria-hidden="true" />

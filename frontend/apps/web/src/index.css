@@ -27,9 +27,9 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--app-font-sans);
-  --font-serif: var(--app-font-serif);
-  --font-mono: var(--app-font-mono);
-  --font-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-serif: var(--app-font-sans);
+  --font-mono: var(--app-font-sans);
+  --font-jakarta: var(--app-font-sans);
   --color-brand-blue: var(--blue);
   --color-brand-sky: var(--sky);
   --color-brand-coral: var(--coral);
@@ -74,8 +74,8 @@
 
   --radius: 0.75rem;
   --app-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --app-font-serif: 'Fraunces', Georgia, serif;
-  --app-font-mono: 'DM Mono', monospace;
+  --app-font-serif: var(--app-font-sans);
+  --app-font-mono: var(--app-font-sans);
 
   /* Saúde Memora Design Tokens (desing.md) */
   --blue: #1D4ED8;

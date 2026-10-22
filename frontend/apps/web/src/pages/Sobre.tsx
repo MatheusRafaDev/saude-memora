@@ -26,7 +26,6 @@ export default function Sobre() {
 
             <h1
               className="text-[36px] sm:text-[50px] lg:text-[56px] font-bold leading-[1.1] tracking-[-0.025em] text-white mb-6"
-              style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
             >
               Sua saúde organizada, sem complicação.
             </h1>
@@ -39,14 +38,12 @@ export default function Sobre() {
               <Link
                 href="/criar-conta"
                 className="inline-flex h-[52px] items-center justify-center gap-2 rounded-full bg-white text-[#2357D9] px-8 text-sm sm:text-base font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 Criar conta grátis
               </Link>
               <a
                 href="/#recursos"
                 className="inline-flex h-[52px] items-center justify-center rounded-full border border-white/40 bg-white/10 text-white px-7 text-sm sm:text-base font-medium transition-all hover:bg-white/20 active:translate-y-0.5 cursor-pointer"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 Ver recursos
               </a>
@@ -63,7 +60,6 @@ export default function Sobre() {
               </div>
               <h2
                 className="text-[28px] sm:text-[36px] font-bold tracking-[-0.02em] text-[#173754]"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Por que criamos a plataforma
               </h2>
@@ -76,7 +72,6 @@ export default function Sobre() {
                 </div>
                 <h3
                   className="mt-4 text-[20px] font-normal text-[#173754]"
-                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                 >
                   Tudo em um só lugar
                 </h3>
@@ -91,7 +86,6 @@ export default function Sobre() {
                 </div>
                 <h3
                   className="mt-4 text-[20px] font-normal text-[#173754]"
-                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                 >
                   Sempre com você
                 </h3>
@@ -106,7 +100,6 @@ export default function Sobre() {
                 </div>
                 <h3
                   className="mt-4 text-[20px] font-normal text-[#173754]"
-                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                 >
                   Você no controle
                 </h3>
@@ -130,7 +123,6 @@ export default function Sobre() {
               </div>
               <h3
                 className="mt-1 text-xl font-bold text-[#173754]"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Matheus Rafael
               </h3>
@@ -171,7 +163,6 @@ export default function Sobre() {
             <div>
               <h2
                 className="font-medium text-[26px] sm:text-[32px] text-white leading-tight"
-                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
               >
                 Comece a organizar seus exames hoje.
               </h2>
@@ -183,7 +174,6 @@ export default function Sobre() {
             <Link
               href="/criar-conta"
               className="inline-flex items-center justify-center gap-2.5 h-[54px] px-7 rounded-[27px] bg-white text-[#2357D9] text-[16px] font-medium transition-all hover:bg-white/95 shadow-md active:translate-y-0.5 cursor-pointer shrink-0"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               <span>Criar conta gratuita</span>
               <ArrowRight size={18} />

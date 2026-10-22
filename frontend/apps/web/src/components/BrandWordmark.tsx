@@ -36,7 +36,7 @@ export function BrandWordmark({
   const dotColor = '#EB6A4A';
 
   const style: React.CSSProperties = {
-    fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamily: "var(--app-font-sans)",
   };
 
   if (height) {

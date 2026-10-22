@@ -271,10 +271,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
-    <div
-      className="min-h-screen min-h-[100dvh] bg-[#F8FAFC] lg:bg-white text-[#173754] font-sans selection:bg-[#CFE0FF] selection:text-[#1D4ED8]"
-      style={{ fontFamily: "'Plus Jakarta Sans', Inter, system-ui, sans-serif" }}
-    >
+    <div className="min-h-screen min-h-[100dvh] bg-[#F8FAFC] lg:bg-white text-[#173754] font-sans selection:bg-[#CFE0FF] selection:text-[#1D4ED8]">
       <div className="min-h-screen min-h-[100dvh] grid grid-cols-1 lg:grid-cols-12 box-border">
         {/* ── PAINEL DO FORMULÁRIO (ESQUERDA) ────────────────────────── */}
         <section className="lg:col-span-7 xl:col-span-6 flex flex-col justify-between px-4 sm:px-8 md:px-12 lg:px-12 xl:px-16 py-6 sm:py-8 lg:py-10 bg-white min-h-[100dvh] lg:min-h-0 overflow-y-auto">

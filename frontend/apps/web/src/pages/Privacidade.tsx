@@ -44,7 +44,6 @@ export default function Privacidade() {
             </div>
             <h1
               className="mt-4 mb-2 text-3xl sm:text-5xl font-bold tracking-[-0.03em] text-white"
-              style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
             >
               Política de Privacidade
             </h1>
@@ -61,7 +60,6 @@ export default function Privacidade() {
               <section key={section.id} id={section.id} className="scroll-mt-28">
                 <h2
                   className="mb-2.5 text-2xl font-bold tracking-tight text-[#173754]"
-                  style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
                 >
                   {section.title}
                 </h2>
