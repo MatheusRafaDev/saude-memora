@@ -143,7 +143,7 @@ public static class ChatEndpoints
             var model = Environment.GetEnvironmentVariable("GROQ_MODEL")
                 ?? config["GROQ_MODEL"]
                 ?? config["Groq:Model"]
-                ?? "llama-3.1-8b-instant";
+                ?? "llama3-8b-8192";
 
             var toolsEnabled = ReadBooleanSetting(
                 config,
