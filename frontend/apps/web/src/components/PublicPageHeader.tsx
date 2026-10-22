@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Menu, X } from 'lucide-react';
-import { BrandWordmark } from '@/components/BrandWordmark';
+import { BrandLogo } from '@/components/BrandLogo';
 
 type PublicPageHeaderProps = {
   variant?: 'blue' | 'light';
@@ -16,7 +16,7 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
     { href: '/#recursos', label: 'Recursos' },
     { href: '/#como-funciona', label: 'Como funciona' },
     { href: '/#duvidas', label: 'Dúvidas' },
-    { href: '/sobre', label: 'Sobre' },
+    { href: '/#sobre', label: 'Sobre' },
   ];
 
   const isBlue = variant === 'blue';
@@ -31,9 +31,13 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
     >
       <div className="mx-auto flex h-20 sm:h-24 max-w-[1376px] items-center justify-between px-6 sm:px-8">
         {/* Logo Saúde Memora oficial */}
-        <Link href="/" aria-label="Saúde Memora — início" className="transition-opacity hover:opacity-95">
-          <BrandWordmark height={26} variant={isBlue ? 'white' : 'default'} />
-        </Link>
+        <BrandLogo
+          href="/"
+          variant={isBlue ? 'white' : 'default'}
+          layout="stacked"
+          iconClassName="h-9 w-9 sm:h-10 sm:w-10 drop-shadow-xs"
+          wordmarkClassName="text-[17px] sm:text-[19px]"
+        />
 
         {/* Menu de Navegação Desktop */}
         <nav

@@ -1,5 +1,5 @@
 import { Link } from 'wouter';
-import { BrandWordmark } from '@/components/BrandWordmark';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export function PublicPageFooter() {
   return (
@@ -7,9 +7,13 @@ export function PublicPageFooter() {
       <div className="mx-auto max-w-[1312px] px-6 py-16 sm:px-8 sm:py-20">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-8">
           <div>
-            <Link href="/" aria-label="Saúde Memora — início">
-              <BrandWordmark height={24} />
-            </Link>
+            <BrandLogo
+              href="/"
+              variant="default"
+              layout="stacked"
+              iconClassName="h-9 w-9 sm:h-10 sm:w-10"
+              wordmarkClassName="text-base sm:text-[17px]"
+            />
             <p className="mt-5 max-w-[30ch] text-[15px] leading-relaxed text-[#536C80]">
               Um lugar para guardar os documentos que contam a sua história de saúde.
             </p>
@@ -28,6 +32,9 @@ export function PublicPageFooter() {
               </a>
               <a href="/#duvidas" className="transition-colors hover:text-[#2357D9]">
                 Dúvidas
+              </a>
+              <a href="/#sobre" className="transition-colors hover:text-[#2357D9]">
+                Sobre
               </a>
             </div>
           </div>

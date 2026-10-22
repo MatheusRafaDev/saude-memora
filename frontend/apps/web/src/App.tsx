@@ -473,7 +473,10 @@ function Router() {
                 <Route path="/reset-password" component={ResetPassword} />
                 <Route path="/termos" component={Termos} />
                 <Route path="/privacidade" component={Privacidade} />
-                <Route path="/sobre" component={Sobre} />
+                <Route path="/sobre">{() => {
+                  window.location.replace('/#sobre');
+                  return <Home />;
+                }}</Route>
                 <Route path="/recursos">{() => {
                   window.location.replace('/#recursos');
                   return <Home />;

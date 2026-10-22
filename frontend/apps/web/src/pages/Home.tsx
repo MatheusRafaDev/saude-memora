@@ -10,6 +10,9 @@ import {
   ArrowRight,
   Minus,
   Plus,
+  Smartphone,
+  User,
+  Info,
 } from 'lucide-react';
 import { PublicPageHeader } from '@/components/PublicPageHeader';
 import { PublicPageFooter } from '@/components/PublicPageFooter';
@@ -153,9 +156,9 @@ export default function Home() {
 
               <div className="w-full">
                 <img
-                  src="/images/hero-home.jpg"
-                  alt="Mulher à mesa com o celular numa mão e um documento na outra, cercada por pastas e papéis"
-                  className="w-full aspect-[666/474] object-cover rounded-[20px] shadow-lg block"
+                  src="/images/saude-memora-app.jpg"
+                  alt="Mulher à mesa com documentos e celular exibindo o aplicativo Saúde Memora"
+                  className="w-full aspect-[666/474] object-cover rounded-[24px] shadow-2xl border border-white/20 block bg-white"
                   loading="eager"
                 />
               </div>
@@ -198,6 +201,48 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* ── CARD DE DESTAQUE: ROTINA E MEDICAMENTOS ───────────────── */}
+          <div className="mt-12 bg-gradient-to-br from-[#F0F5FF] via-[#F8FAFC] to-[#EEF4FF] rounded-[28px] border border-[#DCE7F6] p-7 sm:p-10 lg:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xs">
+            <div className="lg:col-span-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#DFEBFF] text-[#2357D9] text-xs font-bold uppercase tracking-wider mb-3">
+                <Activity size={14} />
+                <span>Tranquilidade no seu dia a dia</span>
+              </div>
+              <h3
+                className="text-[26px] sm:text-[34px] font-bold text-[#173754] leading-[1.2] mb-4"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                Medicamentos, consultas e cuidados sempre em dia.
+              </h3>
+              <p className="text-[15px] sm:text-[16px] text-[#536C80] leading-relaxed mb-6">
+                Tenha clareza sobre suas prescrições e dosagens. O Saúde Memora reúne suas orientações médicas para você não esquecer tratamentos e ter tudo pronto quando precisar retornar ao consultório.
+              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  href="/criar-conta"
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-[#2357D9] text-white text-sm font-bold shadow-md hover:bg-[#1E4DC4] transition-colors"
+                >
+                  <span>Começar agora</span>
+                  <ArrowRight size={16} />
+                </Link>
+                <a
+                  href="#como-funciona"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[#2357D9] hover:underline"
+                >
+                  <span>Ver como funciona</span>
+                </a>
+              </div>
+            </div>
+            <div className="lg:col-span-6 overflow-hidden rounded-[20px] shadow-lg border border-white bg-white">
+              <img
+                src="/images/rotina-saude.jpg"
+                alt="Mulher acompanhando medicamentos, lembretes e rotina de saúde no celular"
+                className="w-full aspect-[4/3] object-cover block"
+                loading="lazy"
+              />
+            </div>
+          </div>
         </section>
 
         {/* ── COMO FUNCIONA SECTION ─────────────────────────────────── */}
@@ -206,9 +251,9 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-[530px_minmax(0,1fr)] gap-12 lg:gap-20 items-center">
               <div>
                 <img
-                  src="/images/como-funciona.jpg"
-                  alt="Ilustração de documentos e pastas de saúde organizados"
-                  className="w-full aspect-[530/392] object-cover rounded-[20px] shadow-lg block"
+                  src="/images/consulta-medica.jpg"
+                  alt="Médico e paciente em consulta analisando exames e histórico de saúde no tablet"
+                  className="w-full aspect-[530/392] object-cover rounded-[24px] shadow-2xl border border-white/20 block bg-white"
                   loading="lazy"
                 />
               </div>
@@ -325,6 +370,146 @@ export default function Home() {
                 );
               })}
             </div>
+          </div>
+        </section>
+
+        {/* ── SOBRE SECTION ─────────────────────────────────────────── */}
+        <section id="sobre" className="scroll-mt-24 max-w-[1312px] mx-auto px-6 pt-20 sm:px-8 sm:pt-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-10">
+            <div className="lg:col-span-7">
+              <div className="text-[12px] font-bold text-[#2357D9] uppercase tracking-wider mb-2">
+                Sobre o projeto
+              </div>
+              <h2
+                className="text-[30px] sm:text-[38px] lg:text-[40px] font-bold leading-[1.15] tracking-[-0.02em] text-[#173754]"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                Sua saúde organizada,<br />sem complicação.
+              </h2>
+              <p className="mt-4 text-[16px] sm:text-[17px] text-[#536C80] leading-relaxed">
+                O Saúde Memora nasceu para que você nunca mais perca exames, laudos ou receitas importantes em gavetas ou pastas antigas. Tudo reunido em um só lugar, seguro e fácil de consultar no dia a dia e na hora da consulta.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2.5 text-xs sm:text-sm font-semibold text-[#173754]">
+                <div className="flex items-center gap-2 bg-[#F1F5F9] px-3.5 py-1.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-[#2357D9]" />
+                  <span>Para pacientes e famílias</span>
+                </div>
+                <div className="flex items-center gap-2 bg-[#F1F5F9] px-3.5 py-1.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-[#2357D9]" />
+                  <span>Facilita a consulta médica</span>
+                </div>
+                <div className="flex items-center gap-2 bg-[#F1F5F9] px-3.5 py-1.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-[#2357D9]" />
+                  <span>Privacidade e segurança</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 flex justify-center">
+              <div className="relative w-full max-w-[360px] p-5 bg-gradient-to-b from-[#F0F5FF] to-white rounded-[28px] border border-[#DFE7EF] shadow-sm flex flex-col items-center text-center">
+                <img
+                  src="/images/equipe-medica.png"
+                  alt="Profissionais de saúde e médicos apoiando o cuidado do paciente"
+                  className="w-full h-auto object-contain block max-h-[250px]"
+                  loading="lazy"
+                />
+                <span className="mt-3 text-xs font-bold text-[#2357D9]">
+                  Pensado para fortalecer a relação entre paciente e médico
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="bg-[#F7F9FC] rounded-[20px] p-6 border border-transparent hover:border-[#DFEBFF] hover:bg-[#F3F6FB] transition-all">
+              <div className="w-[44px] h-[44px] rounded-[12px] bg-[#DFEBFF] text-[#2357D9] flex items-center justify-center mb-4">
+                <FolderHeart size={22} />
+              </div>
+              <h3
+                className="font-normal text-[20px] text-[#173754] mb-1.5 leading-snug"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                Tudo em um só lugar
+              </h3>
+              <p className="text-[15px] text-[#536C80] leading-[1.55]">
+                Reúna exames de sangue, laudos e receitas em uma linha do tempo única e clara.
+              </p>
+            </div>
+
+            <div className="bg-[#F7F9FC] rounded-[20px] p-6 border border-transparent hover:border-[#DFEBFF] hover:bg-[#F3F6FB] transition-all">
+              <div className="w-[44px] h-[44px] rounded-[12px] bg-[#DFEBFF] text-[#2357D9] flex items-center justify-center mb-4">
+                <Smartphone size={22} />
+              </div>
+              <h3
+                className="font-normal text-[20px] text-[#173754] mb-1.5 leading-snug"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                Sempre com você
+              </h3>
+              <p className="text-[15px] text-[#536C80] leading-[1.55]">
+                Acesse seu histórico no celular para consultar ou mostrar ao médico durante a consulta.
+              </p>
+            </div>
+
+            <div className="bg-[#F7F9FC] rounded-[20px] p-6 border border-transparent hover:border-[#DFEBFF] hover:bg-[#F3F6FB] transition-all">
+              <div className="w-[44px] h-[44px] rounded-[12px] bg-[#DFEBFF] text-[#2357D9] flex items-center justify-center mb-4">
+                <User size={22} />
+              </div>
+              <h3
+                className="font-normal text-[20px] text-[#173754] mb-1.5 leading-snug"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                Você no controle
+              </h3>
+              <p className="text-[15px] text-[#536C80] leading-[1.55]">
+                Total autonomia para adicionar, revisar e excluir seus documentos com facilidade.
+              </p>
+            </div>
+          </div>
+
+          {/* Card do Criador */}
+          <div className="mt-8 rounded-[24px] border border-[#DFE7EF] bg-[#F7F9FC] p-7 sm:p-9 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 shadow-xs">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#2357D9] text-xl font-bold text-white shadow-sm">
+              MR
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <div className="text-xs font-bold uppercase tracking-wider text-[#2357D9]">
+                Criador
+              </div>
+              <h3
+                className="mt-1 text-xl font-bold text-[#173754]"
+                style={{ fontFamily: "'DM Sans', Inter, sans-serif" }}
+              >
+                Matheus Rafael
+              </h3>
+              <p className="mt-1.5 text-sm text-[#536C80] leading-relaxed">
+                Criou o Saúde Memora para simplificar o acesso aos históricos de saúde de forma acolhedora, prática e direta.
+              </p>
+              <div className="mt-3 flex items-center justify-center sm:justify-start gap-4 text-xs font-bold text-[#2357D9]">
+                <a
+                  href="https://www.linkedin.com/in/matheus-rafael-50a676219/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline transition-colors"
+                >
+                  LinkedIn ↗
+                </a>
+                <span>•</span>
+                <a
+                  href="https://github.com/MatheusRafaDev"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline transition-colors"
+                >
+                  GitHub ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-[#536C80]">
+            <Info size={15} className="text-[#2357D9] shrink-0" />
+            <span>O Saúde Memora é um organizador pessoal de saúde e não substitui avaliação médica profissional.</span>
           </div>
         </section>
 
