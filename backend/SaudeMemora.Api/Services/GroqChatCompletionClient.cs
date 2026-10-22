@@ -193,10 +193,10 @@ public sealed class GroqChatCompletionClient : IChatCompletionClient
             payload["tools"] = PatientChatTools.Definitions;
             payload["tool_choice"] = "auto";
         }
-        else
-        {
-            payload["response_format"] = new { type = "json_object" };
-        }
+        // Qwen can occasionally emit its natural-language answer before satisfying
+        // Groq's JSON mode validator, which makes Groq reject an otherwise useful
+        // completion with json_validate_failed. The system prompt still requires
+        // the response contract and ChatPromptBuilder validates it before use.
 
         return payload;
     }
