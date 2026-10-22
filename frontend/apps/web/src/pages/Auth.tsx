@@ -326,7 +326,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
             <div className="relative">
               {mode === 'login' ? (
                 /* ── FORMULÁRIO: LOGIN ── */
-                <div key="login-form" className="animate-in fade-in duration-150">
+                <div key="login-form">
                   <div className="mb-6 sm:mb-8">
                     <h1 className="text-[26px] sm:text-[32px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#173754] mb-2">
                       Bem-vindo de volta
@@ -452,7 +452,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
                 </div>
               ) : (
                 /* ── FORMULÁRIO: CADASTRO / CRIAR CONTA ── */
-                <div key="register-form" className="animate-in fade-in duration-150">
+                <div key="register-form">
                   <div className="mb-5 sm:mb-6">
                     <h1 className="text-[26px] sm:text-[32px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#173754] mb-2">
                       Crie sua conta
