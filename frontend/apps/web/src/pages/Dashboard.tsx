@@ -293,8 +293,8 @@ export default function Dashboard() {
               <h2 className="mt-3 text-xl text-white">Ficha de emergência</h2>
               <p className="mt-2 text-sm leading-relaxed text-[#A9B6CE]">Informado por você na ficha médica. Confira com um profissional de saúde.</p>
               <div className="mt-4 space-y-2 border-t border-[#36425F] pt-3 text-sm">
-                <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Contato</span><span className="truncate text-right font-semibold text-white">{resumoFicha.contatoEmergencia || 'Não informado'}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Condições</span><span className="truncate text-right font-semibold text-white">{resumoFicha.condicoes.length > 0 ? resumoFicha.condicoes.join(', ') : 'Nenhuma'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Contato</span><span className="break-words text-right font-semibold text-white">{resumoFicha.contatoEmergencia || 'Não informado'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-[#A9B6CE]">Condições</span><span className="break-words text-right font-semibold text-white">{resumoFicha.condicoes.length > 0 ? resumoFicha.condicoes.join(', ') : 'Nenhuma'}</span></div>
               </div>
             </div>
             <button type="button" onClick={triggerEmergencyModal} className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1D4ED8] px-4 text-sm font-bold text-white transition-colors hover:bg-[#1E40AF]">
@@ -319,28 +319,30 @@ export default function Dashboard() {
               const isDestaque = item.tom === 'destaque';
               const cardInner = (
                 <div
-                  className={`h-full rounded-[18px] sm:rounded-[20px] border p-3.5 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${TOM_CLASSES[item.tom]} ${
+                  className={`flex flex-col justify-between h-full rounded-[18px] sm:rounded-[20px] border p-3.5 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${TOM_CLASSES[item.tom]} ${
                     item.href ? (isDestaque ? 'hover:border-[#60A5FA]/80 cursor-pointer' : 'hover:border-[#1D4ED8]/40 cursor-pointer') : ''
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1.5 sm:gap-2">
-                    <span className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider truncate transition-colors ${
-                      isDestaque ? 'text-[#93C5FD]' : 'text-[#5B6878] group-hover:text-[#1D4ED8]'
+                  <div>
+                    <div className="flex items-start justify-between gap-1.5 sm:gap-2 min-h-[30px] sm:min-h-[34px]">
+                      <span className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wide leading-tight break-words min-w-0 flex-1 transition-colors ${
+                        isDestaque ? 'text-[#93C5FD]' : 'text-[#5B6878] group-hover:text-[#1D4ED8]'
+                      }`}>
+                        {item.rotulo}
+                      </span>
+                      <span className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg sm:rounded-xl ${
+                        isDestaque ? 'bg-white/10 text-[#93C5FD]' : 'bg-[#1D4ED8]/10 text-[#1D4ED8]'
+                      }`}>
+                        {item.icon}
+                      </span>
+                    </div>
+                    <div className={`mt-2.5 sm:mt-3 text-2xl font-serif font-semibold leading-none tracking-tight sm:text-[42px] ${
+                      isDestaque ? 'text-white' : 'text-[#14211F]'
                     }`}>
-                      {item.rotulo}
-                    </span>
-                    <span className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg sm:rounded-xl ${
-                      isDestaque ? 'bg-white/10 text-[#93C5FD]' : 'bg-[#1D4ED8]/10 text-[#1D4ED8]'
-                    }`}>
-                      {item.icon}
-                    </span>
+                      {item.valor}
+                    </div>
                   </div>
-                  <div className={`mt-2.5 sm:mt-3 text-2xl font-serif font-semibold leading-none tracking-tight sm:text-[42px] ${
-                    isDestaque ? 'text-white' : 'text-[#14211F]'
-                  }`}>
-                    {item.valor}
-                  </div>
-                  <div className={`mt-1 text-xs sm:text-[13px] truncate ${
+                  <div className={`mt-2 text-xs sm:text-[13px] leading-snug break-words ${
                     isDestaque ? 'text-blue-100/80 font-medium' : 'text-[#5B6878]'
                   }`}>
                     {item.detalhe}
@@ -532,7 +534,7 @@ export default function Dashboard() {
                         <FileText size={16} className="text-[#1D4ED8]" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <b className="block truncate text-sm text-[#14211F]">{doc.titulo}</b>
+                        <b className="block break-words text-sm text-[#14211F]">{doc.titulo}</b>
                         <span className="mt-0.5 block text-[13px] text-[#5B6878]">
                           {[doc.medico, doc.clinica].filter(Boolean).join(' · ') || 'Sem profissional identificado'}
                         </span>
@@ -550,7 +552,7 @@ export default function Dashboard() {
                         <FileText size={16} className="text-[#1D4ED8]" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <b className="block truncate text-sm text-[#14211F]">{doc.titulo}</b>
+                        <b className="block break-words text-sm text-[#14211F]">{doc.titulo}</b>
                         <span className="mt-0.5 block text-[13px] text-[#5B6878]">{doc.medico || 'Sem profissional identificado'}</span>
                       </span>
                     </div>

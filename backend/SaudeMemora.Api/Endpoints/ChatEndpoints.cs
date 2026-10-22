@@ -128,6 +128,7 @@ public static class ChatEndpoints
                 return Results.Json(new { message = "consentimento_necessario" }, statusCode: StatusCodes.Status403Forbidden);
 
             var groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY")
+                ?? Environment.GetEnvironmentVariable("GROQ_KEY")
                 ?? config["GROQ_API_KEY"]
                 ?? config["Groq:ApiKey"];
             if (string.IsNullOrWhiteSpace(groqApiKey))
@@ -135,7 +136,7 @@ public static class ChatEndpoints
                 app.Logger.LogError("GROQ_API_KEY is not configured.");
                 return Results.Problem(
                     title: "Serviço de IA indisponível",
-                    detail: "A chave do Groq não está configurada no servidor.",
+                    detail: "A chave do Groq não está configurada no servidor. Configure a variável GROQ_API_KEY no arquivo .env ou no painel da Vercel.",
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
 

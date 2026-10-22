@@ -28,7 +28,11 @@ using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 
 // Load .env variables
-Env.Load();
+Env.TraversePath().Load();
+if (File.Exists("backend/.env"))
+{
+    Env.Load("backend/.env");
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -219,6 +223,17 @@ void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
     context.Response.Cookies.Append("auth_token", jwt, new CookieOptions
     {
         HttpOnly = true,
+        SameSite = sameSiteMode,
+        Secure = cookieSecure,
+        Expires = DateTimeOffset.UtcNow.Add(expiresIn),
+        MaxAge = expiresIn,
+        IsEssential = true,
+        Path = "/"
+    });
+
+    context.Response.Cookies.Append("auth_session", "1", new CookieOptions
+    {
+        HttpOnly = false,
         SameSite = sameSiteMode,
         Secure = cookieSecure,
         Expires = DateTimeOffset.UtcNow.Add(expiresIn),
@@ -630,6 +645,14 @@ app.MapPost("/api/auth/logout", async (
     context.Response.Cookies.Delete("auth_token", new CookieOptions
     {
         HttpOnly = true,
+        SameSite = sameSiteMode,
+        Secure = cookieSecure,
+        Path = "/"
+    });
+
+    context.Response.Cookies.Delete("auth_session", new CookieOptions
+    {
+        HttpOnly = false,
         SameSite = sameSiteMode,
         Secure = cookieSecure,
         Path = "/"

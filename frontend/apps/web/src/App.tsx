@@ -1,12 +1,13 @@
 import { lazy, Suspense, type ReactNode, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { AppShell } from '@/components/AppShell';
 import { SeoMetadata } from '@/components/SeoMetadata';
+import { warmUpEntireSystem } from '@/lib/prefetch';
 import {
   Route,
   Switch,
@@ -27,6 +28,7 @@ import Sobre from '@/pages/Sobre';
 import Recursos from '@/pages/Recursos';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
+import { hasAuthCookie } from '@/lib/auth';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Documents = lazy(() => import('@/pages/Documents'));
@@ -233,10 +235,12 @@ function SessionKeepAlive() {
 
 function HomeRoute() {
   const [, setLocation] = useLocation();
+  const hasCookie = typeof window !== 'undefined' && hasAuthCookie();
   const { data: user, isLoading } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
+      enabled: hasCookie,
       meta: { skipUnauthorizedRedirect: true },
     },
   });
@@ -250,12 +254,12 @@ function HomeRoute() {
   useEffect(() => {
     if (user) {
       setLocation('/visao-geral');
-    } else if (isStandalone && !isLoading) {
+    } else if (isStandalone && !isLoading && !hasCookie) {
       setLocation('/entrar');
     }
-  }, [user, isStandalone, isLoading, setLocation]);
+  }, [user, isStandalone, isLoading, hasCookie, setLocation]);
 
-  if (user || (isStandalone && isLoading)) {
+  if (user || (isStandalone && isLoading && hasCookie)) {
     return <PageLoading />;
   }
 
@@ -281,6 +285,7 @@ function isProtectedPath(path: string) {
 }
 
 function ProtectedLayout() {
+  const queryClient = useQueryClient();
   const { data: user, isLoading, isError, error, isFetching } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
@@ -296,32 +301,12 @@ function ProtectedLayout() {
 
   const [location, setLocation] = useLocation();
 
-  // Background idle prefetch of core pages
+  // Pré-carrega de imediato TODO o sistema:
+  // Faz o download paralelo dos módulos de todas as telas (Documentos, Anamnese, Perfil, Chat, etc.)
+  // e pré-busca todos os dados no cache para que a troca de telas seja instantânea.
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(() => {
-        void import('@/pages/Documents');
-        void import('@/pages/Dashboard');
-        void import('@/pages/AnamneseEdit');
-        void import('@/pages/Chat');
-        void import('@/pages/Profile');
-      });
-    } else {
-      timer = setTimeout(() => {
-        void import('@/pages/Documents');
-        void import('@/pages/Dashboard');
-        void import('@/pages/AnamneseEdit');
-        void import('@/pages/Chat');
-        void import('@/pages/Profile');
-      }, 1200);
-    }
-    return () => {
-      if (timer !== undefined) {
-        clearTimeout(timer);
-      }
-    };
-  }, []);
+    warmUpEntireSystem(queryClient);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!isFetching && isError && getHttpStatus(error) === 401 && !user) {

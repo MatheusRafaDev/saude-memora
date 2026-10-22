@@ -16,14 +16,20 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
     return apiError.data;
   }
 
-  if (
-    typeof apiError.data === 'object' &&
-    apiError.data !== null &&
-    'message' in apiError.data &&
-    typeof apiError.data.message === 'string' &&
-    !isHtml(apiError.data.message)
-  ) {
-    return apiError.data.message;
+  if (typeof apiError.data === 'object' && apiError.data !== null) {
+    const obj = apiError.data as Record<string, unknown>;
+    if (typeof obj.detail === 'string' && obj.detail && !isHtml(obj.detail)) {
+      return obj.detail;
+    }
+    if (typeof obj.message === 'string' && obj.message && !isHtml(obj.message)) {
+      return obj.message;
+    }
+    if (typeof obj.title === 'string' && obj.title && !isHtml(obj.title)) {
+      return obj.title;
+    }
+    if (typeof obj.error === 'string' && obj.error && !isHtml(obj.error)) {
+      return obj.error;
+    }
   }
 
   if (apiError.message && !isHtml(apiError.message)) {

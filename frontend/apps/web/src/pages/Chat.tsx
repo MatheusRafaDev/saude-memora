@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import ReactMarkdown from 'react-markdown';
+import { getApiErrorMessage } from '@/lib/api-error-message';
 
 
 type Citation = {

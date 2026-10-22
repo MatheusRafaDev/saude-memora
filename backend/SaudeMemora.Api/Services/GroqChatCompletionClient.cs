@@ -34,10 +34,11 @@ public sealed class GroqChatCompletionClient : IChatCompletionClient
         CancellationToken cancellationToken)
     {
         var apiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY")
+            ?? Environment.GetEnvironmentVariable("GROQ_KEY")
             ?? _configuration["GROQ_API_KEY"]
             ?? _configuration["Groq:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
-            throw new ChatProviderException("GROQ_API_KEY is not configured.");
+            throw new ChatProviderException("GROQ_API_KEY is not configured. Configure a variável GROQ_API_KEY no arquivo .env ou no servidor.");
 
         var payload = CreatePayload(request);
         var serializedPayload = JsonSerializer.Serialize(payload);
