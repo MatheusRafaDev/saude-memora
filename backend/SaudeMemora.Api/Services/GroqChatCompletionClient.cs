@@ -175,13 +175,16 @@ public sealed class GroqChatCompletionClient : IChatCompletionClient
             ["messages"] = messages,
             ["temperature"] = 0.2,
             ["max_tokens"] = request.MaxOutputTokens,
-            ["response_format"] = new { type = "json_object" }
         };
 
         if (request.EnableTools)
         {
             payload["tools"] = PatientChatTools.Definitions;
             payload["tool_choice"] = "auto";
+        }
+        else
+        {
+            payload["response_format"] = new { type = "json_object" };
         }
 
         return payload;

@@ -57,6 +57,31 @@ public static class ChatEndpoints
                 day.UpdatedAt)).ToArray()));
         }).Produces<ChatHistoryDaysResponse>().RequireAuthorization();
 
+        app.MapGet("/api/chat/documentos-consultados", async (
+            ClaimsPrincipal user,
+            IChatHistoryRepository chatHistoryRepo,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId is null) return Results.Unauthorized();
+
+            var history = await chatHistoryRepo.GetAllByPacienteIdAsync(userId, cancellationToken);
+            var result = history
+                .Where(item => item.Citacoes != null && item.Citacoes.Count > 0)
+                .SelectMany(item => item.Citacoes.Select(c => new DocumentoConsultadoItem(
+                    c.Id,
+                    c.Titulo,
+                    c.Data,
+                    item.Pergunta,
+                    item.CriadoEm,
+                    item.DataChat
+                )))
+                .OrderByDescending(x => x.DataConsulta)
+                .ToArray();
+
+            return Results.Ok(result);
+        }).Produces<DocumentoConsultadoItem[]>().RequireAuthorization();
+
         app.MapPost("/api/chat/reindex", async (
             ClaimsPrincipal user,
             IDocumentVectorIndexer vectorIndexer,
@@ -116,12 +141,8 @@ public static class ChatEndpoints
 
             var model = Environment.GetEnvironmentVariable("GROQ_MODEL")
                 ?? config["GROQ_MODEL"]
-                ?? config["Groq:Model"];
-            if (string.IsNullOrWhiteSpace(model))
-                return Results.Problem(
-                    title: "Modelo de IA indisponível",
-                    detail: "GROQ_MODEL não está configurado no servidor.",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
+                ?? config["Groq:Model"]
+                ?? "qwen/qwen3.8-27b";
 
             var toolsEnabled = ReadBooleanSetting(
                 config,
@@ -286,3 +307,4 @@ public record ChatHistoryDay(string Date, int MessageCount, DateTime UpdatedAt);
 public record ChatHistoryDaysResponse(ChatHistoryDay[] Days);
 public record ChatCitation(string Id, string Titulo, string Data);
 public record ChatResponse(string Response, ChatCitation[] Citations);
+public record DocumentoConsultadoItem(string DocumentoId, string Titulo, string DataDocumento, string Pergunta, DateTime DataConsulta, string? DataChat);

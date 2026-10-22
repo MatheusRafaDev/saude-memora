@@ -77,6 +77,26 @@ public static class ChatPromptBuilder
         return (int)Math.Ceiling(characterCount / 3d);
     }
 
+    public static string NormalizeJsonContent(string content)
+    {
+        var trimmed = content.Trim();
+        if (trimmed.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
+        {
+            trimmed = trimmed[7..].TrimStart('\r', '\n');
+            var closing = trimmed.LastIndexOf("```", StringComparison.Ordinal);
+            if (closing >= 0)
+                trimmed = trimmed[..closing];
+        }
+        else if (trimmed.StartsWith("```", StringComparison.Ordinal))
+        {
+            trimmed = trimmed[3..].TrimStart('\r', '\n');
+            var closing = trimmed.LastIndexOf("```", StringComparison.Ordinal);
+            if (closing >= 0)
+                trimmed = trimmed[..closing];
+        }
+        return trimmed.Trim();
+    }
+
     public static bool TryParseAnswer(string? content, out ChatAnswer answer)
     {
         answer = new ChatAnswer(string.Empty, Array.Empty<string>());
@@ -85,7 +105,8 @@ public static class ChatPromptBuilder
 
         try
         {
-            using var json = JsonDocument.Parse(content);
+            var cleaned = NormalizeJsonContent(content);
+            using var json = JsonDocument.Parse(cleaned);
             var root = json.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || root.EnumerateObject().Any(property => property.Name is not ("response" or "citationIds"))

@@ -841,95 +841,70 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           </div>
         </section>
 
-        {/* ── PAINEL DA DIREITA (ASIDE AZUL COM IMAGEM E PONTOS) ───────── */}
-        <aside className="hidden lg:flex lg:col-span-5 xl:col-span-6 relative bg-gradient-to-br from-[#1C51BB] via-[#2357D9] to-[#14377B] text-white p-8 xl:p-12 flex-col justify-between overflow-hidden select-none">
-          {/* Círculos de brilho decorativos de fundo com animação ambiente sutil */}
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl"
-            animate={{
-              scale: [1, 1.15, 1],
-              opacity: [0.1, 0.22, 0.1],
-              x: [0, -18, 0],
-              y: [0, 18, 0],
-            }}
-            transition={{ repeat: Infinity, duration: 10, ease: 'easeInOut' }}
-          />
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none absolute -left-24 -bottom-24 h-96 w-96 rounded-full bg-[#14377B]/60 blur-3xl"
-            animate={{
-              scale: [1, 1.18, 1],
-              opacity: [0.4, 0.65, 0.4],
-              x: [0, 18, 0],
-              y: [0, -18, 0],
-            }}
-            transition={{ repeat: Infinity, duration: 12, ease: 'easeInOut' }}
-          />
+        {/* ── PAINEL DA DIREITA (FOTO DA CLÍNICA AJUSTADA COM QUALIDADE E SEM ZOOM) ── */}
+        <motion.aside
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden lg:flex lg:col-span-5 xl:col-span-6 relative h-full min-h-[100dvh] flex-col items-center justify-center bg-gradient-to-br from-[#F2F7FC] via-[#E8F1FA] to-[#DDEAF6] p-6 sm:p-8 xl:p-12 overflow-hidden select-none border-l border-[#E2E8F0]"
+        >
+          {/* Luzes ambientes suaves de fundo */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-white/60 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[#2357D9]/10 blur-3xl" />
+          </div>
 
-          <div className="relative z-10 flex flex-col gap-6 max-w-[500px]">
-            {/* Card com a imagem com hover sutil */}
+          <div className="relative z-10 w-full max-w-[640px] flex flex-col items-center gap-6">
+            {/* Imagem da clínica médica em alta nitidez e proporção original 100% visível */}
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              whileHover={{ y: -3, scale: 1.01 }}
-              className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/20 transition-all bg-white"
+              initial={{ opacity: 0, scale: 0.97, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full rounded-[24px] overflow-hidden shadow-[0_20px_50px_-15px_rgba(20,55,123,0.18)] border border-white bg-white"
             >
               <img
-                src="/images/saude-memora-app.jpg"
-                alt="Mulher à mesa com documentos e celular exibindo o aplicativo Saúde Memora"
-                className="w-full max-h-[260px] xl:max-h-[300px] object-cover block"
-                loading="lazy"
+                src="/images/login-clinica.jpg"
+                alt="Clínica médica - Saúde Memora"
+                className="w-full h-auto object-contain block"
+                loading="eager"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#14377B]/85 via-black/20 to-transparent" />
-              <div className="absolute bottom-3.5 left-4 right-4 text-xs font-semibold text-white/95 flex items-center justify-between">
-                <span>Seus exames e receitas sempre à mão</span>
-                <span className="text-[11px] font-medium bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-xs">App Web</span>
-              </div>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center max-w-[500px]"
             >
-              <h2 className="text-[26px] xl:text-[30px] leading-[1.2] tracking-[-0.015em] font-extrabold text-white mb-3">
+              <h2 className="text-[22px] xl:text-[26px] font-bold text-[#173754] leading-snug tracking-[-0.015em]">
                 Todo o seu histórico médico num só lugar.
               </h2>
-              <p className="text-white/85 text-sm xl:text-[15px] leading-relaxed">
+              <p className="mt-2 text-sm xl:text-[15px] text-[#536C80] leading-relaxed">
                 Menos papéis espalhados e mais tranquilidade para você e sua família na hora da consulta.
               </p>
             </motion.div>
 
-            <div className="grid gap-3.5 font-medium text-sm xl:text-[15px]">
-              {[
-                'Guarde exames, receitas e laudos clínicos',
-                'Leitura e organização inteligente por data',
-                'Acesso rápido e seguro no celular ou computador',
-              ].map((text, idx) => (
-                <motion.div
-                  key={text}
-                  initial={{ opacity: 0, x: 14 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  whileHover={{ x: 5 }}
-                  transition={{ duration: 0.4, delay: 0.18 + idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center gap-3 cursor-default"
-                >
-                  <span className="w-8 h-8 rounded-full bg-white text-[#1C51BB] flex items-center justify-center shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-110">
-                    <Check size={16} strokeWidth={2.5} />
-                  </span>
-                  <span>{text}</span>
-                </motion.div>
-              ))}
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap items-center justify-center gap-2.5 text-xs font-semibold text-[#173754]"
+            >
+              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/80 shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2357D9]" />
+                <span>100% Gratuito</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/80 shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2357D9]" />
+                <span>Acesso pelo celular</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-white/80 shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2357D9]" />
+                <span>Seguro e Confidencial</span>
+              </div>
+            </motion.div>
           </div>
-
-          <div className="relative z-10 pt-6 border-t border-white/15 flex items-center justify-between text-xs text-white/80">
-            <span>Saúde Memora</span>
-            <span>Privacidade e segurança em primeiro lugar</span>
-          </div>
-        </aside>
+        </motion.aside>
       </div>
 
       {/* ── MODAL: RECUPERAR SENHA ─────────────────────────────────── */}

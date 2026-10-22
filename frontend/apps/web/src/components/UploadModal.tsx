@@ -276,7 +276,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
         try {
           const formData = new FormData();
           formData.append('file', file);
-          formData.append('documentType', selectedType);
+          formData.append('documentType', 'outro');
 
           const res = (await customFetch('/api/documents/upload', {
             method: 'POST',
@@ -340,6 +340,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
       if (outcome.status === 'pronto') {
         setProgress(100);
         setStatus('done');
+        window.dispatchEvent(new CustomEvent('document-uploaded'));
         if (onSuccess) onSuccess(res.id);
       } else if (outcome.status === 'timeout') {
         setStatus('timeout');
@@ -408,7 +409,10 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
             </button>
             <button
               type="button"
-              onClick={() => setIsBatchMode(true)}
+              onClick={() => {
+                setIsBatchMode(true);
+                setSelectedType('outro');
+              }}
               className={`flex items-center justify-center gap-2 rounded-lg py-2 px-3 text-xs font-semibold transition-all cursor-pointer ${
                 isBatchMode
                   ? 'bg-white text-[#1D4ED8] shadow-xs ring-1 ring-[#1D4ED8]/20'
@@ -507,11 +511,7 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                   </button>
                 </div>
 
-                {/* Quick Paste hint */}
-                <div className="mt-3.5 text-[11px] text-[#5B6878] flex items-center justify-center gap-1.5">
-                  <Clipboard size={12} className="text-[#1D4ED8]" />
-                  <span>Dica: Você também pode colar capturas diretamente com <strong>Ctrl+V</strong></span>
-                </div>
+
               </div>
             ) : files.length === 1 && filePreviews[0]?.isImage && filePreviews[0]?.url ? (
               /* Single Image Preview */
@@ -783,7 +783,10 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
-                    onClick={() => setIsBatchMode(true)}
+                    onClick={() => {
+                      setIsBatchMode(true);
+                      setSelectedType('outro');
+                    }}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       isBatchMode
                         ? 'bg-white border-[#1D4ED8] shadow-xs ring-1 ring-[#1D4ED8]'
@@ -828,50 +831,49 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               </div>
             )}
 
-            {/* Document Type Pills with Icons */}
-            <div className="my-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#5B6878]">
-                  Classificação do documento
-                </span>
-                <span className="text-[11px] text-[#1D4ED8] font-semibold">
-                  A IA pode identificar automaticamente
-                </span>
-              </div>
+            {/* Document Type Pills with Icons (oculto se for envio em lote) */}
+            {!isBatchMode && (
+              <div className="my-4 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#5B6878]">
+                    Classificação do documento
+                  </span>
+                </div>
 
-              <div className="flex gap-2 flex-wrap">
-                {TYPE_OPTIONS.map((t) => {
-                  const Icon = t.icon;
-                  const isSelected = selectedType === t.id;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setSelectedType(t.id)}
-                      className={`inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-semibold transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8] shadow-xs scale-[1.02]'
-                          : 'bg-white text-[#14211F] border border-[#E3E8F0] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
-                      }`}
-                    >
-                      <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
-                      <span>{t.label}</span>
-                      {t.badge && (
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-[#CFE0FF] text-[#1D4ED8]'}`}>
-                          {t.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                <div className="flex gap-2 flex-wrap">
+                  {TYPE_OPTIONS.map((t) => {
+                    const Icon = t.icon;
+                    const isSelected = selectedType === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setSelectedType(t.id)}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs sm:text-[13px] font-semibold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#1D4ED8] text-white border border-[#1D4ED8] shadow-xs scale-[1.02]'
+                            : 'bg-white text-[#14211F] border border-[#E3E8F0] hover:border-[#CFE0FF] hover:bg-[#F4F7FC]'
+                        }`}
+                      >
+                        <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
+                        <span>{t.label}</span>
+                        {t.badge && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-[#CFE0FF] text-[#1D4ED8]'}`}>
+                            {t.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Clinical Scanning Tip */}
             <div className="mb-4 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC]/70 p-3 text-xs text-[#5B6878] flex items-center gap-2.5">
               <Info size={15} className="text-[#1D4ED8] shrink-0" />
               <span>
-                <strong>Dica médica:</strong> Para exames e receitas manuscritas, uma foto nítida e bem iluminada garante 100% de precisão na leitura das dosagens.
+                Para exames e receitas manuscritas, uma foto nítida e bem iluminada garante 100% de precisão na leitura das dosagens.
               </span>
             </div>
 

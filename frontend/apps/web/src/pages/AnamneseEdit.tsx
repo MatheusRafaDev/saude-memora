@@ -355,7 +355,7 @@ export default function AnamneseEdit() {
   const [alcohol, setAlcohol] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [secaoAberta, setSecaoAberta] = useState<SecaoId | null>('gerais');
+  const [secaoAberta, setSecaoAberta] = useState<SecaoId | null>(null);
 
   useEffect(() => {
     if (!fichaRaw || hasLoaded) return;
@@ -524,51 +524,22 @@ export default function AnamneseEdit() {
             Seu histórico de saúde, reunido em um só lugar.
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setLocation('/visao-geral')}
-            className="btn-secondary"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="btn-primary"
-          >
-            {isSaving ? (
-              <LoaderCircle size={17} className="animate-spin" />
-            ) : (
-              <Save size={17} />
-            )}
-            <span>{isSaving ? 'Salvando…' : 'Salvar anamnese'}</span>
-          </button>
-        </div>
+
       </div>
 
-      <div className="mb-6 flex items-start gap-3 rounded-2xl border border-[#CFE0FF] bg-gradient-to-r from-[#CFE0FF]/35 to-[#F4F7FC] p-4 text-sm leading-relaxed text-[#1D4ED8] shadow-xs">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1D4ED8]/10 text-[#1D4ED8]">
-          <ShieldCheck size={17} />
-        </div>
-        <p className="mb-0 text-[#14211F]">
-          Preencha apenas o que quiser — os campos são opcionais. Estas informações aparecem na
-          <strong className="font-bold"> Visão geral</strong> e na
-          <strong className="font-bold"> ficha de emergência</strong>.
-        </p>
-      </div>
 
       <div className="space-y-6">
         {/* Seção 1: Dados gerais */}
-        <section id="secao-gerais" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+        <section id="secao-gerais" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6 transition-all">
           <button
             type="button"
             onClick={() => setSecaoAberta(secaoAberta === 'gerais' ? null : 'gerais')}
             aria-expanded={secaoAberta === 'gerais'}
-            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            className="flex w-full items-center gap-3 text-left cursor-pointer"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+              secaoAberta === 'gerais' ? 'bg-[#1D4ED8] text-white' : 'bg-[#CFE0FF]/40 text-[#1D4ED8]'
+            }`}>
               <Droplet size={18} />
             </span>
             <span className="min-w-0 flex-1">
@@ -581,13 +552,13 @@ export default function AnamneseEdit() {
             </span>
             <ChevronDown
               size={18}
-              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
-                secaoAberta === 'gerais' ? 'rotate-180' : ''
+              className={`shrink-0 text-[#5B6878] transition-transform ${
+                secaoAberta === 'gerais' ? 'rotate-180 text-[#1D4ED8]' : ''
               }`}
             />
           </button>
 
-          <div className={`mt-5 ${secaoAberta === 'gerais' ? '' : 'hidden'} lg:block`}>
+          <div className={`mt-5 ${secaoAberta === 'gerais' ? 'block' : 'hidden'}`}>
             <div className="space-y-5">
               <div>
                 <label
@@ -628,14 +599,16 @@ export default function AnamneseEdit() {
         </section>
 
         {/* Seção 2: Condições de saúde */}
-        <section id="secao-condicoes" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+        <section id="secao-condicoes" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6 transition-all">
           <button
             type="button"
             onClick={() => setSecaoAberta(secaoAberta === 'condicoes' ? null : 'condicoes')}
             aria-expanded={secaoAberta === 'condicoes'}
-            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            className="flex w-full items-center gap-3 text-left cursor-pointer"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+              secaoAberta === 'condicoes' ? 'bg-[#1D4ED8] text-white' : 'bg-[#CFE0FF]/40 text-[#1D4ED8]'
+            }`}>
               <HeartPulse size={18} />
             </span>
             <span className="min-w-0 flex-1">
@@ -648,13 +621,13 @@ export default function AnamneseEdit() {
             </span>
             <ChevronDown
               size={18}
-              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
-                secaoAberta === 'condicoes' ? 'rotate-180' : ''
+              className={`shrink-0 text-[#5B6878] transition-transform ${
+                secaoAberta === 'condicoes' ? 'rotate-180 text-[#1D4ED8]' : ''
               }`}
             />
           </button>
 
-          <div className={`mt-5 ${secaoAberta === 'condicoes' ? '' : 'hidden'} lg:block`}>
+          <div className={`mt-5 ${secaoAberta === 'condicoes' ? 'block' : 'hidden'}`}>
             <div className="space-y-3">
               {conditions.map((condition, index) => (
                 <div
@@ -714,14 +687,16 @@ export default function AnamneseEdit() {
         </section>
 
         {/* Seção 3: Alergias e medicamentos */}
-        <section id="secao-alergias" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+        <section id="secao-alergias" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6 transition-all">
           <button
             type="button"
             onClick={() => setSecaoAberta(secaoAberta === 'alergias' ? null : 'alergias')}
             aria-expanded={secaoAberta === 'alergias'}
-            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            className="flex w-full items-center gap-3 text-left cursor-pointer"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+              secaoAberta === 'alergias' ? 'bg-[#1D4ED8] text-white' : 'bg-[#CFE0FF]/40 text-[#1D4ED8]'
+            }`}>
               <Pill size={18} />
             </span>
             <span className="min-w-0 flex-1">
@@ -734,13 +709,13 @@ export default function AnamneseEdit() {
             </span>
             <ChevronDown
               size={18}
-              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
-                secaoAberta === 'alergias' ? 'rotate-180' : ''
+              className={`shrink-0 text-[#5B6878] transition-transform ${
+                secaoAberta === 'alergias' ? 'rotate-180 text-[#1D4ED8]' : ''
               }`}
             />
           </button>
 
-          <div className={`mt-5 ${secaoAberta === 'alergias' ? '' : 'hidden'} lg:block`}>
+          <div className={`mt-5 ${secaoAberta === 'alergias' ? 'block' : 'hidden'}`}>
             <div className="space-y-6">
               <EditableList
                 label="Alergias"
@@ -761,14 +736,16 @@ export default function AnamneseEdit() {
         </section>
 
         {/* Seção 4: Hábitos e histórico */}
-        <section id="secao-habitos" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6">
+        <section id="secao-habitos" className="scroll-mt-24 rounded-2xl border border-[#E3E8F0] bg-white p-5 shadow-xs sm:p-6 transition-all">
           <button
             type="button"
             onClick={() => setSecaoAberta(secaoAberta === 'habitos' ? null : 'habitos')}
             aria-expanded={secaoAberta === 'habitos'}
-            className="flex w-full items-center gap-3 text-left lg:cursor-default"
+            className="flex w-full items-center gap-3 text-left cursor-pointer"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/40 text-[#1D4ED8]">
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+              secaoAberta === 'habitos' ? 'bg-[#1D4ED8] text-white' : 'bg-[#CFE0FF]/40 text-[#1D4ED8]'
+            }`}>
               <Moon size={18} />
             </span>
             <span className="min-w-0 flex-1">
@@ -781,13 +758,13 @@ export default function AnamneseEdit() {
             </span>
             <ChevronDown
               size={18}
-              className={`shrink-0 text-[#5B6878] transition-transform lg:hidden ${
-                secaoAberta === 'habitos' ? 'rotate-180' : ''
+              className={`shrink-0 text-[#5B6878] transition-transform ${
+                secaoAberta === 'habitos' ? 'rotate-180 text-[#1D4ED8]' : ''
               }`}
             />
           </button>
 
-          <div className={`mt-5 ${secaoAberta === 'habitos' ? '' : 'hidden'} lg:block`}>
+          <div className={`mt-5 ${secaoAberta === 'habitos' ? 'block' : 'hidden'}`}>
             <div className="space-y-5">
               <TextAreaField
                 label="Hábitos gerais (sono, alimentação, atividade física)"
@@ -887,7 +864,7 @@ function ConditionInput({ onAdd }: { onAdd: (name: string) => void }) {
           className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-[#1D4ED8] px-4 text-sm font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-50 transition-all shadow-xs"
         >
           <Plus size={16} />
-          Adicionar
+          Adicionar Documento
         </button>
       </div>
       {suggestions.length > 0 && (

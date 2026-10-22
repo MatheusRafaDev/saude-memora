@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { BrandLogo } from '@/components/BrandLogo';
-import { AiDataNotice } from '@/components/AiDataNotice';
+
 import { useToast } from '@/hooks/use-toast';
 import { rotateEmergencyToken } from '@/lib/emergency-token';
 
@@ -516,14 +516,6 @@ export function CarteirinhaModal({
                     </div>
                   </div>
 
-                  {/* Institutional Recognition Badge below Card */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#CFE0FF] bg-white px-4 py-2.5 text-xs text-[#5B6878] shadow-2xs">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck size={16} className="text-[#10B981]" />
-                      <span className="font-semibold text-[#14211F]">Identificação Digital de Saúde</span>
-                    </div>
-                    <span className="text-[11px] text-[#5B6878]">Apresente na recepção de clínicas, consultórios ou laboratórios</span>
-                  </div>
 
                   {/* ── SEÇÃO CLÍNICA COMPLEMENTAR (VERSO DO CARTÃO) ───── */}
                   <div className="rounded-[24px] border border-[#E3E8F0] bg-white p-5 sm:p-6 shadow-xs space-y-4">
@@ -664,7 +656,7 @@ export function CarteirinhaModal({
                       </div>
                     )}
                   </div>
-                  <AiDataNotice />
+
                 </>
               ) : (
                 /* ── ABA: DOCUMENTO ORIGINAL DO CONVÊNIO ─────────────── */

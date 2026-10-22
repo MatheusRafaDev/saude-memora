@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link } from 'wouter';
 import {
   Send,
@@ -13,10 +13,13 @@ import {
   Copy,
   Check,
   Lock,
+  ExternalLink,
+  Info,
+  X,
 } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import ReactMarkdown from 'react-markdown';
-import { AiDataNotice } from '@/components/AiDataNotice';
+
 
 type Citation = {
   id?: string;
@@ -107,9 +110,45 @@ export default function Chat() {
   const [sessionId, setSessionId] = useState<string>(createSessionId);
   const [avisoNovoDia, setAvisoNovoDia] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+  const [securityModalOpen, setSecurityModalOpen] = useState(false);
+  const [serverConsultados, setServerConsultados] = useState<Citation[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const todayRequestId = useRef(0);
   const diaAtualRef = useRef(getLocalDateKey());
+
+  const loadConsultados = async () => {
+    try {
+      const response = await fetch('/api/chat/documentos-consultados');
+      if (!response.ok) return; // endpoint not available yet — silently skip
+      const res = await response.json() as { documentos?: Array<{ documentId: string; titulo: string; data?: string }> };
+      if (res && Array.isArray(res.documentos)) {
+        setServerConsultados(
+          res.documentos.map((d) => ({ id: d.documentId, titulo: d.titulo, data: d.data })),
+        );
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    void loadConsultados();
+  }, []);
+
+  const allConsultedDocs = useMemo(() => {
+    const map = new Map<string, Citation>();
+    for (const d of serverConsultados) {
+      if (d.id || d.titulo) map.set(d.id || d.titulo, d);
+    }
+    for (const m of messages) {
+      if (m.citations) {
+        for (const c of m.citations) {
+          map.set(c.id || c.titulo, c);
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [messages, serverConsultados]);
 
   const handleCopyMessage = async (msgId: string, content: string) => {
     try {
@@ -240,6 +279,7 @@ export default function Chat() {
       // Reconcilia com o servidor: a conversa do dia já está salva e passa a ter os
       // identificadores definitivos, sem depender de recarregar a página.
       void loadTodayConversation(chatDate, false);
+      void loadConsultados();
     } catch {
       setMessages((current) => current.map((message) =>
         message.id === userMessage.id ? { ...message, sendFailed: true } : message,
@@ -278,9 +318,6 @@ export default function Chat() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <b className="text-sm leading-tight text-[#14211F] sm:text-[17px]">Assistente Clínico</b>
-                    <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                      <Lock size={10} /> Canal Criptografado
-                    </span>
                   </div>
                   <div className="truncate text-[11px] text-[#5a6a80] sm:text-[13px]">
                     Sessão diária arquivada · {formatDateLabel(chatDate)}
@@ -288,26 +325,16 @@ export default function Chat() {
                 </div>
               </div>
 
-              {messages.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const text = messages.map(m => `${m.role === 'user' ? 'Paciente' : 'Assistente'}: ${m.content}`).join('\n\n');
-                    void navigator.clipboard.writeText(text);
-                    setCopiedMsgId('all');
-                    setTimeout(() => setCopiedMsgId(null), 2000);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] px-3 py-1.5 text-xs font-semibold text-[#14211F] hover:bg-[#E3E8F0] transition-colors"
-                  title="Copiar conversa para levar ao médico"
-                >
-                  {copiedMsgId === 'all' ? <Check size={13} className="text-[#10B981]" /> : <Copy size={13} />}
-                  <span className="hidden sm:inline">{copiedMsgId === 'all' ? 'Copiado!' : 'Copiar resumo'}</span>
-                </button>
-              )}
-            </div>
-
-            <div className="my-3 sm:my-3.5">
-              <AiDataNotice />
+              {/* Botão de informações de segurança no mobile */}
+              <button
+                type="button"
+                onClick={() => setSecurityModalOpen(true)}
+                aria-label="Informações sobre sigilo e segurança"
+                className="flex items-center gap-1.5 rounded-xl border border-[#CFE0FF] bg-[#F4F7FC] px-2.5 py-1.5 text-xs font-semibold text-[#1D4ED8] hover:bg-[#CFE0FF]/40 transition-colors lg:hidden cursor-pointer"
+              >
+                <ShieldCheck size={14} className="text-[#1D4ED8]" />
+                <span>Segurança</span>
+              </button>
             </div>
 
             {avisoNovoDia && (
@@ -350,7 +377,18 @@ export default function Chat() {
                     <div className="mb-3 flex justify-end sm:mb-4">
                       <div className="max-w-[88%] rounded-[18px] rounded-tr-[6px] bg-[#1D4ED8] px-3.5 py-3 text-sm leading-relaxed text-white shadow-xs sm:max-w-[500px] sm:px-4.5 sm:py-3.5 sm:text-[15px]">
                         {message.content}
-                        {message.sendFailed && <div className="mt-2 border-t border-white/20 pt-2 text-xs text-white/80">Falha ao salvar no histórico.</div>}
+                        {message.sendFailed && (
+                          <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/20 pt-2 text-xs text-white/90">
+                            <span>Falha na resposta da IA.</span>
+                            <button
+                              type="button"
+                              onClick={() => void handleSend(message.content)}
+                              className="font-medium underline hover:text-white cursor-pointer shrink-0"
+                            >
+                              Tentar novamente
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -360,16 +398,48 @@ export default function Chat() {
                       </div>
                       <div className="group relative min-w-0 max-w-[calc(100%-2.5rem)] rounded-[18px] rounded-tl-[6px] bg-[#F8FAFD] border border-[#E3E8F0] p-3 text-sm leading-relaxed text-[#14211F] sm:max-w-[620px] sm:p-4 sm:text-[15px]">
                         <div className="prose prose-sm max-w-none break-words text-[#14211F]"><ReactMarkdown>{message.content}</ReactMarkdown></div>
+
+                        {/* Seção com transparência das fontes consultadas pela IA nesta resposta */}
                         {message.citations && message.citations.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#E3E8F0] pt-2">
-                            {message.citations.map((citation, index) => (
-                              <span key={citation.id || index} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#CFE0FF] bg-white px-2.5 py-1 text-[10px] font-bold text-[#1D4ED8] sm:px-3 sm:text-xs shadow-2xs">
-                                <FileText size={12} className="shrink-0" />
-                                <span className="truncate">{citation.titulo} {citation.data ? `· ${citation.data}` : ''}</span>
+                          <div className="mt-3.5 rounded-xl border border-[#CFE0FF]/90 bg-white p-3 shadow-2xs">
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-[#1D4ED8]">
+                                <FileText size={14} className="shrink-0 text-[#1D4ED8]" />
+                                <span>Documentos consultados para esta resposta:</span>
+                              </div>
+                              <span className="rounded-full bg-[#1D4ED8]/10 px-2 py-0.5 text-[10px] font-bold text-[#1D4ED8]">
+                                {message.citations.length} {message.citations.length === 1 ? 'documento' : 'documentos'}
                               </span>
-                            ))}
+                            </div>
+                            <div className="space-y-1.5">
+                              {message.citations.map((citation, index) => {
+                                const docHref = citation.id ? `/documentos/${citation.id}` : '/documentos';
+                                return (
+                                  <div
+                                    key={citation.id || index}
+                                    className="flex items-center justify-between gap-2.5 rounded-lg border border-[#E3E8F0] bg-[#F8FAFD] px-3 py-2 text-xs transition-colors hover:border-[#CFE0FF] hover:bg-[#F0F5FF]"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <FileText size={13} className="shrink-0 text-[#1D4ED8]" />
+                                      <span className="truncate font-semibold text-[#14211F]">{citation.titulo}</span>
+                                      {citation.data && (
+                                        <span className="shrink-0 text-[11px] text-[#5a6a80]">· {citation.data}</span>
+                                      )}
+                                    </div>
+                                    <Link
+                                      href={docHref}
+                                      className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#1D4ED8] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-[#1E40AF] transition-colors cursor-pointer"
+                                    >
+                                      <span>Visualizar</span>
+                                      <ExternalLink size={11} />
+                                    </Link>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
+
                         <div className="mt-3 flex items-center justify-between border-t border-[#E3E8F0]/70 pt-2 text-[10px] text-[#5a6a80] sm:text-xs">
                           <span>Confira sempre os laudos originais. Não substitui consulta médica.</span>
                           <button
@@ -397,8 +467,8 @@ export default function Chat() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Clinical categorized suggestion chips */}
-            <div className="my-2.5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
+            {/* Sugestões de perguntas: escondidas no mobile, visíveis a partir de sm */}
+            <div className="my-2.5 hidden sm:flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible">
               {CLINICAL_PROMPTS.map((prompt) => {
                 const IconComponent = prompt.icon;
                 return (
@@ -415,6 +485,22 @@ export default function Chat() {
                 );
               })}
             </div>
+
+            {sendError && (
+              <div className="mb-2.5 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs text-amber-900">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={15} className="shrink-0 text-amber-600" />
+                  <span>O assistente de IA está temporariamente indisponível. Verifique se o backend e a chave Groq estão ativos ou tente novamente em instantes.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSendError(false)}
+                  className="ml-2 font-medium text-amber-700 underline hover:text-amber-900 cursor-pointer text-[11px]"
+                >
+                  Dispensar
+                </button>
+              </div>
+            )}
 
             <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="flex items-center gap-2 rounded-2xl border border-[#E3E8F0] bg-white p-1.5 pl-3 text-sm transition-all focus-within:border-[#1D4ED8] focus-within:ring-2 focus-within:ring-[#1D4ED8]/15 sm:gap-2.5 sm:p-2 sm:pl-4 sm:text-[15px]">
               <input
@@ -437,6 +523,50 @@ export default function Chat() {
           </section>
 
           <aside className="flex flex-col gap-4 lg:col-span-4 lg:gap-5">
+            {/* Widget de Documentos Consultados pela IA no Prontuário */}
+            <section className="rounded-2xl border border-[#CFE0FF]/80 bg-white p-4 shadow-xs sm:rounded-[24px] sm:p-6">
+              <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#E3E8F0] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#CFE0FF]/50 text-[#1D4ED8]">
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <b className="block text-sm text-[#14211F] sm:text-base">Documentos Consultados</b>
+                    <span className="text-[11px] text-[#5a6a80]">Fontes citadas pela IA no prontuário</span>
+                  </div>
+                </div>
+                <span className="rounded-full bg-[#1D4ED8] px-2.5 py-0.5 text-xs font-bold text-white shadow-2xs">
+                  {allConsultedDocs.length}
+                </span>
+              </div>
+              {allConsultedDocs.length === 0 ? (
+                <div className="rounded-xl bg-[#F8FAFD] border border-[#E3E8F0] p-3.5 text-xs leading-relaxed text-[#5a6a80]">
+                  À medida que a IA responde suas perguntas clínicas, os laudos, receitas e exames consultados aparecerão aqui para total transparência e conferência.
+                </div>
+              ) : (
+                <div className="divide-y divide-[#E3E8F0] max-h-56 overflow-y-auto">
+                  {allConsultedDocs.map((doc, idx) => {
+                    const docHref = doc.id ? `/documentos/${doc.id}` : '/documentos';
+                    return (
+                      <div key={doc.id || idx} className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-2.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-xs font-semibold text-[#14211F]">{doc.titulo}</div>
+                          {doc.data && <div className="text-[11px] text-[#5a6a80]">{doc.data}</div>}
+                        </div>
+                        <Link
+                          href={docHref}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#F0F5FF] border border-[#CFE0FF] px-2 py-1 text-[11px] font-bold text-[#1D4ED8] hover:bg-[#1D4ED8] hover:text-white transition-colors cursor-pointer"
+                        >
+                          <span>Abrir</span>
+                          <ExternalLink size={10} />
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
             {/* Clinical query templates */}
             <section className="rounded-2xl border border-[#E3E8F0] bg-white p-4 shadow-xs sm:rounded-[24px] sm:p-6">
               <div className="mb-2.5 flex items-center gap-2.5 sm:mb-4">
@@ -455,7 +585,7 @@ export default function Chat() {
                     type="button"
                     onClick={() => void handleSend(prompt)}
                     disabled={isLoading}
-                    className="block min-h-11 w-full py-2.5 text-left text-xs text-[#14211F] transition-colors hover:font-semibold hover:text-[#1D4ED8] disabled:opacity-50 sm:py-3 sm:text-sm"
+                    className="block min-h-11 w-full py-2.5 text-left text-xs text-[#14211F] transition-colors hover:font-semibold hover:text-[#1D4ED8] disabled:opacity-50 sm:py-3 sm:text-sm cursor-pointer"
                   >
                     {prompt}
                   </button>
@@ -463,8 +593,23 @@ export default function Chat() {
               </div>
             </section>
 
-            {/* Institutional Security & Regulatory Card */}
-            <section className="rounded-2xl border border-[#CFE0FF]/80 bg-gradient-to-br from-white to-[#F8FAFD] p-4 shadow-xs sm:rounded-[24px] sm:p-6">
+            {/* Botão de informações de segurança no mobile (substitui textos extensos) */}
+            <div className="block lg:hidden">
+              <button
+                type="button"
+                onClick={() => setSecurityModalOpen(true)}
+                className="flex w-full items-center justify-between rounded-xl border border-[#CFE0FF] bg-[#F0F5FF] p-3.5 text-left text-xs font-semibold text-[#1D4ED8] shadow-2xs hover:bg-[#CFE0FF]/40 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-[#1D4ED8]" />
+                  <span>Informações sobre Sigilo, LGPD & Segurança</span>
+                </div>
+                <Info size={15} className="text-[#1D4ED8]" />
+              </button>
+            </div>
+
+            {/* Institutional Security & Regulatory Card (apenas Desktop) */}
+            <section className="hidden lg:block rounded-2xl border border-[#CFE0FF]/80 bg-gradient-to-br from-white to-[#F8FAFD] p-4 shadow-xs sm:rounded-[24px] sm:p-6">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1D4ED8]">
                 <ShieldCheck size={16} />
                 <span>Sigilo & Segurança Clínica</span>
@@ -494,6 +639,54 @@ export default function Chat() {
           As respostas são geradas com base estrita nos documentos e dados cadastrados no seu prontuário pessoal.
         </p>
       </main>
+
+      {/* Modal de Detalhes de Sigilo e Segurança (Mobile e Acesso Rápido) */}
+      {securityModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-[#E3E8F0]">
+            <div className="flex items-center justify-between border-b border-[#E3E8F0] pb-3 mb-4">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#1D4ED8]">
+                <ShieldCheck size={18} />
+                <span>Sigilo & Segurança Clínica</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSecurityModalOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5a6a80] hover:bg-[#F4F7FC] hover:text-[#14211F] transition-colors cursor-pointer"
+                aria-label="Fechar modal"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <ul className="space-y-3 text-xs sm:text-sm text-[#475569]">
+              <li className="flex items-start gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-[#1D4ED8] mt-1.5 shrink-0" />
+                <span><strong>LGPD Art. 11:</strong> Tratamento confidencial e restrito de dados sensíveis de saúde, sem compartilhamento com terceiros.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-[#1D4ED8] mt-1.5 shrink-0" />
+                <span><strong>Criptografia AES-256:</strong> Armazenamento isolado e comunicação protegida ponta-a-ponta por SSL/TLS.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-[#1D4ED8] mt-1.5 shrink-0" />
+                <span><strong>Diretrizes CFM:</strong> Ferramenta de apoio pessoal ao paciente sem substituição do ato médico profissional.</span>
+              </li>
+            </ul>
+            <div className="mt-4 pt-3 border-t border-[#E3E8F0] text-xs text-[#E8664A] bg-[#FFF5F3] p-3 rounded-xl border border-[#E8664A]/20">
+              Em caso de urgência médica com risco à vida, contate imediatamente o <strong>SAMU (192)</strong> ou dirija-se a uma unidade de emergência.
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSecurityModalOpen(false)}
+                className="h-10 px-5 rounded-xl bg-[#1D4ED8] text-white text-xs sm:text-sm font-bold shadow-xs hover:bg-[#1E40AF] transition-colors cursor-pointer"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

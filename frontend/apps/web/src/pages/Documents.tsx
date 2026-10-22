@@ -40,7 +40,7 @@ import {
   customFetch,
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
-import { AiDataNotice } from '@/components/AiDataNotice';
+
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import {
@@ -189,6 +189,19 @@ export default function Documents() {
   }, [refetch]);
 
   const activeDocs = (documentsRaw as unknown as any[]) || [];
+
+  // Se houver algum documento ainda em processamento ou pendente na lista, faz polling a cada 2s
+  const hasProcessingDocs = useMemo(() => {
+    return activeDocs.some((d: any) => d.status === 'processing' || d.status === 'pending');
+  }, [activeDocs]);
+
+  useEffect(() => {
+    if (!hasProcessingDocs) return;
+    const interval = setInterval(() => {
+      refetch();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [hasProcessingDocs, refetch]);
 
   const allItems = useMemo(() => {
     return activeDocs.map((doc: any) => {
@@ -447,14 +460,7 @@ export default function Documents() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => triggerUploadModal({ mode: 'batch' })}
-              className="min-h-[44px] flex-1 sm:flex-none px-4 rounded-xl border border-[#CFE0FF] bg-white text-[#1D4ED8] hover:bg-[#CFE0FF]/40 font-semibold text-sm inline-flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-98"
-            >
-              <Layers size={16} />
-              <span>Enviar em lote</span>
-            </button>
+
 
             <button
               type="button"
@@ -467,9 +473,7 @@ export default function Documents() {
           </div>
         </div>
 
-        <div className="mb-6">
-          <AiDataNotice />
-        </div>
+
 
         {/* Pending Review Alert Banner if needed */}
         {pendingReviewCount > 0 && (
@@ -490,47 +494,6 @@ export default function Documents() {
           </div>
         )}
 
-        {/* Quick Category Filter Pills Bar */}
-        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar sm:flex-wrap">
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('all')}
-            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
-              selectedCategory === 'all'
-                ? 'bg-[#1D4ED8] text-white shadow-xs'
-                : 'bg-[#F4F7FC] text-[#5B6878] hover:bg-[#E3E8F0] hover:text-[#14211F] border border-[#E3E8F0]'
-            }`}
-          >
-            <Layers size={14} />
-            <span>Todos os tipos</span>
-            <span className={`rounded-full px-2 py-0.2 text-[11px] font-bold ${selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-white text-[#5B6878] border border-[#E3E8F0]'}`}>
-              {counts.all}
-            </span>
-          </button>
-
-          {DOCUMENT_TYPES.map(({ id, label, icon: Icon }) => {
-            const isSelected = selectedCategory === id;
-            const count = counts[id] || 0;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setSelectedCategory(id)}
-                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#1D4ED8] text-white shadow-xs'
-                    : 'bg-[#F4F7FC] text-[#5B6878] hover:bg-[#E3E8F0] hover:text-[#14211F] border border-[#E3E8F0]'
-                }`}
-              >
-                <Icon size={14} className={isSelected ? 'text-white' : 'text-[#1D4ED8]'} />
-                <span>{label}</span>
-                <span className={`rounded-full px-2 py-0.2 text-[11px] font-bold ${isSelected ? 'bg-white/20 text-white' : 'bg-white text-[#5B6878] border border-[#E3E8F0]'}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
 
         {/* Filter Bar with Search, View Mode, and Dropdowns */}
         <section aria-label="Filtros de documentos" className="mb-7 rounded-2xl border border-[#E3E8F0] bg-white p-3.5 shadow-xs sm:p-4">
@@ -817,16 +780,16 @@ export default function Documents() {
 
                         {/* Title & Date */}
                         <Link href={`/documentos/${doc.id}`} className="block mt-3.5 group/title">
-                          <div className="text-[15px] font-bold text-[#14211F] group-hover/title:text-[#1D4ED8] transition-colors truncate" title={doc.titulo}>
+                          <div className="text-[15px] font-bold text-[#14211F] group-hover/title:text-[#1D4ED8] transition-colors break-words">
                             {doc.titulo}
                           </div>
-                          <div className="text-xs text-[#5B6878] mt-1 flex items-center gap-1.5 truncate">
+                          <div className="text-xs text-[#5B6878] mt-1 flex flex-wrap items-center gap-1.5">
                             <Clock size={12} className="shrink-0 text-[#5B6878]" />
                             <span>Adicionado {doc.dateStr}</span>
                             {doc.dataDocumento && (
                               <>
                                 <span>•</span>
-                                <span className="truncate">Doc: {doc.dataDocumento}</span>
+                                <span>Doc: {doc.dataDocumento}</span>
                               </>
                             )}
                           </div>
@@ -836,30 +799,34 @@ export default function Documents() {
                         <div className="my-3 space-y-2 text-xs text-[#5B6878]">
                           {/* Doctor & CRM */}
                           {(doc.medico || doc.crm) && (
-                            <div className="flex items-center gap-1.5 text-xs text-[#14211F] font-semibold min-w-0">
-                              <UserCheck size={13} className="shrink-0 text-[#1D4ED8]" />
-                              <span className="truncate">{doc.medico || 'Médico Responsável'}</span>
-                              {doc.crm && (
-                                <span className="shrink-0 rounded bg-[#F4F7FC] border border-[#E3E8F0] px-1.5 py-0.2 text-[10px] font-semibold text-[#5B6878]">
-                                  CRM {doc.crm}
-                                </span>
-                              )}
+                            <div className="flex items-start gap-1.5 text-xs text-[#14211F] font-semibold min-w-0">
+                              <UserCheck size={13} className="shrink-0 text-[#1D4ED8] mt-0.5" />
+                              <div className="min-w-0">
+                                {doc.medico && <span className="break-words">{doc.medico}</span>}
+                                {doc.crm && (
+                                  <span className="shrink-0 rounded bg-[#F4F7FC] border border-[#E3E8F0] px-1.5 py-0.2 text-[10px] font-semibold text-[#5B6878] ml-1">
+                                    CRM {doc.crm}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
 
                           {/* Clinic & CNES */}
                           {(doc.clinica || doc.cnes) && (
-                            <div className="flex items-center gap-1.5 text-xs text-[#5B6878] min-w-0">
-                              <Building2 size={13} className="shrink-0 text-[#5B6878]" />
-                              <span className="truncate">{doc.clinica || 'Estabelecimento de Saúde'}</span>
-                              {doc.cnes && (
-                                <span
-                                  className="shrink-0 rounded bg-blue-50 border border-blue-200/70 px-1.5 py-0.2 text-[10px] font-bold text-blue-700"
-                                  title={`Código CNES do Estabelecimento: ${doc.cnes}`}
-                                >
-                                  CNES {doc.cnes}
-                                </span>
-                              )}
+                            <div className="flex items-start gap-1.5 text-xs text-[#5B6878] min-w-0">
+                              <Building2 size={13} className="shrink-0 text-[#5B6878] mt-0.5" />
+                              <div className="min-w-0">
+                                {doc.clinica && <span className="break-words">{doc.clinica}</span>}
+                                {doc.cnes && (
+                                  <span
+                                    className="shrink-0 rounded bg-blue-50 border border-blue-200/70 px-1.5 py-0.2 text-[10px] font-bold text-blue-700 ml-1"
+                                    title={`Código CNES do Estabelecimento: ${doc.cnes}`}
+                                  >
+                                    CNES {doc.cnes}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
 
@@ -877,7 +844,7 @@ export default function Documents() {
                                   </span>
                                 )}
                               </div>
-                              <p className="m-0 text-[11px] leading-relaxed text-[#3B4252] line-clamp-2 font-medium">
+                              <p className="m-0 text-[11px] leading-relaxed text-[#3B4252] font-medium whitespace-pre-wrap break-words">
                                 {doc.diagnostico || doc.resumo}
                               </p>
                             </div>
@@ -892,24 +859,26 @@ export default function Documents() {
                                   <span>Medicamentos ({doc.medicamentos.length})</span>
                                 </div>
                               </div>
-                              <div className="space-y-1">
+                              <div className="space-y-1.5">
                                 {doc.medicamentos.slice(0, 2).map((med: any, idx: number) => (
-                                  <div key={idx} className="flex items-baseline justify-between gap-1.5 text-[11px]">
-                                    <span className="font-semibold text-[#14211F] truncate" title={med.nome}>
+                                  <div key={idx} className="text-[11px] space-y-0.5">
+                                    <div className="font-semibold text-[#14211F] break-words">
                                       {med.nome}
-                                    </span>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      {med.dosagem && (
-                                        <span className="px-1.5 py-0.2 rounded bg-white text-blue-700 font-bold text-[10px] border border-blue-200/80 shadow-2xs">
-                                          {med.dosagem}
-                                        </span>
-                                      )}
-                                      {med.horario && (
-                                        <span className="text-[10px] text-[#5B6878] truncate max-w-[85px]" title={med.horario}>
-                                          {med.horario}
-                                        </span>
-                                      )}
                                     </div>
+                                    {(med.dosagem || med.horario) && (
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        {med.dosagem && (
+                                          <span className="px-1.5 py-0.5 rounded bg-white text-blue-700 font-bold text-[10px] border border-blue-200/80 shadow-2xs break-all">
+                                            {med.dosagem}
+                                          </span>
+                                        )}
+                                        {med.horario && (
+                                          <span className="text-[10px] text-[#5B6878] break-words">
+                                            {med.horario}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                                 {doc.medicamentos.length > 2 && (
@@ -928,13 +897,13 @@ export default function Documents() {
                                 <Activity size={12} className="text-indigo-600 shrink-0" />
                                 <span>Exames & Biomarcadores</span>
                               </div>
-                              <div className="text-[11.5px] font-semibold text-[#14211F] truncate">
+                              <div className="text-[11.5px] font-semibold text-[#14211F] break-words">
                                 {doc.nomeExame || (doc.exames.length > 0 ? doc.exames.map((e: any) => e.nome).filter(Boolean).slice(0, 2).join(', ') : doc.tipoExame)}
                               </div>
                               {doc.exames.length > 0 && (
                                 <div className="flex flex-wrap gap-1 pt-0.5">
                                   {doc.exames.slice(0, 3).map((ex: any, idx: number) => (
-                                    <span key={idx} className="px-1.5 py-0.5 rounded bg-white text-[#14211F] text-[10px] font-medium border border-indigo-200/60 shadow-2xs truncate max-w-[130px]">
+                                    <span key={idx} className="px-1.5 py-0.5 rounded bg-white text-[#14211F] text-[10px] font-medium border border-indigo-200/60 shadow-2xs break-words">
                                       {ex.nome || ex.nomeNormalizado}
                                     </span>
                                   ))}
@@ -1024,7 +993,7 @@ export default function Documents() {
                       <div className="flex-1 min-w-0">
                         <Link href={`/documentos/${doc.id}`} className="block">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[15px] font-bold text-[#14211F] hover:text-[#1D4ED8] transition-colors truncate">
+                            <span className="text-[15px] font-bold text-[#14211F] hover:text-[#1D4ED8] transition-colors break-words">
                               {doc.titulo}
                             </span>
                             {doc.cid && (
@@ -1069,7 +1038,8 @@ export default function Documents() {
                                 <span>•</span>
                                 <span className="text-[#5B6878] inline-flex items-center gap-1">
                                   <Building2 size={11} />
-                                  {doc.clinica || 'Estabelecimento'} {doc.cnes && <span className="text-blue-700 font-semibold">(CNES {doc.cnes})</span>}
+                                  {doc.clinica && <span>{doc.clinica}</span>}
+                                  {doc.cnes && <span className="text-blue-700 font-semibold">{doc.clinica ? ' ' : ''}(CNES {doc.cnes})</span>}
                                 </span>
                               </>
                             )}
@@ -1079,7 +1049,7 @@ export default function Documents() {
                               {(doc.diagnostico || doc.resumo) && (
                                 <div className="flex items-start gap-1.5 text-[#3B4252]">
                                   <Stethoscope size={12} className="text-purple-600 mt-0.5 shrink-0" />
-                                  <span className="line-clamp-1">
+                                  <span className="break-words whitespace-pre-wrap">
                                     <strong className="text-purple-900 font-semibold mr-1">Diagnóstico:</strong>
                                     {doc.diagnostico || doc.resumo}
                                   </span>
@@ -1088,7 +1058,7 @@ export default function Documents() {
                               {doc.medicamentos.length > 0 && (
                                 <div className="flex items-start gap-1.5 text-[#14211F]">
                                   <Pill size={12} className="text-blue-600 mt-0.5 shrink-0" />
-                                  <div className="line-clamp-1">
+                                  <div className="break-words">
                                     <strong className="text-blue-900 font-semibold mr-1">Medicamentos:</strong>
                                     {doc.medicamentos.map((m: any, idx: number) => (
                                       <span key={idx} className="mr-2 inline-flex items-center gap-1">
@@ -1108,7 +1078,7 @@ export default function Documents() {
                               {doc.exames.length > 0 && (
                                 <div className="flex items-start gap-1.5 text-[#14211F]">
                                   <Activity size={12} className="text-indigo-600 mt-0.5 shrink-0" />
-                                  <div className="line-clamp-1">
+                                  <div className="break-words">
                                     <strong className="text-indigo-900 font-semibold mr-1">Exames:</strong>
                                     {doc.exames.map((exame: any) => exame.nome || exame.nomeNormalizado).filter(Boolean).join(', ')}
                                   </div>

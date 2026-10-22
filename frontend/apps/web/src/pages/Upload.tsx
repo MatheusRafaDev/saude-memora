@@ -203,6 +203,7 @@ export default function Upload() {
             )
           );
           toast({ title: 'Documento concluído e catalogado!' });
+          window.dispatchEvent(new CustomEvent('document-uploaded'));
         } else if (outcome.status === 'timeout') {
           setQueue((prev) =>
             prev.map((item) => item.id === tempId

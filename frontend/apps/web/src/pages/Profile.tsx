@@ -29,7 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { useConsentimento, useSaveConsentimento } from '@/hooks/useConsentimento';
 import { CarteirinhaModal } from '@/components/CarteirinhaModal';
-import { AiDataNotice } from '@/components/AiDataNotice';
+
 
 export default function Profile() {
   const { toast } = useToast();
@@ -56,7 +56,8 @@ export default function Profile() {
   const [originalEmail, setOriginalEmail] = useState('');
   const [nascimento, setNascimento] = useState('');
   const [sexo, setSexo] = useState('');
-  const [contatoEmergencia, setContatoEmergencia] = useState('');  const [senhaAtualPerfil, setSenhaAtualPerfil] = useState('');
+  const [contatoEmergencia, setContatoEmergencia] = useState('');
+  const [senhaAtualPerfil, setSenhaAtualPerfil] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [planoSaude, setPlanoSaude] = useState('');
   const [numeroCarteirinha, setNumeroCarteirinha] = useState('');
@@ -89,7 +90,8 @@ export default function Profile() {
     setContatoEmergencia(p.contatoEmergencia || '');
     setPlanoSaude(p.planoSaude || '');
     setNumeroCarteirinha(p.numeroCarteirinha || '');
-    setUrlCarteirinha(p.urlCarteirinha || '');  }, [profileRaw, toast]);
+    setUrlCarteirinha(p.urlCarteirinha || '');
+  }, [profileRaw, toast]);
 
   useEffect(() => {
     if (!consentimento) return;
@@ -519,10 +521,6 @@ export default function Profile() {
                   Cadastre os dados manualmente ou envie uma imagem para preencher os campos com ajuda da leitura automática. Confira as informações extraídas.
                 </p>
 
-                <div className="mb-5">
-                  <AiDataNotice />
-                </div>
-
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
@@ -800,9 +798,6 @@ export default function Profile() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-[#5B6878]">
-          Os dados e preferências exibidos pertencem à sua conta.
-        </p>
       </main>
 
       {/* Delete Account Modal Dialog */}

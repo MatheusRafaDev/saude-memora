@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useRoute, useLocation } from 'wouter';
 import {
   ArrowLeft,
   Download,
   Trash2,
   ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  RotateCw,
   AlertTriangle,
   Check,
   Edit2,
@@ -13,8 +16,17 @@ import {
   Pill,
   LoaderCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Copy,
-  RotateCw,
+  Stethoscope,
+  Activity,
+  FileSearch,
+  Info,
+  Sparkles,
+  ClipboardList,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react';
 import {
   useGetApiDocumentsId,
@@ -23,7 +35,7 @@ import {
   customFetch,
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
-import { AiDataNotice } from '@/components/AiDataNotice';
+
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
@@ -150,6 +162,16 @@ function createDocumentEditForm(doc: any): DocumentEditForm {
   };
 }
 
+export type DetailTabKey = 'dados' | 'exames' | 'opiniao' | 'recomendacoes' | 'outros';
+
+const TAB_PREF_KEY = 'saude_memora_doc_tab';
+const getStoredTab = (): DetailTabKey | null => {
+  try { return (localStorage.getItem(TAB_PREF_KEY) as DetailTabKey | null); } catch { return null; }
+};
+const storeTab = (key: DetailTabKey) => {
+  try { localStorage.setItem(TAB_PREF_KEY, key); } catch { /* noop */ }
+};
+
 export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [, params] = useRoute('/documentos/:id');
   const [, setLocation] = useLocation();
@@ -175,7 +197,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     },
   });
 
-  const [activeTab, setActiveTab] = useState<'dados' | 'medicamentos' | 'alertas'>('dados');
+  const [activeTab, setActiveTab] = useState<DetailTabKey>(() => getStoredTab() ?? 'dados');
+  const handleSetTab = (tab: DetailTabKey) => { setActiveTab(tab); storeTab(tab); };
+  const [mobileView, setMobileView] = useState<'dados' | 'original'>('dados');
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
   const [isEditingModalOpen, setIsEditingModalOpen] = useState(false);
   const [isConfirmingRevisao, setIsConfirmingRevisao] = useState(false);
   const [isReprocessing, setIsReprocessing] = useState(false);
@@ -193,13 +220,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [loadingBulaIndex, setLoadingBulaIndex] = useState<number | null>(null);
 
   const doc = (docRaw as any) || null;
-  const hasMedicationTab = String(doc?.tipo ?? '').trim().toLowerCase() === 'receita' || (Array.isArray(doc?.medicamentos) && doc.medicamentos.length > 0);
 
   useEffect(() => {
     if (!doc) return;
-    if (!hasMedicationTab) setActiveTab('dados');
     setFormData(createDocumentEditForm(doc));
-  }, [doc, hasMedicationTab]);
+  }, [doc]);
 
   useEffect(() => {
     if (!isEditingModalOpen || formData.cid.trim().length < 3) {
@@ -247,14 +272,87 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       : (typeof doc?.data === 'string' && doc.data ? doc.data : 'Data não informada');
   const isReviewPending = Boolean(doc?.revisaoPendente);
   const imageUrls: string[] = Array.isArray(doc?.urlImagens) ? doc.urlImagens : [];
-  const fileUrl = imageUrls[0] || doc?.fileUrl || null;
+  const totalPages = imageUrls.length > 0 ? imageUrls.length : (doc?.fileUrl ? 1 : 0);
+  const currentImageUrl = imageUrls[currentPageIndex] || imageUrls[0] || doc?.fileUrl || null;
+  const fileUrl = currentImageUrl;
   const examResults = Array.isArray(doc?.resultadosExame) ? doc.resultadosExame : [];
   const medications = Array.isArray(doc?.medicamentos) ? doc.medicamentos : [];
   const alerts = Array.isArray(doc?.alertas) ? doc.alertas : [];
   const activeAlerts = alerts.filter((alert: any) => alert.dispensado !== true);
+
+  const hasExames = Boolean(
+    examResults.length > 0 ||
+    doc?.nomeExame ||
+    doc?.tipoExame ||
+    (doc?.resultado && String(doc.resultado).trim().length > 0) ||
+    ['exame', 'laudo'].includes(String(doc?.tipo || '').toLowerCase())
+  );
+
+  const hasOpiniao = Boolean(
+    (doc?.diagnostico && String(doc.diagnostico).trim().length > 0) ||
+    (doc?.conclusoes && String(doc.conclusoes).trim().length > 0) ||
+    (doc?.tipoClinico && String(doc.tipoClinico).trim().length > 0) ||
+    (doc?.conteudo && String(doc.conteudo).trim().length > 0)
+  );
+
+  const hasRecomendacoes = Boolean(
+    medications.length > 0 ||
+    activeAlerts.length > 0 ||
+    String(doc?.tipo || '').toLowerCase() === 'receita'
+  );
+
+  const hasOutros = Boolean(
+    (doc?.resumo && String(doc.resumo).trim().length > 0) ||
+    (doc?.observacoes && String(doc.observacoes).trim().length > 0)
+  );
+
+  const availableTabs = useMemo(() => {
+    const list: { key: DetailTabKey; label: string; icon: any; count?: number | string }[] = [
+      { key: 'dados', label: 'Dados lidos', icon: FileText },
+    ];
+
+    if (hasExames) {
+      list.push({
+        key: 'exames',
+        label: 'Exames',
+        icon: Activity,
+        count: examResults.length > 0 ? examResults.length : (doc?.nomeExame ? '1' : undefined),
+      });
+    }
+
+    if (hasOpiniao) {
+      list.push({
+        key: 'opiniao',
+        label: 'Opinião',
+        icon: Stethoscope,
+      });
+    }
+
+    if (hasRecomendacoes) {
+      list.push({
+        key: 'recomendacoes',
+        label: 'Recomendações',
+        icon: Pill,
+        count: medications.length > 0 ? medications.length : (activeAlerts.length > 0 ? '!' : undefined),
+      });
+    }
+
+    if (hasOutros) {
+      list.push({
+        key: 'outros',
+        label: 'Outras informações',
+        icon: Info,
+      });
+    }
+
+    return list;
+  }, [hasExames, hasOpiniao, hasRecomendacoes, hasOutros, examResults.length, doc?.nomeExame, medications.length, activeAlerts.length]);
+
   useEffect(() => {
-    if (activeTab === 'alertas' && activeAlerts.length === 0) setActiveTab('dados');
-  }, [activeTab, activeAlerts.length]);
+    if (availableTabs.length > 0 && !availableTabs.some((t: { key: DetailTabKey }) => t.key === activeTab)) {
+      handleSetTab(availableTabs[0].key);
+    }
+  }, [availableTabs, activeTab]);
   const indentedContent: any[] = Array.isArray(doc?.conteudoIndentado) ? doc.conteudoIndentado : [];
   const lowConfidenceFields = Array.isArray(doc?.camposBaixaConfianca)
     ? doc.camposBaixaConfianca
@@ -454,9 +552,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
               {docTitle}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="whitespace-nowrap rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F]">
-                {doc.tipo || 'Tipo não informado'}
-              </span>
+              {doc.tipo && (
+                <span className="whitespace-nowrap rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F]">
+                  {doc.tipo}
+                </span>
+              )}
               {['processing', 'pending'].includes(doc.status) && (
                 <span className="whitespace-nowrap rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F]">
                   Processando
@@ -523,9 +623,6 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
         </div>
 
-        <div className="mb-5">
-          <AiDataNotice />
-        </div>
 
         {doc.errorMessage && (
           <div role="status" className="mb-5 rounded-xl border border-[#E8664A]/30 bg-[#FDE1DA] px-4 py-3 text-sm text-[#9B2C16]">
@@ -549,26 +646,97 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
         )}
 
+        {/* Switcher de visualização no Mobile (Evita página longa no celular) */}
+        <div className="lg:hidden mb-4 grid grid-cols-2 gap-1 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setMobileView('dados')}
+            className={`flex items-center justify-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold transition-all cursor-pointer ${
+              mobileView === 'dados' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'
+            }`}
+          >
+            <FileText size={15} />
+            <span>Dados em Abas</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView('original')}
+            className={`flex items-center justify-center gap-2 rounded-lg py-2.5 px-3 text-xs font-bold transition-all cursor-pointer ${
+              mobileView === 'original' ? 'bg-white text-[#1D4ED8] shadow-xs' : 'text-[#5B6878] hover:text-[#14211F]'
+            }`}
+          >
+            <ZoomIn size={15} />
+            <span>Ver Original {totalPages > 0 ? `(${totalPages})` : ''}</span>
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-12">
-          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-4 sm:p-6 shadow-xs lg:col-span-6">
-            <div className="mb-4 flex items-center gap-2.5">
-              <b className="flex-1 font-serif text-base font-semibold text-[#14211F]">Documento original</b>
-              <button
-                type="button"
-                onClick={() => setIsZoomModalOpen(true)}
-                disabled={!fileUrl}
-                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-[#F4F7FC] transition-colors hover:bg-[#E3E8F0] disabled:cursor-not-allowed disabled:opacity-50"
-                title={fileUrl ? 'Ampliar documento' : 'Arquivo original indisponível'}
-              >
-                <ZoomIn size={19} className="text-[#1D4ED8]" />
-              </button>
-              <span className="text-[13px] font-semibold text-[#5B6878]">
-                {imageUrls.length > 0 ? `${imageUrls.length} página(s)` : 'Original indisponível'}
-              </span>
+          {/* Seção do Documento Original */}
+          <section className={`rounded-[20px] border border-[#E3E8F0] bg-white p-4 sm:p-6 shadow-xs lg:col-span-5 ${mobileView === 'dados' ? 'hidden lg:block' : 'block'}`}>
+            <div className="mb-4 flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <b className="font-serif text-base font-semibold text-[#14211F]">Documento original</b>
+                {totalPages > 0 && (
+                  <span className="rounded-full bg-[#F4F7FC] border border-[#E3E8F0] px-2 py-0.5 text-xs font-semibold text-[#5B6878]">
+                    {totalPages} {totalPages === 1 ? 'pág' : 'págs'}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1 bg-[#F4F7FC] rounded-lg p-0.5 border border-[#E3E8F0]">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPageIndex((prev) => Math.max(0, prev - 1))}
+                      disabled={currentPageIndex === 0}
+                      className="p-1 rounded text-[#5B6878] hover:text-[#14211F] disabled:opacity-30 cursor-pointer"
+                      title="Página anterior"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="text-[11px] font-bold text-[#14211F] px-1">
+                      {currentPageIndex + 1}/{totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPageIndex((prev) => Math.min(totalPages - 1, prev + 1))}
+                      disabled={currentPageIndex === totalPages - 1}
+                      className="p-1 rounded text-[#5B6878] hover:text-[#14211F] disabled:opacity-30 cursor-pointer"
+                      title="Próxima página"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsZoomModalOpen(true)}
+                  disabled={!fileUrl}
+                  className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-xl bg-[#F4F7FC] transition-colors hover:bg-[#E3E8F0] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  title={fileUrl ? 'Visualização detalhada e Zoom' : 'Arquivo original indisponível'}
+                >
+                  <ZoomIn size={18} className="text-[#1D4ED8]" />
+                </button>
+              </div>
             </div>
+
             {fileUrl ? (
-              <div className="flex min-h-[500px] items-center justify-center overflow-hidden rounded-xl border border-[#E3E8F0] bg-slate-50">
-                <img src={fileUrl} alt={`Documento original: ${docTitle}`} className="max-h-[640px] w-auto object-contain" />
+              <div
+                onClick={() => setIsZoomModalOpen(true)}
+                className="group relative flex min-h-[460px] sm:min-h-[520px] items-center justify-center overflow-hidden rounded-xl border border-[#E3E8F0] bg-[#f8fafc] cursor-zoom-in transition-all hover:border-[#CFE0FF]"
+                title="Clique para abrir a visualização com zoom"
+              >
+                <img
+                  src={fileUrl}
+                  alt={`Documento original: ${docTitle} (Pág ${currentPageIndex + 1})`}
+                  className="max-h-[580px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                />
+                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 pointer-events-none">
+                  <ZoomIn size={12} />
+                  <span>Clique para ampliar</span>
+                </div>
               </div>
             ) : (
               <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-[#E3E8F0] bg-[#F4F7FC] p-8 text-center">
@@ -580,223 +748,221 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             )}
           </section>
 
-          <section className="rounded-[20px] border border-[#E3E8F0] bg-white p-4 sm:p-6 shadow-xs lg:col-span-6">
-            <div className="mb-5 flex border-b border-[#E3E8F0]">
-              {([
-                ['dados', 'Dados lidos'],
-                ['medicamentos', 'Medicamentos'],
-                ['alertas', 'Alertas'],
-              ] as const)
-                .filter(([tab]) => (tab !== 'medicamentos' || hasMedicationTab) && (tab !== 'alertas' || activeAlerts.length > 0))
-                .map(([tab, label]) => (
+          {/* Seção de Dados Estruturados em Abas */}
+          <section className={`rounded-[20px] border border-[#E3E8F0] bg-white p-4 sm:p-6 shadow-xs lg:col-span-7 ${mobileView === 'original' ? 'hidden lg:block' : 'block'}`}>
+            {/* Abas Superiores de Categorias */}
+            <div className="mb-5 flex items-center gap-0.5 overflow-x-auto pb-1 border-b border-[#E3E8F0] no-scrollbar">
+              {availableTabs.map((tab: { key: DetailTabKey; label: string; icon: any; count?: number | string }) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.key;
+                return (
                   <button
-                    key={tab}
+                    key={tab.key}
                     type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={`-mb-px cursor-pointer border-b-[3px] px-4 py-2.5 text-sm font-bold transition-colors ${
-                      activeTab === tab
+                    onClick={() => handleSetTab(tab.key)}
+                    className={`-mb-px cursor-pointer inline-flex items-center gap-1.5 border-b-[3px] px-2.5 sm:px-3.5 py-2.5 text-[11px] sm:text-sm font-bold whitespace-nowrap transition-all ${
+                      isActive
                         ? 'border-[#1D4ED8] text-[#1D4ED8]'
-                        : 'border-transparent text-[#5B6878] hover:text-[#14211F]'
+                        : 'border-transparent text-[#5B6878] hover:text-[#14211F] hover:border-[#E3E8F0]'
                     }`}
+                    title={tab.label}
                   >
-                    {label}
+                    <Icon size={14} className={isActive ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
+                    <span className="hidden xs:inline sm:inline">{tab.label}</span>
+                    {tab.count !== undefined && (
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                          isActive
+                            ? 'bg-[#1D4ED8] text-white'
+                            : 'bg-[#F4F7FC] text-[#5B6878] border border-[#E3E8F0]'
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    )}
                   </button>
-                ))}
+                );
+              })}
             </div>
 
-            {/* Metadados dinâmicos e completos extraídos do documento */}
-            <div className="mb-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-              <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                <div className="text-[11px] font-semibold text-[#5a6a80]">Tipo</div>
-                <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] capitalize truncate">
-                  {doc.tipoExame || doc.tipo || 'Não informado'}
-                </div>
-              </div>
+            {/* CONTEÚDO DAS ABAS */}
 
-              <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                <div className="text-[11px] font-semibold text-[#5a6a80]">Data</div>
-                <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate">
-                  {doc.data || docDate}
-                </div>
-              </div>
-
-              {(doc.medico || doc.crm) && (
-                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3 col-span-2 sm:col-span-1">
-                  <div className="text-[11px] font-semibold text-[#5a6a80]">Médico / Solicitante</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate" title={doc.medico}>
-                    {doc.medico || 'Não informado'}
-                  </div>
-                  {doc.crm && (
-                    <div className="text-xs text-[#1D4ED8] font-semibold mt-0.5">
-                      CRM: {doc.crm}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {doc.clinica && (
-                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                  <div className="text-[11px] font-semibold text-[#5a6a80]">Clínica / Local</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate" title={doc.clinica}>
-                    {doc.clinica}
-                  </div>
-                </div>
-              )}
-
-              {doc.especialidade && (
-                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                  <div className="text-[11px] font-semibold text-[#5a6a80]">Especialidade</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate">
-                    {doc.especialidade}
-                  </div>
-                </div>
-              )}
-
-              {doc.cid && (
-                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                  <div className="text-[11px] font-semibold text-[#5a6a80]">Código CID-10</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1D4ED8] inline-block bg-[#CFE0FF]/40 border border-[#CFE0FF] px-2 py-0.5 rounded font-mono">
-                    {doc.cid}
-                  </div>
-                </div>
-              )}
-
-              {doc.cnes && (
-                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                  <div className="text-[11px] font-semibold text-[#5a6a80]">CNES</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d]">
-                    {doc.cnes}
-                  </div>
-                </div>
-              )}
-
-              {doc.nomeExame && (
-                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                  <div className="text-[11px] font-semibold text-[#5a6a80]">Exame</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] truncate" title={doc.nomeExame}>
-                    {doc.nomeExame}
-                  </div>
-                </div>
-              )}
-
-              {doc.tipoClinico && (
-                <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
-                  <div className="text-[11px] font-semibold text-[#5a6a80]">Classificação</div>
-                  <div className="mt-0.5 text-sm font-bold text-[#1d2a3d]">
-                    {doc.tipoClinico}
-                  </div>
-                </div>
-              )}
-            </div>
-
+            {/* 1. ABA: DADOS LIDOS */}
             {activeTab === 'dados' && (
-              <div className="space-y-4">
-                {/* Resultados de Exames Laboratoriais */}
-                {examResults.length > 0 && (
-                  <div>
-                    <h2 className="mb-3 text-sm font-bold text-[#1d2a3d]">Resultados registrados</h2>
-                    <div className="divide-y divide-[#dde3ec] rounded-xl border border-[#dde3ec] px-4">
-                      {examResults.map((result: any, index: number) => (
-                        <div key={`${result.nome || 'resultado'}-${index}`} className="flex flex-wrap justify-between gap-2 py-3">
-                          <div className="min-w-0">
-                            <div className="font-semibold text-[#1d2a3d]">{result.nome || 'Resultado'}</div>
-                            {result.referenciaTexto && (
-                              <div className="mt-0.5 text-xs text-[#5a6a80]">Referência: {result.referenciaTexto}</div>
-                            )}
-                          </div>
-                          <div className="text-right font-bold text-[#1d2a3d]">
-                            {result.valorTexto || result.valor || 'Não informado'} {result.unidade || ''}
-                            {result.status && <div className="text-xs font-medium text-[#5a6a80]">{result.status}</div>}
-                          </div>
-                        </div>
-                      ))}
+              <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Atestado: resumo do CID em destaque */}
+                {String(doc?.tipo || '').toLowerCase() === 'atestado' && doc.cid && (
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                      <ClipboardList size={18} className="text-blue-700" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-bold text-blue-700 uppercase tracking-wide mb-0.5">CID-10 — Atestado Médico</div>
+                      <div className="text-base font-bold text-blue-900 font-mono">{doc.cid}</div>
+                      {doc.diagnostico && String(doc.diagnostico).trim() && (
+                        <p className="mt-1 text-sm leading-relaxed text-blue-800 whitespace-pre-wrap">{doc.diagnostico}</p>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Estrutura e dados detalhados identificados pela IA */}
-                {indentedContent.length > 0 && (
-                  <div className="space-y-3 rounded-2xl border border-[#dde3ec] bg-white p-5 shadow-xs">
-                    <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3">
-                      <FileText size={17} className="text-[#1D4ED8]" />
-                      <span>Dados e estrutura identificados pela IA</span>
+                {/* Metadados clínicos principais — só mostra campo com valor */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {(doc.tipoExame || doc.tipo) && (
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                      <div className="text-[11px] font-semibold text-[#5a6a80]">Tipo de documento</div>
+                      <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] capitalize break-words">
+                        {doc.tipoExame || doc.tipo}
+                      </div>
                     </div>
+                  )}
 
-                    <div className="space-y-3 pt-1">
-                      {/* Chaves e Valores (Paciente, Endereço, etc.) */}
-                      {indentedContent.some((item: any) => item.chave && item.valor) && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          {indentedContent
-                            .filter((item: any) => item.chave && item.valor)
-                            .map((item: any, idx: number) => (
-                              <div
-                                key={`kv-${idx}`}
-                                className="flex flex-col justify-center rounded-xl border border-[#dde3ec] bg-[#f8fafc] px-3.5 py-2.5"
-                              >
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5a6a80]">
-                                  {item.chave}
-                                </span>
-                                <span className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">
-                                  {item.valor}
-                                </span>
-                              </div>
-                            ))}
+                  {(doc.data || docDate) && (
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                      <div className="text-[11px] font-semibold text-[#5a6a80]">Data do registro</div>
+                      <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">
+                        {docDate}
+                      </div>
+                    </div>
+                  )}
+
+                  {(doc.medico || doc.crm) && (
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3 col-span-2 sm:col-span-1">
+                      <div className="text-[11px] font-semibold text-[#5a6a80]">Médico / Solicitante</div>
+                      {doc.medico && (
+                        <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">
+                          {doc.medico}
                         </div>
                       )}
+                      {doc.crm && (
+                        <div className="text-xs text-[#1D4ED8] font-semibold mt-0.5">
+                          CRM: {doc.crm}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                      {/* Cabeçalhos, Tópicos e Textos formatados */}
-                      {indentedContent
-                        .filter((item: any) => !item.chave || !item.valor)
-                        .map((item: any, idx: number) => {
-                          if (item.tipo === 'header' || (!item.tipo && item.texto?.length < 60 && !item.texto?.startsWith('-'))) {
+                  {doc.clinica && (
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                      <div className="text-[11px] font-semibold text-[#5a6a80]">Clínica / Local</div>
+                      <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">
+                        {doc.clinica}
+                      </div>
+                      {doc.cnes && (
+                        <div className="text-[11px] text-[#5a6a80] mt-0.5">
+                          CNES: {doc.cnes}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {doc.especialidade && (
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                      <div className="text-[11px] font-semibold text-[#5a6a80]">Especialidade</div>
+                      <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">
+                        {doc.especialidade}
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.cid && (
+                    <div className="rounded-xl border border-[#CFE0FF] bg-[#CFE0FF]/20 p-3">
+                      <div className="text-[11px] font-semibold text-[#1D4ED8]">CID-10</div>
+                      <div className="mt-0.5 text-sm font-bold text-[#1D4ED8] font-mono">
+                        {doc.cid}
+                      </div>
+                    </div>
+                  )}
+
+                  {doc.tipoClinico && (
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3">
+                      <div className="text-[11px] font-semibold text-[#5a6a80]">Classificação</div>
+                      <div className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">
+                        {doc.tipoClinico}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dados e estrutura identificados pela IA */}
+                {(() => {
+                  const kvItems = indentedContent.filter(
+                    (item: any) => item.chave?.trim() && item.valor?.trim()
+                  );
+                  const isItemHeader = (item: any) =>
+                    item.tipo === 'header' ||
+                    (!item.tipo && item.texto?.trim().length > 0 && item.texto.trim().length < 60 && !item.texto.trim().startsWith('-') && !item.texto.trim().startsWith('•'));
+                  const nonKvRaw = indentedContent.filter(
+                    (item: any) => (!item.chave || !item.valor) && item.texto?.trim()
+                  );
+                  // Suprime headers órfãos (sem conteúdo real após eles antes do próximo header)
+                  const nonKvItems: any[] = [];
+                  for (let i = 0; i < nonKvRaw.length; i++) {
+                    const cur = nonKvRaw[i];
+                    if (isItemHeader(cur)) {
+                      const hasContent = nonKvRaw.slice(i + 1).some(
+                        (next: any) => !isItemHeader(next) && next.texto?.trim()
+                      );
+                      if (hasContent) nonKvItems.push(cur);
+                    } else {
+                      nonKvItems.push(cur);
+                    }
+                  }
+                  if (kvItems.length === 0 && nonKvItems.length === 0) return null;
+                  return (
+                    <div className="space-y-3 rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                      <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3">
+                        <FileText size={17} className="text-[#1D4ED8]" />
+                        <span>Campos identificados no documento</span>
+                      </div>
+                      <div className="space-y-3 pt-1">
+                        {kvItems.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {kvItems.map((item: any, idx: number) => (
+                              <div key={`kv-${idx}`} className="flex flex-col justify-center rounded-xl border border-[#dde3ec] bg-[#f8fafc] px-3.5 py-2.5">
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5a6a80]">{item.chave}</span>
+                                <span className="mt-0.5 text-sm font-bold text-[#1d2a3d] break-words">{item.valor}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {nonKvItems.map((item: any, idx: number) => {
+                          if (isItemHeader(item)) {
                             return (
-                              <div
-                                key={`h-${idx}`}
-                                className="mt-2 text-sm font-bold text-[#14211F] border-l-2 border-[#1D4ED8] pl-2.5 py-0.5"
-                              >
+                              <div key={`h-${idx}`} className="mt-2 text-sm font-bold text-[#14211F] border-l-2 border-[#1D4ED8] pl-2.5 py-0.5">
                                 {item.texto}
                               </div>
                             );
                           }
                           if (item.tipo === 'bullet' || item.texto?.startsWith('-') || item.texto?.startsWith('•')) {
                             const cleanText = item.texto?.replace(/^[-•]\s*/, '') || '';
+                            if (!cleanText.trim()) return null;
                             return (
-                              <div
-                                key={`b-${idx}`}
-                                className="flex items-start gap-2.5 rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3 text-xs sm:text-sm text-[#1d2a3d]"
-                              >
+                              <div key={`b-${idx}`} className="flex items-start gap-2.5 rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3 text-xs sm:text-sm text-[#1d2a3d]">
                                 <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#1D4ED8] shrink-0" />
-                                <span className="leading-relaxed">{cleanText}</span>
+                                <span className="leading-relaxed break-words">{cleanText}</span>
                               </div>
                             );
                           }
+                          if (!item.texto?.trim()) return null;
                           return (
-                            <div
-                              key={`t-${idx}`}
-                              className="rounded-xl bg-[#f1f4f8] p-3 text-xs sm:text-sm leading-relaxed text-[#4a5568]"
-                            >
+                            <div key={`t-${idx}`} className="rounded-xl bg-[#f1f4f8] p-3 text-xs sm:text-sm leading-relaxed text-[#4a5568] break-words whitespace-pre-wrap">
                               {item.texto}
                             </div>
                           );
                         })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
-                {/* Seções de Texto Complementares (Resumo, Diagnóstico, Conclusões, etc.) */}
-                {textSections.map(([label, value]) => (
-                  <div key={label as string} className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4">
-                    <h2 className="mb-1 text-xs font-bold uppercase tracking-wider text-[#14211F]">{label}</h2>
-                    <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-[#2d3a4d]">{value as string}</p>
-                  </div>
-                ))}
-
+                {/* Texto bruto original extraído com OCR */}
                 {extractedText && (
                   <div className="rounded-2xl border border-[#dde3ec] bg-white overflow-hidden shadow-xs transition-all">
                     <button
                       type="button"
                       onClick={() => setShowExtractedText((open) => !open)}
-                      className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-[#F4F7FC]"
+                      className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-[#F4F7FC] cursor-pointer"
                       aria-expanded={showExtractedText}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -804,8 +970,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                           <FileText size={16} />
                         </div>
                         <div>
-                          <div className="text-sm font-bold text-[#1d2a3d] flex items-center gap-2">
-                            Texto extraído
+                          <div className="text-sm font-bold text-[#1d2a3d]">
+                            Texto original transcrito (OCR)
+                          </div>
+                          <div className="text-xs text-[#5B6878]">
+                            Visualizar todo o texto lido da imagem
                           </div>
                         </div>
                       </div>
@@ -822,7 +991,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                       <div className="border-t border-[#dde3ec] bg-[#f8fafc] p-4 animate-in fade-in slide-in-from-top-1 duration-200">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-semibold text-[#5a6a80]">
-                            Transcrição OCR original:
+                            Transcrição textual completa:
                           </span>
                           <button
                             type="button"
@@ -842,7 +1011,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                             )}
                           </button>
                         </div>
-                        <div className="max-h-96 overflow-y-auto rounded-xl border border-[#dde3ec] bg-white p-3.5 shadow-inner">
+                        <div className="max-h-80 overflow-y-auto rounded-xl border border-[#dde3ec] bg-white p-3.5 shadow-inner">
                           <p className="m-0 whitespace-pre-wrap font-sans text-xs leading-relaxed text-[#2d3a4d] select-text">
                             {extractedText}
                           </p>
@@ -851,74 +1020,341 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                     )}
                   </div>
                 )}
-
-                {examResults.length === 0 && textSections.length === 0 && !extractedText && (
-                  <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
-                    Ainda não há dados extraídos para este documento.
-                  </p>
-                )}
               </div>
             )}
 
-            {hasMedicationTab && activeTab === 'medicamentos' && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-bold text-[#1d2a3d]">Medicamentos registrados</h2>
-                {medications.length === 0 ? (
-                  <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
-                    Não há medicamentos registrados neste documento.
-                  </p>
-                ) : medications.map((medication: any, index: number) => (
-                  <div key={`${medication.nome || 'medicamento'}-${index}`} className="flex gap-3 rounded-2xl border border-[#dde3ec] bg-[#f8fafc] p-4">
-                    <Pill size={20} className="mt-0.5 shrink-0 text-[#1D4ED8]" />
-                    <div>
-                      <b className="block text-[15px] text-[#14211F]">{medication.nome || 'Medicamento'}</b>
-                      {(medication.dosagem || medication.horario) && (
-                        <p className="mb-0 mt-1 text-xs text-[#5a6a80]">
-                          {[medication.dosagem, medication.horario].filter(Boolean).join(' · ')}
+            {/* 2. ABA: EXAMES (Mamografia, Raio-X, Exames laboratoriais, etc.) */}
+            {activeTab === 'exames' && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Identificação do exame */}
+                <div className="rounded-2xl border border-[#CFE0FF] bg-[#CFE0FF]/20 p-4 sm:p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center text-[#1D4ED8] shrink-0">
+                      <Activity size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-bold text-[#1D4ED8] uppercase tracking-wide">
+                        {doc.tipoExame || 'Exame de Saúde'}
+                      </span>
+                      <h2 className="m-0 text-lg font-bold text-[#14211F]">
+                        {doc.nomeExame || doc.titulo || 'Exame'}
+                      </h2>
+                      {doc.clinica && (
+                        <p className="m-0 mt-0.5 text-xs text-[#5B6878]">
+                          Realizado em: <span className="font-semibold text-[#14211F]">{doc.clinica}</span>
                         </p>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
 
-            {activeTab === 'alertas' && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-bold text-[#1d2a3d]">Alertas registrados</h2>
-                {activeAlerts.length === 0 ? (
-                  <p className="m-0 rounded-xl bg-[#f7f9fc] p-4 text-sm text-[#5a6a80]">
-                    Não há alertas ativos neste documento.
-                  </p>
-                ) : activeAlerts.map((alert: any, index: number) => (
-                  <div key={`${alert.tipo || 'alerta'}-${index}`} className="rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-4 text-[#14211F]">
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <b className="block text-sm text-[#E8664A]">{alert.tipo || 'Alerta'}{alert.severidade ? ` · ${alert.severidade}` : ''}</b>
-                        {alert.mensagem && <p className="mb-0 mt-1 text-xs leading-relaxed text-[#14211F]">{alert.mensagem}</p>}
-                      </div>
-                      {alert.id && (
-                        <button
-                          type="button"
-                          onClick={() => void handleDismissAlert(alert.id)}
-                          disabled={dismissingAlertId !== null}
-                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#E8664A]/40 bg-white px-2.5 text-xs font-bold text-[#E8664A] hover:bg-[#E8664A]/10 disabled:opacity-50 transition-colors"
-                        >
-                          {dismissingAlertId === alert.id ? <LoaderCircle size={14} className="animate-spin" /> : <Check size={14} />}
-                          Dispensar
-                        </button>
-                      )}
+                {/* Laudo e Resultado Descritivo (ex: Mamografia, Raio-X, Ultrassom, Biópsias) */}
+                {doc.resultado && String(doc.resultado).trim().length > 0 && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3 mb-3">
+                      <FileSearch size={18} className="text-[#1D4ED8]" />
+                      <span>Laudo & Resultado Descritivo</span>
+                    </div>
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4 text-[#1d2a3d]">
+                      <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed font-sans">
+                        {doc.resultado}
+                      </p>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Resultados de Exames Laboratoriais Estruturados */}
+                {examResults.length > 0 && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-[#dde3ec] pb-3 mb-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-[#14211F]">
+                        <Activity size={18} className="text-[#1D4ED8]" />
+                        <span>Valores & Biomarcadores Medidos</span>
+                      </div>
+                      <span className="rounded-full bg-[#F4F7FC] border border-[#E3E8F0] px-2.5 py-0.5 text-xs font-semibold text-[#5B6878]">
+                        {examResults.length} {examResults.length === 1 ? 'item' : 'itens'}
+                      </span>
+                    </div>
+
+                    <div className="divide-y divide-[#dde3ec] rounded-xl border border-[#dde3ec] px-4 bg-[#f8fafc]">
+                      {examResults.map((result: any, index: number) => {
+                        const statusNorm = String(result.status || '').toLowerCase();
+                        const isNormal = statusNorm === 'normal';
+                        const isAltered = statusNorm === 'alto' || statusNorm === 'baixo' || statusNorm === 'alterado';
+
+                        const hasValue = result.valorTexto || result.valor != null;
+                        const displayValue = hasValue
+                          ? `${result.valorTexto || result.valor}${result.unidade ? ' ' + result.unidade : ''}`
+                          : '—';
+                        return (
+                          <div key={`${result.nome || 'resultado'}-${index}`} className="flex flex-wrap items-start justify-between gap-2 py-3.5">
+                            <div className="min-w-0 flex-1 pr-2">
+                              <div className="font-semibold text-sm text-[#1d2a3d] break-words">{result.nome || 'Resultado'}</div>
+                              {result.referenciaTexto && (
+                                <div className="mt-0.5 text-xs text-[#5a6a80] break-words">
+                                  Ref: <span className="font-medium text-[#14211F]">{result.referenciaTexto}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <div className="text-sm font-bold text-[#1d2a3d] break-all">
+                                {displayValue}
+                              </div>
+                              {result.status && result.status !== 'indefinido' && (
+                                <span
+                                  className={`inline-block mt-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border ${
+                                    isNormal
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : isAltered
+                                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                      : 'bg-slate-100 text-[#5a6a80] border-slate-200'
+                                  }`}
+                                >
+                                  {result.status}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+
               </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-2.5 border-t border-[#E3E8F0] pt-4">
+            {/* 3. ABA: OPINIÃO (Diagnóstico, conclusões médicas, parecer) */}
+            {activeTab === 'opiniao' && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Diagnóstico Clínico Registrado */}
+                {doc.diagnostico && String(doc.diagnostico).trim().length > 0 && (
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 sm:p-5">
+                    <div className="flex items-center gap-2 text-sm font-bold text-blue-900 mb-2">
+                      <Stethoscope size={18} className="text-blue-700" />
+                      <span>Diagnóstico Clínico Registrado</span>
+                      {doc.cid && (
+                        <span className="ml-auto inline-block rounded bg-blue-100 border border-blue-200 px-2 py-0.5 font-mono text-xs font-bold text-blue-800">
+                          CID: {doc.cid}
+                        </span>
+                      )}
+                    </div>
+                    <p className="m-0 text-sm leading-relaxed text-blue-950 font-medium whitespace-pre-wrap">
+                      {doc.diagnostico}
+                    </p>
+                  </div>
+                )}
+
+                {/* Conclusões do Laudo / Consulta */}
+                {doc.conclusoes && String(doc.conclusoes).trim().length > 0 && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3 mb-3">
+                      <Check size={18} className="text-emerald-600" />
+                      <span>Conclusões do Especialista</span>
+                    </div>
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4 text-[#1d2a3d]">
+                      <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed">
+                        {doc.conclusoes}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conteúdo Clínico & Avaliação */}
+                {doc.conteudo && String(doc.conteudo).trim().length > 0 && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3 mb-3">
+                      <FileText size={18} className="text-[#1D4ED8]" />
+                      <span>Avaliação Clínica & Parecer</span>
+                    </div>
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4 text-[#1d2a3d]">
+                      <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed">
+                        {doc.conteudo}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. ABA: RECOMENDAÇÕES (Medicamentos, alertas, condutas) */}
+            {activeTab === 'recomendacoes' && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Medicamentos Prescritos */}
+                {medications.length > 0 && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-[#dde3ec] pb-3 mb-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-[#14211F]">
+                        <Pill size={18} className="text-[#1D4ED8]" />
+                        <span>Medicamentos Prescritos</span>
+                      </div>
+                      <span className="rounded-full bg-[#F4F7FC] border border-[#E3E8F0] px-2.5 py-0.5 text-xs font-semibold text-[#5B6878]">
+                        {medications.length} {medications.length === 1 ? 'medicamento' : 'medicamentos'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {medications.map((medication: any, index: number) => (
+                        <div
+                          key={`${medication.nome || 'medicamento'}-${index}`}
+                          className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-3.5 transition-all hover:border-[#CFE0FF]"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-[#CFE0FF]/50 text-[#1D4ED8] flex items-center justify-center shrink-0 mt-0.5">
+                                <Pill size={16} />
+                              </div>
+                              <div className="min-w-0">
+                                <b className="block text-sm sm:text-[15px] text-[#14211F]">{medication.nome || 'Medicamento'}</b>
+                                {(medication.dosagem || medication.horario) && (
+                                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#5B6878]">
+                                    {medication.dosagem && (
+                                      <span className="rounded-md bg-white border border-[#dde3ec] px-2 py-0.5 font-medium text-[#14211F]">
+                                        Dosagem: {medication.dosagem}
+                                      </span>
+                                    )}
+                                    {medication.horario && (
+                                      <span className="rounded-md bg-white border border-[#dde3ec] px-2 py-0.5 font-medium text-[#14211F]">
+                                        Horário: {medication.horario}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSearchBula(index, medication.nome)}
+                              disabled={loadingBulaIndex === index}
+                              className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E3E8F0] bg-white px-2.5 text-xs font-semibold text-[#1D4ED8] hover:bg-[#F4F7FC] disabled:opacity-50 transition-colors cursor-pointer"
+                              title="Consultar bula na base oficial da Anvisa"
+                            >
+                              {loadingBulaIndex === index ? (
+                                <LoaderCircle size={13} className="animate-spin" />
+                              ) : (
+                                <BookOpen size={13} />
+                              )}
+                              <span>Bula</span>
+                            </button>
+                          </div>
+
+                          {/* Resultado da busca da Bula Anvisa se carregado */}
+                          {bulaResults[index] && (
+                            <div className="mt-3 rounded-xl border border-blue-200 bg-white p-3 text-xs animate-in fade-in">
+                              <div className="font-bold text-blue-900 mb-1 flex items-center gap-1.5">
+                                <BookOpen size={13} className="text-blue-700" />
+                                <span>Informações da Bula Anvisa</span>
+                              </div>
+                              <p className="m-0 text-[#2d3a4d] leading-relaxed">
+                                {typeof bulaResults[index] === 'string'
+                                  ? bulaResults[index]
+                                  : bulaResults[index]?.descricao || bulaResults[index]?.principioAtivo || JSON.stringify(bulaResults[index])}
+                              </p>
+                            </div>
+                          )}
+
+                          {bulaErrors[index] && (
+                            <div className="mt-2 text-xs text-rose-600">
+                              {bulaErrors[index]}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Alertas Ativos */}
+                {activeAlerts.length > 0 && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5">
+                    <div className="flex items-center gap-2 text-sm font-bold text-amber-900 mb-3">
+                      <AlertTriangle size={18} className="text-amber-700" />
+                      <span>Alertas Clínicos & Cuidados</span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {activeAlerts.map((alert: any, index: number) => (
+                        <div
+                          key={`${alert.tipo || 'alerta'}-${index}`}
+                          className="rounded-xl border border-amber-200 bg-white p-3.5 text-[#14211F]"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                                {alert.tipo || 'Alerta'} {alert.severidade ? `· Severidade ${alert.severidade}` : ''}
+                              </span>
+                              {alert.mensagem && (
+                                <p className="m-0 mt-1 text-xs leading-relaxed text-[#14211F]">
+                                  {alert.mensagem}
+                                </p>
+                              )}
+                            </div>
+                            {alert.id && (
+                              <button
+                                type="button"
+                                onClick={() => void handleDismissAlert(alert.id)}
+                                disabled={dismissingAlertId !== null}
+                                className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg border border-amber-300 bg-white px-2.5 text-xs font-bold text-amber-800 hover:bg-amber-50 disabled:opacity-50 transition-colors cursor-pointer"
+                              >
+                                {dismissingAlertId === alert.id ? <LoaderCircle size={13} className="animate-spin" /> : <Check size={13} />}
+                                Dispensar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+
+              </div>
+            )}
+
+            {/* 5. ABA: OUTRAS INFORMAÇÕES (Resumo executivo e observações) */}
+            {activeTab === 'outros' && (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Resumo IA */}
+                {doc.resumo && String(doc.resumo).trim().length > 0 && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3 mb-3">
+                      <Sparkles size={18} className="text-[#1D4ED8]" />
+                      <span>Resumo Executivo do Documento</span>
+                    </div>
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4 text-[#1d2a3d]">
+                      <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed">
+                        {doc.resumo}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Observações Gerais */}
+                {doc.observacoes && String(doc.observacoes).trim().length > 0 && (
+                  <div className="rounded-2xl border border-[#dde3ec] bg-white p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#14211F] border-b border-[#dde3ec] pb-3 mb-3">
+                      <Info size={18} className="text-[#1D4ED8]" />
+                      <span>Observações Gerais</span>
+                    </div>
+                    <div className="rounded-xl border border-[#dde3ec] bg-[#f8fafc] p-4 text-[#1d2a3d]">
+                      <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed">
+                        {doc.observacoes}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Ações inferiores da seção de detalhes */}
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-2.5 border-t border-[#E3E8F0] pt-4">
               <button
                 type="button"
                 onClick={() => { setConfirmedFields(new Set()); setIsEditingModalOpen(true); }}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] shadow-xs"
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] shadow-xs cursor-pointer"
               >
                 <Edit2 size={16} /> Editar dados
               </button>
@@ -927,7 +1363,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   type="button"
                   onClick={handleConfirmRevisao}
                   disabled={isConfirmingRevisao}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1D4ED8] px-5 text-sm font-semibold text-white transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A] shadow-xs disabled:opacity-60"
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1D4ED8] px-5 text-sm font-semibold text-white transition-all hover:bg-[#1E40AF] active:bg-[#1E3A8A] shadow-xs disabled:opacity-60 cursor-pointer"
                 >
                   {isConfirmingRevisao ? <LoaderCircle size={16} className="animate-spin" /> : <Check size={16} />}
                   Confirmar revisão
@@ -1202,29 +1638,138 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
       <DialogPrimitive.Root open={isZoomModalOpen} onOpenChange={setIsZoomModalOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs animate-in fade-in" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-[#dde3ec] bg-white p-6 shadow-2xl outline-none">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsZoomModalOpen(false);
-                  setLocation('/documentos');
-                }}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-4 text-sm font-semibold text-[#14211F] transition-colors hover:bg-[#F4F7FC]"
-              >
-                <ArrowLeft size={17} />
-                Voltar aos documentos
-              </button>
-              <DialogPrimitive.Close
-                aria-label="Fechar visualização ampliada"
-                className="rounded-xl p-1 text-[#5B6878] hover:bg-[#F4F7FC] transition-colors"
-              >
-                <X size={18} />
-              </DialogPrimitive.Close>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in" />
+          <DialogPrimitive.Content className="fixed inset-2 sm:inset-5 z-50 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-[#334155] bg-[#0b1329] shadow-2xl outline-none">
+            {/* Header com Controles de Zoom e Navegação */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#1e293b] bg-[#0f172a] px-3.5 sm:px-6 py-2.5 sm:py-3 text-white">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setIsZoomModalOpen(false)}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white hover:bg-white/15 transition-colors cursor-pointer"
+                >
+                  <ArrowLeft size={15} />
+                  <span className="hidden sm:inline">Fechar</span>
+                </button>
+                <h3 className="m-0 text-xs sm:text-base font-bold text-white truncate max-w-[160px] sm:max-w-[320px]">
+                  {docTitle}
+                </h3>
+              </div>
+
+              {/* Controles de Zoom & Páginas */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-1 bg-white/10 rounded-xl px-2 py-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPageIndex((prev) => Math.max(0, prev - 1))}
+                      disabled={currentPageIndex === 0}
+                      className="p-1 rounded text-white/80 hover:text-white disabled:opacity-30 cursor-pointer"
+                      title="Página anterior"
+                    >
+                      <ChevronLeft size={15} />
+                    </button>
+                    <span className="font-bold text-white px-1 text-[11px] sm:text-xs">
+                      {currentPageIndex + 1}/{totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPageIndex((prev) => Math.min(totalPages - 1, prev + 1))}
+                      disabled={currentPageIndex === totalPages - 1}
+                      className="p-1 rounded text-white/80 hover:text-white disabled:opacity-30 cursor-pointer"
+                      title="Próxima página"
+                    >
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Botões de Zoom */}
+                <div className="flex items-center gap-0.5 sm:gap-1 bg-white/10 rounded-xl p-0.5 sm:p-1">
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
+                    disabled={zoomLevel <= 0.5}
+                    className="p-1.5 rounded text-white/80 hover:text-white hover:bg-white/10 disabled:opacity-30 cursor-pointer transition-colors"
+                    title="Diminuir zoom"
+                  >
+                    <ZoomOut size={15} />
+                  </button>
+                  <span className="text-[11px] sm:text-xs font-bold text-white min-w-[38px] sm:min-w-[42px] text-center select-none">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel((prev) => Math.min(3, Number((prev + 0.25).toFixed(2))))}
+                    disabled={zoomLevel >= 3}
+                    className="p-1.5 rounded text-white/80 hover:text-white hover:bg-white/10 disabled:opacity-30 cursor-pointer transition-colors"
+                    title="Aumentar zoom"
+                  >
+                    <ZoomIn size={15} />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { setZoomLevel(1); setRotation(0); }}
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-white/10 text-white/80 hover:text-white hover:bg-white/15 transition-colors cursor-pointer"
+                  title="Redefinir visualização (100%)"
+                >
+                  <RotateCcw size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-white/10 text-white/80 hover:text-white hover:bg-white/15 transition-colors cursor-pointer"
+                  title="Girar 90°"
+                >
+                  <RotateCw size={14} />
+                </button>
+
+                {fileUrl && (
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="hidden sm:flex h-9 items-center gap-1.5 rounded-xl bg-white/10 px-3 text-xs font-semibold text-white hover:bg-white/15 transition-colors"
+                    title="Baixar imagem original"
+                  >
+                    <Download size={14} />
+                    <span>Baixar</span>
+                  </a>
+                )}
+
+                <DialogPrimitive.Close
+                  aria-label="Fechar visualização ampliada"
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer ml-1"
+                >
+                  <X size={16} />
+                </DialogPrimitive.Close>
+              </div>
             </div>
-            <div className="flex justify-center rounded-2xl border border-[#E3E8F0] bg-[#F4F7FC] p-4">
-              {fileUrl && <img src={fileUrl} alt={`Documento original ampliado: ${docTitle}`} className="max-h-[75vh] object-contain" />}
+
+            {/* Canvas de Visualização com Zoom e Pan */}
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center select-none bg-[#070c18] relative">
+              {fileUrl ? (
+                <div
+                  className="transition-transform duration-200 ease-out origin-center flex items-center justify-center"
+                  style={{
+                    transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
+                  }}
+                >
+                  <img
+                    src={fileUrl}
+                    alt={`Documento original ampliado: ${docTitle} (Pág ${currentPageIndex + 1})`}
+                    className="max-h-[80vh] max-w-[85vw] object-contain rounded-lg shadow-2xl cursor-pointer"
+                    onClick={() => setZoomLevel((prev) => (prev === 1 ? 1.75 : 1))}
+                    title="Clique para alternar zoom 100% / 175%"
+                  />
+                </div>
+              ) : (
+                <div className="text-white/60 text-sm">Original indisponível para visualização.</div>
+              )}
             </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>

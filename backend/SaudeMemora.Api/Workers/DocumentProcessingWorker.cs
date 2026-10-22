@@ -15,10 +15,10 @@ namespace SaudeMemora.Api.Workers;
 public class DocumentProcessingWorker : BackgroundService
 {
     /// <summary>Intervalo mínimo entre consultas quando a fila está vazia.</summary>
-    private static readonly TimeSpan PollMinimo = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan PollMinimo = TimeSpan.FromSeconds(1);
 
-    /// <summary>Teto do backoff: com a fila vazia, consulta a cada 30s em vez de a cada 5s.</summary>
-    private static readonly TimeSpan PollMaximo = TimeSpan.FromSeconds(30);
+    /// <summary>Teto do backoff: com a fila vazia, consulta a cada 3s em vez de a cada 30s para não atrasar novos uploads.</summary>
+    private static readonly TimeSpan PollMaximo = TimeSpan.FromSeconds(3);
 
     private static readonly TimeSpan DelayAposErro = TimeSpan.FromSeconds(10);
 
@@ -128,8 +128,8 @@ public class DocumentProcessingWorker : BackgroundService
         var storage = scope.ServiceProvider.GetRequiredService<IImageStorageService>();
         var vectorIndexer = scope.ServiceProvider.GetService<IDocumentVectorIndexer>();
 
-        // Busca o próximo documento e coloca um lock de 10 minutos (tempo generoso para IA/OCR processar)
-        var lockDuration = TimeSpan.FromMinutes(10);
+        // Busca o próximo documento e coloca um lock de 3 minutos (suficiente para OCR + IA sem prender a fila em falhas)
+        var lockDuration = TimeSpan.FromMinutes(3);
         var doc = await repo.DequeuePendingAsync(workerId, lockDuration);
 
         if (doc == null)

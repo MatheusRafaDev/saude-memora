@@ -43,8 +43,8 @@ public class DocumentProcessingService : IOcrAiService
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
-        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"];
-        _groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL") ?? config["Groq:Model"];
+        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"] ?? "gemini-3.8-flash";
+        _groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL") ?? config["Groq:Model"] ?? "qwen/qwen3.8-27b";
         _configuration = config;
 
         _logger = logger;
@@ -52,7 +52,7 @@ public class DocumentProcessingService : IOcrAiService
 
     private string GetGeminiModel() => !string.IsNullOrWhiteSpace(_geminiModel)
         ? _geminiModel
-        : throw new InvalidOperationException("GEMINI_MODEL não está configurado.");
+        : "gemini-3.8-flash";
 
     public async Task<DocumentoExtraidoDto> ExtractDocumentDataAsync(string imageUrl, string documentType, CancellationToken cancellationToken = default)
     {
@@ -67,8 +67,8 @@ public class DocumentProcessingService : IOcrAiService
 
         var resultados = await Task.WhenAll(engine1Task, engine2Task);
 
-        string textEngine1 = resultados[0].Text;
-        string textEngine2 = resultados[1].Text;
+        string textEngine1 = (resultados[0].Text ?? "").Trim();
+        string textEngine2 = (resultados[1].Text ?? "").Trim();
 
         if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
         {
@@ -77,8 +77,20 @@ public class DocumentProcessingService : IOcrAiService
             throw new Exception("Nenhum texto encontrado pela OCR.space em nenhum dos motores.");
         }
 
-        // 2. Unificar textos com a Gemini
-        string unifiedText = await UnifyTextsWithGeminiAsync(textEngine1, textEngine2, cancellationToken);
+        // 2. Unificar textos: se apenas um motor teve sucesso ou ambos trouxeram o mesmo texto, evita chamada desnecessária à IA
+        string unifiedText;
+        if (string.IsNullOrWhiteSpace(textEngine1))
+        {
+            unifiedText = textEngine2;
+        }
+        else if (string.IsNullOrWhiteSpace(textEngine2) || string.Equals(textEngine1, textEngine2, StringComparison.OrdinalIgnoreCase))
+        {
+            unifiedText = textEngine1;
+        }
+        else
+        {
+            unifiedText = await UnifyTextsWithGeminiAsync(textEngine1, textEngine2, cancellationToken);
+        }
 
         // 3. Extrair dados estruturados
         return await ExtractStructuredDataAsync(unifiedText, documentType, cancellationToken);
@@ -97,8 +109,8 @@ public class DocumentProcessingService : IOcrAiService
             var engine2Task = CallOcrSpaceAsync(url, 2, cancellationToken);
             var resultados = await Task.WhenAll(engine1Task, engine2Task);
 
-            string textEngine1 = resultados[0].Text;
-            string textEngine2 = resultados[1].Text;
+            string textEngine1 = (resultados[0].Text ?? "").Trim();
+            string textEngine2 = (resultados[1].Text ?? "").Trim();
 
             if (string.IsNullOrWhiteSpace(textEngine1) && string.IsNullOrWhiteSpace(textEngine2))
             {
@@ -109,7 +121,20 @@ public class DocumentProcessingService : IOcrAiService
                 continue;
             }
 
-            string unifiedText = await UnifyTextsWithGeminiAsync(textEngine1, textEngine2, cancellationToken);
+            string unifiedText;
+            if (string.IsNullOrWhiteSpace(textEngine1))
+            {
+                unifiedText = textEngine2;
+            }
+            else if (string.IsNullOrWhiteSpace(textEngine2) || string.Equals(textEngine1, textEngine2, StringComparison.OrdinalIgnoreCase))
+            {
+                unifiedText = textEngine1;
+            }
+            else
+            {
+                unifiedText = await UnifyTextsWithGeminiAsync(textEngine1, textEngine2, cancellationToken);
+            }
+
             allTexts.Add(unifiedText);
         }
 
@@ -271,7 +296,11 @@ public class DocumentProcessingService : IOcrAiService
 
     private async Task<string> UnifyTextsWithGeminiAsync(string text1, string text2, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_geminiApiKey) || string.IsNullOrWhiteSpace(_geminiModel))
+        if (string.IsNullOrWhiteSpace(text1)) return text2 ?? "";
+        if (string.IsNullOrWhiteSpace(text2)) return text1 ?? "";
+        if (string.Equals(text1.Trim(), text2.Trim(), StringComparison.OrdinalIgnoreCase)) return text1;
+
+        if (string.IsNullOrWhiteSpace(_geminiApiKey))
             return text1.Length > text2.Length ? text1 : text2;
 
         var prompt = AiPrompts.ProtectUntrustedSource(string.Format(AiPrompts.UnifyPrompt, text1, text2));

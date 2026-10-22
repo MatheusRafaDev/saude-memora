@@ -747,7 +747,7 @@ export default function Record() {
                     onClick={() => setIsAddingMed(true)}
                     className="text-xs font-semibold text-[#1D4ED8] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Plus size={14} /> Adicionar
+                    <Plus size={14} /> Adicionar Documento
                   </button>
                 </div>
 

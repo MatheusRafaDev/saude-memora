@@ -22,7 +22,7 @@ public class AlertaMedicamentoService : IAlertaMedicamentoService
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? configuration["Gemini:ApiKey"] ?? string.Empty;
-        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? configuration["Gemini:Model"];
+        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? configuration["Gemini:Model"] ?? "gemini-3.8-flash";
     }
 
     public async Task<List<AlertaDocumento>> GerarAlertasAsync(RegistroDocumento documento, FichaMedica ficha)
@@ -186,9 +186,7 @@ Seja conservador: na dúvida, não alerte com severidade alta. Se não houver in
 
         var requestBody = new
         {
-            model = string.IsNullOrWhiteSpace(_geminiModel)
-                ? throw new InvalidOperationException("GEMINI_MODEL não está configurado.")
-                : _geminiModel,
+            model = !string.IsNullOrWhiteSpace(_geminiModel) ? _geminiModel : "gemini-3.8-flash",
             messages = new[]
             {
                 new { role = "system", content = "Você é um assistente de checagem de interações medicamentosas. Devolva apenas JSON válido, sem texto em volta." },
