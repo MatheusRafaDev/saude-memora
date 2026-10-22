@@ -190,7 +190,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
         '/api': {
           target: apiTarget,
           changeOrigin: true,
-          secure: true,
+          secure: apiTarget.startsWith('https://'),
           cookieDomainRewrite: '',
           configure: (proxy: any) => {
             proxy.on('proxyRes', (proxyRes: IncomingMessage) => {
@@ -215,7 +215,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
         '/api': {
           target: apiTarget,
           changeOrigin: true,
-          secure: true,
+          secure: apiTarget.startsWith('https://'),
           cookieDomainRewrite: '',
         } satisfies ProxyOptions,
       } : undefined,
