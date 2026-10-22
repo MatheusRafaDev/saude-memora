@@ -143,13 +143,13 @@ public static class ChatEndpoints
             var model = Environment.GetEnvironmentVariable("GROQ_MODEL")
                 ?? config["GROQ_MODEL"]
                 ?? config["Groq:Model"]
-                ?? "qwen/qwen3.8-27b";
+                ?? "llama-3.1-8b-instant";
 
             var toolsEnabled = ReadBooleanSetting(
                 config,
                 "GROQ_CHAT_TOOL_CALLING_ENABLED",
                 "Groq:ChatToolCallingEnabled",
-                defaultValue: true);
+                defaultValue: false);
             var inputBudget = ReadBoundedSetting(
                 config,
                 "GROQ_CHAT_INPUT_TOKEN_BUDGET",
