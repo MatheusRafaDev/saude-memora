@@ -763,6 +763,7 @@ export default function Documents() {
           /* Empty State */
           activeDocs.length === 0 ? (
             /* First time onboarding empty state */
+            <>
             <div className="hidden">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] text-white mx-auto mb-4 flex items-center justify-center shadow-md">
                 <UploadCloud size={32} />
@@ -808,6 +809,7 @@ export default function Documents() {
               <h3 className="text-lg font-bold text-[#14211F]">Você ainda não possui documentos</h3>
               <p className="mt-1 text-sm text-[#5B6878]">Seus documentos enviados aparecerão aqui.</p>
             </div>
+            </>
           ) : (
             /* No search results found */
             <div className="bg-white rounded-2xl p-12 text-center border border-[#E3E8F0] shadow-xs my-6">
