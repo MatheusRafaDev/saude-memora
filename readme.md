@@ -97,7 +97,6 @@ O **SaúdeMemora** adota uma arquitetura de IA ponta a ponta integrada ao runtim
 | --- | :---: | --- |
 | **RAG** | **Completo (Híbrido)** | **Recuperação híbrida:** combina busca vetorial semântica via embeddings e ranking lexical (sobreposição de termos médicos), agrupamento por documento e isolamento estrito por paciente autenticado via JWT. |
 | **Embeddings e Banco Vetorial** | **Sim (Implementado)** | **Embeddings nativos e armazenamento vetorial:** geração de vetores via Google Gemini (`text-embedding-004`, 768 dimensões), pipeline de chunking clínico versionado (`DocumentChunker`), coleção dedicada no MongoDB (`DocumentoChunks`), similaridade de cosseno, idempotência e exclusão em cascata (LGPD Art. 18). |
-| **Fine-tuning** | **Não (Decisão Justificada)** | **Decisão consciente e documentada:** a combinação de prompts instruídos versionados (`v2`), modo JSON estrito, schemas tipados e RAG híbrido atende com precisão os requisitos clínicos sem os riscos de alucinação permanente, desatualização de dados e custo de retraining associados a modelos fine-tuned. |
 
 ---
 
@@ -358,39 +357,5 @@ sequenceDiagram
 - **Interações Medicamentosas (Gemini):** `temperature = 0.0`.
 - **Chat Assistente (Groq):** `temperature = 0.2` (baixo calor: equilibra naturalidade com precisão factual).
 - **Relatório de Saúde (Gemini):** `temperature = 0.2`, `max_tokens = 1200`.
-
----
-
-### 7. Estudo Comparativo: RAG Híbrido vs Fine-Tuning
-
-```mermaid
-graph LR
-    subgraph FineTuningRisks[Riscos do Fine-Tuning com Dados de Pacientes]
-        R1[Pesos Neurais Estáticos<br/>Exige retreino diário caro]
-        R2[Alucinação Permanente<br/>Sem citação auditável de fonte]
-        R3[Violação Crônica da LGPD<br/>Impossível deletar dados da rede]
-        R4[Vazamento entre Pacientes<br/>Data Leakage nos pesos]
-    end
-
-    subgraph RagAdvantages[Vantagens do RAG Híbrido no SaúdeMemora]
-        A1[Atualização Instantânea<br/>Indexou, já está no chat]
-        A2[100% Auditável<br/>Cita ID exato do documento]
-        A3[LGPD Nativa<br/>Exclusão total no MongoDB]
-        A4[Isolamento Multitenant<br/>Filtrado por Token JWT]
-    end
-
-    FineTuningRisks -. Substituído por .-> RagAdvantages
-```
-
-#### Por que Fine-Tuning NÃO foi adotado para dados de pacientes:
-1. **Dados Hiperdinâmicos:** Novos exames chegam todo dia. O RAG indexa em segundos no MongoDB. O Fine-Tuning exigiria retreinamento diário em GPUs custando milhares de dólares e gerando problemas de esquecimento catastrófico (*Catastrophic Forgetting*).
-2. **Conformidade LGPD (Artigo 18 - Direito ao Esquecimento):** Se o paciente solicitar a exclusão da conta, o RAG remove os chunks no MongoDB imediatamente. Em modelos fine-tuned, "Machine Unlearning" (fazer a rede neural esquecer dados absorvidos em seus pesos) ainda é um problema em aberto na ciência da computação.
-3. **Isolamento Multitenant e Segurança:** No RAG do SaúdeMemora, o filtro `pacienteId == authId` impede matematicamente que chunks de outro paciente entrem no contexto. No Fine-Tuning, ataques de engenharia de prompt poderiam vazar informações privadas de outros pacientes do treino.
-4. **Auditabilidade Clínica:** O RAG devolve `citationIds` que o paciente clica no app para conferir o documento original emitido pelo médico. O Fine-Tuning responde "de memória" sem garantia de veracidade.
-
-#### Cenários Futuros Válidos para Fine-Tuning:
-- **Modelos de Visão Especializados:** Fine-tuning de TrOCR ou Donut exclusivamente para decifrar caligrafia médica manuscrita brasileira.
-- **Small Language Models (SLMs) Locais:** Ajustar modelos compactos (1B a 3B parâmetros) quantizados em WebGPU/ONNX para rodar no próprio celular do paciente extraindo entidades clínicas sem enviar dados para a nuvem.
-- **Embeddings Médicos de Domínio:** Ajustar o modelo vetorial para a ontologia nacional do SUS, TUSS e Bulário ANVISA.
 
 
