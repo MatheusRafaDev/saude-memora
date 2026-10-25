@@ -119,6 +119,31 @@ public class ChatHistoryRepository : IChatHistoryRepository
         await _history.DeleteManyAsync(item => item.PacienteId == pacienteId, cancellationToken);
     }
 
+    public async Task RemoveCitationsByDocumentoIdAsync(
+        string pacienteId,
+        string documentoId,
+        CancellationToken cancellationToken = default)
+    {
+        var filter = Builders<ChatHistorico>.Filter.And(
+            Builders<ChatHistorico>.Filter.Eq(x => x.PacienteId, pacienteId),
+            Builders<ChatHistorico>.Filter.Or(
+                Builders<ChatHistorico>.Filter.ElemMatch(x => x.Citacoes, c => c.Id == documentoId),
+                Builders<ChatHistorico>.Filter.ElemMatch(x => x.Citacoes, Builders<ChatHistoricoCitacao>.Filter.Eq("id", documentoId)),
+                Builders<ChatHistorico>.Filter.ElemMatch(x => x.Citacoes, Builders<ChatHistoricoCitacao>.Filter.Eq("Id", documentoId))
+            ));
+
+        var update = Builders<ChatHistorico>.Update.PullFilter<ChatHistoricoCitacao>(
+            x => x.Citacoes,
+            Builders<ChatHistoricoCitacao>.Filter.Or(
+                Builders<ChatHistoricoCitacao>.Filter.Eq(c => c.Id, documentoId),
+                Builders<ChatHistoricoCitacao>.Filter.Eq("id", documentoId),
+                Builders<ChatHistoricoCitacao>.Filter.Eq("Id", documentoId)
+            ));
+
+        await _history.UpdateManyAsync(filter, update, cancellationToken: cancellationToken);
+    }
+
+
     public static async Task EnsureIndexesAsync(
         MongoDbContext context,
         CancellationToken cancellationToken = default)

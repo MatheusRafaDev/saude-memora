@@ -250,6 +250,8 @@ public class AccountDeletionServiceTests
         public Task SaveExchangeAsync(string p, string d, string s, string q, string r,
             IReadOnlyList<ChatHistoricoCitacao> cit, CancellationToken c = default)
             => Task.CompletedTask;
+        public Task RemoveCitationsByDocumentoIdAsync(string p, string d, CancellationToken c = default)
+            => Task.CompletedTask;
     }
 
     private sealed class StubLogRepository : ISistemaLogRepository

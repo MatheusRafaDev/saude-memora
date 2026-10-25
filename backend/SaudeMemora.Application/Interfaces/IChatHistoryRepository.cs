@@ -39,4 +39,10 @@ public interface IChatHistoryRepository
         CancellationToken cancellationToken = default);
 
     Task DeleteByPacienteIdAsync(string pacienteId, CancellationToken cancellationToken = default);
+
+    Task RemoveCitationsByDocumentoIdAsync(
+        string pacienteId,
+        string documentoId,
+        CancellationToken cancellationToken = default);
 }
+

@@ -220,7 +220,7 @@ export default function Emergencia({ token }: { token?: string } = {}) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-[#F8FAFC] text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-6 lg:px-8 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
         <div className="flex justify-between items-end gap-3 sm:gap-5 mb-5 sm:mb-7 flex-wrap">

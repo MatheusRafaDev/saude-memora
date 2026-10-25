@@ -490,19 +490,22 @@ export default function AnamneseEdit() {
 
   if (isLoading) {
     return (
-      <div className="p-12 text-center text-[#5a6a80]">
-        Carregando sua anamnese…
+      <div className="flex-1 flex min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] items-center justify-center text-[#5a6a80]" role="status">
+        <LoaderCircle size={22} className="mr-2 animate-spin text-[#1D4ED8]" />
+        <span className="font-medium text-sm">Carregando sua anamnese…</span>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div
-        role="alert"
-        className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#FFF5F3] p-5 sm:p-8 text-center text-[#E8664A]"
-      >
-        Não foi possível carregar sua anamnese. Tente novamente mais tarde.
+      <div className="flex-1 flex min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] items-center justify-center p-6">
+        <div
+          role="alert"
+          className="w-full max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#FFF5F3] p-5 sm:p-8 text-center text-[#E8664A]"
+        >
+          Não foi possível carregar sua anamnese. Tente novamente mais tarde.
+        </div>
       </div>
     );
   }
@@ -510,7 +513,7 @@ export default function AnamneseEdit() {
   const conditionInput = <ConditionInput onAdd={addCondition} />;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-5 pb-16 pt-9 text-[#14211F] sm:px-8">
+    <main className="mx-auto min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 w-full max-w-4xl px-5 pb-16 pt-9 text-[#14211F] sm:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1">

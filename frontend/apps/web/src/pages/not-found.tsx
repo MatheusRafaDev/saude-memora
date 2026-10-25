@@ -3,7 +3,7 @@ import { BrandLogo } from '@/components/BrandLogo';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-white font-sans text-[#14211F] flex flex-col items-center justify-center text-center p-8 bg-[radial-gradient(700px_400px_at_50%_0,#CFE0FF/30,transparent_60%),#fff]">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white font-sans text-[#14211F] flex flex-col items-center justify-center text-center p-8 bg-[radial-gradient(700px_400px_at_50%_0,#CFE0FF/30,transparent_60%),#fff]">
       <BrandLogo
         iconClassName="h-10 w-10 transition-transform group-hover:scale-105"
         wordmarkClassName="text-[22px] text-[#14211F]"

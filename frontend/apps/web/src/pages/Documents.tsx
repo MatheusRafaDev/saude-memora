@@ -476,10 +476,12 @@ export default function Documents() {
 
   const handleDelete = async () => {
     if (!documentPendingDeletion) return;
+    const deletedId = documentPendingDeletion.id;
     try {
-      await deleteMutation.mutateAsync({ id: documentPendingDeletion.id });
+      await deleteMutation.mutateAsync({ id: deletedId });
       toast({ title: 'Documento excluído com sucesso' });
       setDocumentPendingDeletion(null);
+      window.dispatchEvent(new CustomEvent('document-deleted', { detail: { id: deletedId } }));
       refetch();
     } catch {
       toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
@@ -501,12 +503,16 @@ export default function Documents() {
     }
   };
 
-  const renderBadge = (doc: { status: string; revisaoPendente: boolean }) => {
+  const renderBadge = (doc: { status: string; revisaoPendente: boolean; progress?: number }) => {
     if (doc.status === 'processing' || doc.status === 'pending') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F4F7FC] border border-[#E3E8F0] text-[#14211F] text-xs font-semibold whitespace-nowrap">
           <LoaderCircle size={11} className="animate-spin text-[#1D4ED8]" />
-          Processando
+          {typeof doc.progress === 'number' && doc.progress > 0
+            ? `Processando (${doc.progress}%)`
+            : doc.status === 'pending'
+            ? 'Na fila'
+            : 'Processando'}
         </span>
       );
     }
@@ -535,7 +541,7 @@ export default function Documents() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title & CTA Actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-5 mb-5 sm:mb-6">
@@ -741,7 +747,7 @@ export default function Documents() {
 
         {/* Documents Content */}
         {isLoading ? (
-          <div className="bg-white rounded-2xl p-16 text-center border border-[#E3E8F0] text-[#5B6878]">
+          <div className="bg-white rounded-2xl p-16 min-h-[360px] flex flex-col items-center justify-center text-center border border-[#E3E8F0] text-[#5B6878]">
             <LoaderCircle size={28} className="mx-auto animate-spin mb-3 text-[#1D4ED8]" />
             <p className="text-sm font-semibold text-[#14211F]">Carregando seus documentos...</p>
             <p className="text-xs text-[#5B6878] mt-1">Recuperando histórico com criptografia segura.</p>

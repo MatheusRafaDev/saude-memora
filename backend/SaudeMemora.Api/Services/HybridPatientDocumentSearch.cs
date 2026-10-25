@@ -17,17 +17,20 @@ public sealed class HybridPatientDocumentSearch : IPatientDocumentSearch
     private readonly IDocumentVectorRepository _vectorRepo;
     private readonly IEmbeddingService _embeddingService;
     private readonly LexicalPatientDocumentSearch _lexicalFallback;
+    private readonly IDocumentRepository _documentRepository;
     private readonly ILogger<HybridPatientDocumentSearch> _logger;
 
     public HybridPatientDocumentSearch(
         IDocumentVectorRepository vectorRepo,
         IEmbeddingService embeddingService,
         LexicalPatientDocumentSearch lexicalFallback,
+        IDocumentRepository documentRepository,
         ILogger<HybridPatientDocumentSearch> logger)
     {
         _vectorRepo = vectorRepo;
         _embeddingService = embeddingService;
         _lexicalFallback = lexicalFallback;
+        _documentRepository = documentRepository;
         _logger = logger;
     }
 
@@ -67,14 +70,38 @@ public sealed class HybridPatientDocumentSearch : IPatientDocumentSearch
             return await _lexicalFallback.SearchAsync(authenticatedPatientId, query, documentType, limit, cancellationToken);
         }
 
+        // 2.1 Verifica quais documentos realmente existem e estão com status "pronto"
+        var activeDocs = await _documentRepository.GetAllForChatByPacienteIdAsync(authenticatedPatientId, cancellationToken);
+        var activeDocIds = new HashSet<string>(
+            activeDocs
+                .Where(d => !string.IsNullOrWhiteSpace(d.Id) && string.Equals(d.Status, "pronto", StringComparison.OrdinalIgnoreCase))
+                .Select(d => d.Id!),
+            StringComparer.Ordinal);
+
+        // Se houver chunks de documentos que foram apagados, exclui da busca e limpa do repositório vetorial
+        var orphanedDocIds = chunks
+            .Where(chunk => !string.IsNullOrWhiteSpace(chunk.DocumentoId) && !activeDocIds.Contains(chunk.DocumentoId))
+            .Select(chunk => chunk.DocumentoId)
+            .Distinct()
+            .ToList();
+
+        if (orphanedDocIds.Count > 0)
+        {
+            foreach (var orphanedId in orphanedDocIds)
+            {
+                await _vectorRepo.DeleteByDocumentoIdAsync(orphanedId, cancellationToken);
+            }
+        }
+
         var terms = PatientChatTools.GetTerms(query);
 
-        // 3. Calcula similaridade semântica (cosseno) e sobreposição lexical
+        // 3. Calcula similaridade semântica (cosseno) e sobreposição lexical apenas para documentos existentes e prontos
         var scoredChunks = chunks
             .Where(chunk => string.Equals(chunk.PacienteId, authenticatedPatientId, StringComparison.Ordinal)
                 && chunk.Embedding is { Count: > 0 }
                 && string.Equals(chunk.ModeloEmbedding, _embeddingService.ModelName, StringComparison.Ordinal)
-                && !string.IsNullOrWhiteSpace(chunk.DocumentoId))
+                && !string.IsNullOrWhiteSpace(chunk.DocumentoId)
+                && activeDocIds.Contains(chunk.DocumentoId))
             .Select(chunk =>
             {
                 var semanticSim = CosineSimilarity(queryEmbedding, chunk.Embedding);

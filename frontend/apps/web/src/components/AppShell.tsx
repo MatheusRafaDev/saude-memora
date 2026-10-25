@@ -310,7 +310,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main page content */}
       <div
         id="main-content"
-        className="flex-1 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 bg-white flex flex-col"
+        className="flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 bg-white flex flex-col"
       >
         {children}
       </div>

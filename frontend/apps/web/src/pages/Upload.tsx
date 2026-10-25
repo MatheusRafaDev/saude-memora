@@ -260,7 +260,7 @@ export default function Upload() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-5 sm:px-10 pt-8 pb-16">
         {/* Breadcrumb */}
         <div className="text-sm text-[#5B6878] mb-3.5 flex items-center gap-2">

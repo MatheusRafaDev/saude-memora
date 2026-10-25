@@ -20,6 +20,7 @@ public static class ChatEndpoints
             [FromQuery(Name = "date")] string? chatDate,
             ClaimsPrincipal user,
             IChatHistoryRepository chatHistoryRepo,
+            IDocumentRepository documentRepo,
             CancellationToken cancellationToken) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -31,12 +32,21 @@ public static class ChatEndpoints
             if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
                 return Results.BadRequest(new { message = "Data inválida. Use o formato yyyy-MM-dd." });
 
+            var activeDocs = await documentRepo.GetAllForChatByPacienteIdAsync(userId, cancellationToken);
+            var activeDocIds = activeDocs
+                .Where(d => !string.IsNullOrWhiteSpace(d.Id) && string.Equals(d.Status, "pronto", StringComparison.OrdinalIgnoreCase))
+                .Select(d => d.Id!)
+                .ToHashSet(StringComparer.Ordinal);
+
             var history = await chatHistoryRepo.GetByPacienteIdAndDayAsync(userId, date, cancellationToken);
             var messages = history.SelectMany(item => new[]
             {
                 new ChatHistoryMessage(item.Id + "-user", "user", item.Pergunta, item.CriadoEm, item.SessaoId, Array.Empty<ChatCitation>()),
                 new ChatHistoryMessage(item.Id + "-assistant", "assistant", item.Resposta, item.CriadoEm, item.SessaoId,
-                    (item.Citacoes ?? []).Select(citation => new ChatCitation(citation.Id, citation.Titulo, citation.Data)).ToArray())
+                    (item.Citacoes ?? [])
+                        .Where(citation => !string.IsNullOrWhiteSpace(citation.Id) && activeDocIds.Contains(citation.Id))
+                        .Select(citation => new ChatCitation(citation.Id, citation.Titulo, citation.Data))
+                        .ToArray())
             });
 
             return Results.Ok(new ChatHistoryResponse(date, messages.ToArray()));
@@ -60,23 +70,33 @@ public static class ChatEndpoints
         app.MapGet("/api/chat/documentos-consultados", async (
             ClaimsPrincipal user,
             IChatHistoryRepository chatHistoryRepo,
+            IDocumentRepository documentRepo,
             CancellationToken cancellationToken) =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId is null) return Results.Unauthorized();
 
+            var activeDocs = await documentRepo.GetAllForChatByPacienteIdAsync(userId, cancellationToken);
+            var activeDocDict = activeDocs
+                .Where(d => !string.IsNullOrWhiteSpace(d.Id) && string.Equals(d.Status, "pronto", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(d => d.Id!, d => d, StringComparer.Ordinal);
+
             var history = await chatHistoryRepo.GetAllByPacienteIdAsync(userId, cancellationToken);
             var result = history
                 .Where(item => item.Citacoes != null && item.Citacoes.Count > 0)
-                .SelectMany(item => item.Citacoes.Select(c => new DocumentoConsultadoItem(
-                    c.Id,
-                    c.Titulo,
-                    c.Data,
-                    item.Pergunta,
-                    item.CriadoEm,
-                    item.DataChat
-                )))
+                .SelectMany(item => item.Citacoes
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Id) && activeDocDict.ContainsKey(c.Id))
+                    .Select(c => new DocumentoConsultadoItem(
+                        c.Id,
+                        activeDocDict[c.Id].Titulo ?? c.Titulo,
+                        activeDocDict[c.Id].Data ?? c.Data,
+                        item.Pergunta,
+                        item.CriadoEm,
+                        item.DataChat
+                    )))
                 .OrderByDescending(x => x.DataConsulta)
+                .GroupBy(x => x.DocumentoId)
+                .Select(g => g.First())
                 .ToArray();
 
             return Results.Ok(result);

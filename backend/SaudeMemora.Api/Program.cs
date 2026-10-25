@@ -1670,8 +1670,8 @@ app.MapPut("/api/documents/{id}", async (
     return Results.Ok(new { message = "Documento atualizado com sucesso." });
 }).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 
-// Exclui documento por ID (e remove do Cloudinary)
-app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDocumentVectorRepository vectorRepo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria) =>
+// Exclui documento por ID (e remove do Cloudinary, vetores e citações do chat)
+app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDocumentVectorRepository vectorRepo, IChatHistoryRepository chatHistoryRepo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria, CancellationToken cancellationToken) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -1688,7 +1688,15 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
         context.ParaAuditoria(), AuditoriaOperacao.Exclusao, "Documento", id, AuditoriaResultado.Sucesso);
 
     await repo.DeleteAsync(id);
-    await vectorRepo.DeleteByDocumentoIdAsync(id);
+    await vectorRepo.DeleteByDocumentoIdAsync(id, cancellationToken);
+    try
+    {
+        await chatHistoryRepo.RemoveCitationsByDocumentoIdAsync(userId, id, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"[ChatHistory] Erro ao remover citações do documento excluído {id}: {ex.Message}");
+    }
 
     if (doc.IdPublicos != null && doc.IdPublicos.Any())
     {

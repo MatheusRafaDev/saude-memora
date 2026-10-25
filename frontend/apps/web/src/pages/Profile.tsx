@@ -284,32 +284,34 @@ export default function Profile() {
 
   if (isProfileLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-[#5a6a80]" role="status">
-        <LoaderCircle size={22} className="mr-2 animate-spin" />
-        Carregando seus dados…
+      <div className="flex-1 flex min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] items-center justify-center text-[#5a6a80]" role="status">
+        <LoaderCircle size={22} className="mr-2 animate-spin text-[#1D4ED8]" />
+        <span className="font-medium text-sm">Carregando seus dados…</span>
       </div>
     );
   }
 
   if (profileError || !profileRaw) {
     return (
-      <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-8 text-center">
-        <p className="text-[#E8664A] font-medium" role="alert">
-          Não foi possível carregar seu perfil. Suas informações não foram alteradas.
-        </p>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="mt-4 min-h-[44px] rounded-xl bg-[#1D4ED8] px-5 font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all shadow-xs"
-        >
-          Tentar novamente
-        </button>
+      <div className="flex-1 flex min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] items-center justify-center p-6">
+        <div className="w-full max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-8 text-center">
+          <p className="text-[#E8664A] font-medium" role="alert">
+            Não foi possível carregar seu perfil. Suas informações não foram alteradas.
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="mt-4 min-h-[44px] rounded-xl bg-[#1D4ED8] px-5 font-semibold text-white hover:bg-[#1E40AF] active:bg-[#1E3A8A] transition-all shadow-xs"
+          >
+            Tentar novamente
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
         <div className={`flex justify-between items-end gap-4 sm:gap-5 mb-5 sm:mb-7 flex-wrap ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>

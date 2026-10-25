@@ -113,12 +113,25 @@ function PageLoading() {
 
 function ProtectedPageLoading() {
   return (
-    <div className="space-y-6 w-full animate-pulse" aria-busy="true" aria-live="polite">
-      <div className="h-24 w-full rounded-2xl bg-muted" />
+    <div
+      className="mx-auto w-full max-w-[1240px] flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] px-3.5 sm:px-8 lg:px-10 py-6 sm:py-9 space-y-6 animate-pulse"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <div className="space-y-2">
+        <div className="h-4 w-32 rounded-lg bg-[#E3E8F0]/70" />
+        <div className="h-9 w-64 rounded-xl bg-[#E3E8F0]/80" />
+        <div className="h-4 w-80 max-w-full rounded-lg bg-[#E3E8F0]/50" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="h-28 rounded-2xl bg-[#E3E8F0]/50" />
+        <div className="h-28 rounded-2xl bg-[#E3E8F0]/50" />
+        <div className="h-28 rounded-2xl bg-[#E3E8F0]/50" />
+        <div className="h-28 rounded-2xl bg-[#E3E8F0]/50" />
+      </div>
       <div className="grid gap-5 lg:grid-cols-3">
-        <div className="h-64 rounded-xl bg-muted" />
-        <div className="h-64 rounded-xl bg-muted" />
-        <div className="h-64 rounded-xl bg-muted" />
+        <div className="h-72 rounded-2xl bg-[#E3E8F0]/40 lg:col-span-2" />
+        <div className="h-72 rounded-2xl bg-[#E3E8F0]/40" />
       </div>
     </div>
   );
@@ -373,7 +386,7 @@ function ProtectedLayout() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-1"
+            className="flex-1 flex flex-col min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)]"
           >
             <Switch>
               <Route path="/visao-geral">{() => <Dashboard />}</Route>

@@ -111,12 +111,17 @@ public class DocumentVectorRagTests
 
         var vectorRepo = new MemoryDocumentVectorRepository([ownedChunkHigh, ownedChunkLow, foreignChunk]);
         var embeddingService = new StubEmbeddingService(_ => [0.95f, 0.05f, 0.0f]); // Consulta de glicose
-        var lexicalFallback = new LexicalPatientDocumentSearch(new PatientChatAiTests_MemoryDocumentRepo());
+        var docRepo = new PatientChatAiTests_MemoryDocumentRepo([
+            new RegistroDocumento { Id = "doc-owned-1", PacienteId = "paciente-1", Status = "pronto" },
+            new RegistroDocumento { Id = "doc-owned-2", PacienteId = "paciente-1", Status = "pronto" }
+        ]);
+        var lexicalFallback = new LexicalPatientDocumentSearch(docRepo);
 
         var search = new HybridPatientDocumentSearch(
             vectorRepo,
             embeddingService,
             lexicalFallback,
+            docRepo,
             NullLogger<HybridPatientDocumentSearch>.Instance);
 
         var results = await search.SearchAsync("paciente-1", "qual foi minha glicose?", null, 4, CancellationToken.None);
@@ -127,6 +132,58 @@ public class DocumentVectorRagTests
         // JAMAIS deve vazar o chunk do outro paciente
         Assert.DoesNotContain(results, r => r.Id == "doc-foreign");
         Assert.DoesNotContain(results, r => r.Excerpt.Contains("450"));
+    }
+
+    [Fact]
+    public async Task HybridPatientDocumentSearch_NeverConsultsDeletedDocument_EvenIfVectorChunkExists()
+    {
+        // Chunk de documento que foi apagado (não existe mais no repositório de documentos)
+        var deletedDocChunk = new DocumentChunk
+        {
+            Id = "chunk-del",
+            DocumentoId = "doc-deleted-mamografia",
+            PacienteId = "paciente-1",
+            Titulo = "Mamografia",
+            Tipo = "exame",
+            Data = "27/12/2022",
+            Texto = "Mamografia bilateral sem nódulos suspeitos.",
+            Embedding = [0.99f, 0.01f, 0.0f]
+        };
+
+        var activeDocChunk = new DocumentChunk
+        {
+            Id = "chunk-act",
+            DocumentoId = "doc-active-receita",
+            PacienteId = "paciente-1",
+            Titulo = "Receituário Médico",
+            Tipo = "receita",
+            Data = "24/04/2024",
+            Texto = "Uso de medicação contínua.",
+            Embedding = [0.85f, 0.15f, 0.0f]
+        };
+
+        var vectorRepo = new MemoryDocumentVectorRepository([deletedDocChunk, activeDocChunk]);
+        var embeddingService = new StubEmbeddingService(_ => [0.95f, 0.05f, 0.0f]);
+        // doc-deleted-mamografia NÃO existe mais no repositório
+        var docRepo = new PatientChatAiTests_MemoryDocumentRepo([
+            new RegistroDocumento { Id = "doc-active-receita", PacienteId = "paciente-1", Status = "pronto", Titulo = "Receituário Médico" }
+        ]);
+        var lexicalFallback = new LexicalPatientDocumentSearch(docRepo);
+
+        var search = new HybridPatientDocumentSearch(
+            vectorRepo,
+            embeddingService,
+            lexicalFallback,
+            docRepo,
+            NullLogger<HybridPatientDocumentSearch>.Instance);
+
+        var results = await search.SearchAsync("paciente-1", "qual o laudo do meu exame?", null, 4, CancellationToken.None);
+
+        // Documento apagado NÃO deve ser consultado nem retornado
+        Assert.DoesNotContain(results, r => r.Id == "doc-deleted-mamografia");
+        Assert.DoesNotContain(results, r => r.Title.Contains("Mamografia"));
+        Assert.Single(results);
+        Assert.Equal("doc-active-receita", results[0].Id);
     }
 
     [Fact]
@@ -144,12 +201,14 @@ public class DocumentVectorRagTests
 
         var vectorRepo = new MemoryDocumentVectorRepository([]);
         var failingEmbeddingService = new StubEmbeddingService(_ => null); // Falha de embeddings
-        var lexicalFallback = new LexicalPatientDocumentSearch(new PatientChatAiTests_MemoryDocumentRepo([ownedDoc]));
+        var docRepo = new PatientChatAiTests_MemoryDocumentRepo([ownedDoc]);
+        var lexicalFallback = new LexicalPatientDocumentSearch(docRepo);
 
         var search = new HybridPatientDocumentSearch(
             vectorRepo,
             failingEmbeddingService,
             lexicalFallback,
+            docRepo,
             NullLogger<HybridPatientDocumentSearch>.Instance);
 
         var results = await search.SearchAsync("paciente-1", "amoxicilina", null, 4, CancellationToken.None);

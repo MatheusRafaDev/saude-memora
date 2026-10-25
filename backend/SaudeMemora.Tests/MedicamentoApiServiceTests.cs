@@ -131,6 +131,26 @@ public class MedicamentoApiServiceTests
         Assert.Equal(["Amoxicilina 500mg", "Amoxicilina"], repository.Queries);
     }
 
+    [Fact]
+    public async Task BuscarDescricaoAsync_MedicamentosCompostosEPrescritos_EncontraNoDicionarioClinico()
+    {
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.Forbidden)); // Simula Turnstile / 403 da ANVISA
+        var service = new MedicamentoApiService(
+            new HttpClient(handler) { BaseAddress = new Uri("https://consultas.anvisa.gov.br/") },
+            new BularioApiOptions { BaseUrl = "https://consultas.anvisa.gov.br/" },
+            NullLogger<MedicamentoApiService>.Instance);
+
+        var resultPulmicort = await service.BuscarDescricaoAsync("PULMICORT Suspensao");
+        Assert.NotNull(resultPulmicort);
+        Assert.Contains("Budesonida", resultPulmicort.PrincipioAtivo, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("asma", resultPulmicort.Descricao, StringComparison.OrdinalIgnoreCase);
+
+        var resultPrednisolona = await service.BuscarDescricaoAsync("PREDNISOLONA (GENERICO) PRATI, DONADUZZI Sol or");
+        Assert.NotNull(resultPrednisolona);
+        Assert.Contains("Prednisolona", resultPrednisolona.PrincipioAtivo, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("anti-inflamatório", resultPrednisolona.Descricao, StringComparison.OrdinalIgnoreCase);
+    }
+
     private sealed class StubHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;

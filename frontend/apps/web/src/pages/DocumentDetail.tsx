@@ -27,6 +27,7 @@ import {
   ClipboardList,
   BookOpen,
   ExternalLink,
+  Lock,
 } from 'lucide-react';
 import {
   useGetApiDocumentsId,
@@ -192,7 +193,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       enabled: isMongoId,
       refetchInterval: (query) => {
         const status = (query.state.data as any)?.status;
-        return status === 'pending' || status === 'processing' ? 4000 : false;
+        return status === 'pending' || status === 'processing' ? 2000 : false;
       },
     },
   });
@@ -218,8 +219,34 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [bulaResults, setBulaResults] = useState<Record<number, any>>({});
   const [bulaErrors, setBulaErrors] = useState<Record<number, string>>({});
   const [loadingBulaIndex, setLoadingBulaIndex] = useState<number | null>(null);
+  const [lastKnownStatus, setLastKnownStatus] = useState<string | null>(null);
 
   const doc = (docRaw as any) || null;
+  const isProcessing = doc?.status === 'processing' || doc?.status === 'pending';
+  const progressPercent = typeof doc?.progress === 'number' && doc.progress >= 0 ? doc.progress : (doc?.status === 'processing' ? 45 : 15);
+
+  // Notifica o usuário e destrava a interface quando o processamento for concluído
+  useEffect(() => {
+    if (!doc?.status) return;
+    if (
+      lastKnownStatus &&
+      (lastKnownStatus === 'processing' || lastKnownStatus === 'pending') &&
+      (doc.status === 'pronto' || doc.status === 'revisar')
+    ) {
+      toast({
+        title: 'Processamento concluído!',
+        description: 'Os dados do documento foram extraídos e o zoom no original já está disponível.',
+      });
+    }
+    setLastKnownStatus(doc.status);
+  }, [doc?.status, lastKnownStatus, toast]);
+
+  // Se o documento estiver em processamento, garante que o modal de zoom fica fechado
+  useEffect(() => {
+    if (isProcessing && isZoomModalOpen) {
+      setIsZoomModalOpen(false);
+    }
+  }, [isProcessing, isZoomModalOpen]);
 
   useEffect(() => {
     if (!doc) return;
@@ -383,6 +410,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
     try {
       await deleteMutation.mutateAsync({ id });
       toast({ title: 'Documento excluído com sucesso' });
+      window.dispatchEvent(new CustomEvent('document-deleted', { detail: { id } }));
       setLocation('/documentos');
     } catch {
       toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
@@ -472,7 +500,11 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const confirmField = (path: string) => setConfirmedFields((previous) => new Set(previous).add(path));
 
   const handleSearchBula = async (index: number, nome: string) => {
-    if (nome.trim().length < 3) return;
+    if (bulaResults[index]) {
+      setBulaResults((previous) => ({ ...previous, [index]: undefined }));
+      return;
+    }
+    if (!nome || nome.trim().length < 2) return;
     setLoadingBulaIndex(index);
     setBulaErrors((previous) => ({ ...previous, [index]: '' }));
     setBulaResults((previous) => ({ ...previous, [index]: undefined }));
@@ -480,7 +512,7 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
       const result = await customFetch<any>(`/api/medicamentos/${encodeURIComponent(nome.trim())}/descricao`);
       setBulaResults((previous) => ({ ...previous, [index]: result }));
     } catch (error) {
-      setBulaErrors((previous) => ({ ...previous, [index]: getApiErrorMessage(error, 'Não foi possível localizar a bula deste medicamento.') }));
+      setBulaErrors((previous) => ({ ...previous, [index]: getApiErrorMessage(error, 'Não foi possível localizar a bula deste medicamento na base oficial.') }));
     } finally {
       setLoadingBulaIndex(null);
     }
@@ -506,29 +538,32 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center text-[#5a6a80]">
-        <LoaderCircle size={22} className="mr-2 animate-spin" /> Carregando documento…
+      <div className="flex-1 flex min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] items-center justify-center text-[#5a6a80]">
+        <LoaderCircle size={22} className="mr-2 animate-spin text-[#1D4ED8]" />
+        <span className="font-medium text-sm">Carregando documento…</span>
       </div>
     );
   }
 
   if (!isMongoId || isError || !doc) {
     return (
-      <main className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#dde3ec] bg-white p-8 text-center">
-        <FileText size={36} className="mx-auto mb-3 text-[#5a6a80]" />
-        <h1 className="text-xl font-bold text-[#14211F]">Documento não encontrado</h1>
-        <p className="mt-2 text-sm text-[#5a6a80]">
-          Não foi possível carregar este documento da sua conta.
-        </p>
-        <Link href="/documentos" className="mt-5 inline-flex font-bold text-[#1D4ED8] hover:underline">
-          Voltar aos documentos
-        </Link>
-      </main>
+      <div className="flex-1 flex min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] items-center justify-center p-6">
+        <main className="w-full max-w-2xl rounded-2xl border border-[#dde3ec] bg-white p-8 text-center">
+          <FileText size={36} className="mx-auto mb-3 text-[#5a6a80]" />
+          <h1 className="text-xl font-bold text-[#14211F]">Documento não encontrado</h1>
+          <p className="mt-2 text-sm text-[#5a6a80]">
+            Não foi possível carregar este documento da sua conta.
+          </p>
+          <Link href="/documentos" className="mt-5 inline-flex font-bold text-[#1D4ED8] hover:underline">
+            Voltar aos documentos
+          </Link>
+        </main>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white pb-16 font-sans text-[#14211F]">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white pb-16 font-sans text-[#14211F]">
       <main className="mx-auto max-w-[1240px] px-3.5 sm:px-8 lg:px-10 pb-16 pt-5 sm:pt-8">
         <Link
           href="/documentos"
@@ -557,9 +592,13 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                   {doc.tipo}
                 </span>
               )}
-              {['processing', 'pending'].includes(doc.status) && (
-                <span className="whitespace-nowrap rounded-full border border-[#E3E8F0] bg-[#F4F7FC] px-2.5 py-1 text-xs font-medium text-[#14211F]">
-                  Processando
+              {isProcessing && (
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 shadow-2xs">
+                  <LoaderCircle size={12} className="animate-spin text-blue-600" />
+                  <span>{doc.status === 'pending' ? 'Na fila' : 'Processando com IA'}</span>
+                  {typeof doc.progress === 'number' && doc.progress > 0 && (
+                    <span className="font-bold text-blue-800">({doc.progress}%)</span>
+                  )}
                 </span>
               )}
               {doc.status === 'failed' && (
@@ -646,6 +685,129 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </div>
         )}
 
+        {/* Card Informativo de Status e Progresso de Processamento */}
+        {isProcessing && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-5 overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/90 via-white to-blue-50/50 p-4 sm:p-5 shadow-xs"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-blue-100">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+                  <LoaderCircle size={20} className="animate-spin" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-bold text-[#14211F] m-0">
+                      Documento em processamento
+                    </h2>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-100/80 border border-blue-200 px-2 py-0.5 rounded-full">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-ping" />
+                      Atualizando em tempo real
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5B6878] mt-0.5 mb-0">
+                    A inteligência artificial está lendo e estruturando este documento clínico. O zoom na imagem original e a edição estarão liberados assim que a análise for finalizada.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 self-end sm:self-center bg-white px-3 py-1.5 rounded-xl border border-blue-100 shadow-2xs">
+                <span className="text-xs font-semibold text-[#5B6878]">Progresso:</span>
+                <span className="text-sm font-bold text-blue-700">{progressPercent}%</span>
+              </div>
+            </div>
+
+            {/* Barra de Progresso com Transição Suave */}
+            <div className="mt-3.5">
+              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-blue-100/80">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-600 to-blue-600 transition-all duration-500 ease-out"
+                  style={{ width: `${Math.max(8, Math.min(100, progressPercent))}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Etapas do Processamento */}
+            <div className="mt-3.5 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              {/* Etapa 1: Upload */}
+              <div className="flex items-center gap-2 rounded-xl bg-white border border-blue-100 p-2.5 shadow-2xs">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Check size={13} strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-[#14211F] truncate">1. Upload</div>
+                  <div className="text-[10px] text-emerald-700 font-medium">Arquivo salvo</div>
+                </div>
+              </div>
+
+              {/* Etapa 2: OCR */}
+              <div className={`flex items-center gap-2 rounded-xl p-2.5 border transition-all ${
+                progressPercent >= 40 
+                  ? 'bg-white border-blue-100 shadow-2xs' 
+                  : 'bg-blue-50/80 border-blue-200'
+              }`}>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                  progressPercent >= 40 
+                    ? 'bg-emerald-100 text-emerald-700' 
+                    : 'bg-blue-600 text-white'
+                }`}>
+                  {progressPercent >= 40 ? <Check size={13} strokeWidth={2.5} /> : <LoaderCircle size={13} className="animate-spin" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-[#14211F] truncate">2. Leitura OCR</div>
+                  <div className="text-[10px] text-[#5B6878]">
+                    {progressPercent >= 40 ? 'Texto extraído' : 'Extraindo texto...'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Etapa 3: IA */}
+              <div className={`flex items-center gap-2 rounded-xl p-2.5 border transition-all ${
+                progressPercent >= 90
+                  ? 'bg-white border-blue-100 shadow-2xs'
+                  : progressPercent >= 40
+                  ? 'bg-blue-50/80 border-blue-200'
+                  : 'bg-white/50 border-[#E3E8F0] opacity-60'
+              }`}>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                  progressPercent >= 90
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : progressPercent >= 40
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-[#E3E8F0] text-[#5B6878]'
+                }`}>
+                  {progressPercent >= 90 ? (
+                    <Check size={13} strokeWidth={2.5} />
+                  ) : progressPercent >= 40 ? (
+                    <LoaderCircle size={13} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={12} />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-[#14211F] truncate">3. Análise IA</div>
+                  <div className="text-[10px] text-[#5B6878]">
+                    {progressPercent >= 90 ? 'Estruturado' : progressPercent >= 40 ? 'Identificando dados...' : 'Aguardando OCR'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Etapa 4: Zoom & Conferência */}
+              <div className="flex items-center gap-2 rounded-xl bg-amber-50/80 border border-amber-200/80 p-2.5 shadow-2xs">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-800">
+                  <Lock size={12} />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-amber-900 truncate">4. Zoom no documento</div>
+                  <div className="text-[10px] text-amber-800 font-medium truncate">Bloqueado até finalizar</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Switcher de visualização no Mobile (Evita página longa no celular) */}
         <div className="lg:hidden mb-4 grid grid-cols-2 gap-1 rounded-xl border border-[#E3E8F0] bg-[#F4F7FC] p-1 shadow-2xs">
           <button
@@ -712,31 +874,94 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
                 <button
                   type="button"
-                  onClick={() => setIsZoomModalOpen(true)}
-                  disabled={!fileUrl}
-                  className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-xl bg-[#F4F7FC] transition-colors hover:bg-[#E3E8F0] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                  title={fileUrl ? 'Visualização detalhada e Zoom' : 'Arquivo original indisponível'}
+                  onClick={() => {
+                    if (isProcessing) {
+                      toast({
+                        title: 'Documento em processamento',
+                        description: 'Aguarde a finalização do processamento para ampliar o documento.',
+                      });
+                      return;
+                    }
+                    setIsZoomModalOpen(true);
+                  }}
+                  disabled={!fileUrl || isProcessing}
+                  className={`flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-xl transition-colors ${
+                    isProcessing
+                      ? 'bg-amber-50 border border-amber-200 text-amber-700 cursor-not-allowed opacity-80'
+                      : 'bg-[#F4F7FC] hover:bg-[#E3E8F0] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer'
+                  }`}
+                  title={
+                    isProcessing
+                      ? 'Zoom indisponível: aguarde o término do processamento'
+                      : fileUrl
+                      ? 'Visualização detalhada e Zoom'
+                      : 'Arquivo original indisponível'
+                  }
                 >
-                  <ZoomIn size={18} className="text-[#1D4ED8]" />
+                  {isProcessing ? (
+                    <Lock size={16} className="text-amber-700" />
+                  ) : (
+                    <ZoomIn size={18} className="text-[#1D4ED8]" />
+                  )}
                 </button>
               </div>
             </div>
 
             {fileUrl ? (
               <div
-                onClick={() => setIsZoomModalOpen(true)}
-                className="group relative flex min-h-[460px] sm:min-h-[520px] items-center justify-center overflow-hidden rounded-xl border border-[#E3E8F0] bg-[#f8fafc] cursor-zoom-in transition-all hover:border-[#CFE0FF]"
-                title="Clique para abrir a visualização com zoom"
+                onClick={() => {
+                  if (isProcessing) {
+                    toast({
+                      title: 'Processamento em andamento',
+                      description: 'O zoom no documento estará liberado assim que o processamento for finalizado.',
+                    });
+                    return;
+                  }
+                  setIsZoomModalOpen(true);
+                }}
+                className={`group relative flex min-h-[460px] sm:min-h-[520px] items-center justify-center overflow-hidden rounded-xl border transition-all ${
+                  isProcessing
+                    ? 'border-blue-200 bg-[#f4f7fc] cursor-not-allowed select-none'
+                    : 'border-[#E3E8F0] bg-[#f8fafc] cursor-zoom-in hover:border-[#CFE0FF]'
+                }`}
+                title={
+                  isProcessing
+                    ? 'Processamento em andamento. O zoom estará liberado ao concluir.'
+                    : 'Clique para abrir a visualização com zoom'
+                }
               >
                 <img
                   src={fileUrl}
                   alt={`Documento original: ${docTitle} (Pág ${currentPageIndex + 1})`}
-                  className="max-h-[580px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                  className={`max-h-[580px] w-auto object-contain transition-all duration-300 ${
+                    isProcessing
+                      ? 'opacity-60 filter blur-[0.6px]'
+                      : 'group-hover:scale-[1.02]'
+                  }`}
                 />
-                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 pointer-events-none">
-                  <ZoomIn size={12} />
-                  <span>Clique para ampliar</span>
-                </div>
+
+                {isProcessing ? (
+                  <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] flex flex-col items-center justify-center p-6 text-center text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md mb-3 text-white shadow-lg animate-pulse">
+                      <LoaderCircle size={24} className="animate-spin text-white" />
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-white drop-shadow-xs">
+                      Documento em processamento
+                    </div>
+                    <div className="mt-1 max-w-xs text-xs text-white/90 drop-shadow-xs leading-relaxed">
+                      O zoom está temporariamente bloqueado para aguardar a finalização da análise.
+                    </div>
+                    <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-white shadow-xs border border-white/25">
+                      <Lock size={12} className="text-amber-300" />
+                      <span>Zoom bloqueado até finalizar</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 pointer-events-none">
+                    <ZoomIn size={12} />
+                    <span>Clique para ampliar</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-[#E3E8F0] bg-[#F4F7FC] p-8 text-center">
@@ -790,6 +1015,22 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             {/* 1. ABA: DADOS LIDOS */}
             {activeTab === 'dados' && (
               <div className="space-y-4 animate-in fade-in duration-200">
+                {/* Aviso quando o documento ainda está em processamento */}
+                {isProcessing && (
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 sm:p-5 flex items-start gap-3.5">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-blue-900">
+                        Extraindo dados clínicos com inteligência artificial...
+                      </div>
+                      <p className="mt-1 text-xs text-blue-800 leading-relaxed mb-0">
+                        Os dados do médico, clínica, diagnósticos, receitas e exames aparecerão aqui automaticamente assim que a análise for finalizada.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {/* Atestado: resumo do CID em destaque */}
                 {String(doc?.tipo || '').toLowerCase() === 'atestado' && doc.cid && (
                   <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 flex items-start gap-3">
@@ -1229,36 +1470,129 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
                               type="button"
                               onClick={() => handleSearchBula(index, medication.nome)}
                               disabled={loadingBulaIndex === index}
-                              className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[#E3E8F0] bg-white px-2.5 text-xs font-semibold text-[#1D4ED8] hover:bg-[#F4F7FC] disabled:opacity-50 transition-colors cursor-pointer"
-                              title="Consultar bula na base oficial da Anvisa"
+                              className={`inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+                                bulaResults[index]
+                                  ? 'border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                  : 'border-[#E3E8F0] bg-white text-[#1D4ED8] hover:bg-[#F4F7FC] disabled:opacity-50'
+                              }`}
+                              title={bulaResults[index] ? 'Recolher informações da bula' : 'Consultar bula na base oficial da Anvisa'}
                             >
                               {loadingBulaIndex === index ? (
                                 <LoaderCircle size={13} className="animate-spin" />
                               ) : (
                                 <BookOpen size={13} />
                               )}
-                              <span>Bula</span>
+                              <span>{bulaResults[index] ? 'Ocultar Bula' : 'Bula'}</span>
                             </button>
                           </div>
 
-                          {/* Resultado da busca da Bula Anvisa se carregado */}
+                          {/* Resultado da busca da Bula se carregado */}
                           {bulaResults[index] && (
-                            <div className="mt-3 rounded-xl border border-blue-200 bg-white p-3 text-xs animate-in fade-in">
-                              <div className="font-bold text-blue-900 mb-1 flex items-center gap-1.5">
-                                <BookOpen size={13} className="text-blue-700" />
-                                <span>Informações da Bula Anvisa</span>
+                            <div className="mt-3 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50/80 via-white to-blue-50/50 p-3.5 sm:p-4 text-xs animate-in fade-in duration-200 shadow-2xs">
+                              <div className="flex items-start justify-between gap-2 border-b border-blue-100 pb-2.5 mb-2.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white shadow-2xs shrink-0">
+                                    <BookOpen size={14} />
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-blue-950 text-[13px] leading-tight">
+                                      {bulaResults[index].nome || medication.nome}
+                                    </div>
+                                    <div className="text-[10px] text-blue-700 font-semibold mt-0.5">
+                                      Fonte: {bulaResults[index].fonte || 'ANVISA'}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setBulaResults((prev) => ({ ...prev, [index]: undefined }))}
+                                  className="text-[#5B6878] hover:text-[#14211F] p-1 rounded-md hover:bg-black/5 transition-colors cursor-pointer"
+                                  title="Recolher bula"
+                                >
+                                  <X size={14} />
+                                </button>
                               </div>
-                              <p className="m-0 text-[#2d3a4d] leading-relaxed">
-                                {typeof bulaResults[index] === 'string'
-                                  ? bulaResults[index]
-                                  : bulaResults[index]?.descricao || bulaResults[index]?.principioAtivo || JSON.stringify(bulaResults[index])}
-                              </p>
+
+                              {/* Badges de Princípio Ativo e Classe Terapêutica */}
+                              <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                                {bulaResults[index].principioAtivo && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-bold text-blue-800">
+                                    <Pill size={10} />
+                                    <span>Princípio Ativo: {bulaResults[index].principioAtivo}</span>
+                                  </span>
+                                )}
+                                {bulaResults[index].classeTerapeutica && (
+                                  <span className="inline-flex items-center rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+                                    {bulaResults[index].classeTerapeutica}
+                                  </span>
+                                )}
+                                {bulaResults[index].fabricante && (
+                                  <span className="inline-flex items-center rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                                    {bulaResults[index].fabricante}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Descrição e Indicação ao Paciente */}
+                              <div className="rounded-xl bg-white border border-blue-100/90 p-3 leading-relaxed text-[#1d2a3d] text-xs">
+                                <b className="block text-[11px] uppercase tracking-wider text-blue-900 mb-1 font-semibold">
+                                  Indicação & Ação no Organismo
+                                </b>
+                                <p className="m-0 whitespace-pre-wrap">
+                                  {typeof bulaResults[index] === 'string'
+                                    ? bulaResults[index]
+                                    : bulaResults[index]?.descricao || 'Informações clínicas registradas para este medicamento.'}
+                                </p>
+                              </div>
+
+                              {/* Link para consulta oficial da ANVISA */}
+                              <div className="mt-2.5 pt-2 border-t border-blue-100/60 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#5B6878]">
+                                <a
+                                  href={`https://consultas.anvisa.gov.br/#/bulario`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 font-bold text-[#1D4ED8] hover:text-[#1E40AF] hover:underline"
+                                >
+                                  <ExternalLink size={12} />
+                                  <span>Consultar Bulário Eletrônico da ANVISA</span>
+                                </a>
+                                {bulaResults[index].registroAnvisa && (
+                                  <span className="text-[10px] text-[#5B6878]">
+                                    Registro: {bulaResults[index].registroAnvisa}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
 
                           {bulaErrors[index] && (
-                            <div className="mt-2 text-xs text-rose-600">
-                              {bulaErrors[index]}
+                            <div className="mt-2.5 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-800 animate-in fade-in">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 font-semibold text-rose-900">
+                                  <AlertTriangle size={13} className="text-rose-600 shrink-0" />
+                                  <span>{bulaErrors[index]}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setBulaErrors((prev) => ({ ...prev, [index]: '' }))}
+                                  className="text-rose-600 hover:text-rose-900 cursor-pointer"
+                                  title="Fechar aviso"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                              <div className="mt-2">
+                                <a
+                                  href="https://consultas.anvisa.gov.br/#/bulario"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg bg-white border border-rose-200 px-2.5 py-1 text-[11px] font-bold text-rose-800 hover:bg-rose-100 transition-colors"
+                                >
+                                  <ExternalLink size={11} />
+                                  <span>Buscar diretamente no Bulário da ANVISA</span>
+                                </a>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1353,8 +1687,14 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             <div className="mt-6 flex flex-wrap items-center justify-end gap-2.5 border-t border-[#E3E8F0] pt-4">
               <button
                 type="button"
-                onClick={() => { setConfirmedFields(new Set()); setIsEditingModalOpen(true); }}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] shadow-xs cursor-pointer"
+                onClick={() => {
+                  if (isProcessing) return;
+                  setConfirmedFields(new Set());
+                  setIsEditingModalOpen(true);
+                }}
+                disabled={isProcessing}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E3E8F0] bg-white px-5 text-sm font-semibold text-[#14211F] transition-all hover:bg-[#F4F7FC] hover:border-[#CFE0FF] shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title={isProcessing ? 'Edição indisponível durante o processamento' : 'Editar dados'}
               >
                 <Edit2 size={16} /> Editar dados
               </button>
@@ -1636,7 +1976,12 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
 
-      <DialogPrimitive.Root open={isZoomModalOpen} onOpenChange={setIsZoomModalOpen}>
+      <DialogPrimitive.Root
+        open={isZoomModalOpen && !isProcessing}
+        onOpenChange={(open) => {
+          if (!isProcessing) setIsZoomModalOpen(open);
+        }}
+      >
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in" />
           <DialogPrimitive.Content className="fixed inset-2 sm:inset-5 z-50 flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-[#334155] bg-[#0b1329] shadow-2xl outline-none">

@@ -135,14 +135,48 @@ export default function Chat() {
     void loadConsultados();
   }, []);
 
+  useEffect(() => {
+    const handleDocumentDeleted = (event: Event) => {
+      const customEvent = event as CustomEvent<{ id?: string }>;
+      const deletedId = customEvent.detail?.id;
+      if (deletedId) {
+        setServerConsultados((prev) => prev.filter((d) => d.id !== deletedId));
+        setMessages((prev) =>
+          prev.map((msg) => ({
+            ...msg,
+            citations: msg.citations?.filter((c) => c.id !== deletedId),
+          })),
+        );
+      }
+      void loadConsultados();
+      void loadTodayConversation(chatDate, false);
+    };
+
+    window.addEventListener('document-deleted', handleDocumentDeleted);
+    return () => window.removeEventListener('document-deleted', handleDocumentDeleted);
+  }, [chatDate]);
+
   const allConsultedDocs = useMemo(() => {
     const docs = new Map<string, Citation>();
     for (const document of serverConsultados) {
-      docs.set(document.id ?? document.titulo, document);
+      if (document.id) {
+        docs.set(document.id, document);
+      } else if (document.titulo) {
+        docs.set(document.titulo, document);
+      }
     }
+    const serverIds = new Set(serverConsultados.map((d) => d.id).filter(Boolean));
     for (const message of messages) {
       for (const citation of message.citations ?? []) {
-        docs.set(citation.id ?? citation.titulo, citation);
+        if (!citation.id && !citation.titulo) continue;
+        const key = citation.id ?? citation.titulo;
+        // Se serverConsultados já retornou registros e a citação possui ID, não adiciona documento que foi apagado
+        if (citation.id && serverConsultados.length > 0) {
+          if (!serverIds.has(citation.id)) {
+            continue;
+          }
+        }
+        docs.set(key, citation);
       }
     }
     return Array.from(docs.values());
@@ -193,10 +227,7 @@ export default function Chat() {
   }, []);
 
   /**
-   * Detecta a virada do dia com a tela aberta.
-   *
-   * Sem isso, `chatDate` continuava apontando para ontem após a meia-noite: a conversa nova
-   * era salva sob a data errada e o rótulo "Hoje" passava a se referir ao dia anterior.
+   * Detecta a virada do dia com a tela aberta ou foco de volta à aba.
    */
   useEffect(() => {
     const verificar = () => {
@@ -215,11 +246,16 @@ export default function Chat() {
       // O chat passa a trabalhar no dia novo. O que foi conversado ontem permanece salvo,
       // mas não é mais exibido nesta tela.
       void loadTodayConversation(agora, false);
+      void loadConsultados();
     };
 
     const intervalo = window.setInterval(verificar, 30_000);
     const aoVoltarParaAba = () => {
-      if (document.visibilityState === 'visible') verificar();
+      if (document.visibilityState === 'visible') {
+        verificar();
+        void loadConsultados();
+        void loadTodayConversation(diaAtualRef.current, false);
+      }
     };
     document.addEventListener('visibilitychange', aoVoltarParaAba);
 
@@ -289,7 +325,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans text-[#14211F]">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white font-sans text-[#14211F]">
       <main className="mx-auto max-w-[1240px] px-3 pb-8 pt-4 sm:px-6 sm:pt-8 lg:px-10 lg:pb-16">
         <div className="mb-3.5 sm:mb-6">
           <div className="min-w-0">
@@ -398,45 +434,55 @@ export default function Chat() {
                         <div className="prose prose-sm max-w-none break-words text-[#14211F]"><ReactMarkdown>{message.content}</ReactMarkdown></div>
 
                         {/* Seção com transparência das fontes consultadas pela IA nesta resposta */}
-                        {message.citations && message.citations.length > 0 && (
-                          <div className="mt-3.5 rounded-xl border border-[#CFE0FF]/90 bg-white p-3 shadow-2xs">
-                            <div className="mb-2 flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 text-xs font-bold text-[#1D4ED8]">
-                                <FileText size={14} className="shrink-0 text-[#1D4ED8]" />
-                                <span>Documentos consultados para esta resposta:</span>
+                        {message.citations && message.citations.length > 0 && (() => {
+                          const activeIds = new Set(serverConsultados.map((d) => d.id).filter(Boolean));
+                          const validCitations = message.citations.filter((citation) => {
+                            if (!citation.id) return Boolean(citation.titulo);
+                            return serverConsultados.length === 0 || activeIds.has(citation.id);
+                          });
+
+                          if (validCitations.length === 0) return null;
+
+                          return (
+                            <div className="mt-3.5 rounded-xl border border-[#CFE0FF]/90 bg-white p-3 shadow-2xs">
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-[#1D4ED8]">
+                                  <FileText size={14} className="shrink-0 text-[#1D4ED8]" />
+                                  <span>Documentos consultados para esta resposta:</span>
+                                </div>
+                                <span className="rounded-full bg-[#1D4ED8]/10 px-2 py-0.5 text-[10px] font-bold text-[#1D4ED8]">
+                                  {validCitations.length} {validCitations.length === 1 ? 'documento' : 'documentos'}
+                                </span>
                               </div>
-                              <span className="rounded-full bg-[#1D4ED8]/10 px-2 py-0.5 text-[10px] font-bold text-[#1D4ED8]">
-                                {message.citations.length} {message.citations.length === 1 ? 'documento' : 'documentos'}
-                              </span>
-                            </div>
-                            <div className="space-y-1.5">
-                              {message.citations.map((citation, index) => {
-                                const docHref = citation.id ? `/documentos/${citation.id}` : '/documentos';
-                                return (
-                                  <div
-                                    key={citation.id || index}
-                                    className="flex items-center justify-between gap-2.5 rounded-lg border border-[#E3E8F0] bg-[#F8FAFD] px-3 py-2 text-xs transition-colors hover:border-[#CFE0FF] hover:bg-[#F0F5FF]"
-                                  >
-                                    <div className="flex min-w-0 items-center gap-2">
-                                      <FileText size={13} className="shrink-0 text-[#1D4ED8]" />
-                                      <span className="truncate font-semibold text-[#14211F]">{citation.titulo}</span>
-                                      {citation.data && (
-                                        <span className="shrink-0 text-[11px] text-[#5a6a80]">· {citation.data}</span>
-                                      )}
-                                    </div>
-                                    <Link
-                                      href={docHref}
-                                      className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#1D4ED8] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-[#1E40AF] transition-colors cursor-pointer"
+                              <div className="space-y-1.5">
+                                {validCitations.map((citation, index) => {
+                                  const docHref = citation.id ? `/documentos/${citation.id}` : '/documentos';
+                                  return (
+                                    <div
+                                      key={citation.id || index}
+                                      className="flex items-center justify-between gap-2.5 rounded-lg border border-[#E3E8F0] bg-[#F8FAFD] px-3 py-2 text-xs transition-colors hover:border-[#CFE0FF] hover:bg-[#F0F5FF]"
                                     >
-                                      <span>Visualizar</span>
-                                      <ExternalLink size={11} />
-                                    </Link>
-                                  </div>
-                                );
-                              })}
+                                      <div className="flex min-w-0 items-center gap-2">
+                                        <FileText size={13} className="shrink-0 text-[#1D4ED8]" />
+                                        <span className="truncate font-semibold text-[#14211F]">{citation.titulo}</span>
+                                        {citation.data && (
+                                          <span className="shrink-0 text-[11px] text-[#5a6a80]">· {citation.data}</span>
+                                        )}
+                                      </div>
+                                      <Link
+                                        href={docHref}
+                                        className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#1D4ED8] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-[#1E40AF] transition-colors cursor-pointer"
+                                      >
+                                        <span>Visualizar</span>
+                                        <ExternalLink size={11} />
+                                      </Link>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         <div className="mt-3 flex items-center justify-between border-t border-[#E3E8F0]/70 pt-2 text-[10px] text-[#5a6a80] sm:text-xs">
                           <span>Confira sempre os laudos originais. Não substitui consulta médica.</span>

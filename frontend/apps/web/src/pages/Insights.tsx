@@ -159,7 +159,7 @@ export default function Insights({ embedded = false }: { embedded?: boolean }) {
   };
 
   return (
-    <div className={embedded ? 'w-full' : 'mx-auto w-full max-w-[1240px] px-5 pb-16 pt-9 sm:px-10'}>
+    <div className={embedded ? 'w-full' : 'mx-auto w-full max-w-[1240px] flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] px-5 pb-16 pt-9 sm:px-10'}>
       {!embedded && <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">Seu histórico de saúde</div>

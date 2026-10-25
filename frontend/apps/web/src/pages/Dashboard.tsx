@@ -135,7 +135,7 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-[1240px] space-y-5 px-3.5 sm:px-6 lg:px-10 pb-16 pt-5 sm:pt-9" aria-busy="true" aria-label="Carregando visão geral">
+      <div className="mx-auto w-full max-w-[1240px] flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] space-y-5 px-3.5 sm:px-6 lg:px-10 pb-16 pt-5 sm:pt-9" aria-busy="true" aria-label="Carregando visão geral">
         <div className="space-y-2"><div className="animate-shimmer h-3 w-32 rounded-lg" /><div className="animate-shimmer h-9 w-56 max-w-full rounded-lg" /><div className="animate-shimmer h-4 w-72 max-w-full rounded-lg" /></div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div className="animate-shimmer h-28 rounded-2xl" /><div className="animate-shimmer h-28 rounded-2xl" /><div className="animate-shimmer h-28 rounded-2xl" /><div className="animate-shimmer h-28 rounded-2xl" /></div>
         <div className="grid gap-5 lg:grid-cols-3"><div className="animate-shimmer h-80 rounded-[24px] lg:col-span-2" /><div className="animate-shimmer h-80 rounded-[24px]" /></div>
@@ -145,8 +145,10 @@ export default function Dashboard() {
 
   if (hasError || !dados) {
     return (
-      <div role="alert" className="mx-auto mt-12 max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-8 text-center text-[#E8664A]">
-        Não foi possível carregar os dados da sua conta. Atualize a página ou tente novamente mais tarde.
+      <div className="mx-auto w-full max-w-[1240px] flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] px-3.5 sm:px-6 lg:px-10 py-12 flex items-center justify-center">
+        <div role="alert" className="w-full max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-8 text-center text-[#E8664A]">
+          Não foi possível carregar os dados da sua conta. Atualize a página ou tente novamente mais tarde.
+        </div>
       </div>
     );
   }
@@ -232,7 +234,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-[#14211F] font-sans pb-16">
+    <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-6 lg:px-10 pt-4 sm:pt-8 pb-16">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-5 mb-5 sm:mb-6">
