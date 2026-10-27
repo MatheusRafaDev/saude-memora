@@ -22,7 +22,7 @@ export default function Recursos() {
       <main className="flex-1">
         {/* ── HERO SECTION DIRETO ───────────────────────────────── */}
         <section className="relative overflow-hidden min-h-[calc(100dvh-80px)] lg:min-h-[75vh] bg-white text-[#14211F] flex flex-col justify-between">
-          <div className="h-20 sm:h-24 lg:h-28 shrink-0 relative z-10" aria-hidden="true" />
+          <div className="h-4 sm:h-8 shrink-0 relative z-10" aria-hidden="true" />
 
           <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-1 flex-col items-center justify-center text-center px-6 py-12 sm:px-8 sm:py-16">
             <div className="flex flex-col items-center gap-6 max-w-[760px]">

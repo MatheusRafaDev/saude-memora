@@ -229,14 +229,14 @@ export function EmergenciaModal({
     // da página, que continua visível por trás. O desfoque preserva a legibilidade dos
     // textos escuros da ficha mesmo sobre fundos claros.
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#eef3fa]/80 p-2 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#eef3fa]/80 px-2 sm:px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] backdrop-blur-sm"
       onClick={handleClose}
     >
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="emergency-modal-title"
-        className="relative flex max-h-[96dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#dde3ec] bg-[#f7f9fc] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] sm:rounded-[28px]"
+        className="relative flex max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#dde3ec] bg-[#f7f9fc] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] sm:rounded-[28px]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex shrink-0 items-start gap-3 border-b border-[#E3E8F0] bg-white p-4 pr-14 sm:p-6 sm:pr-16">

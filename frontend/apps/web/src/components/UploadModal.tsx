@@ -360,11 +360,11 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0f1e3c]/60 backdrop-blur-xs p-2.5 sm:p-4 animate-in fade-in"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0f1e3c]/60 backdrop-blur-xs px-2.5 sm:px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] animate-in fade-in"
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-[660px] max-h-[94vh] sm:max-h-[92vh] overflow-y-auto bg-white rounded-[24px] sm:rounded-[28px] p-4 sm:p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] border border-[#dde3ec]"
+        className="relative w-full max-w-[660px] max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2rem)] overflow-y-auto bg-white rounded-[24px] sm:rounded-[28px] p-4 sm:p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] border border-[#dde3ec]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}

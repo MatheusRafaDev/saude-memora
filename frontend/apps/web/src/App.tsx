@@ -28,7 +28,7 @@ import Sobre from '@/pages/Sobre';
 import Recursos from '@/pages/Recursos';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
-import { hasAuthCookie } from '@/lib/auth';
+import { hasAuthCookie, setClientAuthSession } from '@/lib/auth';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Documents = lazy(() => import('@/pages/Documents'));
@@ -67,8 +67,8 @@ const queryClient = new QueryClient({
   })
 });
 
-const SESSION_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
-const SESSION_REFRESH_RETRY_MS = 30 * 1000;
+const SESSION_REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000;
+const SESSION_REFRESH_RETRY_MS = 60 * 1000;
 
 function PageLoading() {
   return (
@@ -92,7 +92,7 @@ function PageLoading() {
         </div>
       </header>
       {/* Skeleton Content */}
-      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
+      <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
         <div className="space-y-6">
           <div className="h-24 w-full rounded-2xl bg-muted animate-pulse" />
           <div className="grid gap-5 lg:grid-cols-3">
@@ -114,7 +114,7 @@ function PageLoading() {
 function ProtectedPageLoading() {
   return (
     <div
-      className="mx-auto w-full max-w-[1240px] flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] px-3.5 sm:px-8 lg:px-10 py-6 sm:py-9 space-y-6 animate-pulse"
+      className="mx-auto w-full max-w-[1240px] flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] px-3.5 sm:px-8 lg:px-10 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] py-6 sm:py-9 space-y-6 animate-pulse"
       aria-busy="true"
       aria-live="polite"
     >
@@ -320,6 +320,12 @@ function ProtectedLayout() {
   useEffect(() => {
     warmUpEntireSystem(queryClient);
   }, [queryClient]);
+
+  useEffect(() => {
+    if (user) {
+      setClientAuthSession();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isFetching && isError && getHttpStatus(error) === 401 && !user) {

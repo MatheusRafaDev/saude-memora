@@ -65,7 +65,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[#173754] font-sans flex flex-col justify-center items-center p-6 bg-[radial-gradient(ellipse_at_top,_#eef3fa_0%,_#ffffff_70%)]">
+    <div className="min-h-screen bg-white text-[#173754] font-sans flex flex-col justify-center items-center px-6 pt-[calc(2rem+env(safe-area-inset-top,0px))] pb-[calc(2rem+env(safe-area-inset-bottom,0px))] bg-[radial-gradient(ellipse_at_top,_#eef3fa_0%,_#ffffff_70%)]">
       {/* Brand Wordmark */}
       <div className="mb-8">
         <Link href="/" aria-label="Saúde Memora — início">

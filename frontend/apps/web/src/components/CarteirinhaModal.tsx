@@ -230,7 +230,7 @@ export function CarteirinhaModal({
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md animate-in fade-in duration-200" />
           <DialogPrimitive.Content
             aria-describedby="carteirinha-modal-description"
-            className="fixed inset-x-2 sm:inset-x-4 top-[2%] sm:top-[4%] z-50 mx-auto flex max-h-[96dvh] sm:max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] sm:rounded-[32px] border border-[#E3E8F0] bg-[#F4F7FC] shadow-2xl outline-none animate-in fade-in zoom-in-95 duration-200"
+            className="fixed inset-x-2 sm:inset-x-4 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-50 mx-auto flex max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] sm:rounded-[32px] border border-[#E3E8F0] bg-[#F4F7FC] shadow-2xl outline-none animate-in fade-in zoom-in-95 duration-200"
           >
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-[#E3E8F0] bg-white px-3.5 py-2.5 sm:px-6 sm:py-4">

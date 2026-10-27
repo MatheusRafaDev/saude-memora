@@ -207,7 +207,7 @@ TimeSpan GetJwtLifetime(IConfiguration config)
 void SetAuthCookie(HttpContext context, string jwt, TimeSpan expiresIn)
 {
     var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "false", "true", StringComparison.OrdinalIgnoreCase);
-    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? (IsSecureRequest(context) ? "None" : "Lax");
+    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
     var sameSiteMode = cookieSameSite switch
     {
         "None" => SameSiteMode.None,
@@ -392,16 +392,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var cachedStamp = await cache.SafeGetStringAsync($"secstamp_{userId}");
                 if (cachedStamp == null)
                 {
-                    var user = await userManager.GetByIdAsync(userId);
-                    if (user != null)
+                    try
                     {
-                        cachedStamp = user.IsDeleting ? "DELETED" : user.SecurityStamp;
-                        await cache.SafeSetStringAsync($"secstamp_{userId}", cachedStamp ?? string.Empty, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60) });
+                        var user = await userManager.GetByIdAsync(userId);
+                        if (user != null)
+                        {
+                            cachedStamp = user.IsDeleting ? "DELETED" : user.SecurityStamp;
+                            await cache.SafeSetStringAsync(
+                                $"secstamp_{userId}",
+                                cachedStamp ?? string.Empty,
+                                new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions
+                                {
+                                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
+                                });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Falha transitória ao consultar banco de dados não desconecta o usuário se o JWT em si é íntegro
+                        Console.Error.WriteLine($"[Auth] Erro transitório ao verificar security stamp: {ex.Message}");
+                        return;
                     }
                 }
 
-
-                if (cachedStamp == null || cachedStamp == "DELETED" || cachedStamp != stamp)
+                if (cachedStamp == "DELETED" || (cachedStamp != null && cachedStamp != stamp))
                 {
                     context.Fail("Security stamp inválido ou conta excluída.");
                 }
@@ -629,7 +643,7 @@ app.MapPost("/api/auth/logout", async (
     }
 
     var cookieSecure = IsSecureRequest(context) || string.Equals(Environment.GetEnvironmentVariable("COOKIE_SECURE") ?? "false", "true", StringComparison.OrdinalIgnoreCase);
-    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? (IsSecureRequest(context) ? "None" : "Lax");
+    var cookieSameSite = Environment.GetEnvironmentVariable("COOKIE_SAME_SITE") ?? "Lax";
     var sameSiteMode = cookieSameSite switch
     {
         "None" => SameSiteMode.None,

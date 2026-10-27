@@ -64,13 +64,13 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-colors ${
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-colors pt-[env(safe-area-inset-top,0px)] ${
           isBlue
             ? 'bg-[#2357D9] text-white'
             : 'bg-white/95 text-[#14211F] border-b border-[#E3E8F0] backdrop-blur-md'
         }`}
       >
-      <div className="mx-auto flex h-20 sm:h-24 max-w-[1376px] items-center justify-between px-6 sm:px-8">
+      <div className="mx-auto flex h-16 sm:h-20 lg:h-24 max-w-[1376px] items-center justify-between px-6 sm:px-8">
         {/* Logo Saúde Memora oficial */}
         <BrandLogo
           href="/"
@@ -210,8 +210,8 @@ export function PublicPageHeader({ variant = 'blue' }: PublicPageHeaderProps) {
         </div>
       )}
     </motion.header>
-      {/* Espaçador para manter o fluxo do documento com o header fixo */}
-      <div className={`h-20 sm:h-24 w-full shrink-0 ${isBlue ? 'bg-[#2357D9]' : 'bg-white'}`} aria-hidden="true" />
+      {/* Espaçador para manter o fluxo do documento com o header fixo e notch seguro */}
+      <div className={`h-[calc(4rem+env(safe-area-inset-top,0px))] sm:h-20 lg:h-24 w-full shrink-0 ${isBlue ? 'bg-[#2357D9]' : 'bg-white'}`} aria-hidden="true" />
     </>
   );
 }

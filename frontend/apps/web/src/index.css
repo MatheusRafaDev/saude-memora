@@ -187,12 +187,16 @@
 
   .divider { border-top: 1px solid hsl(var(--border) / .7); }
   
-  /* Safe Area Utilities for iOS PWA */
-  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-  .pt-safe { padding-top: env(safe-area-inset-top); }
-  .pl-safe { padding-left: env(safe-area-inset-left); }
-  .pr-safe { padding-right: env(safe-area-inset-right); }
-  .mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+  /* Safe Area Utilities for iOS / iPhone Notch */
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+  .pl-safe { padding-left: env(safe-area-inset-left, 0px); }
+  .pr-safe { padding-right: env(safe-area-inset-right, 0px); }
+  .mb-safe { margin-bottom: env(safe-area-inset-bottom, 0px); }
+  .mt-safe { margin-top: env(safe-area-inset-top, 0px); }
+  .top-safe { top: env(safe-area-inset-top, 0px); }
+  .h-safe-top { height: env(safe-area-inset-top, 0px); }
+  .pt-safe-card { padding-top: calc(1rem + env(safe-area-inset-top, 0px)); }
 
   /* Card styles — cleaner, less backdrop blur noise */
   .card-base {

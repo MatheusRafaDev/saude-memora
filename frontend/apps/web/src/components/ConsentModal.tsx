@@ -44,7 +44,7 @@ export function ConsentModal() {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-[99998] bg-[#0f1e3c]/60 backdrop-blur-xs animate-in fade-in" />
         <DialogPrimitive.Content
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[99999] w-full max-w-[580px] bg-white rounded-[28px] p-8 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] border border-[#dde3ec] outline-none animate-in zoom-in-95"
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[99999] w-[calc(100%-2rem)] max-w-[580px] max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2rem)] overflow-y-auto bg-white rounded-[28px] p-6 sm:p-8 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)] border border-[#dde3ec] outline-none animate-in zoom-in-95"
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           {/* Close button */}

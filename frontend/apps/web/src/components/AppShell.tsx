@@ -164,6 +164,38 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 
 
+      {/* ── Mobile Header (Respeita o Notch do iPhone 11 e Dispositivos com Safe Area) ── */}
+      <header className="sticky top-0 z-40 flex h-[calc(3.5rem+env(safe-area-inset-top,0px))] w-full items-center justify-between border-b border-white/15 bg-[#2357D9] text-white px-4 pt-[env(safe-area-inset-top,0px)] shadow-xs lg:hidden select-none">
+        <BrandLogo
+          href="/visao-geral"
+          variant="white"
+          iconClassName="h-7 w-7 drop-shadow-xs"
+          wordmarkClassName="text-[17px] tracking-[-0.03em]"
+        />
+
+        <div className="flex items-center gap-2">
+          {/* Botão de Emergência SOS */}
+          <button
+            type="button"
+            onClick={() => setEmergencyModalOpen(true)}
+            aria-label="Ficha de emergência"
+            className="flex h-8 items-center gap-1.5 rounded-full bg-white/15 hover:bg-white/25 px-2.5 text-[11px] font-bold text-white transition-all active:scale-95 cursor-pointer border border-white/20"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[#EF4444] animate-pulse" />
+            <span>SOS</span>
+          </button>
+
+          {/* Avatar do Usuário */}
+          <Link
+            href="/perfil"
+            aria-label="Meu perfil"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[12px] font-bold text-[#2357D9] transition-transform active:scale-95 shadow-xs ring-1 ring-white/50"
+          >
+            {initials}
+          </Link>
+        </div>
+      </header>
+
       {/* ── Desktop Header ─────────────────────────────────────── */}
       <header className="sticky top-0 z-40 hidden h-[72px] items-center gap-7 border-b border-white/15 bg-[#2357D9] text-white px-6 sm:px-10 lg:flex shadow-xs">
         <BrandLogo

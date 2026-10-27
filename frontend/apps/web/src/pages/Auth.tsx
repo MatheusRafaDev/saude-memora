@@ -262,7 +262,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
           initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="lg:col-span-7 xl:col-span-6 flex flex-col justify-between px-4 sm:px-8 md:px-12 lg:px-12 xl:px-16 py-6 sm:py-8 lg:py-10 bg-white min-h-[100dvh] lg:min-h-0 overflow-y-auto"
+          className="lg:col-span-7 xl:col-span-6 flex flex-col justify-between px-4 sm:px-8 md:px-12 lg:px-12 xl:px-16 pt-[calc(1.25rem+env(safe-area-inset-top,0px))] pb-6 sm:py-8 lg:py-10 bg-white min-h-[100dvh] lg:min-h-0 overflow-y-auto"
         >
           {/* Topo: Logo & Voltar */}
           <div className="flex items-center justify-between w-full max-w-[440px] mx-auto mb-6 sm:mb-8">
