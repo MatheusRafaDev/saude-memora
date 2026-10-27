@@ -31,8 +31,6 @@ import {
   Building2,
   Eye,
   Sparkles,
-  Stethoscope,
-  Tag,
   X,
 } from 'lucide-react';
 import {
@@ -88,10 +86,6 @@ function getDocumentTypeIcon(type: string) {
   if (normalized.includes('encaminh')) return Send;
   if (normalized.includes('relat')) return FileBarChart;
   return FileText;
-}
-
-function getCidCode(cid: string): string {
-  return cid.match(/[A-TV-Z][0-9]{2}(?:\.[0-9]{1,2})?/i)?.[0]?.toUpperCase() ?? '';
 }
 
 function getCategoryTheme(type: string) {
@@ -216,7 +210,6 @@ export default function Documents() {
     return 'grid';
   });
   const [retryingId, setRetryingId] = useState<string | null>(null);
-  const [cidSummaries, setCidSummaries] = useState<Record<string, string>>({});
 
   // Persiste preferência de visualização na sessionStorage
   const handleViewModeChange = (mode: 'grid' | 'list') => {
@@ -355,30 +348,6 @@ export default function Documents() {
       };
     });
   }, [activeDocs]);
-
-  useEffect(() => {
-    const codes = Array.from(new Set(allItems.map((item) => getCidCode(item.cid)).filter(Boolean)));
-    const pendingCodes = codes.filter((code) => !(code in cidSummaries));
-    if (pendingCodes.length === 0) return;
-
-    let cancelled = false;
-    void Promise.all(pendingCodes.map(async (code) => {
-      try {
-        const result = await customFetch<{ registros?: Array<{ codigo?: string; descricao?: string }> }>(
-          `/api/catalogo-cid10?${new URLSearchParams({ query: code, limit: '10' })}`,
-        );
-        const record = result.registros?.find((item) => getCidCode(item.codigo ?? '') === code);
-        return [code, record?.descricao?.trim() ?? ''] as const;
-      } catch {
-        return [code, ''] as const;
-      }
-    })).then((entries) => {
-      if (cancelled) return;
-      setCidSummaries((current) => ({ ...current, ...Object.fromEntries(entries) }));
-    });
-
-    return () => { cancelled = true; };
-  }, [allItems, cidSummaries]);
 
   // Filtering
   const filteredItems = useMemo(() => {
@@ -863,19 +832,9 @@ export default function Documents() {
                       className="bg-white border border-[#E3E8F0] hover:border-[#CFE0FF] rounded-[22px] p-4 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between"
                     >
                       <div>
-                        {/* Header: Type Badge, CID/CNES & Status Badge */}
+                        {/* Header: Type Badge & Status Badge */}
                         <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                            <DocumentTypeBadge type={doc.tipo} />
-                            {doc.cid && (
-                              <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] font-bold border border-purple-200/80"
-                                title={`Classificação Internacional de Doenças (CID): ${doc.cid}`}
-                              >
-                                <Tag size={9} /> CID {doc.cid}
-                              </span>
-                            )}
-                          </div>
+                          <DocumentTypeBadge type={doc.tipo} />
                           {renderBadge(doc)}
                         </div>
 
@@ -901,138 +860,23 @@ export default function Documents() {
                           </div>
                         </Link>
 
-                        {/* Clinical Findings & Metadata */}
-                        <div className="my-3 space-y-2 text-xs text-[#5B6878]">
-                          {/* Doctor & CRM */}
-                          {(doc.medico || doc.crm) && (
-                            <div className="flex items-start gap-1.5 text-xs text-[#14211F] font-semibold min-w-0">
-                              <UserCheck size={13} className="shrink-0 text-[#1D4ED8] mt-0.5" />
-                              <div className="min-w-0">
-                                {doc.medico && <span className="break-words">{doc.medico}</span>}
-                                {doc.crm && (
-                                  <span className="shrink-0 rounded bg-[#F4F7FC] border border-[#E3E8F0] px-1.5 py-0.2 text-[10px] font-semibold text-[#5B6878] ml-1">
-                                    CRM {doc.crm}
-                                  </span>
-                                )}
+                        {/* Professional & Clinic */}
+                        {(doc.medico || doc.clinica) && (
+                          <div className="mt-2.5 space-y-1 text-xs text-[#5B6878]">
+                            {doc.medico && (
+                              <div className="flex items-center gap-1.5 font-medium text-[#14211F] truncate">
+                                <UserCheck size={13} className="shrink-0 text-[#1D4ED8]" />
+                                <span className="truncate">{doc.medico}</span>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Clinic & CNES */}
-                          {(doc.clinica || doc.cnes) && (
-                            <div className="flex items-start gap-1.5 text-xs text-[#5B6878] min-w-0">
-                              <Building2 size={13} className="shrink-0 text-[#5B6878] mt-0.5" />
-                              <div className="min-w-0">
-                                {doc.clinica && <span className="break-words">{doc.clinica}</span>}
-                                {doc.cnes && (
-                                  <span
-                                    className="shrink-0 rounded bg-blue-50 border border-blue-200/70 px-1.5 py-0.2 text-[10px] font-bold text-blue-700 ml-1"
-                                    title={`Código CNES do Estabelecimento: ${doc.cnes}`}
-                                  >
-                                    CNES {doc.cnes}
-                                  </span>
-                                )}
+                            )}
+                            {doc.clinica && (
+                              <div className="flex items-center gap-1.5 text-[#5B6878] truncate">
+                                <Building2 size={13} className="shrink-0 text-[#5B6878]" />
+                                <span className="truncate">{doc.clinica}</span>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Diagnosis & CID block */}
-                          {(doc.diagnostico || doc.resumo || doc.cid) && (
-                            <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-2.5 text-xs space-y-1">
-                              <div className="flex items-center justify-between gap-1.5">
-                                <div className="flex items-center gap-1.5 font-bold text-purple-900 text-[10.5px] uppercase tracking-wider">
-                                  <Stethoscope size={12} className="text-purple-600 shrink-0" />
-                                  <span>Diagnóstico Clínico</span>
-                                </div>
-                                {doc.cid && (
-                                  <span className="inline-flex items-center gap-1 rounded bg-purple-100/90 px-1.5 py-0.5 text-[10px] font-extrabold text-purple-800 border border-purple-200 shrink-0">
-                                    CID {doc.cid}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="m-0 text-[11px] leading-relaxed text-[#3B4252] font-medium whitespace-pre-wrap break-words">
-                                {doc.diagnostico || doc.resumo || `CID-10 ${doc.cid}`}
-                              </p>
-                              {doc.cid && cidSummaries[getCidCode(doc.cid)] && (
-                                <p className="m-0 border-t border-purple-100 pt-1.5 text-[10.5px] leading-relaxed text-purple-800">
-                                  <span className="font-bold">Resumo CID-10: </span>{cidSummaries[getCidCode(doc.cid)]}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Medications with dosage and schedules */}
-                          {doc.medicamentos.length > 0 && (
-                            <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-2.5 text-xs space-y-1.5">
-                              <div className="flex items-center justify-between gap-1">
-                                <div className="flex items-center gap-1.5 font-bold text-blue-900 text-[10.5px] uppercase tracking-wider">
-                                  <Pill size={12} className="text-blue-600 shrink-0" />
-                                  <span>Medicamentos ({doc.medicamentos.length})</span>
-                                </div>
-                              </div>
-                              <div className="space-y-1.5">
-                                {doc.medicamentos.slice(0, 2).map((med: any, idx: number) => (
-                                  <div key={idx} className="text-[11px] space-y-0.5">
-                                    <div className="font-semibold text-[#14211F] break-words">
-                                      {med.nome}
-                                    </div>
-                                    {(med.dosagem || med.horario) && (
-                                      <div className="flex flex-wrap items-center gap-1">
-                                        {med.dosagem && (
-                                          <span className="px-1.5 py-0.5 rounded bg-white text-blue-700 font-bold text-[10px] border border-blue-200/80 shadow-2xs break-all">
-                                            {med.dosagem}
-                                          </span>
-                                        )}
-                                        {med.horario && (
-                                          <span className="text-[10px] text-[#5B6878] break-words">
-                                            {med.horario}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {doc.medicamentos.length > 2 && (
-                                  <div className="text-[10px] font-medium text-blue-700 pt-0.5">
-                                    +{doc.medicamentos.length - 2} outro{doc.medicamentos.length - 2 > 1 ? 's' : ''} medicamento{doc.medicamentos.length - 2 > 1 ? 's' : ''}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Exam biomarkers tags */}
-                          {(doc.nomeExame || doc.tipoExame || doc.exames.length > 0) && (
-                            <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-2.5 text-xs space-y-1">
-                              <div className="flex items-center gap-1.5 font-bold text-indigo-900 text-[10.5px] uppercase tracking-wider">
-                                <Activity size={12} className="text-indigo-600 shrink-0" />
-                                <span>Exames & Biomarcadores</span>
-                              </div>
-                              <div className="text-[11.5px] font-semibold text-[#14211F] break-words">
-                                {doc.nomeExame || (doc.exames.length > 0 ? doc.exames.map((e: any) => e.nome).filter(Boolean).slice(0, 2).join(', ') : doc.tipoExame)}
-                              </div>
-                              {doc.exames.length > 0 && (
-                                <div className="flex flex-wrap gap-1 pt-0.5">
-                                  {doc.exames.slice(0, 3).map((ex: any, idx: number) => (
-                                    <span key={idx} className="px-1.5 py-0.5 rounded bg-white text-[#14211F] text-[10px] font-medium border border-indigo-200/60 shadow-2xs break-words">
-                                      {ex.nome || ex.nomeNormalizado}
-                                    </span>
-                                  ))}
-                                  {doc.exames.length > 3 && (
-                                    <span className="text-[10px] text-indigo-600 self-center font-medium">+{doc.exames.length - 3}</span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {doc.quantidadeAlertas > 0 && (
-                            <div className="flex items-center gap-1.5 text-amber-800 font-semibold text-[11px] bg-amber-50 px-2.5 py-1.5 rounded-xl border border-amber-200/80">
-                              <AlertTriangle size={13} className="text-amber-600 shrink-0" />
-                              <span>{doc.quantidadeAlertas} {doc.quantidadeAlertas === 1 ? 'alerta ativo' : 'alertas ativos'}</span>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Card Footer Actions */}
@@ -1104,100 +948,35 @@ export default function Documents() {
 
                       <div className="flex-1 min-w-0">
                         <Link href={`/documentos/${doc.id}`} className="block">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[15px] font-bold text-[#14211F] hover:text-[#1D4ED8] transition-colors break-words">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[14px] sm:text-[15px] font-bold text-[#14211F] hover:text-[#1D4ED8] transition-colors truncate">
                               {doc.titulo}
                             </span>
-                            {doc.cid && (
-                              <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200 shrink-0"
-                                title={`Código CID: ${doc.cid}`}
-                              >
-                                <Tag size={9} /> CID {doc.cid}
-                              </span>
-                            )}
-                            {doc.cnes && (
-                              <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-extrabold border border-blue-200 shrink-0"
-                                title={`Código CNES do Estabelecimento: ${doc.cnes}`}
-                              >
-                                <Building2 size={9} /> CNES {doc.cnes}
-                              </span>
-                            )}
                           </div>
-                          <div className="text-xs text-[#5B6878] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <div className="text-xs text-[#5B6878] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span className="inline-flex items-center gap-1">
                               <Clock size={11} className="text-[#5B6878]" />
-                              <span>Adicionado {doc.dateStr}</span>
+                              <span>{doc.dataDocumento ? `Data: ${doc.dataDocumento}` : `Adicionado ${doc.dateStr}`}</span>
                             </span>
-                            {doc.dataDocumento && (
+                            {doc.medico && (
                               <>
                                 <span>•</span>
-                                <span>Data do documento: {doc.dataDocumento}</span>
-                              </>
-                            )}
-                            {(doc.medico || doc.crm) && (
-                              <>
-                                <span>•</span>
-                                <span className="font-semibold text-[#14211F] inline-flex items-center gap-1">
-                                  <UserCheck size={11} className="text-[#1D4ED8]" />
-                                  {doc.medico || 'Médico'} {doc.crm && <span className="font-normal text-[#5B6878]">(CRM {doc.crm})</span>}
+                                <span className="font-medium text-[#14211F] inline-flex items-center gap-1 truncate max-w-[200px]">
+                                  <UserCheck size={11} className="text-[#1D4ED8] shrink-0" />
+                                  <span className="truncate">{doc.medico}</span>
                                 </span>
                               </>
                             )}
-                            {(doc.clinica || doc.cnes) && (
+                            {doc.clinica && (
                               <>
                                 <span>•</span>
-                                <span className="text-[#5B6878] inline-flex items-center gap-1">
-                                  <Building2 size={11} />
-                                  {doc.clinica && <span>{doc.clinica}</span>}
-                                  {doc.cnes && <span className="text-blue-700 font-semibold">{doc.clinica ? ' ' : ''}(CNES {doc.cnes})</span>}
+                                <span className="text-[#5B6878] inline-flex items-center gap-1 truncate max-w-[200px]">
+                                  <Building2 size={11} className="shrink-0" />
+                                  <span className="truncate">{doc.clinica}</span>
                                 </span>
                               </>
                             )}
                           </div>
-                          {(doc.resumo || doc.diagnostico || doc.medicamentos.length > 0 || doc.exames.length > 0) && (
-                            <div className="mt-2 space-y-1 text-xs">
-                              {(doc.diagnostico || doc.resumo) && (
-                                <div className="flex items-start gap-1.5 text-[#3B4252]">
-                                  <Stethoscope size={12} className="text-purple-600 mt-0.5 shrink-0" />
-                                  <span className="break-words whitespace-pre-wrap">
-                                    <strong className="text-purple-900 font-semibold mr-1">Diagnóstico:</strong>
-                                    {doc.diagnostico || doc.resumo}
-                                  </span>
-                                </div>
-                              )}
-                              {doc.medicamentos.length > 0 && (
-                                <div className="flex items-start gap-1.5 text-[#14211F]">
-                                  <Pill size={12} className="text-blue-600 mt-0.5 shrink-0" />
-                                  <div className="break-words">
-                                    <strong className="text-blue-900 font-semibold mr-1">Medicamentos:</strong>
-                                    {doc.medicamentos.map((m: any, idx: number) => (
-                                      <span key={idx} className="mr-2 inline-flex items-center gap-1">
-                                        <span className="font-medium">{m.nome}</span>
-                                        {m.dosagem && (
-                                          <span className="bg-blue-50 text-blue-700 px-1 py-0.2 rounded text-[10px] font-bold border border-blue-200">
-                                            {m.dosagem}
-                                          </span>
-                                        )}
-                                        {m.horario && <span className="text-[#5B6878] text-[11px]">({m.horario})</span>}
-                                        {idx < doc.medicamentos.length - 1 ? ',' : ''}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {doc.exames.length > 0 && (
-                                <div className="flex items-start gap-1.5 text-[#14211F]">
-                                  <Activity size={12} className="text-indigo-600 mt-0.5 shrink-0" />
-                                  <div className="break-words">
-                                    <strong className="text-indigo-900 font-semibold mr-1">Exames:</strong>
-                                    {doc.exames.map((exame: any) => exame.nome || exame.nomeNormalizado).filter(Boolean).join(', ')}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </Link>
                       </div>
 
