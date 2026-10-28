@@ -120,20 +120,6 @@ public static class DashboardEndpoints
             }
         }
 
-        // Receitas vencidas: o usuário pode continuar tomando algo que já expirou.
-        foreach (var doc in documentos.Where(d => d.Tipo == "receita" && d.Status == "pronto"))
-        {
-            var data = ExtrairData(doc.Data);
-            if (data is null || data >= hoje.AddDays(-90)) continue;
-
-            itens.Add(new DashboardItemAtencao(
-                Tipo: "receita_vencida",
-                Severidade: "baixa",
-                Titulo: string.IsNullOrWhiteSpace(doc.Titulo) ? "Receita" : doc.Titulo!,
-                Descricao: $"Receita de {data.Value:dd/MM/yyyy} com mais de 90 dias.",
-                DocumentoId: doc.Id));
-        }
-
         return itens
             .OrderByDescending(i => PesoSeveridade(i.Severidade))
             .Take(MaxAlertas)

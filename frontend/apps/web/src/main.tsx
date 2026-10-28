@@ -9,6 +9,9 @@ import { setAuthTokenGetter } from "@workspace/api-client-react";
 // Manter requisições de API na mesma origem para que os rewrites de produção da Vercel façam o proxy
 setAuthTokenGetter(() => null);
 
+// Inicia o download paralelo do chunk inicial do Dashboard para eliminar o atraso do lazy loading
+void import('@/pages/Dashboard');
+
 // Register PWA Service Worker
 if ('serviceWorker' in navigator) {
   import('virtual:pwa-register').then(({ registerSW }) => {

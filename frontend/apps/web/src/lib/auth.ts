@@ -100,6 +100,8 @@ export function clearStoredAuthToken(): void {
     localStorage.removeItem(AUTH_SESSION_COOKIE);
     localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem('saude_memora_session_ts');
+    localStorage.removeItem('saude_memora_cached_profile');
+    localStorage.removeItem('saude_memora_cached_dashboard');
   } catch {
     // Ignora
   }

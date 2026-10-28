@@ -7,7 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { AppShell } from '@/components/AppShell';
 import { SeoMetadata } from '@/components/SeoMetadata';
-import { warmUpEntireSystem } from '@/lib/prefetch';
+import { warmUpEntireSystem, initFastCache } from '@/lib/prefetch';
 import {
   Route,
   Switch,
@@ -66,6 +66,12 @@ const queryClient = new QueryClient({
     }
   })
 });
+
+// Hidratação instantânea (0ms) do cache local e persistência em background para o PWA
+initFastCache(queryClient);
+if (typeof window !== 'undefined' && hasAuthCookie()) {
+  warmUpEntireSystem(queryClient);
+}
 
 const SESSION_REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000;
 const SESSION_REFRESH_RETRY_MS = 60 * 1000;

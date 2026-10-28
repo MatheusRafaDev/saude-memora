@@ -119,10 +119,47 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           runtimeCaching: [
             {
               urlPattern: ({ request }) => request.method === 'GET' && request.url.includes('/api/'),
               handler: 'NetworkOnly'
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'google-fonts-stylesheets',
+                cacheableResponse: {
+                  statuses: [0, 200]
+                }
+              }
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-webfonts',
+                cacheableResponse: {
+                  statuses: [0, 200]
+                },
+                expiration: {
+                  maxEntries: 30,
+                  maxAgeSeconds: 365 * 24 * 60 * 60
+                }
+              }
+            },
+            {
+              urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'app-images',
+                expiration: {
+                  maxEntries: 60,
+                  maxAgeSeconds: 30 * 24 * 60 * 60
+                }
+              }
             }
           ]
         }
@@ -160,6 +197,9 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
               }
               if (id.includes('@tanstack/react-query')) {
                 return 'vendor-query';
+              }
+              if (id.includes('framer-motion')) {
+                return 'vendor-motion';
               }
               if (id.includes('lucide-react')) {
                 return 'vendor-icons';

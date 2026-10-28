@@ -1,11 +1,63 @@
 import {
+  customFetch,
   getGetApiDocumentsQueryOptions,
   getGetApiFichaMedicaMeQueryOptions,
+  getGetApiPacientesMeQueryKey,
   getGetApiPacientesMeQueryOptions,
 } from '@workspace/api-client-react';
 import type { QueryClient } from '@tanstack/react-query';
+import { hasAuthCookie } from '@/lib/auth';
 
 let hasWarmedUp = false;
+
+/**
+ * Inicializa o cache offline/local no cliente.
+ * Se o usuário possui sessão ativa, restaura instantaneamente os dados de perfil
+ * e da tela inicial (Dashboard) salvos no localStorage para que o app abra em 0ms
+ * sem tela de carregamento, e revalida os dados de forma transparente em segundo plano.
+ */
+export function initFastCache(queryClient: QueryClient) {
+  if (typeof window === 'undefined') return;
+
+  if (hasAuthCookie()) {
+    try {
+      const rawProfile = localStorage.getItem('saude_memora_cached_profile');
+      if (rawProfile) {
+        const profile = JSON.parse(rawProfile);
+        queryClient.setQueryData(getGetApiPacientesMeQueryKey(), profile, { updatedAt: 0 });
+      }
+
+      const rawDashboard = localStorage.getItem('saude_memora_cached_dashboard');
+      if (rawDashboard) {
+        const dash = JSON.parse(rawDashboard);
+        queryClient.setQueryData(['dashboard-resumo'], dash, { updatedAt: 0 });
+      }
+    } catch {
+      // Ignora erro em JSON corrompido ou modo restrito
+    }
+  }
+
+  // Monitora atualizações bem-sucedidas no cache para manter o snapshot local sempre atual
+  queryClient.getQueryCache().subscribe((event) => {
+    if (event.type === 'updated' && event.action?.type === 'success' && event.query?.state?.data) {
+      const qk = event.query.queryKey;
+      try {
+        const isProfile = Array.isArray(qk) && qk.some((k) => typeof k === 'string' && k.includes('pacientes/me'));
+        if (isProfile) {
+          localStorage.setItem('saude_memora_cached_profile', JSON.stringify(event.query.state.data));
+          return;
+        }
+
+        const isDashboard = Array.isArray(qk) && qk[0] === 'dashboard-resumo';
+        if (isDashboard) {
+          localStorage.setItem('saude_memora_cached_dashboard', JSON.stringify(event.query.state.data));
+        }
+      } catch {
+        // Ignora limitações de storage
+      }
+    }
+  });
+}
 
 /**
  * Pré-carrega de imediato o código de todas as rotas do sistema.
@@ -28,12 +80,18 @@ export function preloadAllRoutes() {
  * - Perfil do paciente (nome, plano, contatos)
  * - Ficha médica / anamnese (alergias, remédios contínuos, condições)
  * - Lista de documentos (exames, receitas, laudos)
+ * - Indicadores e resumo da visão geral
  */
 export function preloadAllAppData(queryClient: QueryClient) {
   void Promise.allSettled([
     queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
     queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
     queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
+    queryClient.prefetchQuery({
+      queryKey: ['dashboard-resumo'],
+      queryFn: () => customFetch('/api/dashboard/resumo'),
+      staleTime: 60_000,
+    }),
   ]);
 }
 

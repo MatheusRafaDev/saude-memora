@@ -12,8 +12,6 @@ import {
   LoaderCircle,
   AlertTriangle,
   X,  LogOut,
-  ArrowLeft,
-  ChevronRight,
   ZoomIn,
 } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
@@ -46,9 +44,7 @@ export default function Profile() {
   const saveConsentimento = useSaveConsentimento();
 
   const [activeTab, setActiveTab] = useState<'dados' | 'carteirinha' | 'seguranca' | 'privacidade'>('dados');
-  const [mobileSectionOpen, setMobileSectionOpen] = useState(false);
   const [isCarteirinhaModalOpen, setIsCarteirinhaModalOpen] = useState(false);
-  const sectionTitles = { dados: 'Dados pessoais', carteirinha: 'Carteirinha', seguranca: 'Segurança', privacidade: 'Privacidade' } as const;
 
   // Form State
   const [nome, setNome] = useState('');
@@ -314,83 +310,131 @@ export default function Profile() {
     <div className="min-h-screen min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] flex-1 bg-white text-[#14211F] font-sans pb-16">
       <main className="max-w-[1240px] mx-auto px-3.5 sm:px-8 lg:px-10 pt-5 sm:pt-9 pb-16">
         {/* Header Title */}
-        <div className={`flex justify-between items-end gap-4 sm:gap-5 mb-5 sm:mb-7 flex-wrap ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
+        <div className="flex justify-between items-end gap-4 sm:gap-5 mb-4 sm:mb-7 flex-wrap">
           <div>
             <div className="text-xs font-bold tracking-[0.16em] uppercase text-[#1D4ED8]">
               Perfil
             </div>
-            <h1 className="mt-2 mb-0 text-3xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#14211F]">
+            <h1 className="mt-1.5 sm:mt-2 mb-0 text-2xl sm:text-4xl font-extrabold tracking-[-0.035em] text-[#14211F]">
               Meu perfil
             </h1>
-            <p className="mt-1.5 mb-0 text-[#5B6878] text-sm sm:text-base">
+            <p className="mt-1 sm:mt-1.5 mb-0 text-[#5B6878] text-xs sm:text-base">
               Gerencie seus dados, segurança e privacidade.
             </p>
           </div>
         </div>
 
+        {/* Mobile Horizontal Tabs */}
+        <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-1 mb-4 no-scrollbar -mx-1 px-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('dados')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+              activeTab === 'dados'
+                ? 'border-[#1D4ED8] bg-[#1D4ED8] text-white shadow-2xs'
+                : 'border-[#E3E8F0] bg-[#F8FAFD] text-[#5B6878] hover:text-[#14211F]'
+            }`}
+          >
+            <User size={14} />
+            <span>Dados pessoais</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('carteirinha')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+              activeTab === 'carteirinha'
+                ? 'border-[#1D4ED8] bg-[#1D4ED8] text-white shadow-2xs'
+                : 'border-[#E3E8F0] bg-[#F8FAFD] text-[#5B6878] hover:text-[#14211F]'
+            }`}
+          >
+            <CreditCard size={14} />
+            <span>Carteirinha</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('seguranca')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+              activeTab === 'seguranca'
+                ? 'border-[#1D4ED8] bg-[#1D4ED8] text-white shadow-2xs'
+                : 'border-[#E3E8F0] bg-[#F8FAFD] text-[#5B6878] hover:text-[#14211F]'
+            }`}
+          >
+            <Lock size={14} />
+            <span>Segurança</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('privacidade')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+              activeTab === 'privacidade'
+                ? 'border-[#1D4ED8] bg-[#1D4ED8] text-white shadow-2xs'
+                : 'border-[#E3E8F0] bg-[#F8FAFD] text-[#5B6878] hover:text-[#14211F]'
+            }`}
+          >
+            <Shield size={14} />
+            <span>Privacidade</span>
+          </button>
+        </div>
+
         {/* 2-col Layout */}
         <div className="flex gap-7 flex-wrap items-start">
-          {/* Left Sidebar Tabs (240px) */}
-          <div className={`w-full sm:w-[240px] flex flex-col gap-1 shrink-0 ${mobileSectionOpen ? 'hidden sm:flex' : ''}`}>
+          {/* Left Sidebar Tabs (Desktop, 240px) */}
+          <div className="hidden sm:flex w-[240px] flex-col gap-1 shrink-0">
             <button
-              onClick={() => { setActiveTab('dados'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              type="button"
+              onClick={() => setActiveTab('dados')}
+              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left ${
                 activeTab === 'dados'
                   ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
                   : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
               <User size={18} className={activeTab === 'dados' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
-              <span className="flex-1">Dados pessoais</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
+              <span>Dados pessoais</span>
             </button>
 
             <button
-              onClick={() => { setActiveTab('carteirinha'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              type="button"
+              onClick={() => setActiveTab('carteirinha')}
+              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left ${
                 activeTab === 'carteirinha'
                   ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
                   : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
               <CreditCard size={18} className={activeTab === 'carteirinha' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
-              <span className="flex-1">Carteirinha</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
+              <span>Carteirinha</span>
             </button>
 
             <button
-              onClick={() => { setActiveTab('seguranca'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              type="button"
+              onClick={() => setActiveTab('seguranca')}
+              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left ${
                 activeTab === 'seguranca'
                   ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
                   : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
               <Lock size={18} className={activeTab === 'seguranca' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
-              Segurança
+              <span>Segurança</span>
             </button>
 
             <button
-              onClick={() => { setActiveTab('privacidade'); setMobileSectionOpen(true); }}
-              className={`flex items-center gap-2.5 border border-[#E3E8F0] bg-white px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left sm:border-transparent sm:bg-transparent ${
+              type="button"
+              onClick={() => setActiveTab('privacidade')}
+              className={`flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-all cursor-pointer text-left ${
                 activeTab === 'privacidade'
                   ? 'bg-[#CFE0FF]/40 text-[#1D4ED8] font-bold shadow-xs'
                   : 'text-[#5B6878] hover:bg-[#F4F7FC] hover:text-[#14211F]'
               }`}
             >
               <Shield size={18} className={activeTab === 'privacidade' ? 'text-[#1D4ED8]' : 'text-[#5B6878]'} />
-              <span className="flex-1">Privacidade</span><ChevronRight size={17} className="ml-auto text-[#9aa8b8] sm:hidden" />
+              <span>Privacidade</span>
             </button>
           </div>
 
           {/* Right Column: Cards (flex: 1) */}
-          <div className={`w-full min-w-0 flex-1 flex-col gap-5 ${mobileSectionOpen ? 'flex' : 'hidden'} sm:flex`}>
-            {/* Top header bar stays static without animation */}
-            <div className="mb-1 flex items-center gap-3 sm:hidden">
-              <button type="button" onClick={() => setMobileSectionOpen(false)} aria-label="Voltar às opções do perfil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E3E8F0] bg-white text-[#14211F] shadow-xs transition-colors hover:bg-[#F4F7FC]">
-                <ArrowLeft size={19} />
-              </button>
-              <h2 className="m-0 text-xl font-bold text-[#14211F]">{sectionTitles[activeTab]}</h2>
-            </div>
-
+          <div className="w-full min-w-0 flex-1 flex flex-col gap-5">
             {/* Content items with smooth entrance animation */}
             <div key={activeTab} className="w-full flex flex-col gap-5 animate-in fade-in slide-in-from-right-2 duration-200">
               {/* Card 1: Dados pessoais */}

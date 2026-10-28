@@ -68,6 +68,7 @@ public static class ChatEndpoints
         }).Produces<ChatHistoryDaysResponse>().RequireAuthorization();
 
         app.MapGet("/api/chat/documentos-consultados", async (
+            [FromQuery(Name = "date")] string? chatDate,
             ClaimsPrincipal user,
             IChatHistoryRepository chatHistoryRepo,
             IDocumentRepository documentRepo,
@@ -81,7 +82,9 @@ public static class ChatEndpoints
                 .Where(d => !string.IsNullOrWhiteSpace(d.Id) && string.Equals(d.Status, "pronto", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(d => d.Id!, d => d, StringComparer.Ordinal);
 
-            var history = await chatHistoryRepo.GetAllByPacienteIdAsync(userId, cancellationToken);
+            var history = !string.IsNullOrWhiteSpace(chatDate)
+                ? await chatHistoryRepo.GetByPacienteIdAndDayAsync(userId, chatDate, cancellationToken)
+                : await chatHistoryRepo.GetAllByPacienteIdAsync(userId, cancellationToken);
             var result = history
                 .Where(item => item.Citacoes != null && item.Citacoes.Count > 0)
                 .SelectMany(item => item.Citacoes

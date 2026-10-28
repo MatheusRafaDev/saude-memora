@@ -224,11 +224,13 @@ export default function Dashboard() {
     {
       rotulo: 'Precisam de atenção',
       valor: atencao.length,
-      detalhe: indicadores.revisaoPendente > 0
-        ? pluralizar(indicadores.revisaoPendente, 'revisão pendente', 'revisões pendentes')
+      detalhe: atencao.length > 0
+        ? (indicadores.revisaoPendente > 0
+            ? pluralizar(indicadores.revisaoPendente, 'revisão pendente', 'revisões pendentes')
+            : pluralizar(atencao.length, 'alerta clínico', 'alertas clínicos'))
         : 'tudo em ordem',
       tom: tomAtencao,
-      icon: <AlertTriangle size={18} className={alertaAlta ? 'text-[#E8664A]' : 'text-[#1D4ED8]'} />,
+      icon: <AlertTriangle size={18} className={alertaAlta ? 'text-[#E8664A]' : (atencao.length > 0 ? 'text-[#9B2C16]' : 'text-[#1D4ED8]')} />,
       href: atencao.length > 0 ? (atencao[0].documentoId ? `/documentos/${atencao[0].documentoId}` : '/documentos') : undefined,
     },
   ];

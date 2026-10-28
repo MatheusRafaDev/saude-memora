@@ -148,8 +148,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         .toUpperCase()
     : '—';
 
+  const isChat = location === '/chat' || location.startsWith('/chat/');
+
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-white flex flex-col font-sans text-[#14211F]">
+    <div className={`min-h-screen min-h-[100dvh] bg-white flex flex-col font-sans text-[#14211F] ${
+      isChat ? 'h-[100dvh] overflow-hidden lg:h-auto lg:overflow-visible' : ''
+    }`}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-[60] focus:rounded-lg focus:bg-[#1D4ED8] focus:px-4 focus:py-3 focus:text-white"
@@ -305,7 +309,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main page content */}
       <div
         id="main-content"
-        className="flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] pt-[env(safe-area-inset-top,0px)] lg:pt-0 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 bg-white flex flex-col"
+        className={`flex-1 bg-white flex flex-col ${
+          isChat
+            ? 'h-[calc(100dvh-4.25rem-env(safe-area-inset-bottom,0px))] max-h-[calc(100dvh-4.25rem-env(safe-area-inset-bottom,0px))] overflow-hidden pt-[env(safe-area-inset-top,0px)] lg:h-auto lg:max-h-none lg:min-h-[calc(100vh-72px)] lg:min-h-[calc(100dvh-72px)] lg:overflow-visible lg:pb-8 lg:pt-0'
+            : 'min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] pt-[env(safe-area-inset-top,0px)] lg:pt-0 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8'
+        }`}
       >
         {children}
       </div>
