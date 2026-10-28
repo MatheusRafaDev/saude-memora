@@ -398,7 +398,11 @@ function ProtectedLayout() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-1 flex flex-col min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)]"
+            className={`flex-1 flex flex-col ${
+              location.startsWith('/chat')
+                ? 'h-full min-h-0'
+                : 'min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)]'
+            }`}
           >
             <Switch>
               <Route path="/visao-geral">{() => <Dashboard />}</Route>

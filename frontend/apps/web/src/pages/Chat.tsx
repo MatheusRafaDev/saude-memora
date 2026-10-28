@@ -283,8 +283,8 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden lg:h-auto lg:overflow-visible bg-white font-sans text-[#14211F]">
-      <main className="mx-auto flex-1 flex flex-col w-full max-w-[1240px] h-full overflow-hidden lg:h-auto lg:overflow-visible px-2 sm:px-6 lg:px-10 pt-1.5 sm:pt-4 lg:pt-8 pb-1.5 sm:pb-4 lg:pb-16">
+    <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden lg:h-auto lg:overflow-visible bg-white font-sans text-[#14211F]">
+      <main className="mx-auto flex-1 min-h-0 flex flex-col w-full max-w-[1240px] h-full overflow-hidden lg:h-auto lg:overflow-visible px-2 sm:px-6 lg:px-10 pt-1 sm:pt-4 lg:pt-8 pb-1 sm:pb-4 lg:pb-16">
         <div className="hidden lg:block mb-3.5 sm:mb-6">
           <div className="min-w-0">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#1D4ED8]/10 px-3 py-1 text-xs font-bold tracking-[0.08em] uppercase text-[#1D4ED8] mb-1">
@@ -514,21 +514,26 @@ export default function Chat() {
               </div>
             )}
 
-            <div className="shrink-0 pt-1.5 sm:pt-2">
-              <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="flex items-center gap-2 rounded-2xl border border-[#E3E8F0] bg-white p-1 pl-3 text-sm transition-all focus-within:border-[#1D4ED8] focus-within:ring-2 focus-within:ring-[#1D4ED8]/15 sm:gap-2.5 sm:p-2 sm:pl-4 sm:text-[15px]">
+            <div className="shrink-0 pt-2 pb-0.5 bg-white z-10">
+              <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="flex items-center gap-2 rounded-2xl border border-[#CFE0FF] bg-[#F8FAFD] p-1.5 pl-3 sm:bg-white sm:border-[#E3E8F0] text-sm transition-all focus-within:border-[#1D4ED8] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#1D4ED8]/15 sm:gap-2.5 sm:p-2 sm:pl-4 sm:text-[15px] shadow-xs">
                 <input
                   type="text"
-                  placeholder="Pergunte sobre seus exames, medicamentos ou laudos anexados…"
+                  placeholder="Pergunte sobre seus exames ou receitas…"
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
+                  onFocus={() => {
+                    setTimeout(() => {
+                      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                  }}
                   disabled={isLoading}
-                  className="min-w-0 flex-1 border-none bg-transparent text-[#14211F] outline-none placeholder:text-[#738198] text-sm sm:text-base"
+                  className="min-w-0 flex-1 border-none bg-transparent text-[#14211F] outline-none placeholder:text-[#738198] text-sm sm:text-base py-0.5"
                 />
                 <button
                   type="submit"
                   aria-label="Enviar pergunta"
                   disabled={isLoading || !input.trim()}
-                  className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8] text-white shadow-xs transition-colors hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-50 cursor-pointer"
+                  className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-[#1D4ED8] text-white shadow-xs transition-colors hover:bg-[#1E40AF] active:bg-[#1E3A8A] disabled:opacity-40 cursor-pointer"
                 >
                   {isLoading ? <LoaderCircle size={16} className="animate-spin" /> : <Send size={16} />}
                 </button>
