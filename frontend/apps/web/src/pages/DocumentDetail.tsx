@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useRoute, useLocation } from 'wouter';
 import {
   ArrowLeft,
@@ -32,6 +33,7 @@ import {
 import {
   useGetApiDocumentsId,
   useDeleteApiDocumentsId,
+  getGetApiDocumentsQueryKey,
   getGetApiDocumentsIdQueryKey,
   customFetch,
 } from '@workspace/api-client-react';
@@ -177,6 +179,8 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
   const [, params] = useRoute('/documentos/:id');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const deleteMutation = useDeleteApiDocumentsId();
 
   const id = propId || (params as any)?.id;
@@ -406,14 +410,24 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
 
   const handleDelete = async () => {
     if (!doc || !id || !isMongoId) return;
-    if (!confirm('Tem certeza que deseja excluir este documento?')) return;
+    setIsDeleteModalOpen(false);
+
+    // Atualização otimista imediata no cache de documentos
+    queryClient.setQueryData(getGetApiDocumentsQueryKey(), (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.filter((item: any) => item.id !== id);
+    });
+
+    window.dispatchEvent(new CustomEvent('document-deleted', { detail: { id } }));
+    toast({ title: 'Documento excluído com sucesso' });
+    setLocation('/documentos');
+
     try {
       await deleteMutation.mutateAsync({ id });
-      toast({ title: 'Documento excluído com sucesso' });
-      window.dispatchEvent(new CustomEvent('document-deleted', { detail: { id } }));
-      setLocation('/documentos');
+      queryClient.invalidateQueries({ queryKey: getGetApiDocumentsQueryKey() });
     } catch {
       toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
+      queryClient.invalidateQueries({ queryKey: getGetApiDocumentsQueryKey() });
     }
   };
 
@@ -654,10 +668,16 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
             )}
             <button
               type="button"
-              onClick={handleDelete}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E8664A]/30 bg-white px-5 text-sm font-bold text-[#E8664A] shadow-xs transition-colors hover:bg-[#FDE1DA]/40"
+              onClick={() => setIsDeleteModalOpen(true)}
+              disabled={deleteMutation.isPending}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[#E8664A]/30 bg-white px-5 text-sm font-bold text-[#E8664A] shadow-xs transition-colors hover:bg-[#FDE1DA]/40 disabled:opacity-60 cursor-pointer"
             >
-              <Trash2 size={16} strokeWidth={2} /> Excluir
+              {deleteMutation.isPending ? (
+                <LoaderCircle size={16} className="animate-spin" />
+              ) : (
+                <Trash2 size={16} strokeWidth={2} />
+              )}
+              <span>{deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}</span>
             </button>
           </div>
         </div>
@@ -2119,6 +2139,48 @@ export default function DocumentDetail({ id: propId }: { id?: string }) {
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
+      {isDeleteModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-detail-title"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#14211F]/55 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleteMutation.isPending) {
+              setIsDeleteModalOpen(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[#F3CBC0] bg-white p-6 shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FDE1DA] text-[#C94E35]">
+              <Trash2 size={21} />
+            </div>
+            <h2 id="delete-detail-title" className="mt-4 text-xl font-bold text-[#14211F]">Excluir documento?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#5B6878]">
+              <strong className="text-[#14211F]">{docTitle}</strong> será removido permanentemente. Esta ação não pode ser desfeita.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleteMutation.isPending}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="h-10 rounded-xl border border-[#E3E8F0] px-4 text-sm font-bold text-[#5B6878] transition-colors hover:bg-[#F4F7FC] disabled:opacity-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleteMutation.isPending}
+                onClick={handleDelete}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E8664A] px-4 text-sm font-bold text-white transition-colors hover:bg-[#C94E35] disabled:opacity-60 cursor-pointer"
+              >
+                {deleteMutation.isPending && <LoaderCircle size={16} className="animate-spin" />}
+                Excluir documento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

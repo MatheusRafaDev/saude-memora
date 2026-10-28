@@ -1688,7 +1688,7 @@ app.MapPut("/api/documents/{id}", async (
 }).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 
 // Exclui documento por ID (e remove do Cloudinary, vetores e citações do chat)
-app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IDocumentVectorRepository vectorRepo, IChatHistoryRepository chatHistoryRepo, IImageStorageService storage, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria, CancellationToken cancellationToken) =>
+app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDocumentRepository repo, IServiceScopeFactory scopeFactory, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, IAuditoriaService auditoria, CancellationToken cancellationToken) =>
 {
     var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
     if (userId == null) return Results.Unauthorized();
@@ -1704,30 +1704,41 @@ app.MapDelete("/api/documents/{id}", async (string id, ClaimsPrincipal user, IDo
     await auditoria.RegistrarAsync(
         context.ParaAuditoria(), AuditoriaOperacao.Exclusao, "Documento", id, AuditoriaResultado.Sucesso);
 
+    // Exclusão imediata no MongoDB e invalidação imediata dos caches do usuário
     await repo.DeleteAsync(id);
-    await vectorRepo.DeleteByDocumentoIdAsync(id, cancellationToken);
-    try
-    {
-        await chatHistoryRepo.RemoveCitationsByDocumentoIdAsync(userId, id, cancellationToken);
-    }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine($"[ChatHistory] Erro ao remover citações do documento excluído {id}: {ex.Message}");
-    }
-
-    if (doc.IdPublicos != null && doc.IdPublicos.Any())
-    {
-        foreach (var publicId in doc.IdPublicos)
-        {
-            if (!string.IsNullOrWhiteSpace(publicId))
-            {
-                try { await storage.DeleteImageAsync(publicId); }
-                catch (Exception ex) { Console.WriteLine($"[Cloudinary] Erro ao deletar: {ex.Message}"); }
-            }
-        }
-    }
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(userId));
     await cache.SafeRemoveAsync(DocumentRepository.UserDocumentCountCacheKey(userId));
+
+    // Limpeza pesada assíncrona (vetores, citações do chat e imagens no Cloudinary em paralelo) sem travar a resposta HTTP
+    var publicIds = doc.IdPublicos?.Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            using var scope = scopeFactory.CreateScope();
+            var bgVectorRepo = scope.ServiceProvider.GetRequiredService<IDocumentVectorRepository>();
+            var bgChatHistoryRepo = scope.ServiceProvider.GetRequiredService<IChatHistoryRepository>();
+            var bgStorage = scope.ServiceProvider.GetRequiredService<IImageStorageService>();
+
+            var cleanupTasks = new List<Task>
+            {
+                bgVectorRepo.DeleteByDocumentoIdAsync(id, CancellationToken.None),
+                bgChatHistoryRepo.RemoveCitationsByDocumentoIdAsync(userId, id, CancellationToken.None)
+            };
+
+            if (publicIds != null && publicIds.Count > 0)
+            {
+                cleanupTasks.AddRange(publicIds.Select(pid => bgStorage.DeleteImageAsync(pid)));
+            }
+
+            await Task.WhenAll(cleanupTasks);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[DocumentDeleteCleanup] Erro na limpeza secundária do documento {id}: {ex.Message}");
+        }
+    });
+
     return Results.Ok(new { message = "Documento deletado com sucesso." });
 }).AddEndpointFilter<GlobalValidationFilter>().Produces<ApiMessageResponse>().RequireAuthorization();
 

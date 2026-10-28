@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import {
   Search,
@@ -36,6 +37,7 @@ import {
 import {
   useGetApiDocuments,
   useDeleteApiDocumentsId,
+  getGetApiDocumentsQueryKey,
   customFetch,
 } from '@workspace/api-client-react';
 import { triggerUploadModal } from '@/components/UploadModal';
@@ -162,6 +164,7 @@ function DocumentThumbnail({
 
 export default function Documents() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: documentsRaw, refetch, isLoading, isError } = useGetApiDocuments();
   const deleteMutation = useDeleteApiDocumentsId();
 
@@ -437,23 +440,66 @@ export default function Documents() {
     return groups;
   }, [filteredItems]);
 
-  const requestDelete = (id: string, title: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Garante que o body não fique com pointer-events travado ao abrir modal de exclusão
+  useEffect(() => {
+    if (!documentPendingDeletion) {
+      return undefined;
+    }
+    if (typeof document !== 'undefined') {
+      document.body.style.pointerEvents = 'auto';
+    }
+    const timer = setTimeout(() => {
+      if (typeof document !== 'undefined') {
+        document.body.style.pointerEvents = 'auto';
+      }
+    }, 50);
+    return () => {
+      clearTimeout(timer);
+      if (typeof document !== 'undefined') {
+        document.body.style.pointerEvents = 'auto';
+      }
+    };
+  }, [documentPendingDeletion]);
+
+  const requestDelete = (id: string, title: string) => {
+    if (typeof document !== 'undefined') {
+      document.body.style.pointerEvents = 'auto';
+    }
     setDocumentPendingDeletion({ id, title });
   };
 
   const handleDelete = async () => {
     if (!documentPendingDeletion) return;
     const deletedId = documentPendingDeletion.id;
+
+    // Fecha o modal imediatamente para resposta visual instantânea (0ms)
+    setDocumentPendingDeletion(null);
+    if (typeof document !== 'undefined') {
+      document.body.style.pointerEvents = 'auto';
+    }
+
+    // Snapshot para rollback seguro se houver falha de rede
+    const previousDocs = queryClient.getQueryData(getGetApiDocumentsQueryKey());
+
+    // Atualização otimista imediata no cache do React Query
+    queryClient.setQueryData(getGetApiDocumentsQueryKey(), (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.filter((item: any) => item.id !== deletedId);
+    });
+
+    // Notifica outros componentes e exibe feedback de sucesso imediatamente
+    window.dispatchEvent(new CustomEvent('document-deleted', { detail: { id: deletedId } }));
+    toast({ title: 'Documento excluído com sucesso' });
+
     try {
       await deleteMutation.mutateAsync({ id: deletedId });
-      toast({ title: 'Documento excluído com sucesso' });
-      setDocumentPendingDeletion(null);
-      window.dispatchEvent(new CustomEvent('document-deleted', { detail: { id: deletedId } }));
-      refetch();
+      queryClient.invalidateQueries({ queryKey: getGetApiDocumentsQueryKey() });
     } catch {
-      toast({ title: 'Erro ao excluir documento', variant: 'destructive' });
+      // Reverte caso a exclusão falhe no servidor
+      if (previousDocs) {
+        queryClient.setQueryData(getGetApiDocumentsQueryKey(), previousDocs);
+      }
+      toast({ title: 'Erro ao excluir documento', description: 'O documento foi restaurado.', variant: 'destructive' });
     }
   };
 
@@ -907,7 +953,7 @@ export default function Documents() {
                             </DropdownMenuItem>
                             {doc.previewUrl && (
                               <DropdownMenuItem
-                                onClick={() => setOriginalPreview({ url: doc.previewUrl!, title: doc.titulo })}
+                                onSelect={() => setOriginalPreview({ url: doc.previewUrl!, title: doc.titulo })}
                                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-[#14211F] transition-all hover:bg-[#F0F5FF] hover:text-[#1D4ED8] focus:bg-[#F0F5FF] focus:text-[#1D4ED8]"
                               >
                                 <Eye size={14} /> Ver imagem original
@@ -916,14 +962,14 @@ export default function Documents() {
                             {doc.status === 'failed' && (
                               <DropdownMenuItem
                                 disabled={retryingId === doc.id}
-                                onClick={(event) => handleRetry(doc.id, event)}
+                                onSelect={(event) => handleRetry(doc.id, event as any)}
                                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-[#14211F] transition-all hover:bg-[#F0F5FF] hover:text-[#1D4ED8] focus:bg-[#F0F5FF] focus:text-[#1D4ED8]"
                               >
                                 <RotateCw size={14} /> Tentar novamente
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
-                              onClick={(e) => requestDelete(doc.id, doc.titulo, e)}
+                              onSelect={() => requestDelete(doc.id, doc.titulo)}
                               className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#E8664A] transition-all hover:bg-[#FFF0ED] hover:text-[#C94E35] focus:bg-[#FFF0ED] focus:text-[#C94E35]"
                             >
                               <Trash2 size={14} /> Excluir documento
@@ -1022,7 +1068,7 @@ export default function Documents() {
                           <DropdownMenuContent align="end" className="min-w-44 rounded-xl border border-[#E3E8F0] bg-white p-1.5 shadow-xl shadow-slate-900/10">
                             {doc.previewUrl && (
                               <DropdownMenuItem
-                                onClick={() => setOriginalPreview({ url: doc.previewUrl!, title: doc.titulo })}
+                                onSelect={() => setOriginalPreview({ url: doc.previewUrl!, title: doc.titulo })}
                                 className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-[#14211F] transition-all hover:bg-[#F0F5FF] hover:text-[#1D4ED8]"
                               >
                                 <Eye size={14} /> Ver imagem original
@@ -1038,7 +1084,7 @@ export default function Documents() {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
-                              onClick={(event) => requestDelete(doc.id, doc.titulo, event)}
+                              onSelect={() => requestDelete(doc.id, doc.titulo)}
                               className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#E8664A] transition-all hover:bg-[#FFF0ED] hover:text-[#C94E35] focus:bg-[#FFF0ED] focus:text-[#C94E35]"
                             >
                               <Trash2 size={14} /> Excluir documento
@@ -1099,12 +1145,13 @@ export default function Documents() {
           aria-modal="true"
           aria-labelledby="delete-document-title"
           className="fixed inset-0 z-[70] flex items-center justify-center bg-[#14211F]/55 p-4 backdrop-blur-sm"
-          onMouseDown={() => !deleteMutation.isPending && setDocumentPendingDeletion(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleteMutation.isPending) {
+              setDocumentPendingDeletion(null);
+            }
+          }}
         >
-          <div
-            className="w-full max-w-md rounded-2xl border border-[#F3CBC0] bg-white p-6 shadow-2xl"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
+          <div className="w-full max-w-md rounded-2xl border border-[#F3CBC0] bg-white p-6 shadow-2xl">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#FDE1DA] text-[#C94E35]">
               <Trash2 size={21} />
             </div>
@@ -1117,20 +1164,15 @@ export default function Documents() {
                 type="button"
                 disabled={deleteMutation.isPending}
                 onClick={() => setDocumentPendingDeletion(null)}
-                className="h-10 rounded-xl border border-[#E3E8F0] px-4 text-sm font-bold text-[#5B6878] transition-colors hover:bg-[#F4F7FC] disabled:opacity-50"
+                className="h-10 rounded-xl border border-[#E3E8F0] px-4 text-sm font-bold text-[#5B6878] transition-colors hover:bg-[#F4F7FC] disabled:opacity-50 cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 disabled={deleteMutation.isPending}
-                onMouseDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  void handleDelete();
-                }}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E8664A] px-4 text-sm font-bold text-white transition-colors hover:bg-[#C94E35] disabled:opacity-60"
+                onClick={handleDelete}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#E8664A] px-4 text-sm font-bold text-white transition-colors hover:bg-[#C94E35] disabled:opacity-60 cursor-pointer"
               >
                 {deleteMutation.isPending && <LoaderCircle size={16} className="animate-spin" />}
                 Excluir documento
