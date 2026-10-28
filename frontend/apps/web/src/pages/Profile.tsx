@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/lib/api-error-message';
 import { useConsentimento, useSaveConsentimento } from '@/hooks/useConsentimento';
 import { CarteirinhaModal } from '@/components/CarteirinhaModal';
+import { optimizeUploadFile } from '@/lib/image-compression';
 
 
 export default function Profile() {
@@ -167,21 +168,22 @@ export default function Profile() {
   };
 
   const handleUploadHealthCard = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const rawFile = event.target.files?.[0];
     event.target.value = '';
-    if (!file) return;
+    if (!rawFile) return;
 
-    const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png']);
-    const allowedExtensions = /\.(pdf|jpe?g|png)$/i.test(file.name);
-    if (!allowedTypes.has(file.type) || !allowedExtensions) {
-      toast({ title: 'Selecione um arquivo PDF, JPG ou PNG.', variant: 'destructive' });
+    const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp']);
+    const allowedExtensions = /\.(pdf|jpe?g|png|heic|heif|webp)$/i.test(rawFile.name);
+    if ((rawFile.type && !allowedTypes.has(rawFile.type)) && !allowedExtensions) {
+      toast({ title: 'Selecione um arquivo PDF, JPG, PNG ou HEIC.', variant: 'destructive' });
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: 'O arquivo deve ter no máximo 10 MB.', variant: 'destructive' });
+    if (rawFile.size > 25 * 1024 * 1024) {
+      toast({ title: 'O arquivo deve ter no máximo 25 MB.', variant: 'destructive' });
       return;
     }
 
+    const file = await optimizeUploadFile(rawFile);
     const formData = new FormData();
     formData.append('file', file);
     setIsUploadingCard(true);
@@ -663,7 +665,7 @@ export default function Profile() {
                       {isUploadingCard ? 'Enviando…' : urlCarteirinha ? 'Substituir imagem' : 'Enviar carteirinha'}
                       <input
                         type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                        accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,application/pdf,image/*"
                         onChange={handleUploadHealthCard}
                         disabled={isUploadingCard}
                         className="sr-only"

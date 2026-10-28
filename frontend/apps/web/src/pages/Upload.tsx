@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { customFetch, getGetApiDocumentsQueryKey } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
+import { optimizeUploadFile } from '@/lib/image-compression';
 import { useToast } from '@/hooks/use-toast';
 
 type UploadQueueItem = {
@@ -51,7 +52,7 @@ const DOC_TYPES = [
   { id: 'encaminhamento', label: 'Encaminhamento', icon: Send },
   { id: 'relatorio', label: 'Relatório', icon: FileBarChart },
 ];
-const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
+const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp']);
 
 function getDocumentTypeOption(type?: string) {
   return DOC_TYPES.find((option) => option.id === type) ?? DOC_TYPES[0];
@@ -95,25 +96,27 @@ export default function Upload() {
   const handleFiles = async (files: File[]) => {
     if (files.length === 0) return;
 
-    for (const file of files) {
-      const extension = file.name.split('.').pop()?.toLowerCase();
+    for (const rawFile of files) {
+      const extension = rawFile.name.split('.').pop()?.toLowerCase();
       if (!extension || !SUPPORTED_FILE_EXTENSIONS.has(extension)) {
         toast({
           title: 'Formato não suportado',
-          description: `${file.name}: envie um arquivo PDF, JPG ou PNG.`,
+          description: `${rawFile.name}: envie um arquivo PDF, JPG, PNG ou HEIC.`,
           variant: 'destructive',
         });
         continue;
       }
 
-      if (file.size > 10 * 1024 * 1024) {
+      if (rawFile.size > 25 * 1024 * 1024) {
         toast({
           title: 'Arquivo muito grande',
-          description: `${file.name} ultrapassa o limite de 10 MB.`,
+          description: `${rawFile.name} ultrapassa o limite de 25 MB.`,
           variant: 'destructive',
         });
         continue;
       }
+
+      const file = await optimizeUploadFile(rawFile);
 
       const tempId = `upload-${Date.now()}-${Math.random()}`;
       const sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB · enviando`;
@@ -332,7 +335,7 @@ export default function Upload() {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp"
                 className="hidden"
                 onChange={(e) => {
                   const files = Array.from(e.target.files || []);
@@ -343,7 +346,7 @@ export default function Upload() {
               <input
                 ref={cameraInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 capture="environment"
                 className="hidden"
                 onChange={(e) => {

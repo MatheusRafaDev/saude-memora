@@ -435,6 +435,8 @@ if (!string.IsNullOrWhiteSpace(redisConn))
 {
     try
     {
+        var redisConfig = StackExchange.Redis.ConfigurationOptions.Parse(redisConn);
+        if (redisConfig.EndPoints.Count == 0) throw new InvalidOperationException("No Redis endpoints");
         builder.Services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = redisConn;
@@ -963,7 +965,8 @@ app.MapPost("/api/pacientes/me/carteirinha", async (HttpContext context, ClaimsP
     // IA Extração da Carteirinha
     try
     {
-        var extracted = await ocr.ExtractCarteirinhaDataAsync(url, context.RequestAborted);
+        var ocrUrl = storage.GetOcrOptimizedUrl(id) ?? url;
+        var extracted = await ocr.ExtractCarteirinhaDataAsync(ocrUrl, context.RequestAborted);
         var oldPublicId = paciente.IdPublicoCarteirinha;
         
         paciente.UrlCarteirinha = url;

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Configuration;
@@ -72,6 +73,59 @@ public class CloudinaryStorageService : IImageStorageService
                          .Secure(true)
                          .Signed(true)
                          .BuildUrl(publicId);
+    }
+
+    /// <summary>
+    /// Gera URL assinada com transformação reduzida (máx 1600px largura, qualidade 80, jpg)
+    /// garantindo que o arquivo fique bem abaixo do teto de 1.5MB do plano gratuito do OCR.space.
+    /// </summary>
+    public string? GetOcrOptimizedUrl(string publicId)
+    {
+        if (string.IsNullOrEmpty(publicId)) return null;
+
+        var cloudinary = GetCloudinaryOrThrow();
+
+        return cloudinary.Api.UrlImgUp
+                         .Action("image")
+                         .ResourceType("image")
+                         .Type("authenticated")
+                         .Transform(new Transformation().Width(1600).Crop("limit").Quality(80).FetchFormat("jpg"))
+                         .Secure(true)
+                         .Signed(true)
+                         .BuildUrl(publicId);
+    }
+
+    private static readonly Regex CloudinaryVersionRegex = new(@"/v\d+/(.+?)(?:\.[a-zA-Z0-9]+)?(?:\?|#|$)", RegexOptions.Compiled);
+    private static readonly Regex CloudinaryAuthRegex = new(@"/image/(?:authenticated|upload)/(?:s--[^/]+--/)?(?:[a-zA-Z0-9_,]+:[^/]+/|[a-zA-Z0-9_,]+/)*?([^?#]+?)(?:\.[a-zA-Z0-9]+)?(?:\?|#|$)", RegexOptions.Compiled);
+
+    public string GetOcrOptimizedUrlFromUrl(string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl)) return imageUrl;
+
+        // Se já foi transformada ou não é Cloudinary, mantém a URL original
+        if (imageUrl.Contains("c_limit") || imageUrl.Contains("w_1600") || !imageUrl.Contains("cloudinary.com"))
+            return imageUrl;
+
+        var vMatch = CloudinaryVersionRegex.Match(imageUrl);
+        string? publicId = vMatch.Success ? vMatch.Groups[1].Value : null;
+
+        if (string.IsNullOrEmpty(publicId))
+        {
+            var authMatch = CloudinaryAuthRegex.Match(imageUrl);
+            if (authMatch.Success)
+            {
+                publicId = authMatch.Groups[1].Value;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(publicId))
+        {
+            var optimized = GetOcrOptimizedUrl(publicId);
+            if (!string.IsNullOrEmpty(optimized))
+                return optimized;
+        }
+
+        return imageUrl;
     }
 
     public async Task DeleteImageAsync(string publicId)

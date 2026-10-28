@@ -11,6 +11,7 @@ import { subscribeToEmergencyModal } from '@/lib/emergency-modal';
 import { prefetchRoute } from '@/lib/prefetch';
 import { Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 const desktopNavItems = [
   {
@@ -454,6 +455,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="truncate text-[11px]">Perfil</span>
         </Link>
       </nav>
+
+      {/* Pull To Refresh Mobile */}
+      <PullToRefresh />
 
       {/* Modals */}
       <UploadModal />

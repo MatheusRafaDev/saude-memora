@@ -169,8 +169,20 @@ public class DocumentProcessingWorker : BackgroundService
             await repo.UpdateProgressAsync(docId, doc.Progress);
             await cache.SafeRemoveAsync(DocumentRepository.UserDocumentsCacheKey(doc.PacienteId));
 
+            // Prepara URLs otimizadas para OCR (< 1.5MB) usando os IDs públicos do Cloudinary
+            var ocrUrls = new List<string>();
+            for (int i = 0; i < doc.UrlImagens.Count; i++)
+            {
+                string? publicId = i < doc.IdPublicos.Count ? doc.IdPublicos[i] : null;
+                string? ocrUrl = !string.IsNullOrEmpty(publicId)
+                    ? storage.GetOcrOptimizedUrl(publicId)
+                    : storage.GetOcrOptimizedUrlFromUrl(doc.UrlImagens[i]);
+
+                ocrUrls.Add(ocrUrl ?? doc.UrlImagens[i]);
+            }
+
             // Chamada para o Serviço de OCR e IA (que faz OCR.space + Gemini/Groq)
-            var extractedData = await ocrAiService.ExtractMultipleDocumentsDataAsync(doc.UrlImagens, doc.Tipo, stoppingToken);
+            var extractedData = await ocrAiService.ExtractMultipleDocumentsDataAsync(ocrUrls, doc.Tipo, stoppingToken);
 
             doc.Progress = 90; // Exemplo: OCR e IA finalizados
             await repo.UpdateProgressAsync(doc.Id, doc.Progress);

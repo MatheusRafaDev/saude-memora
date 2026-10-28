@@ -32,6 +32,7 @@ public class DocumentProcessingService : IOcrAiService
     private readonly string? _geminiModel;
     private readonly string? _groqModel;
     private readonly IConfiguration _configuration;
+    private readonly IImageStorageService? _storage;
 
     private readonly ILogger<DocumentProcessingService> _logger;
 
@@ -39,16 +40,18 @@ public class DocumentProcessingService : IOcrAiService
         HttpClient httpClient,
         ResilientHttpSender sender,
         IConfiguration config,
-        ILogger<DocumentProcessingService> logger)
+        ILogger<DocumentProcessingService> logger,
+        IImageStorageService? storage = null)
     {
         _httpClient = httpClient;
         _sender = sender;
         _ocrSpaceApiKey = Environment.GetEnvironmentVariable("OCR_SPACE_API_KEY") ?? config["OcrSpace:ApiKey"];
         _geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? config["Gemini:ApiKey"];
         _groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? config["Groq:ApiKey"];
-        _geminiModel = GeminiModel;
-        _groqModel = GroqModel;
+        _geminiModel = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? config["Gemini:Model"] ?? GeminiModel;
+        _groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL") ?? config["Groq:Model"] ?? GroqModel;
         _configuration = config;
+        _storage = storage;
 
         _logger = logger;
     }
@@ -232,7 +235,8 @@ public class DocumentProcessingService : IOcrAiService
 
     private async Task<OcrCallResult> CallOcrSpaceAsync(string imageUrl, int engine, CancellationToken cancellationToken)
     {
-        var encodedUrl = Uri.EscapeDataString(imageUrl);
+        var targetUrl = _storage?.GetOcrOptimizedUrlFromUrl(imageUrl) ?? imageUrl;
+        var encodedUrl = Uri.EscapeDataString(targetUrl);
         var url = $"https://api.ocr.space/parse/imageurl?url={encodedUrl}&ocrengine={engine}&language=por&scale=true&isTable=true";
 
         try
@@ -268,7 +272,8 @@ public class DocumentProcessingService : IOcrAiService
 
                 if (result.TryGetProperty("IsErroredOnProcessing", out var isErrored) && isErrored.GetBoolean())
                 {
-                    _logger.LogWarning("OCR engine returned an error. Engine={Engine}.", engine);
+                    var errorMessage = result.TryGetProperty("ErrorMessage", out var em) ? em.ToString() : "unknown";
+                    _logger.LogWarning("OCR engine returned an error. Engine={Engine}. Error={Error}", engine, errorMessage);
                     return new OcrCallResult("", false);
                 }
 

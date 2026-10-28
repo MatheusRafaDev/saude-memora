@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { customFetch } from '@workspace/api-client-react';
 import { waitForDocumentProcessing, getInvalidDocumentMessage } from '@/lib/document-processing';
+import { optimizeUploadFiles } from '@/lib/image-compression';
 
 interface UploadModalProps {
   open?: boolean;
@@ -63,7 +64,7 @@ const PIPELINE_STEPS = [
   { id: 4, title: 'Catalogação no prontuário', desc: 'Organização automática na sua linha do tempo médica', threshold: 90 },
 ];
 
-const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
+const SUPPORTED_FILE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp']);
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -181,12 +182,12 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
   }, [isOpen, status]);
 
   const validateFiles = (picked: File[]) => {
-    if (picked.some((file) => file.size > 10 * 1024 * 1024)) {
-      setErrorMessage('O tamanho máximo permitido por arquivo é 10 MB.');
+    if (picked.some((file) => file.size > 25 * 1024 * 1024)) {
+      setErrorMessage('O tamanho máximo permitido por arquivo é 25 MB.');
       return false;
     }
     if (picked.some((file) => !SUPPORTED_FILE_EXTENSIONS.has(file.name.split('.').pop()?.toLowerCase() || ''))) {
-      setErrorMessage('Formato não suportado. Envie arquivos PDF, JPG ou PNG.');
+      setErrorMessage('Formato não suportado. Envie arquivos PDF, JPG, PNG ou HEIC.');
       return false;
     }
     return true;
@@ -210,12 +211,13 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     setResultId(null);
   };
 
-  const handleFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = Array.from(e.target.files || []);
+  const handleFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawPicked = Array.from(e.target.files || []);
     e.target.value = '';
-    if (picked.length) {
-      if (!validateFiles(picked)) return;
+    if (rawPicked.length) {
+      if (!validateFiles(rawPicked)) return;
       setErrorMessage('');
+      const picked = await optimizeUploadFiles(rawPicked);
       if (isAppendingRef.current) {
         setFiles((prev) => {
           const existingKeys = new Set(prev.map((f) => `${f.name}-${f.size}`));
@@ -229,13 +231,14 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
     isAppendingRef.current = false;
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const picked = Array.from(e.dataTransfer.files || []);
-    if (picked.length) {
-      if (!validateFiles(picked)) return;
+    const rawPicked = Array.from(e.dataTransfer.files || []);
+    if (rawPicked.length) {
+      if (!validateFiles(rawPicked)) return;
       setErrorMessage('');
+      const picked = await optimizeUploadFiles(rawPicked);
       setFiles(picked);
     }
   };
@@ -432,14 +435,14 @@ export function UploadModal({ open: externalOpen, onClose: externalOnClose, onSu
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+              accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.webp,application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp"
               className="hidden"
               onChange={handleFilePicked}
             />
             <input
               ref={cameraInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif"
               capture="environment"
               className="hidden"
               onChange={handleFilePicked}
