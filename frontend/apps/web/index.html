@@ -88,6 +88,19 @@
         <div style="width: 130px; height: 3px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; position: relative;">
           <div style="position: absolute; top: 0; bottom: 0; left: 0; width: 45%; background: #1D4ED8; border-radius: 9999px; animation: pwa-load 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;"></div>
         </div>
+        <div id="pwa-reload-hint" style="display: none; margin-top: 1.5rem;">
+          <button onclick="localStorage.clear(); if ('serviceWorker' in navigator) { navigator.serviceWorker.getRegistrations().then(function(regs){ regs.forEach(function(r){ r.unregister(); }); }); } window.location.reload();" style="padding: 10px 18px; font-size: 13px; font-weight: 600; background: #1D4ED8; color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);">
+            Demorando? Clique para recarregar
+          </button>
+        </div>
+        <script>
+          setTimeout(function() {
+            var el = document.getElementById('pwa-reload-hint');
+            if (el && document.getElementById('pwa-splash')) {
+              el.style.display = 'block';
+            }
+          }, 6000);
+        </script>
         <style>
           @keyframes pwa-load {
             0% { left: -45%; width: 45%; }

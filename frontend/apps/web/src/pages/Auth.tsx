@@ -33,7 +33,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { BrandLogo } from '@/components/BrandLogo';
 import { getApiErrorMessage } from '@/lib/api-error-message';
-import { hasAuthCookie, setClientAuthSession } from '@/lib/auth';
+import { hasAuthCookie, setClientAuthSession, clearStoredAuthToken } from '@/lib/auth';
 import { warmUpEntireSystem } from '@/lib/prefetch';
 
 export interface AuthProps {
@@ -53,7 +53,7 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
   const hasCookie = typeof window !== 'undefined' && hasAuthCookie();
   const shouldCheckSession = !isRegisterRoute && hasCookie;
 
-  const { data: currentUser } = useGetApiPacientesMe({
+  const { data: currentUser, isError: isSessionError } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
@@ -63,11 +63,19 @@ export default function Auth({ defaultMode }: AuthProps = {}) {
     },
   });
 
+  // Se a checagem falhar (ex: 401), limpa credenciais obsoletas para evitar loop
   useEffect(() => {
-    if (currentUser) {
+    if (isSessionError) {
+      clearStoredAuthToken();
+      queryClient.removeQueries({ queryKey: getGetApiPacientesMeQueryKey() });
+    }
+  }, [isSessionError, queryClient]);
+
+  useEffect(() => {
+    if (currentUser && !isSessionError) {
       setLocation('/visao-geral');
     }
-  }, [currentUser, setLocation]);
+  }, [currentUser, isSessionError, setLocation]);
 
   const loginMutation = usePostApiAuthLogin();
   const registerMutation = usePostApiAuthRegister();

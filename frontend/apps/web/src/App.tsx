@@ -28,7 +28,7 @@ import Sobre from '@/pages/Sobre';
 import Recursos from '@/pages/Recursos';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
-import { hasAuthCookie, setClientAuthSession } from '@/lib/auth';
+import { hasAuthCookie, setClientAuthSession, clearStoredAuthToken } from '@/lib/auth';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Documents = lazy(() => import('@/pages/Documents'));
@@ -54,12 +54,14 @@ const queryClient = new QueryClient({
   },
   queryCache: new QueryCache({
     onError: (error: any, query) => {
+      const status = error?.status ?? error?.response?.status;
       if (
-        (error?.status === 401 || error?.response?.status === 401) &&
+        status === 401 &&
         query.meta?.skipUnauthorizedRedirect !== true
       ) {
+        clearStoredAuthToken();
         queryClient.clear();
-        if (window.location.pathname !== '/entrar') {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/entrar') {
           window.location.href = '/entrar';
         }
       }
@@ -67,11 +69,8 @@ const queryClient = new QueryClient({
   })
 });
 
-// Hidratação instantânea (0ms) do cache local e persistência em background para o PWA
+// Hidratação instantânea (0ms) do cache local para o PWA
 initFastCache(queryClient);
-if (typeof window !== 'undefined' && hasAuthCookie()) {
-  warmUpEntireSystem(queryClient);
-}
 
 const SESSION_REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000;
 const SESSION_REFRESH_RETRY_MS = 60 * 1000;
@@ -206,6 +205,8 @@ function SessionKeepAlive() {
         }
       } catch (error) {
         if (getHttpStatus(error) === 401) {
+          clearStoredAuthToken();
+          queryClient.clear();
           setLocation('/entrar');
           return;
         }
@@ -255,7 +256,7 @@ function SessionKeepAlive() {
 function HomeRoute() {
   const [, setLocation] = useLocation();
   const hasCookie = typeof window !== 'undefined' && hasAuthCookie();
-  const { data: user, isLoading } = useGetApiPacientesMe({
+  const { data: user, isLoading, isError } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: false,
@@ -273,10 +274,15 @@ function HomeRoute() {
   useEffect(() => {
     if (user) {
       setLocation('/visao-geral');
+    } else if (isError) {
+      clearStoredAuthToken();
+      if (isStandalone) {
+        setLocation('/entrar');
+      }
     } else if (isStandalone && !isLoading && !hasCookie) {
       setLocation('/entrar');
     }
-  }, [user, isStandalone, isLoading, hasCookie, setLocation]);
+  }, [user, isError, isStandalone, isLoading, hasCookie, setLocation]);
 
   if (user || (isStandalone && isLoading && hasCookie)) {
     return <PageLoading />;
@@ -305,7 +311,9 @@ function isProtectedPath(path: string) {
 
 function ProtectedLayout() {
   const queryClient = useQueryClient();
-  const { data: user, isLoading, isError, error, isFetching } = useGetApiPacientesMe({
+  const [location, setLocation] = useLocation();
+
+  const { data: user, isLoading, isError, error } = useGetApiPacientesMe({
     query: {
       queryKey: getGetApiPacientesMeQueryKey(),
       retry: (failureCount, err) => {
@@ -318,35 +326,33 @@ function ProtectedLayout() {
     },
   });
 
-  const [location, setLocation] = useLocation();
+  const httpStatus = getHttpStatus(error);
 
-  // Pré-carrega de imediato TODO o sistema:
-  // Faz o download paralelo dos módulos de todas as telas (Documentos, Anamnese, Perfil, Chat, etc.)
-  // e pré-busca todos os dados no cache para que a troca de telas seja instantânea.
+  // Se o servidor retornou 401, limpa credenciais inválidas imediatamente e vai para o login
   useEffect(() => {
-    warmUpEntireSystem(queryClient);
-  }, [queryClient]);
+    if (isError && httpStatus === 401) {
+      clearStoredAuthToken();
+      queryClient.clear();
+      setLocation('/entrar');
+    }
+  }, [isError, httpStatus, queryClient, setLocation]);
 
   useEffect(() => {
     if (user) {
       setClientAuthSession();
+      warmUpEntireSystem(queryClient);
     }
-  }, [user]);
+  }, [user, queryClient]);
 
-  useEffect(() => {
-    if (!isFetching && isError && getHttpStatus(error) === 401 && !user) {
-      setLocation('/entrar');
-    }
-  }, [isError, error, isFetching, user, setLocation]);
-
-  if (isError && getHttpStatus(error) === 401 && !user && !isFetching) {
+  // Se 401, aguarda o redirecionamento sem piscar
+  if (isError && httpStatus === 401) {
     return null;
   }
 
-  if (isLoading || (isFetching && !user)) {
+  // Se estiver carregando inicialmente sem dados prévios em cache
+  if (isLoading && !user) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        {/* Skeleton Header */}
         <header className="sticky top-0 z-40 hidden w-full glass-header border-b border-white/5 lg:block">
           <div className="mx-auto max-w-[1440px] px-4 md:px-8">
             <div className="flex h-[64px] items-center gap-6">
@@ -364,7 +370,6 @@ function ProtectedLayout() {
             </div>
           </div>
         </header>
-        {/* Skeleton Content */}
         <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
           <div className="space-y-6">
             <div className="h-24 w-full rounded-2xl bg-muted animate-pulse" />
@@ -384,8 +389,43 @@ function ProtectedLayout() {
     );
   }
 
-  if (isError) {
-    return null;
+  // Se der erro que não seja 401 (ex: falha temporária de rede no mobile), dá opção de recarregar em vez de tela branca
+  if (isError && !user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white text-center">
+        <div className="max-w-md w-full space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-bold text-[#14211F]">Não foi possível conectar ao servidor</h2>
+          <p className="text-sm text-[#5B6878]">Verifique sua conexão de internet e tente novamente.</p>
+          <div className="flex gap-3 justify-center pt-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-5 py-2.5 rounded-xl bg-[#1D4ED8] text-white text-sm font-semibold hover:bg-[#1E40AF] transition-colors cursor-pointer"
+            >
+              Recarregar página
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearStoredAuthToken();
+                queryClient.clear();
+                setLocation('/entrar');
+              }}
+              className="px-5 py-2.5 rounded-xl border border-[#E3E8F0] text-[#5B6878] text-sm font-semibold hover:bg-[#F4F7FC] transition-colors cursor-pointer"
+            >
+              Ir para o login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
   
   return (

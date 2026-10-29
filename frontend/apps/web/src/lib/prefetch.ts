@@ -84,13 +84,23 @@ export function preloadAllRoutes() {
  */
 export function preloadAllAppData(queryClient: QueryClient) {
   void Promise.allSettled([
-    queryClient.prefetchQuery(getGetApiPacientesMeQueryOptions()),
-    queryClient.prefetchQuery(getGetApiDocumentsQueryOptions()),
-    queryClient.prefetchQuery(getGetApiFichaMedicaMeQueryOptions()),
+    queryClient.prefetchQuery({
+      ...getGetApiPacientesMeQueryOptions(),
+      meta: { skipUnauthorizedRedirect: true },
+    }),
+    queryClient.prefetchQuery({
+      ...getGetApiDocumentsQueryOptions(),
+      meta: { skipUnauthorizedRedirect: true },
+    }),
+    queryClient.prefetchQuery({
+      ...getGetApiFichaMedicaMeQueryOptions(),
+      meta: { skipUnauthorizedRedirect: true },
+    }),
     queryClient.prefetchQuery({
       queryKey: ['dashboard-resumo'],
       queryFn: () => customFetch('/api/dashboard/resumo'),
       staleTime: 60_000,
+      meta: { skipUnauthorizedRedirect: true },
     }),
   ]);
 }

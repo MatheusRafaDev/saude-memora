@@ -130,7 +130,7 @@ export default function Dashboard() {
     : (Array.isArray(dados?.ficha?.alergias) ? dados.ficha.alergias : []);
   const allergiesDisplay = allergiesList.length > 0 ? allergiesList.join(' · ') : 'Não informado';
 
-  const isLoading = isProfileLoading || isFichaLoading || resumo.isLoading;
+  const isLoading = !dados && (isProfileLoading || isFichaLoading || resumo.isLoading);
   const hasError = profileError || fichaError || resumo.isError;
 
   if (isLoading) {
@@ -143,11 +143,19 @@ export default function Dashboard() {
     );
   }
 
-  if (hasError || !dados) {
+  if ((hasError && !dados) || !dados) {
     return (
       <div className="mx-auto w-full max-w-[1240px] flex-1 min-h-[calc(100vh-72px)] min-h-[calc(100dvh-72px)] px-3.5 sm:px-6 lg:px-10 py-12 flex items-center justify-center">
-        <div role="alert" className="w-full max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-8 text-center text-[#E8664A]">
-          Não foi possível carregar os dados da sua conta. Atualize a página ou tente novamente mais tarde.
+        <div role="alert" className="w-full max-w-2xl rounded-2xl border border-[#E8664A]/30 bg-[#E8664A]/10 p-8 text-center text-[#E8664A] space-y-4">
+          <p className="font-semibold text-base">Não foi possível carregar os dados da sua conta.</p>
+          <p className="text-xs text-[#5B6878]">Verifique sua conexão e tente novamente.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 rounded-xl bg-[#1D4ED8] text-white text-xs font-semibold hover:bg-[#1E40AF] transition-colors cursor-pointer"
+          >
+            Recarregar página
+          </button>
         </div>
       </div>
     );
